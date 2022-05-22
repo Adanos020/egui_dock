@@ -19,7 +19,7 @@ struct MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        use egui_docking::{NodeIndex, Split};
+        use egui_docking::NodeIndex;
         let node_tree = Box::new(PlaceholderTab::new("Node Tree"));
         let scene = Box::new(PlaceholderTab::new("Scene"));
 
@@ -29,12 +29,11 @@ impl Default for MyApp {
         let files = Box::new(PlaceholderTab::new("File Browser"));
         let assets = Box::new(PlaceholderTab::new("Asset Manager"));
 
-        let root = egui_docking::Node::leaf_with(vec![scene, node_tree]);
-        let mut tree = egui_docking::Tree::new(root);
+        let mut tree = egui_docking::Tree::new(vec![scene, node_tree]);
 
-        let [a, b] = tree.split_tabs(NodeIndex::root(), Split::Left, 0.3, vec![inspector]);
-        let [_, _] = tree.split_tabs(a, Split::Below, 0.7, vec![files, assets]);
-        let [_, _] = tree.split_tabs(b, Split::Below, 0.5, vec![hierarchy]);
+        let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![inspector]);
+        let [_, _] = tree.split_below(a, 0.7, vec![files, assets]);
+        let [_, _] = tree.split_below(b, 0.5, vec![hierarchy]);
 
         Self {
             style: egui_docking::Style::default(),
@@ -46,6 +45,8 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.style = egui_docking::Style::from_egui(ctx.style().as_ref());
+
         let id = egui::Id::new("some hashable string");
         let layer_id = egui::LayerId::background();
         let max_rect = ctx.available_rect();
@@ -60,12 +61,15 @@ struct MyContext;
 
 struct PlaceholderTab {
     title: String,
+
+    age: u32,
 }
 
 impl PlaceholderTab {
     fn new(title: impl ToString) -> Self {
         Self {
             title: title.to_string(),
+            age: 42,
         }
     }
 }
@@ -75,5 +79,20 @@ impl egui_docking::Tab<MyContext> for PlaceholderTab {
         &self.title
     }
 
-    fn ui(&mut self, ui: &mut egui::Ui, ctx: &mut MyContext) {}
+    fn ui(&mut self, ui: &mut egui::Ui, _ctx: &mut MyContext) {
+        let margin = egui::style::Margin::same(4.0);
+
+        egui::Frame::none().inner_margin(margin).show(ui, |ui| {
+            ui.heading("My egui Application");
+            ui.horizontal(|ui| {
+                ui.label("Your name: ");
+                ui.text_edit_singleline(&mut self.title);
+            });
+            ui.add(egui::Slider::new(&mut self.age, 0..=120).text("age"));
+            if ui.button("Click each year").clicked() {
+                self.age += 1;
+            }
+            ui.label(format!("Hello '{}', age {}", self.title, self.age));
+        });
+    }
 }

@@ -7,56 +7,6 @@ pub use self::tree::{Node, NodeIndex, Split, Tree};
 use egui::style::Margin;
 use egui::*;
 
-struct TabWidget<'a> {
-    label: String,
-    active: bool,
-    style: &'a Style,
-}
-
-impl<'a> egui::Widget for TabWidget<'a> {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let px = ui.ctx().pixels_per_point().recip();
-        let rounding = self.style.tab_rounding;
-
-        let font_id = egui::FontId::proportional(14.0);
-        let galley = ui
-            .painter()
-            .layout_no_wrap(self.label, font_id, self.style.tab_text);
-
-        let offset = egui::vec2(10.0, 0.0);
-        let text_size = galley.size();
-
-        let mut desired_size = text_size + offset * 2.0;
-        desired_size.y = 24.0;
-
-        let (rect, response) = ui.allocate_at_least(desired_size, egui::Sense::hover());
-        let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
-
-        if self.active {
-            let mut tab = rect;
-
-            //tab.min.x -= px;
-            //tab.max.x += px;
-            ui.painter()
-                .rect_filled(tab, rounding, self.style.tab_outline);
-
-            tab.min.x += px;
-            tab.max.x -= px;
-            tab.min.y += px;
-            ui.painter()
-                .rect_filled(tab, rounding, self.style.background);
-        }
-
-        let pos = egui::Align2::LEFT_TOP
-            .anchor_rect(rect.shrink2(egui::vec2(8.0, 5.0)))
-            .min;
-
-        ui.painter().galley(pos, galley);
-
-        response
-    }
-}
-
 struct HoverData {
     rect: Rect,
     tabs: Option<Rect>,
@@ -153,9 +103,8 @@ pub fn show<Context>(
 
             Node::Horizontal { fraction, rect } => {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
-                ui.set_clip_rect(rect);
 
-                let (left, separator, right) = style.hsplit(ui, fraction, rect);
+                let (left, _separator, right) = style.hsplit(ui, fraction, rect);
                 //ui.painter().rect_filled(separator, 0.0, style.background);
 
                 tree[tree_index.left()].set_rect(left);
@@ -164,9 +113,8 @@ pub fn show<Context>(
 
             Node::Vertical { fraction, rect } => {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
-                ui.set_clip_rect(rect);
 
-                let (bottom, separator, top) = style.vsplit(ui, fraction, rect);
+                let (bottom, _separator, top) = style.vsplit(ui, fraction, rect);
                 //ui.painter().rect_filled(separator, 0.0, style.background);
 
                 tree[tree_index.left()].set_rect(bottom);
@@ -191,7 +139,7 @@ pub fn show<Context>(
                 let tabs_response = ui.allocate_rect(tabbar, egui::Sense::hover());
 
                 // tabs
-                {
+                ui.scope(|ui| {
                     ui.painter()
                         .rect_filled(tabbar, style.tab_rounding, style.tabbar_background);
 
@@ -207,16 +155,16 @@ pub fn show<Context>(
                             let id = egui::Id::new((tree_index, tab_index, "tab"));
                             let is_being_dragged = ui.memory().is_being_dragged(id);
 
-                            let widget = TabWidget {
-                                label: tab.title().to_string(),
-                                active: *active == tab_index || is_being_dragged,
-                                style,
-                            };
+                            let is_active = *active == tab_index || is_being_dragged;
+                            let label = tab.title().to_string();
 
                             if is_being_dragged {
                                 let layer_id = egui::LayerId::new(egui::Order::Tooltip, id);
-                                let response =
-                                    ui.with_layer_id(layer_id, |ui| ui.add(widget)).response;
+                                let response = ui
+                                    .with_layer_id(layer_id, |ui| {
+                                        style.tab_title(ui, label, is_active)
+                                    })
+                                    .response;
 
                                 let sense = egui::Sense::click_and_drag();
                                 let response = ui
@@ -239,7 +187,7 @@ pub fn show<Context>(
                                     *active = tab_index;
                                 }
                             } else {
-                                let response = ui.scope(|ui| ui.add(widget)).response;
+                                let response = style.tab_title(ui, label, is_active);
                                 let sense = egui::Sense::click_and_drag();
                                 let response = ui.interact(response.rect, id, sense);
                                 if response.drag_started() {
@@ -248,7 +196,7 @@ pub fn show<Context>(
                             }
                         }
                     });
-                }
+                });
 
                 // tab body
                 if let Some(tab) = tabs.get_mut(*active) {
@@ -324,18 +272,6 @@ fn expand_to_pixel(mut rect: egui::Rect, ppi: f32) -> egui::Rect {
     rect
 }
 
-fn shrink_to_pixel(mut rect: egui::Rect, ppi: f32) -> egui::Rect {
-    rect.min = map_to_pixel_pos(rect.min, ppi, f32::ceil);
-    rect.max = map_to_pixel_pos(rect.max, ppi, f32::floor);
-    rect
-}
-
-fn round_to_pixel(mut rect: egui::Rect, pixels_per_point: f32) -> egui::Rect {
-    rect.min = map_to_pixel_pos(rect.min, pixels_per_point, f32::round);
-    rect.max = map_to_pixel_pos(rect.max, pixels_per_point, f32::round);
-    rect
-}
-
 fn map_to_pixel_pos(mut pos: egui::Pos2, ppi: f32, map: fn(f32) -> f32) -> egui::Pos2 {
     pos.x = map_to_pixel(pos.x, ppi, map);
     pos.y = map_to_pixel(pos.y, ppi, map);
@@ -374,27 +310,42 @@ impl Default for Style {
             },
 
             background: Color32::DARK_GREEN,
-            selection: Color32::BLUE,
+            selection: Color32::from_rgb_additive(0, 92, 128),
             separator_size: 4.0,
             separator_extra: 100.0,
 
-            tabbar_background: Color32::GRAY,
+            tabbar_background: Color32::RED,
 
             tab_text: Color32::WHITE,
             tab_outline: Color32::RED,
+            tab_background: Color32::GREEN,
             tab_rounding: Rounding {
                 ne: 4.0,
                 nw: 4.0,
                 sw: 0.0,
                 se: 0.0,
             },
-            tab_background: Color32::GREEN,
         }
     }
 }
 
 impl Style {
-    pub fn hsplit(&self, ui: &mut Ui, fraction: &mut f32, rect: Rect) -> (Rect, Rect, Rect) {
+    pub fn from_egui(style: &egui::Style) -> Self {
+        Self {
+            selection: style.visuals.selection.bg_fill.linear_multiply(0.5),
+
+            background: style.visuals.window_fill(),
+            tabbar_background: style.visuals.faint_bg_color,
+
+            tab_text: style.visuals.widgets.active.fg_stroke.color,
+            tab_outline: style.visuals.widgets.active.bg_stroke.color,
+            tab_background: style.visuals.widgets.active.bg_fill,
+
+            ..Self::default()
+        }
+    }
+
+    fn hsplit(&self, ui: &mut Ui, fraction: &mut f32, rect: Rect) -> (Rect, Rect, Rect) {
         let pixels_per_point = ui.ctx().pixels_per_point();
 
         let mut separator = rect;
@@ -435,7 +386,7 @@ impl Style {
         )
     }
 
-    pub fn vsplit(&self, ui: &mut Ui, fraction: &mut f32, rect: Rect) -> (Rect, Rect, Rect) {
+    fn vsplit(&self, ui: &mut Ui, fraction: &mut f32, rect: Rect) -> (Rect, Rect, Rect) {
         let pixels_per_point = ui.ctx().pixels_per_point();
 
         let mut separator = rect;
@@ -475,6 +426,44 @@ impl Style {
             separator,
             rect.intersect(Rect::everything_below(separator.max.y)),
         )
+    }
+
+    fn tab_title(&self, ui: &mut egui::Ui, label: String, active: bool) -> egui::Response {
+        let px = ui.ctx().pixels_per_point().recip();
+        let rounding = self.tab_rounding;
+
+        let font_id = egui::FontId::proportional(14.0);
+        let galley = ui.painter().layout_no_wrap(label, font_id, self.tab_text);
+
+        let offset = egui::vec2(8.0, 0.0);
+        let text_size = galley.size();
+
+        let mut desired_size = text_size + offset * 2.0;
+        desired_size.y = 24.0;
+
+        let (rect, response) = ui.allocate_at_least(desired_size, egui::Sense::hover());
+        let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
+
+        if active {
+            let mut tab = rect;
+
+            tab.min.x -= px;
+            tab.max.x += px;
+            ui.painter().rect_filled(tab, rounding, self.tab_outline);
+
+            tab.min.x += px;
+            tab.max.x -= px;
+            tab.min.y += px;
+            ui.painter().rect_filled(tab, rounding, self.background);
+        }
+
+        let pos = egui::Align2::LEFT_TOP
+            .anchor_rect(rect.shrink2(egui::vec2(8.0, 5.0)))
+            .min;
+
+        ui.painter().galley(pos, galley);
+
+        response
     }
 }
 

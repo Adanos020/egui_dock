@@ -1,36 +1,14 @@
 use crate::Tab;
 use egui::*;
 
-/*
-pub struct Wrapper<Context> {
-    pub icon: char,
-    pub title: String,
-    pub inner: Box<dyn Tab<Context>>,
-}
-
-impl<Context> ToString for Wrapper<Context> {
-    fn to_string(&self) -> String {
-        format!("{}  {}", self.icon, self.title)
-    }
-}
-
-impl<Context> Wrapper<Context> {
-    pub fn new(icon: char, title: impl Into<String>, inner: impl Tab<Context> + 'static) -> Self {
-        Self {
-            icon,
-            title: title.into(),
-            inner: Box::new(inner),
-        }
-    }
-}
-*/
+pub type Tabs<Context> = Vec<Box<dyn Tab<Context>>>;
 
 pub enum Node<Context> {
     None,
     Leaf {
         rect: Rect,
         viewport: Rect,
-        tabs: Vec<Box<dyn Tab<Context>>>,
+        tabs: Tabs<Context>,
         active: usize,
     },
     Vertical {
@@ -197,7 +175,8 @@ impl<Context> Default for Tree<Context> {
 }
 
 impl<Context> Tree<Context> {
-    pub fn new(root: Node<Context>) -> Self {
+    pub fn new(tabs: Tabs<Context>) -> Self {
+        let root = Node::leaf_with(tabs);
         Self { tree: vec![root] }
     }
 
@@ -244,6 +223,42 @@ impl<Context> Tree<Context> {
         tabs: Vec<Box<dyn Tab<Context>>>,
     ) -> [NodeIndex; 2] {
         self.split(parent, split, fraction, Node::leaf_with(tabs))
+    }
+
+    pub fn split_above(
+        &mut self,
+        parent: NodeIndex,
+        fraction: f32,
+        tabs: Tabs<Context>,
+    ) -> [NodeIndex; 2] {
+        self.split(parent, Split::Above, fraction, Node::leaf_with(tabs))
+    }
+
+    pub fn split_below(
+        &mut self,
+        parent: NodeIndex,
+        fraction: f32,
+        tabs: Tabs<Context>,
+    ) -> [NodeIndex; 2] {
+        self.split(parent, Split::Below, fraction, Node::leaf_with(tabs))
+    }
+
+    pub fn split_left(
+        &mut self,
+        parent: NodeIndex,
+        fraction: f32,
+        tabs: Tabs<Context>,
+    ) -> [NodeIndex; 2] {
+        self.split(parent, Split::Left, fraction, Node::leaf_with(tabs))
+    }
+
+    pub fn split_right(
+        &mut self,
+        parent: NodeIndex,
+        fraction: f32,
+        tabs: Tabs<Context>,
+    ) -> [NodeIndex; 2] {
+        self.split(parent, Split::Right, fraction, Node::leaf_with(tabs))
     }
 
     pub fn split(
