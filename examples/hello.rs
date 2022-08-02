@@ -15,7 +15,7 @@ fn main() {
 
 struct MyApp {
     context: MyContext,
-    style: egui_dock::Style,
+    style: Style,
     tree: Tree<MyContext>,
 }
 

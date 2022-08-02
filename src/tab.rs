@@ -1,8 +1,13 @@
 use std::any::Any;
+use egui::Ui;
 
+/// Implement this trait to use your widget as a dockable tab in `Tree`s.
 pub trait Tab<Context>: Send + Sync + TabDowncast {
+    /// Returns text displayed in the tab bar.
     fn title(&self) -> &str;
-    fn ui(&mut self, ui: &mut egui::Ui, ctx: &mut Context);
+
+    /// Displays the tab's content.
+    fn ui(&mut self, ui: &mut Ui, ctx: &mut Context);
 }
 
 pub trait TabDowncast {

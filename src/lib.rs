@@ -11,7 +11,7 @@ struct HoverData {
     rect: Rect,
     tabs: Option<Rect>,
     dst: NodeIndex,
-    pointer: egui::Pos2,
+    pointer: Pos2,
 }
 
 impl HoverData {
@@ -66,9 +66,10 @@ impl State {
     }
 }
 
+/// Shows the docking hierarchy inside a `Ui`.
 pub fn show<Context>(
     ui: &mut Ui,
-    id: egui::Id,
+    id: Id,
     style: &Style,
     tree: &mut Tree<Context>,
     context: &mut Context,
@@ -135,31 +136,31 @@ pub fn show<Context>(
                 let bottom_y = rect.min.y + height_topbar;
                 let tabbar = rect.intersect(Rect::everything_above(bottom_y));
 
-                let full_response = ui.allocate_rect(rect, egui::Sense::hover());
-                let tabs_response = ui.allocate_rect(tabbar, egui::Sense::hover());
+                let full_response = ui.allocate_rect(rect, Sense::hover());
+                let tabs_response = ui.allocate_rect(tabbar, Sense::hover());
 
                 // tabs
                 ui.scope(|ui| {
                     ui.painter()
-                        .rect_filled(tabbar, style.tab_rounding, style.tabbar_background);
+                        .rect_filled(tabbar, style.tab_rounding, style.tab_bar_background);
 
-                    let a = egui::pos2(tabbar.min.x, tabbar.max.y - px);
-                    let b = egui::pos2(tabbar.max.x, tabbar.max.y - px);
+                    let a = pos2(tabbar.min.x, tabbar.max.y - px);
+                    let b = pos2(tabbar.max.x, tabbar.max.y - px);
                     ui.painter().line_segment([a, b], (px, style.tab_outline));
 
                     let mut ui = ui.child_ui(tabbar, Default::default());
-                    ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
+                    ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
                     ui.horizontal(|ui| {
                         for (tab_index, tab) in tabs.iter().enumerate() {
-                            let id = egui::Id::new((tree_index, tab_index, "tab"));
+                            let id = Id::new((tree_index, tab_index, "tab"));
                             let is_being_dragged = ui.memory().is_being_dragged(id);
 
                             let is_active = *active == tab_index || is_being_dragged;
                             let label = tab.title().to_string();
 
                             if is_being_dragged {
-                                let layer_id = egui::LayerId::new(egui::Order::Tooltip, id);
+                                let layer_id = LayerId::new(Order::Tooltip, id);
                                 let response = ui
                                     .with_layer_id(layer_id, |ui| {
                                         style.tab_title(ui, label, is_active)
@@ -169,7 +170,7 @@ pub fn show<Context>(
                                 let sense = egui::Sense::click_and_drag();
                                 let response = ui
                                     .interact(response.rect, id, sense)
-                                    .on_hover_cursor(egui::CursorIcon::Grabbing);
+                                    .on_hover_cursor(CursorIcon::Grabbing);
 
                                 if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
                                     let center = response.rect.center();
@@ -188,7 +189,7 @@ pub fn show<Context>(
                                 }
                             } else {
                                 let response = style.tab_title(ui, label, is_active);
-                                let sense = egui::Sense::click_and_drag();
+                                let sense = Sense::click_and_drag();
                                 let response = ui.interact(response.rect, id, sense);
                                 if response.drag_started() {
                                     state.drag_start = response.hover_pos();
@@ -231,8 +232,8 @@ pub fn show<Context>(
         if tree[src].is_leaf() && tree[dst].is_leaf() {
             let (target, helper) = hover.resolve();
 
-            let id = egui::Id::new("helper");
-            let layer_id = egui::LayerId::new(egui::Order::Foreground, id);
+            let id = Id::new("helper");
+            let layer_id = LayerId::new(Order::Foreground, id);
             let painter = ui.ctx().layer_painter(layer_id);
             painter.rect_filled(helper, 0.0, style.selection);
 
@@ -266,13 +267,13 @@ pub fn show<Context>(
     state.store(ui.ctx(), id);
 }
 
-fn expand_to_pixel(mut rect: egui::Rect, ppi: f32) -> egui::Rect {
+fn expand_to_pixel(mut rect: Rect, ppi: f32) -> egui::Rect {
     rect.min = map_to_pixel_pos(rect.min, ppi, f32::floor);
     rect.max = map_to_pixel_pos(rect.max, ppi, f32::ceil);
     rect
 }
 
-fn map_to_pixel_pos(mut pos: egui::Pos2, ppi: f32, map: fn(f32) -> f32) -> egui::Pos2 {
+fn map_to_pixel_pos(mut pos: Pos2, ppi: f32, map: fn(f32) -> f32) -> egui::Pos2 {
     pos.x = map_to_pixel(pos.x, ppi, map);
     pos.y = map_to_pixel(pos.y, ppi, map);
     pos
@@ -283,6 +284,7 @@ fn map_to_pixel(point: f32, ppi: f32, map: fn(f32) -> f32) -> f32 {
     map(point * ppi) / ppi
 }
 
+/// Specifies the look and feel of egui_dock.
 pub struct Style {
     pub padding: Margin,
 
@@ -291,7 +293,7 @@ pub struct Style {
     pub separator_size: f32,
     pub separator_extra: f32,
 
-    pub tabbar_background: Color32,
+    pub tab_bar_background: Color32,
 
     pub tab_text: Color32,
     pub tab_outline: Color32,
@@ -314,7 +316,7 @@ impl Default for Style {
             separator_size: 4.0,
             separator_extra: 100.0,
 
-            tabbar_background: Color32::RED,
+            tab_bar_background: Color32::RED,
 
             tab_text: Color32::WHITE,
             tab_outline: Color32::RED,
@@ -330,12 +332,16 @@ impl Default for Style {
 }
 
 impl Style {
+    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by `egui::Style` are: `selection`, `background`, `tab_bar_background`, `tab_text`,
+    /// `tab_outline`, and `tab_background`.
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             selection: style.visuals.selection.bg_fill.linear_multiply(0.5),
 
             background: style.visuals.window_fill(),
-            tabbar_background: style.visuals.faint_bg_color,
+            tab_bar_background: style.visuals.faint_bg_color,
 
             tab_text: style.visuals.widgets.active.fg_stroke.color,
             tab_outline: style.visuals.widgets.active.bg_stroke.color,
@@ -428,11 +434,11 @@ impl Style {
         )
     }
 
-    fn tab_title(&self, ui: &mut egui::Ui, label: String, active: bool) -> egui::Response {
+    fn tab_title(&self, ui: &mut Ui, label: String, active: bool) -> Response {
         let px = ui.ctx().pixels_per_point().recip();
         let rounding = self.tab_rounding;
 
-        let font_id = egui::FontId::proportional(14.0);
+        let font_id = FontId::proportional(14.0);
         let galley = ui.painter().layout_no_wrap(label, font_id, self.tab_text);
 
         let offset = egui::vec2(8.0, 0.0);
@@ -441,8 +447,8 @@ impl Style {
         let mut desired_size = text_size + offset * 2.0;
         desired_size.y = 24.0;
 
-        let (rect, response) = ui.allocate_at_least(desired_size, egui::Sense::hover());
-        let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
+        let (rect, response) = ui.allocate_at_least(desired_size, Sense::hover());
+        let response = response.on_hover_cursor(CursorIcon::PointingHand);
 
         if active {
             let mut tab = rect;
@@ -457,8 +463,8 @@ impl Style {
             ui.painter().rect_filled(tab, rounding, self.background);
         }
 
-        let pos = egui::Align2::LEFT_TOP
-            .anchor_rect(rect.shrink2(egui::vec2(8.0, 5.0)))
+        let pos = Align2::LEFT_TOP
+            .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
             .min;
 
         ui.painter().galley(pos, galley);
@@ -467,7 +473,6 @@ impl Style {
     }
 }
 
-// TODO: Stable since Rust version 1.62.0
 fn total_cmp(lhs: &f32, rhs: &f32) -> std::cmp::Ordering {
     let mut lhs = lhs.to_bits() as i32;
     let mut rhs = rhs.to_bits() as i32;

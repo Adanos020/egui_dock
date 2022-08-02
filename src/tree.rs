@@ -3,18 +3,23 @@ use egui::*;
 
 pub type Tabs<Context> = Vec<Box<dyn Tab<Context>>>;
 
+/// Represents an abstract node of a `Tree`.
 pub enum Node<Context> {
+    /// Empty node
     None,
+    /// Contains the actual tabs
     Leaf {
         rect: Rect,
         viewport: Rect,
         tabs: Tabs<Context>,
         active: usize,
     },
+    /// Parent node in the vertical orientation
     Vertical {
         rect: Rect,
         fraction: f32,
     },
+    /// Parent node in the horizontal orientation
     Horizontal {
         rect: Rect,
         fraction: f32,
@@ -22,6 +27,7 @@ pub enum Node<Context> {
 }
 
 impl<Context> Node<Context> {
+    /// Constructs a leaf node with a given `tab`.
     pub fn leaf(tab: Box<dyn Tab<Context>>) -> Self {
         Self::Leaf {
             rect: Rect::NOTHING,
@@ -31,6 +37,7 @@ impl<Context> Node<Context> {
         }
     }
 
+    /// Constructs a leaf node with a given list of `tabs`.
     pub fn leaf_with(tabs: Vec<Box<dyn Tab<Context>>>) -> Self {
         Self::Leaf {
             rect: Rect::NOTHING,
@@ -40,6 +47,7 @@ impl<Context> Node<Context> {
         }
     }
 
+    /// Sets the area occupied by the node.
     pub fn set_rect(&mut self, new_rect: Rect) {
         match self {
             Self::None => (),
@@ -49,14 +57,17 @@ impl<Context> Node<Context> {
         }
     }
 
+    /// Returns `true` if the node is a `None`, `false` otherwise.
     pub fn is_none(&self) -> bool {
         matches!(self, Self::None)
     }
 
+    /// Returns `true` if the node is a `Leaf`, `false` otherwise.
     pub fn is_leaf(&self) -> bool {
         matches!(self, Self::Leaf { .. })
     }
 
+    /// Replaces the node with a `Horizontal` or `Vertical` one (depending on `split`) and assigns it an empty rect.
     pub fn split(&mut self, split: Split, fraction: f32) -> Self {
         let rect = Rect::NOTHING;
         let src = match split {
@@ -66,6 +77,10 @@ impl<Context> Node<Context> {
         std::mem::replace(self, src)
     }
 
+    /// Adds a `tab` to the node.
+    ///
+    /// # Panics
+    /// Panics if the new capacity of `tabs` exceeds isize::MAX bytes.
     #[track_caller]
     pub fn append_tab(&mut self, tab: Box<dyn Tab<Context>>) {
         match self {
@@ -74,6 +89,11 @@ impl<Context> Node<Context> {
         }
     }
 
+    /// Removes a tab at given `index` from the node.
+    /// Returns the removed tab if the node is a `Leaf`, or `None` otherwise.
+    ///
+    /// # Panics
+    /// Panics if `index` is out of bounds.
     pub fn remove_tab(&mut self, index: usize) -> Option<Box<dyn Tab<Context>>> {
         match self {
             Node::Leaf { tabs, .. } => Some(tabs.remove(index)),
@@ -82,22 +102,27 @@ impl<Context> Node<Context> {
     }
 }
 
+/// Wrapper around indices to the collection of nodes inside a `Tree`.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct NodeIndex(pub usize);
 
 impl NodeIndex {
+    /// Returns the index of the root node.
     pub const fn root() -> Self {
         Self(0)
     }
 
+    /// Returns the index of the node to the left of the current one.
     pub const fn left(self) -> Self {
         Self(self.0 * 2 + 1)
     }
 
+    /// Returns the index of the node to the right of the current one.
     pub const fn right(self) -> Self {
         Self(self.0 * 2 + 2)
     }
 
+    /// Returns the index of the parent node or `None` if current node is the root.
     pub const fn parent(self) -> Option<Self> {
         if self.0 > 0 {
             Some(Self((self.0 - 1) / 2))
@@ -106,14 +131,17 @@ impl NodeIndex {
         }
     }
 
+    /// Returns the number of nodes leading from the root to the current node, including `self`.
     pub const fn level(self) -> usize {
         (usize::BITS - (self.0 + 1).leading_zeros()) as usize
     }
 
+    /// Returns true if current node is the left node of its parent, false otherwise.
     pub const fn is_left(self) -> bool {
         self.0 % 2 != 0
     }
 
+    /// Returns true if current node is the right node of its parent, false otherwise.
     pub const fn is_right(self) -> bool {
         self.0 % 2 == 0
     }
@@ -140,6 +168,7 @@ impl NodeIndex {
     }
 }
 
+/// Direction in which a new node is created relatively to the parent node at which the split occurs.
 #[derive(Clone, Copy)]
 pub enum Split {
     Left,
@@ -148,6 +177,7 @@ pub enum Split {
     Below,
 }
 
+/// Binary tree representing the relationships between `Node`s.
 pub struct Tree<Context> {
     tree: Vec<Node<Context>>,
 }
@@ -175,11 +205,13 @@ impl<Context> Default for Tree<Context> {
 }
 
 impl<Context> Tree<Context> {
+    /// Creates a new `Tree` with given `Vec` of `Tab`s in its root node.
     pub fn new(tabs: Tabs<Context>) -> Self {
         let root = Node::leaf_with(tabs);
         Self { tree: vec![root] }
     }
 
+    /// Returns the viewport `Rect` and the `Tab` inside the first leaf node, or `None` of no leaf exists in the `Tree`.
     pub fn find_active<T: Tab<Context> + 'static>(&mut self) -> Option<(Rect, &mut T)> {
         self.tree.iter_mut().find_map(|node| {
             if let Node::Leaf {
@@ -198,33 +230,55 @@ impl<Context> Tree<Context> {
         })
     }
 
+    /// Returns the number of nodes in the `Tree`.
     #[inline]
     pub fn len(&self) -> usize {
         self.tree.len()
     }
 
+    /// Returns `true` if the number of nodes in the tree is 0, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.tree.is_empty()
     }
 
+    /// Returns `Iter` of the underlying collection of nodes.
     pub fn iter(&self) -> std::slice::Iter<'_, Node<Context>> {
         self.tree.iter()
     }
 
+    /// Returns `IterMut` of the underlying collection of nodes.
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Node<Context>> {
         self.tree.iter_mut()
     }
 
+    /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
+    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    ///
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// split.
+    ///
+    /// The new node is placed relatively to the old node, in the direction specified by `split`.
+    ///
+    /// Returns the indices of the old node and the new node.
     pub fn split_tabs(
         &mut self,
         parent: NodeIndex,
         split: Split,
         fraction: f32,
-        tabs: Vec<Box<dyn Tab<Context>>>,
+        tabs: Tabs<Context>,
     ) -> [NodeIndex; 2] {
         self.split(parent, split, fraction, Node::leaf_with(tabs))
     }
 
+    /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
+    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    ///
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// split.
+    ///
+    /// The new node is placed above the old node.
+    ///
+    /// Returns the indices of the old node and the new node.
     pub fn split_above(
         &mut self,
         parent: NodeIndex,
@@ -234,6 +288,15 @@ impl<Context> Tree<Context> {
         self.split(parent, Split::Above, fraction, Node::leaf_with(tabs))
     }
 
+    /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
+    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    ///
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// split.
+    ///
+    /// The new node is placed below the old node.
+    ///
+    /// Returns the indices of the old node and the new node.
     pub fn split_below(
         &mut self,
         parent: NodeIndex,
@@ -243,6 +306,15 @@ impl<Context> Tree<Context> {
         self.split(parent, Split::Below, fraction, Node::leaf_with(tabs))
     }
 
+    /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
+    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    ///
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// split.
+    ///
+    /// The new node is placed to the left of the old node.
+    ///
+    /// Returns the indices of the old node and the new node.
     pub fn split_left(
         &mut self,
         parent: NodeIndex,
@@ -252,6 +324,15 @@ impl<Context> Tree<Context> {
         self.split(parent, Split::Left, fraction, Node::leaf_with(tabs))
     }
 
+    /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
+    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    ///
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// split.
+    ///
+    /// The new node is placed to the right of the old node.
+    ///
+    /// Returns the indices of the old node and the new node.
     pub fn split_right(
         &mut self,
         parent: NodeIndex,
@@ -261,6 +342,15 @@ impl<Context> Tree<Context> {
         self.split(parent, Split::Right, fraction, Node::leaf_with(tabs))
     }
 
+    /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
+    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    ///
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// split.
+    ///
+    /// The new node is placed relatively to the old node, in the direction specified by `split`.
+    ///
+    /// Returns the indices of the old node and the new node.
     pub fn split(
         &mut self,
         parent: NodeIndex,
@@ -288,6 +378,7 @@ impl<Context> Tree<Context> {
         index
     }
 
+    /// Removes the first node containing 0 tabs.
     pub fn remove_empty_leaf(&mut self) {
         let mut nodes = self.tree.iter().enumerate();
         let node = nodes.find_map(|(index, node)| match node {
