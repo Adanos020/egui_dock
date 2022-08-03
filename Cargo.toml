@@ -1,8 +1,14 @@
 [package]
 name = "egui_dock"
+description = "Docking support for `egui`"
 authors = ["Iain-dono", "Adam Gąsior (Adanos020)"]
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.61"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Adanos020/egui_dock"
+categories = ["gui", "game-development"]
 
 [dependencies]
 egui = "0.18"
