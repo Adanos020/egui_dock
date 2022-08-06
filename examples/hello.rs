@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use eframe::{NativeOptions, egui};
-use egui::{Frame, Id, LayerId, Slider, Ui, style::Margin};
+use eframe::{egui, NativeOptions};
+use egui::{style::Margin, Frame, Id, LayerId, Slider, Ui};
 use egui_dock::{NodeIndex, Style, Tab, Tree};
 
 fn main() {
@@ -62,7 +62,6 @@ struct MyContext;
 
 struct PlaceholderTab {
     title: String,
-
     age: u32,
 }
 
