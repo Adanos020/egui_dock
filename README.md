@@ -1,6 +1,6 @@
 # `egui_dock`: docking support for `egui`
 
-Credit goes to @Iain-dono for implementing the actual library.
+Credit goes to [@Iain-dono](https://github.com/lain-dono) for implementing the actual library.
 
 This fork aims to provide documentation and further development if necessary.
 
