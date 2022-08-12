@@ -15,15 +15,9 @@ pub enum Node<Context> {
         active: usize,
     },
     /// Parent node in the vertical orientation
-    Vertical {
-        rect: Rect,
-        fraction: f32,
-    },
+    Vertical { rect: Rect, fraction: f32 },
     /// Parent node in the horizontal orientation
-    Horizontal {
-        rect: Rect,
-        fraction: f32,
-    },
+    Horizontal { rect: Rect, fraction: f32 },
 }
 
 impl<Context> Node<Context> {
@@ -33,12 +27,12 @@ impl<Context> Node<Context> {
             rect: Rect::NOTHING,
             viewport: Rect::NOTHING,
             tabs: vec![tab],
-            active: 0,
+            active: Default::default(),
         }
     }
 
     /// Constructs a leaf node with a given list of `tabs`.
-    pub fn leaf_with(tabs: Vec<Box<dyn Tab<Context>>>) -> Self {
+    pub const fn leaf_with(tabs: Vec<Box<dyn Tab<Context>>>) -> Self {
         Self::Leaf {
             rect: Rect::NOTHING,
             viewport: Rect::NOTHING,
@@ -48,6 +42,7 @@ impl<Context> Node<Context> {
     }
 
     /// Sets the area occupied by the node.
+    #[inline(always)]
     pub fn set_rect(&mut self, new_rect: Rect) {
         match self {
             Self::None => (),
@@ -58,16 +53,17 @@ impl<Context> Node<Context> {
     }
 
     /// Returns `true` if the node is a `None`, `false` otherwise.
-    pub fn is_none(&self) -> bool {
+    pub const fn is_none(&self) -> bool {
         matches!(self, Self::None)
     }
 
     /// Returns `true` if the node is a `Leaf`, `false` otherwise.
-    pub fn is_leaf(&self) -> bool {
+    pub const fn is_leaf(&self) -> bool {
         matches!(self, Self::Leaf { .. })
     }
 
     /// Replaces the node with a `Horizontal` or `Vertical` one (depending on `split`) and assigns it an empty rect.
+    #[inline]
     pub fn split(&mut self, split: Split, fraction: f32) -> Self {
         let rect = Rect::NOTHING;
         let src = match split {
@@ -98,6 +94,14 @@ impl<Context> Node<Context> {
         match self {
             Node::Leaf { tabs, .. } => Some(tabs.remove(index)),
             _ => None,
+        }
+    }
+
+    #[inline(always)]
+    pub fn tabs_count(&self) -> usize {
+        match self {
+            Node::Leaf { tabs, .. } => tabs.len(),
+            _ => Default::default(),
         }
     }
 }
@@ -199,13 +203,17 @@ impl<Context> std::ops::IndexMut<NodeIndex> for Tree<Context> {
 }
 
 impl<Context> Default for Tree<Context> {
+    #[inline(always)]
     fn default() -> Self {
-        Self { tree: vec![] }
+        Self {
+            tree: Default::default(),
+        }
     }
 }
 
 impl<Context> Tree<Context> {
     /// Creates a new `Tree` with given `Vec` of `Tab`s in its root node.
+    #[inline(always)]
     pub fn new(tabs: Tabs<Context>) -> Self {
         let root = Node::leaf_with(tabs);
         Self { tree: vec![root] }
@@ -231,12 +239,13 @@ impl<Context> Tree<Context> {
     }
 
     /// Returns the number of nodes in the `Tree`.
-    #[inline]
+    #[inline(always)]
     pub fn len(&self) -> usize {
         self.tree.len()
     }
 
     /// Returns `true` if the number of nodes in the tree is 0, `false` otherwise.
+    #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.tree.is_empty()
     }
