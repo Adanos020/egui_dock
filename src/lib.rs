@@ -144,17 +144,14 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
     let mut rect = ui.max_rect();
 
     if let Some(margin) = style.padding {
-        rect = {
-            rect.min += margin.left_top();
-            rect.max -= margin.right_bottom();
-            ui.painter().rect(
-                rect,
-                margin.top,
-                style.separator_color,
-                Stroke::new(margin.top, style.border_color),
-            );
-            rect
-        };
+        rect.min += margin.left_top();
+        rect.max -= margin.right_bottom();
+        ui.painter().rect(
+            rect,
+            margin.top,
+            style.separator_color,
+            Stroke::new(margin.top, style.border_color),
+        );
     }
 
     tree[NodeIndex::root()].set_rect(rect);
@@ -172,7 +169,7 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
             Node::Horizontal { fraction, rect } => {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
-                let (left, _eparator, right) = style.hsplit(ui, fraction, rect);
+                let (left, _separator, right) = style.hsplit(ui, fraction, rect);
 
                 tree[tree_index.left()].set_rect(left);
                 tree[tree_index.right()].set_rect(right);
@@ -204,8 +201,11 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
 
                 // tabs
                 ui.scope(|ui| {
-                    ui.painter()
-                        .rect_filled(tabbar, style.tab_rounding, style.tab_bar_background);
+                    ui.painter().rect_filled(
+                        tabbar,
+                        style.tab_rounding,
+                        style.tab_bar_background_color,
+                    );
 
                     let a = pos2(tabbar.min.x, tabbar.max.y - px);
                     let b = pos2(tabbar.max.x, tabbar.max.y - px);
@@ -277,7 +277,8 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
 
                     *viewport = rect;
 
-                    ui.painter().rect_filled(rect, 0.0, style.background_color);
+                    ui.painter()
+                        .rect_filled(rect, 0.0, style.tab_background_color);
 
                     let mut ui = ui.child_ui(rect, Default::default());
                     tab.ui(&mut ui, context);
