@@ -6,7 +6,6 @@ use egui::*;
 pub struct Style {
     pub padding: Option<Margin>,
 
-    pub background_color: Color32,
     pub border_color: Color32,
     pub border_size: f32,
     pub selection_color: Color32,
@@ -14,9 +13,9 @@ pub struct Style {
     pub separator_extra: f32,
     pub separator_color: Color32,
 
-    pub tab_bar_background: Color32,
+    pub tab_bar_background_color: Color32,
 
-    pub tab_text: Color32,
+    pub tab_text_color: Color32,
     pub tab_outline_color: Color32,
     pub tab_rounding: Rounding,
     pub tab_background_color: Color32,
@@ -27,18 +26,17 @@ impl Default for Style {
         Self {
             padding: Default::default(),
 
-            border_color: Default::default(),
+            border_color: Color32::BLACK,
             border_size: Default::default(),
 
-            background_color: Color32::WHITE,
-            selection_color: Color32::from_rgb_additive(0, 92, 128),
+            selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
             separator_size: 1.0,
-            separator_extra: 100.0,
-            separator_color: Color32::default(),
+            separator_extra: 175.0,
+            separator_color: Color32::BLACK,
 
-            tab_bar_background: Color32::WHITE,
+            tab_bar_background_color: Color32::WHITE,
 
-            tab_text: Color32::BLACK,
+            tab_text_color: Color32::BLACK,
             tab_outline_color: Color32::BLACK,
             tab_background_color: Color32::WHITE,
             tab_rounding: Default::default(),
@@ -49,20 +47,19 @@ impl Default for Style {
 impl Style {
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
-    /// Fields overwritten by `egui::Style` are: `selection`, `background`, `tab_bar_background`, `tab_text`,
-    /// `tab_outline`, and `tab_background`.
+    /// Fields overwritten by [`egui::Style`] are: `selection`, `tab_bar_background_color`, `tab_text`,
+    /// `tab_outline_color`, `separator_color`, `border_color`, and `tab_background_color`.
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
 
-            background_color: style.visuals.window_fill(),
-            tab_bar_background: style.visuals.faint_bg_color,
+            tab_bar_background_color: style.visuals.faint_bg_color,
 
             separator_color: style.visuals.faint_bg_color,
             border_color: style.visuals.faint_bg_color,
-            tab_text: style.visuals.widgets.active.fg_stroke.color,
+            tab_text_color: style.visuals.widgets.active.fg_stroke.color,
             tab_outline_color: style.visuals.widgets.active.bg_stroke.color,
-            tab_background_color: style.visuals.widgets.active.bg_fill,
+            tab_background_color: style.visuals.window_fill(),
 
             ..Self::default()
         }
@@ -125,7 +122,6 @@ impl Style {
         {
             let delta = response.drag_delta().y;
             let range = rect.max.y - rect.min.y;
-
             let min = (self.separator_extra / range).min(1.0);
             let max = 1.0 - min;
             let (min, max) = (min.min(max), max.max(min));
@@ -162,7 +158,9 @@ impl Style {
         let rounding = self.tab_rounding;
 
         let font_id = FontId::proportional(14.0);
-        let galley = ui.painter().layout_no_wrap(label, font_id, self.tab_text);
+        let galley = ui
+            .painter()
+            .layout_no_wrap(label, font_id, self.tab_text_color);
 
         let offset = egui::vec2(8.0, 0.0);
         let text_size = galley.size();
@@ -185,7 +183,7 @@ impl Style {
                 tab.max.x -= px;
                 tab.min.y += px;
                 ui.painter()
-                    .rect_filled(tab, rounding, self.background_color);
+                    .rect_filled(tab, rounding, self.tab_background_color);
             }
             (true, true) => {
                 let tab = rect;
@@ -220,78 +218,92 @@ impl StyleBuilder {
         Self::default()
     }
 
+    /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.  
     #[inline(always)]
     pub fn with_padding(mut self, padding: Option<Margin>) -> Self {
         self.style.padding = padding;
         self
     }
 
-    #[inline(always)]
-    pub fn with_background_color(mut self, background_color: Color32) -> Self {
-        self.style.background_color = background_color;
-        self
-    }
-
+    /// Sets `border_color` for the  window of "working area". By `Default` it's [`egui::Color32::BLACK`].
     #[inline(always)]
     pub fn with_border_color(mut self, border_color: Color32) -> Self {
         self.style.border_color = border_color;
         self
     }
 
+    /// Sets `border_width` for the border. By `Default` it's `0.0`.
     #[inline(always)]
     pub fn with_border_width(mut self, border_width: f32) -> Self {
         self.style.border_size = border_width;
         self
     }
 
+    /// Sets `selection color` for the placing area of the tab where this tab targeted on it. By `Default` it's `(0, 191, 255)` (light blue) with `0.5` capacity.
     #[inline(always)]
     pub fn with_selection_color(mut self, selection_color: Color32) -> Self {
         self.style.selection_color = selection_color;
         self
     }
 
+    /// Sets `separator_size` for the rectange separator between nodes. By `Default` it's `1.0`.
     #[inline(always)]
     pub fn with_separator_size(mut self, separator_size: f32) -> Self {
         self.style.separator_size = separator_size;
         self
     }
 
+    /// Sets `separator_extra` it sets limit for the allowed area for the separator offset. By `Default` it's `175.0`.
+    /// `bigger value > less allowed offset` for the current widnow size.  
+    #[inline(always)]
+    pub fn with_separator_extra(mut self, separator_extra: f32) -> Self {
+        self.style.separator_extra = separator_extra;
+        self
+    }
+
+    /// Sets `separator_color`for the rectangle separator. By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
     pub fn with_separator_color(mut self, separator_color: Color32) -> Self {
         self.style.separator_color = separator_color;
         self
     }
 
+    /// Sets `tab_bar_background_color` for the color of tab bar. By `Default` it's [`Color32::WHITE`].
     #[inline(always)]
-    pub fn with_tab_bar_background(mut self, tab_bar_background: Color32) -> Self {
-        self.style.tab_bar_background = tab_bar_background;
+    pub fn with_tab_bar_background(mut self, tab_bar_background_color: Color32) -> Self {
+        self.style.tab_bar_background_color = tab_bar_background_color;
         self
     }
 
+    /// Sets `tab_text_color` for the tab's text color. By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
-    pub fn with_tab_text(mut self, tab_text: Color32) -> Self {
-        self.style.tab_text = tab_text;
+    pub fn with_tab_text_color(mut self, tab_text_color: Color32) -> Self {
+        self.style.tab_text_color = tab_text_color;
         self
     }
 
+    /// Sets `tab_outline_color` for the outline color of tabs. By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
     pub fn with_tab_outline_color(mut self, tab_outline_color: Color32) -> Self {
         self.style.tab_outline_color = tab_outline_color;
         self
     }
 
+    /// Sets `tab_rounding` for the tab rounding.
     #[inline(always)]
     pub fn with_tab_rounding(mut self, tab_rounding: Rounding) -> Self {
         self.style.tab_rounding = tab_rounding;
         self
     }
 
+    /// Sets `tab_background_color` for the current tab background color.
     #[inline(always)]
     pub fn with_tab_background_color(mut self, tab_background: Color32) -> Self {
         self.style.tab_background_color = tab_background;
         self
     }
 
+    /// Returns `Style` with set values.
     #[inline(always)]
     pub fn build(self) -> Style {
         self.style

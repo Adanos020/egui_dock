@@ -62,7 +62,6 @@ struct MyContext;
 
 struct PlaceholderTab {
     title: String,
-
     age: u32,
 }
 
