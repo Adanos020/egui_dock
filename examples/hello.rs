@@ -1,8 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use eframe::{egui, NativeOptions};
-use egui::{style::Margin, Frame, Id, LayerId, Slider, Ui};
-use egui_dock::{NodeIndex, Style, Tab, Tree};
+use egui::{Id, LayerId, Slider, Ui};
+use egui_dock::{NodeIndex, Style, TabBuilder, Tree};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 fn main() {
     let options = NativeOptions::default();
@@ -13,24 +15,79 @@ fn main() {
     );
 }
 
+#[derive(Clone)]
+struct MyContext {
+    pub title: String,
+    pub age: u32,
+}
+
 struct MyApp {
-    context: MyContext,
+    _context: Rc<RefCell<MyContext>>,
     style: Style,
-    tree: Tree<MyContext>,
+    tree: Tree,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        let node_tree = Box::new(PlaceholderTab::new("Node Tree"));
-        let scene = Box::new(PlaceholderTab::new("Scene"));
+        let context = Rc::new(RefCell::new(MyContext {
+            title: "Hello".to_string(),
+            age: 24,
+        }));
 
-        let hierarchy = Box::new(PlaceholderTab::new("Hierarchy"));
-        let inspector = Box::new(PlaceholderTab::new("Inspector"));
+        let mt_ctx = context.clone();
+        let node_tree = TabBuilder::default()
+            .title("Node Tree")
+            .content(move |ui| {
+                let mut ctx = mt_ctx.borrow_mut();
+                ui.heading("My egui Application");
+                ui.horizontal(|ui| {
+                    ui.label("Your name: ");
+                    ui.text_edit_singleline(&mut ctx.title);
+                });
+                ui.add(Slider::new(&mut ctx.age, 0..=120).text("age"));
+                if ui.button("Click each year").clicked() {
+                    ctx.age += 1;
+                }
+                ui.label(format!("Hello '{}', age {}", &ctx.title, &ctx.age));
+            })
+            .build();
 
-        let files = Box::new(PlaceholderTab::new("File Browser"));
-        let assets = Box::new(PlaceholderTab::new("Asset Manager"));
+        let scene = TabBuilder::default()
+            .title("Scene")
+            .content(|ui| {
+                ui.label("Scene");
+            })
+            .build();
 
-        let mut tree = Tree::new(vec![scene, node_tree]);
+        let hierarchy = TabBuilder::default()
+            .title("Hierarchy")
+            .content(|ui| {
+                ui.label("Hierarchy");
+            })
+            .build();
+
+        let inspector = TabBuilder::default()
+            .title("Inspector")
+            .content(|ui| {
+                ui.label("Inspector");
+            })
+            .build();
+
+        let files = TabBuilder::default()
+            .title("File Browser")
+            .content(|ui| {
+                ui.label("File Browser");
+            })
+            .build();
+
+        let assets = TabBuilder::default()
+            .title("Asset Manager")
+            .content(|ui| {
+                ui.label("Asset Manager");
+            })
+            .build();
+
+        let mut tree = Tree::new(vec![node_tree, scene]);
 
         let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![inspector]);
         let [_, _] = tree.split_below(a, 0.7, vec![files, assets]);
@@ -38,7 +95,7 @@ impl Default for MyApp {
 
         Self {
             style: Style::default(),
-            context: MyContext,
+            _context: context,
             tree,
         }
     }
@@ -54,45 +111,6 @@ impl eframe::App for MyApp {
         let clip_rect = ctx.available_rect();
 
         let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
-        egui_dock::show(&mut ui, id, &self.style, &mut self.tree, &mut self.context)
-    }
-}
-
-struct MyContext;
-
-struct PlaceholderTab {
-    title: String,
-    age: u32,
-}
-
-impl PlaceholderTab {
-    fn new(title: impl ToString) -> Self {
-        Self {
-            title: title.to_string(),
-            age: 42,
-        }
-    }
-}
-
-impl Tab<MyContext> for PlaceholderTab {
-    fn title(&self) -> &str {
-        &self.title
-    }
-
-    fn ui(&mut self, ui: &mut Ui, _ctx: &mut MyContext) {
-        let margin = Margin::same(4.0);
-
-        Frame::none().inner_margin(margin).show(ui, |ui| {
-            ui.heading("My egui Application");
-            ui.horizontal(|ui| {
-                ui.label("Your name: ");
-                ui.text_edit_singleline(&mut self.title);
-            });
-            ui.add(Slider::new(&mut self.age, 0..=120).text("age"));
-            if ui.button("Click each year").clicked() {
-                self.age += 1;
-            }
-            ui.label(format!("Hello '{}', age {}", self.title, self.age));
-        });
+        egui_dock::show(&mut ui, id, &self.style, &mut self.tree)
     }
 }

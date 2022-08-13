@@ -72,7 +72,7 @@ mod tab;
 mod tree;
 mod utils;
 
-pub use self::tab::{Tab, TabDowncast};
+pub use self::tab::{Tab, TabBuilder};
 pub use self::tree::{Node, NodeIndex, Split, Tree};
 pub use style::{Style, StyleBuilder};
 
@@ -139,7 +139,7 @@ impl State {
 }
 
 /// Shows the docking hierarchy inside a `Ui`.
-pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, context: &mut Ctx) {
+pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
     let mut state = State::load(ui.ctx(), id);
     let mut rect = ui.max_rect();
 
@@ -221,7 +221,7 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
                             let is_being_dragged = ui.memory().is_being_dragged(id);
 
                             let is_active = *active == tab_index || is_being_dragged;
-                            let label = tab.title().to_string();
+                            let label = tab.title.clone();
 
                             if is_being_dragged {
                                 let layer_id = LayerId::new(Order::Tooltip, id);
@@ -281,7 +281,7 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
                         .rect_filled(rect, 0.0, style.tab_background_color);
 
                     let mut ui = ui.child_ui(rect, Default::default());
-                    tab.ui(&mut ui, context);
+                    tab.ui(&mut ui);
                 }
 
                 let is_being_dragged = ui.memory().is_anything_being_dragged();
@@ -289,7 +289,7 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
                     hover_data = ui.input().pointer.hover_pos().map(|pointer| HoverData {
                         rect,
                         dst: tree_index,
-                        tabs: tabs_response.hovered().then(|| tabs_response.rect),
+                        tabs: tabs_response.hovered().then_some(tabs_response.rect),
                         pointer,
                     });
                 }
