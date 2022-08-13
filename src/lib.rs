@@ -32,7 +32,7 @@
 //!
 //! ```rust
 //! let id = ui.id();
-//! egui_dock::show(&mut ui, id, &style, &mut tree)
+//! egui_dock::show(&mut ui, id, &style, &mut tree);
 //! ```
 
 mod style;
