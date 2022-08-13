@@ -27,6 +27,10 @@ impl Default for TabBuilder {
 }
 
 impl TabBuilder {
+    /// Constructs a `Tab` out of accumulated data.
+    ///
+    /// # Panics
+    /// Panics if `title` or `add_contents` is unset.
     pub fn build(self) -> Tab {
         Tab {
             title: self.title.expect("Missing tab title"),
