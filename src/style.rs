@@ -3,13 +3,14 @@ use egui::style::Margin;
 use egui::*;
 
 /// Specifies the look and feel of egui_dock.
+#[derive(Clone)]
 pub struct Style {
     pub padding: Option<Margin>,
 
     pub border_color: Color32,
-    pub border_size: f32,
+    pub border_width: f32,
     pub selection_color: Color32,
-    pub separator_size: f32,
+    pub separator_width: f32,
     pub separator_extra: f32,
     pub separator_color: Color32,
 
@@ -27,10 +28,10 @@ impl Default for Style {
             padding: Default::default(),
 
             border_color: Color32::BLACK,
-            border_size: Default::default(),
+            border_width: Default::default(),
 
             selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
-            separator_size: 1.0,
+            separator_width: 1.0,
             separator_extra: 175.0,
             separator_color: Color32::BLACK,
 
@@ -71,8 +72,8 @@ impl Style {
         let mut separator = rect;
 
         let midpoint = rect.min.x + rect.width() * *fraction;
-        separator.min.x = midpoint - self.separator_size * 0.5;
-        separator.max.x = midpoint + self.separator_size * 0.5;
+        separator.min.x = midpoint - self.separator_width * 0.5;
+        separator.max.x = midpoint + self.separator_width * 0.5;
 
         let response = ui
             .allocate_rect(separator, Sense::click_and_drag())
@@ -89,12 +90,12 @@ impl Style {
 
         let midpoint = rect.min.x + rect.width() * *fraction;
         separator.min.x = map_to_pixel(
-            midpoint - self.separator_size * 0.5,
+            midpoint - self.separator_width * 0.5,
             pixels_per_point,
             f32::round,
         );
         separator.max.x = map_to_pixel(
-            midpoint + self.separator_size * 0.5,
+            midpoint + self.separator_width * 0.5,
             pixels_per_point,
             f32::round,
         );
@@ -112,8 +113,8 @@ impl Style {
         let mut separator = rect;
 
         let midpoint = rect.min.y + rect.height() * *fraction;
-        separator.min.y = midpoint - self.separator_size * 0.5;
-        separator.max.y = midpoint + self.separator_size * 0.5;
+        separator.min.y = midpoint - self.separator_width * 0.5;
+        separator.max.y = midpoint + self.separator_width * 0.5;
 
         let response = ui
             .allocate_rect(separator, Sense::click_and_drag())
@@ -130,12 +131,12 @@ impl Style {
 
         let midpoint = rect.min.y + rect.height() * *fraction;
         separator.min.y = map_to_pixel(
-            midpoint - self.separator_size * 0.5,
+            midpoint - self.separator_width * 0.5,
             pixels_per_point,
             f32::round,
         );
         separator.max.y = map_to_pixel(
-            midpoint + self.separator_size * 0.5,
+            midpoint + self.separator_width * 0.5,
             pixels_per_point,
             f32::round,
         );
@@ -162,7 +163,7 @@ impl Style {
             .painter()
             .layout_no_wrap(label, font_id, self.tab_text_color);
 
-        let offset = egui::vec2(8.0, 0.0);
+        let offset = vec2(8.0, 0.0);
         let text_size = galley.size();
 
         let mut desired_size = text_size + offset * 2.0;
@@ -225,7 +226,7 @@ impl StyleBuilder {
         self
     }
 
-    /// Sets `border_color` for the  window of "working area". By `Default` it's [`egui::Color32::BLACK`].
+    /// Sets `border_color` for the window of "working area". By `Default` it's [`egui::Color32::BLACK`].
     #[inline(always)]
     pub fn with_border_color(mut self, border_color: Color32) -> Self {
         self.style.border_color = border_color;
@@ -235,7 +236,7 @@ impl StyleBuilder {
     /// Sets `border_width` for the border. By `Default` it's `0.0`.
     #[inline(always)]
     pub fn with_border_width(mut self, border_width: f32) -> Self {
-        self.style.border_size = border_width;
+        self.style.border_width = border_width;
         self
     }
 
@@ -246,15 +247,15 @@ impl StyleBuilder {
         self
     }
 
-    /// Sets `separator_size` for the rectange separator between nodes. By `Default` it's `1.0`.
+    /// Sets `separator_size` for the rectangle separator between nodes. By `Default` it's `1.0`.
     #[inline(always)]
-    pub fn with_separator_size(mut self, separator_size: f32) -> Self {
-        self.style.separator_size = separator_size;
+    pub fn with_separator_width(mut self, separator_width: f32) -> Self {
+        self.style.separator_width = separator_width;
         self
     }
 
     /// Sets `separator_extra` it sets limit for the allowed area for the separator offset. By `Default` it's `175.0`.
-    /// `bigger value > less allowed offset` for the current widnow size.  
+    /// `bigger value > less allowed offset` for the current window size.
     #[inline(always)]
     pub fn with_separator_extra(mut self, separator_extra: f32) -> Self {
         self.style.separator_extra = separator_extra;
