@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 use egui::{Id, LayerId, Ui};
-use egui_dock::{NodeIndex, Style, TabBuilder, Tree};
+use egui_dock::{NodeIndex, Style, TabBuilder, Tree, WithTitle};
 
 fn main() {
     let options = NativeOptions::default();
