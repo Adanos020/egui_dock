@@ -6,65 +6,33 @@
 //!
 //! ## Usage
 //!
-//! First, create your context type and your tab widget:
+//! First, construct the initial tree:
 //!
 //! ```rust
-//! use egui::{Frame, Ui, style::Margin};
-//! use egui_dock::Tab;
+//! use egui::style::Margin;
+//! use egui_dock::{TabBuilder, Tree};
 //!
-//! struct MyContext;
-//!
-//! struct MyTab {
-//!     text: String,
-//! }
-//!
-//! impl MyTab {
-//!     fn new(text: impl ToString) -> Self {
-//!         Self {
-//!             text: text.to_string(),
-//!         }
-//!     }
-//! }
-//!
-//! impl Tab<MyContext> for MyTab {
-//!     fn title(&self) -> &str {
-//!         &self.title
-//!     }
-//!
-//!     fn ui(&mut self, ui: &mut Ui, _ctx: &mut MyContext) {
-//!         let margin = Margin::same(4.0);
-//!
-//!         Frame::none().inner_margin(margin).show(ui, |ui| {
-//!             ui.label(&self.text);
-//!         });
-//!     }
-//! }
-//! ```
-//!
-//! Then construct the initial tree using your tab widget:
-//!
-//! ```rust
-//! use egui_dock::{NodeIndex, Tree};
-//!
-//! let tab1 = Box::new(MyTab::new("Tab 1"));
-//! let tab2 = Box::new(MyTab::new("Tab 2"));
-//! let tab3 = Box::new(MyTab::new("Tab 3"));
-//! let tab4 = Box::new(MyTab::new("Tab 4"));
-//! let tab5 = Box::new(MyTab::new("Tab 5"));
-//!
+//! let tab1 = TabBuilder::default()
+//!     .title("Tab 1")
+//!     .content(|ui| {
+//!         ui.label("Tab 1");
+//!     })
+//!     .build();
+//! let tab2 = TabBuilder::default()
+//!     .title("Tab 2")
+//!     .inner_margin(Margin::same(4.0))
+//!     .content(|ui| {
+//!         ui.label("Tab 2");
+//!     })
+//!     .build();
 //! let mut tree = Tree::new(vec![tab1, tab2]);
-//!
-//! // You can modify the tree in runtime
-//! let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![tab3]);
-//! let [_, _] = tree.split_below(a, 0.7, vec![tab4]);
-//! let [_, _] = tree.split_below(b, 0.5, vec![tab5]);
 //! ```
 //!
-//! Finally, you can show the tree.
+//! Then, you can show the tree.
 //!
 //! ```rust
 //! let id = ui.id();
-//! egui_dock::show(&mut ui, id, style, tree, context);
+//! egui_dock::show(&mut ui, id, &style, &mut tree);
 //! ```
 
 mod style;
@@ -72,7 +40,7 @@ mod tab;
 mod tree;
 mod utils;
 
-pub use self::tab::{Tab, TabDowncast};
+pub use self::tab::{Tab, TabBuilder, WithTitle};
 pub use self::tree::{Node, NodeIndex, Split, Tree};
 pub use style::{Style, StyleBuilder};
 
@@ -139,7 +107,7 @@ impl State {
 }
 
 /// Shows the docking hierarchy inside a `Ui`.
-pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, context: &mut Ctx) {
+pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
     let mut state = State::load(ui.ctx(), id);
     let mut rect = ui.max_rect();
 
@@ -221,7 +189,7 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
                             let is_being_dragged = ui.memory().is_being_dragged(id);
 
                             let is_active = *active == tab_index || is_being_dragged;
-                            let label = tab.title().to_string();
+                            let label = tab.title.clone();
 
                             if is_being_dragged {
                                 let layer_id = LayerId::new(Order::Tooltip, id);
@@ -281,7 +249,7 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
                         .rect_filled(rect, 0.0, style.tab_background_color);
 
                     let mut ui = ui.child_ui(rect, Default::default());
-                    tab.ui(&mut ui, context);
+                    tab.ui(&mut ui);
                 }
 
                 let is_being_dragged = ui.memory().is_anything_being_dragged();
@@ -289,7 +257,7 @@ pub fn show<Ctx>(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree<Ctx>, conte
                     hover_data = ui.input().pointer.hover_pos().map(|pointer| HoverData {
                         rect,
                         dst: tree_index,
-                        tabs: tabs_response.hovered().then(|| tabs_response.rect),
+                        tabs: tabs_response.hovered().then_some(tabs_response.rect),
                         pointer,
                     });
                 }

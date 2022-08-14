@@ -1,46 +1,103 @@
-use std::any::Any;
-use egui::Ui;
+use egui::style::Margin;
+use egui::{Frame, RichText, ScrollArea, Ui, WidgetText};
 
-/// Implement this trait to use your widget as a dockable tab in `Tree`s.
-pub trait Tab<Context>: Send + Sync + TabDowncast {
-    /// Returns text displayed in the tab bar.
-    fn title(&self) -> &str;
+pub type TabContent = Box<dyn FnMut(&mut Ui) + 'static>;
 
+pub struct TabBuilder {
+    title: Option<WidgetText>,
+    inner_margin: Margin,
+    add_content: Option<TabContent>,
+}
+
+pub trait WithTitle<TextType> {
+    /// Sets the text displayed in the tab bar.
+    fn title(self, title: TextType) -> Self;
+}
+
+/// Dockable tab that can be used in `Tree`s.
+pub struct Tab {
+    pub title: WidgetText,
+    pub inner_margin: Margin,
+    pub add_content: TabContent,
+}
+
+impl Default for TabBuilder {
+    fn default() -> Self {
+        Self {
+            title: None,
+            inner_margin: Margin::same(4.0),
+            add_content: None,
+        }
+    }
+}
+
+impl WithTitle<String> for TabBuilder {
+    fn title(mut self, title: String) -> Self {
+        self.title = Some(RichText::new(title).strong().into());
+        self
+    }
+}
+
+impl WithTitle<&'static str> for TabBuilder {
+    fn title(mut self, title: &'static str) -> Self {
+        self.title = Some(RichText::new(title).strong().into());
+        self
+    }
+}
+
+impl WithTitle<RichText> for TabBuilder {
+    fn title(mut self, title: RichText) -> Self {
+        self.title = Some(title.into());
+        self
+    }
+}
+
+impl WithTitle<WidgetText> for TabBuilder {
+    fn title(mut self, title: WidgetText) -> Self {
+        self.title = Some(title);
+        self
+    }
+}
+
+impl TabBuilder {
+    /// Constructs a `Tab` out of accumulated data.
+    ///
+    /// # Panics
+    /// Panics if `title` or `add_contents` is unset.
+    pub fn build(self) -> Tab {
+        Tab {
+            title: self.title.expect("Missing tab title"),
+            inner_margin: self.inner_margin,
+            add_content: self.add_content.expect("Missing tab content"),
+        }
+    }
+
+    /// Sets the margins around the tab's content.
+    pub fn inner_margin(mut self, margin: Margin) -> Self {
+        self.inner_margin = margin;
+        self
+    }
+
+    /// Sets the function that adds content to the tab.
+    pub fn content(mut self, add_content: impl FnMut(&mut Ui) + 'static) -> Self {
+        self.add_content = Some(Box::new(add_content));
+        self
+    }
+}
+
+impl Tab {
     /// Displays the tab's content.
-    fn ui(&mut self, ui: &mut Ui, ctx: &mut Context);
-}
-
-pub trait TabDowncast {
-    fn as_any(&self) -> &dyn Any;
-    fn as_any_mut(&mut self) -> &mut dyn Any;
-}
-
-impl<T: Any> TabDowncast for T {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-}
-
-impl<Context> dyn Tab<Context> {
-    /// Returns true if the trait object wraps an object of type `T`.
-    #[inline]
-    pub fn is<T: Tab<Context> + 'static>(&self) -> bool {
-        TabDowncast::as_any(self).is::<T>()
-    }
-
-    /// Returns a reference to the object within the trait object if it is of type `T`, or `None` if it isn't.
-    #[inline]
-    pub fn downcast_ref<T: Tab<Context> + 'static>(&self) -> Option<&T> {
-        TabDowncast::as_any(self).downcast_ref::<T>()
-    }
-
-    /// Returns a mutable reference to the object within the trait object if it is of type `T`, or `None` if it isn't.
-    #[inline]
-    pub fn downcast_mut<T: Tab<Context> + 'static>(&mut self) -> Option<&mut T> {
-        TabDowncast::as_any_mut(self).downcast_mut::<T>()
+    pub fn ui(&mut self, ui: &mut Ui) {
+        ScrollArea::both()
+            .id_source(self.title.text().to_string() + " - egui_dock::Tab")
+            .show(ui, |ui| {
+                Frame::none()
+                    .inner_margin(self.inner_margin)
+                    .show(ui, |ui| {
+                        let available_rect = ui.available_rect_before_wrap();
+                        ui.expand_to_include_rect(available_rect);
+                        (self.add_content)(ui);
+                    });
+            });
     }
 }

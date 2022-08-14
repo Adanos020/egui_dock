@@ -1,8 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use eframe::{NativeOptions, egui};
-use egui::{Frame, Id, LayerId, Ui, style::Margin};
-use egui_dock::{NodeIndex, Style, Tab, Tree};
+use eframe::{egui, NativeOptions};
+use egui::{Id, LayerId, Ui};
+use egui_dock::{NodeIndex, Style, TabBuilder, Tree};
 
 fn main() {
     let options = NativeOptions::default();
@@ -14,18 +14,42 @@ fn main() {
 }
 
 struct MyApp {
-    context: MyContext,
     style: Style,
-    tree: Tree<MyContext>,
+    tree: Tree,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        let tab1 = Box::new(MyTab::new("Tab 1"));
-        let tab2 = Box::new(MyTab::new("Tab 2"));
-        let tab3 = Box::new(MyTab::new("Tab 3"));
-        let tab4 = Box::new(MyTab::new("Tab 4"));
-        let tab5 = Box::new(MyTab::new("Tab 5"));
+        let tab1 = TabBuilder::default()
+            .title("Tab 1")
+            .content(|ui| {
+                ui.label("Tab 1");
+            })
+            .build();
+        let tab2 = TabBuilder::default()
+            .title("Tab 2")
+            .content(|ui| {
+                ui.label("Tab 2");
+            })
+            .build();
+        let tab3 = TabBuilder::default()
+            .title("Tab 3")
+            .content(|ui| {
+                ui.label("Tab 3");
+            })
+            .build();
+        let tab4 = TabBuilder::default()
+            .title("Tab 4")
+            .content(|ui| {
+                ui.label("Tab 4");
+            })
+            .build();
+        let tab5 = TabBuilder::default()
+            .title("Tab 5")
+            .content(|ui| {
+                ui.label("Tab 5");
+            })
+            .build();
 
         let mut tree = Tree::new(vec![tab1, tab2]);
 
@@ -36,7 +60,6 @@ impl Default for MyApp {
 
         Self {
             style: Style::default(),
-            context: MyContext,
             tree,
         }
     }
@@ -52,34 +75,6 @@ impl eframe::App for MyApp {
         let clip_rect = ctx.available_rect();
 
         let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
-        egui_dock::show(&mut ui, id, &self.style, &mut self.tree, &mut self.context)
-    }
-}
-
-struct MyContext;
-
-struct MyTab {
-    text: String,
-}
-
-impl MyTab {
-    fn new(text: impl ToString) -> Self {
-        Self {
-            text: text.to_string(),
-        }
-    }
-}
-
-impl Tab<MyContext> for MyTab {
-    fn title(&self) -> &str {
-        &self.text
-    }
-
-    fn ui(&mut self, ui: &mut Ui, _ctx: &mut MyContext) {
-        let margin = Margin::same(4.0);
-
-        Frame::none().inner_margin(margin).show(ui, |ui| {
-            ui.label(&self.text);
-        });
+        egui_dock::show(&mut ui, id, &self.style, &mut self.tree)
     }
 }
