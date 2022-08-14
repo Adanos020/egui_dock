@@ -28,10 +28,12 @@
 //! let mut tree = Tree::new(vec![tab1, tab2]);
 //! ```
 //!
-//! Then, you can show the tree.
+//! Then you can show the tree.
 //!
 //! ```rust
 //! # egui::__run_test_ui(|ui| {
+//! # let mut tree = egui_dock::Tree::new(vec![]);
+//! let style = egui_dock::Style::default();
 //! let id = ui.id();
 //! egui_dock::show(ui, id, &style, &mut tree);
 //! # });
