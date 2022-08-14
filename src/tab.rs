@@ -54,7 +54,7 @@ impl WithTitle<RichText> for TabBuilder {
 
 impl WithTitle<WidgetText> for TabBuilder {
     fn title(mut self, title: WidgetText) -> Self {
-        self.title = Some(title.into());
+        self.title = Some(title);
         self
     }
 }
@@ -66,7 +66,7 @@ impl TabBuilder {
     /// Panics if `title` or `add_contents` is unset.
     pub fn build(self) -> Tab {
         Tab {
-            title: self.title.expect("Missing tab title").into(),
+            title: self.title.expect("Missing tab title"),
             inner_margin: self.inner_margin,
             add_content: self.add_content.expect("Missing tab content"),
         }
