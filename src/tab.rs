@@ -88,11 +88,11 @@ impl TabBuilder {
 impl Tab {
     /// Displays the tab's content.
     pub fn ui(&mut self, ui: &mut Ui) {
-        Frame::none()
-            .inner_margin(self.inner_margin)
+        ScrollArea::both()
+            .id_source(self.title.text().to_string() + " - egui_dock::Tab")
             .show(ui, |ui| {
-                ScrollArea::both()
-                    .id_source(self.title.text().to_string() + " - egui_dock::Tab")
+                Frame::none()
+                    .inner_margin(self.inner_margin)
                     .show(ui, |ui| {
                         let available_rect = ui.available_rect_before_wrap();
                         ui.expand_to_include_rect(available_rect);
