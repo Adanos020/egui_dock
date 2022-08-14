@@ -18,24 +18,13 @@ jobs:
       - name: check all-features
         run: cargo check --all-targets --all-features --verbose
         continue-on-error: false
-      - name: check log
-        run: cargo check --all-targets --features log --verbose
-      - name: check no_log
-        run: cargo check --all-targets --features no_log --verbose
 
-        continue-on-error: false
       - name: test
         run: cargo test --verbose -- --test-threads=1
         continue-on-error: false
 
       - name: clippy all-features
         run: cargo clippy --all-targets --all-features -- -D warnings
-        continue-on-error: false
-      - name: clippy log
-        run: cargo clippy --all-targets --features log -- -D warnings
-        continue-on-error: false
-      - name: clippy no_log
-        run: cargo clippy --all-targets --features no_log -- -D warnings
         continue-on-error: false
 
       - name: rustfmt
@@ -58,10 +47,6 @@ jobs:
       - name: check all-features
         run: cargo check --all-targets --all-features --verbose
         continue-on-error: false
-      - name: check log
-        run: cargo check --all-targets --features log --verbose
-      - name: check no_log
-        run: cargo check --all-targets --features no_log --verbose
 
         continue-on-error: false
       - name: test
@@ -70,12 +55,6 @@ jobs:
 
       - name: clippy all-features
         run: cargo clippy --all-targets --all-features -- -D warnings
-        continue-on-error: false
-      - name: clippy log
-        run: cargo clippy --all-targets --features log -- -D warnings
-        continue-on-error: false
-      - name: clippy no_log
-        run: cargo clippy --all-targets --features no_log -- -D warnings
         continue-on-error: false
 
       - name: rustfmt
@@ -98,10 +77,6 @@ jobs:
       - name: check all-features
         run: cargo check --all-targets --all-features --verbose
         continue-on-error: false
-      - name: check log
-        run: cargo check --all-targets --features log --verbose
-      - name: check no_log
-        run: cargo check --all-targets --features no_log --verbose
 
         continue-on-error: false
       - name: test
@@ -110,12 +85,6 @@ jobs:
 
       - name: clippy all-features
         run: cargo clippy --all-targets --all-features -- -D warnings
-        continue-on-error: false
-      - name: clippy log
-        run: cargo clippy --all-targets --features log -- -D warnings
-        continue-on-error: false
-      - name: clippy no_log
-        run: cargo clippy --all-targets --features no_log -- -D warnings
         continue-on-error: false
 
       - name: rustfmt
