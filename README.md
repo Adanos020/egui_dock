@@ -40,6 +40,7 @@ let mut tree = Tree::new(vec![tab1, tab2]);
 Then, you can show the tree.
 
 ```rust
+let style = egui_dock::Style::default();
 let id = ui.id();
 egui_dock::show(&mut ui, id, &style, &mut tree);
 ```
