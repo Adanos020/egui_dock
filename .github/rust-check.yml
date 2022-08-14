@@ -1,0 +1,131 @@
+name: rust-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: check all-features
+        run: cargo check --all-targets --all-features --verbose
+        continue-on-error: false
+      - name: check log
+        run: cargo check --all-targets --features log --verbose
+      - name: check no_log
+        run: cargo check --all-targets --features no_log --verbose
+
+        continue-on-error: false
+      - name: test
+        run: cargo test --verbose -- --test-threads=1
+        continue-on-error: false
+
+      - name: clippy all-features
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        continue-on-error: false
+      - name: clippy log
+        run: cargo clippy --all-targets --features log -- -D warnings
+        continue-on-error: false
+      - name: clippy no_log
+        run: cargo clippy --all-targets --features no_log -- -D warnings
+        continue-on-error: false
+
+      - name: rustfmt
+        run: cargo fmt -- --check
+        continue-on-error: false
+
+      - name: miri
+        run: |
+          rustup toolchain install nightly --component miri
+          rustup override set nightly
+          cargo miri setup
+          cargo miri test
+        continue-on-error: false
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: check all-features
+        run: cargo check --all-targets --all-features --verbose
+        continue-on-error: false
+      - name: check log
+        run: cargo check --all-targets --features log --verbose
+      - name: check no_log
+        run: cargo check --all-targets --features no_log --verbose
+
+        continue-on-error: false
+      - name: test
+        run: cargo test --verbose -- --test-threads=1
+        continue-on-error: false
+
+      - name: clippy all-features
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        continue-on-error: false
+      - name: clippy log
+        run: cargo clippy --all-targets --features log -- -D warnings
+        continue-on-error: false
+      - name: clippy no_log
+        run: cargo clippy --all-targets --features no_log -- -D warnings
+        continue-on-error: false
+
+      - name: rustfmt
+        run: cargo fmt -- --check
+        continue-on-error: false
+
+      - name: miri
+        run: |
+          rustup toolchain install nightly --component miri
+          rustup override set nightly
+          cargo miri setup
+          cargo miri test
+        continue-on-error: false
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: check all-features
+        run: cargo check --all-targets --all-features --verbose
+        continue-on-error: false
+      - name: check log
+        run: cargo check --all-targets --features log --verbose
+      - name: check no_log
+        run: cargo check --all-targets --features no_log --verbose
+
+        continue-on-error: false
+      - name: test
+        run: cargo test --verbose -- --test-threads=1
+        continue-on-error: false
+
+      - name: clippy all-features
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        continue-on-error: false
+      - name: clippy log
+        run: cargo clippy --all-targets --features log -- -D warnings
+        continue-on-error: false
+      - name: clippy no_log
+        run: cargo clippy --all-targets --features no_log -- -D warnings
+        continue-on-error: false
+
+      - name: rustfmt
+        run: cargo fmt -- --check
+        continue-on-error: false
+
+      - name: miri
+        run: |
+          rustup toolchain install nightly --component miri
+          rustup override set nightly
+          cargo miri setup
+          cargo miri test
+        continue-on-error: false
