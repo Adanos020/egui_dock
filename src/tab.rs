@@ -1,17 +1,22 @@
 use egui::style::Margin;
-use egui::{Frame, ScrollArea, Ui};
+use egui::{Frame, RichText, ScrollArea, Ui, WidgetText};
 
 pub type TabContent = Box<dyn FnMut(&mut Ui) + 'static>;
 
 pub struct TabBuilder {
-    title: Option<String>,
+    title: Option<WidgetText>,
     inner_margin: Margin,
     add_content: Option<TabContent>,
 }
 
+pub trait WithTitle<TextType> {
+    /// Sets the text displayed in the tab bar.
+    fn title(self, title: TextType) -> Self;
+}
+
 /// Dockable tab that can be used in `Tree`s.
 pub struct Tab {
-    pub title: String,
+    pub title: WidgetText,
     pub inner_margin: Margin,
     pub add_content: TabContent,
 }
@@ -26,6 +31,34 @@ impl Default for TabBuilder {
     }
 }
 
+impl WithTitle<String> for TabBuilder {
+    fn title(mut self, title: String) -> Self {
+        self.title = Some(RichText::new(title).strong().into());
+        self
+    }
+}
+
+impl WithTitle<&'static str> for TabBuilder {
+    fn title(mut self, title: &'static str) -> Self {
+        self.title = Some(RichText::new(title).strong().into());
+        self
+    }
+}
+
+impl WithTitle<RichText> for TabBuilder {
+    fn title(mut self, title: RichText) -> Self {
+        self.title = Some(title.into());
+        self
+    }
+}
+
+impl WithTitle<WidgetText> for TabBuilder {
+    fn title(mut self, title: WidgetText) -> Self {
+        self.title = Some(title.into());
+        self
+    }
+}
+
 impl TabBuilder {
     /// Constructs a `Tab` out of accumulated data.
     ///
@@ -33,16 +66,10 @@ impl TabBuilder {
     /// Panics if `title` or `add_contents` is unset.
     pub fn build(self) -> Tab {
         Tab {
-            title: self.title.expect("Missing tab title"),
+            title: self.title.expect("Missing tab title").into(),
             inner_margin: self.inner_margin,
             add_content: self.add_content.expect("Missing tab content"),
         }
-    }
-
-    /// Sets the text displayed in the tab bar.
-    pub fn title(mut self, title: impl ToString) -> Self {
-        self.title = Some(title.to_string());
-        self
     }
 
     /// Sets the margins around the tab's content.
@@ -65,8 +92,8 @@ impl Tab {
             .inner_margin(self.inner_margin)
             .show(ui, |ui| {
                 ScrollArea::both()
-                    .id_source(self.title.clone() + " - egui_dock::Tab")
-                    .show_viewport(ui, |ui, viewport| {
+                    .id_source(self.title.text().to_string() + " - egui_dock::Tab")
+                    .show(ui, |ui| {
                         let available_rect = ui.available_rect_before_wrap();
                         ui.expand_to_include_rect(available_rect);
                         (self.add_content)(ui);

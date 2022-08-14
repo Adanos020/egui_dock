@@ -1,11 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use eframe::{egui, NativeOptions};
-use egui::{Id, LayerId, Slider, Ui};
-use egui_dock::{NodeIndex, Style, TabBuilder, Tree};
+use egui::color_picker::{color_picker_color32, Alpha};
+use egui::{Color32, Id, LayerId, RichText, Slider, Ui};
+use egui_dock::{NodeIndex, Style, TabBuilder, Tree, WithTitle};
 use std::cell::RefCell;
 use std::rc::Rc;
-use egui::color_picker::{Alpha, color_picker_color32};
 
 fn main() {
     let options = NativeOptions::default();
@@ -38,7 +38,7 @@ impl Default for MyApp {
 
         let mt_ctx = context.clone();
         let node_tree = TabBuilder::default()
-            .title("Simple Demo")
+            .title(RichText::new("Simple Demo").color(Color32::BLUE))
             .content(move |ui| {
                 let mut ctx = mt_ctx.borrow_mut();
                 ui.heading("My egui Application");
@@ -120,11 +120,6 @@ impl Default for MyApp {
 
                     ui.label("Bar background color");
                     color_picker_color32(ui, &mut style.tab_bar_background_color, Alpha::OnlyBlend);
-
-                    ui.separator();
-
-                    ui.label("Text color");
-                    color_picker_color32(ui, &mut style.tab_text_color, Alpha::OnlyBlend);
 
                     ui.separator();
 

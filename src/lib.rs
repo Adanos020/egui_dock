@@ -40,7 +40,7 @@ mod tab;
 mod tree;
 mod utils;
 
-pub use self::tab::{Tab, TabBuilder};
+pub use self::tab::{Tab, TabBuilder, WithTitle};
 pub use self::tree::{Node, NodeIndex, Split, Tree};
 pub use style::{Style, StyleBuilder};
 

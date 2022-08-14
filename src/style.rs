@@ -16,7 +16,6 @@ pub struct Style {
 
     pub tab_bar_background_color: Color32,
 
-    pub tab_text_color: Color32,
     pub tab_outline_color: Color32,
     pub tab_rounding: Rounding,
     pub tab_background_color: Color32,
@@ -37,7 +36,6 @@ impl Default for Style {
 
             tab_bar_background_color: Color32::WHITE,
 
-            tab_text_color: Color32::BLACK,
             tab_outline_color: Color32::BLACK,
             tab_background_color: Color32::WHITE,
             tab_rounding: Default::default(),
@@ -58,7 +56,6 @@ impl Style {
 
             separator_color: style.visuals.faint_bg_color,
             border_color: style.visuals.faint_bg_color,
-            tab_text_color: style.visuals.widgets.active.fg_stroke.color,
             tab_outline_color: style.visuals.widgets.active.bg_stroke.color,
             tab_background_color: style.visuals.window_fill(),
 
@@ -151,17 +148,14 @@ impl Style {
     pub(crate) fn tab_title(
         &self,
         ui: &mut Ui,
-        label: String,
+        label: WidgetText,
         active: bool,
         is_being_dragged: bool,
     ) -> Response {
         let px = ui.ctx().pixels_per_point().recip();
         let rounding = self.tab_rounding;
 
-        let font_id = FontId::proportional(14.0);
-        let galley = ui
-            .painter()
-            .layout_no_wrap(label, font_id, self.tab_text_color);
+        let galley = label.into_galley(ui, None, 14.0, TextStyle::Button);
 
         let offset = vec2(8.0, 0.0);
         let text_size = galley.size();
@@ -202,7 +196,7 @@ impl Style {
             .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
             .min;
 
-        ui.painter().galley(pos, galley);
+        ui.painter().galley(pos, galley.galley);
 
         response
     }
@@ -273,13 +267,6 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn with_tab_bar_background(mut self, tab_bar_background_color: Color32) -> Self {
         self.style.tab_bar_background_color = tab_bar_background_color;
-        self
-    }
-
-    /// Sets `tab_text_color` for the tab's text color. By `Default` it's [`Color32::BLACK`].
-    #[inline(always)]
-    pub fn with_tab_text_color(mut self, tab_text_color: Color32) -> Self {
-        self.style.tab_text_color = tab_text_color;
         self
     }
 
