@@ -1,5 +1,5 @@
 use egui::style::Margin;
-use egui::{Frame, Ui};
+use egui::{Frame, ScrollArea, Ui};
 
 pub type TabContent = Box<dyn FnMut(&mut Ui) + 'static>;
 
@@ -63,6 +63,14 @@ impl Tab {
     pub fn ui(&mut self, ui: &mut Ui) {
         Frame::none()
             .inner_margin(self.inner_margin)
-            .show(ui, |ui| (self.add_content)(ui));
+            .show(ui, |ui| {
+                ScrollArea::both()
+                    .id_source(self.title.clone() + " - egui_dock::Tab")
+                    .show_viewport(ui, |ui, viewport| {
+                        let available_rect = ui.available_rect_before_wrap();
+                        ui.expand_to_include_rect(available_rect);
+                        (self.add_content)(ui);
+                    });
+            });
     }
 }
