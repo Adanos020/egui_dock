@@ -9,11 +9,11 @@
 //! First, construct the initial tree:
 //!
 //! ```rust
-//! use egui::style::Margin;
-//! use egui_dock::{TabBuilder, Tree};
+//! use egui::{Color32, RichText, style::Margin};
+//! use egui_dock::{TabBuilder, Tree, WithTitle};
 //!
 //! let tab1 = TabBuilder::default()
-//!     .title("Tab 1")
+//!     .title(RichText::new("Tab 1").color(Color32::BLUE))
 //!     .content(|ui| {
 //!         ui.label("Tab 1");
 //!     })
@@ -28,11 +28,15 @@
 //! let mut tree = Tree::new(vec![tab1, tab2]);
 //! ```
 //!
-//! Then, you can show the tree.
+//! Then you can show the tree.
 //!
 //! ```rust
+//! # egui::__run_test_ui(|ui| {
+//! # let mut tree = egui_dock::Tree::new(vec![]);
+//! let style = egui_dock::Style::default();
 //! let id = ui.id();
-//! egui_dock::show(&mut ui, id, &style, &mut tree);
+//! egui_dock::show(ui, id, &style, &mut tree);
+//! # });
 //! ```
 
 mod style;

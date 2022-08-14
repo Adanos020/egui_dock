@@ -14,49 +14,14 @@ This fork aims to provide documentation and further development if necessary.
 
 ## Usage
 
-First, create your context type and your tab widget:
+First, construct the initial tree:
 
 ```rust
-use egui::{Frame, Ui, style::Margin};
-use egui_dock::Tab;
-
-struct MyContext;
-
-struct MyTab {
-    text: String,
-}
-
-impl MyTab {
-    fn new(text: impl ToString) -> Self {
-        Self {
-            text: text.to_string(),
-        }
-    }
-}
-
-impl Tab<MyContext> for MyTab {
-    fn title(&self) -> &str {
-        &self.title
-    }
-
-    fn ui(&mut self, ui: &mut Ui, _ctx: &mut MyContext) {
-        let margin = Margin::same(4.0);
-
-        Frame::none().inner_margin(margin).show(ui, |ui| {
-            ui.label(&self.text);
-        });
-    }
-}
-```
-
-Then construct the initial tree using your tab widget:
-
-```rust
-use egui::style::Margin;
-use egui_dock::{TabBuilder, Tree};
+use egui::{Color32, RichText, style::Margin};
+use egui_dock::{TabBuilder, Tree, WithTitle};
 
 let tab1 = TabBuilder::default()
-    .title("Tab 1")
+    .title(RichText::new("Tab 1").color(Color32::BLUE))
     .content(|ui| {
         ui.label("Tab 1");
     })
@@ -72,9 +37,10 @@ let tab2 = TabBuilder::default()
 let mut tree = Tree::new(vec![tab1, tab2]);
 ```
 
-Finally, you can show the tree.
+Then, you can show the tree.
 
 ```rust
+let style = egui_dock::Style::default();
 let id = ui.id();
 egui_dock::show(&mut ui, id, &style, &mut tree);
 ```
