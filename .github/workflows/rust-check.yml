@@ -48,7 +48,6 @@ jobs:
         run: cargo check --all-targets --all-features --verbose
         continue-on-error: false
 
-        continue-on-error: false
       - name: test
         run: cargo test --verbose -- --test-threads=1
         continue-on-error: false
@@ -78,7 +77,6 @@ jobs:
         run: cargo check --all-targets --all-features --verbose
         continue-on-error: false
 
-        continue-on-error: false
       - name: test
         run: cargo test --verbose -- --test-threads=1
         continue-on-error: false
