@@ -9,11 +9,11 @@
 //! First, construct the initial tree:
 //!
 //! ```rust
-//! use egui::style::Margin;
-//! use egui_dock::{TabBuilder, Tree};
+//! use egui::{Color32, RichText, style::Margin};
+//! use egui_dock::{TabBuilder, Tree, WithTitle};
 //!
 //! let tab1 = TabBuilder::default()
-//!     .title("Tab 1")
+//!     .title(RichText::new("Tab 1").color(Color32::BLUE))
 //!     .content(|ui| {
 //!         ui.label("Tab 1");
 //!     })
