@@ -11,7 +11,7 @@ repository = "https://github.com/Adanos020/egui_dock"
 categories = ["gui", "game-development"]
 
 [dependencies]
-egui = "0.18"
+egui = "0.19"
 
 [dev-dependencies]
-eframe = "0.18"
+eframe = "0.19"
