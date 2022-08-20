@@ -1,5 +1,5 @@
 use egui::style::Margin;
-use egui::{Frame, RichText, ScrollArea, Ui, WidgetText};
+use egui::{Frame, ScrollArea, Ui, WidgetText};
 
 pub type TabContent = Box<dyn FnMut(&mut Ui) + 'static>;
 
@@ -7,11 +7,6 @@ pub struct TabBuilder {
     title: Option<WidgetText>,
     inner_margin: Margin,
     add_content: Option<TabContent>,
-}
-
-pub trait WithTitle<TextType> {
-    /// Sets the text displayed in the tab bar.
-    fn title(self, title: TextType) -> Self;
 }
 
 /// Dockable tab that can be used in `Tree`s.
@@ -31,34 +26,6 @@ impl Default for TabBuilder {
     }
 }
 
-impl WithTitle<String> for TabBuilder {
-    fn title(mut self, title: String) -> Self {
-        self.title = Some(RichText::new(title).strong().into());
-        self
-    }
-}
-
-impl WithTitle<&'static str> for TabBuilder {
-    fn title(mut self, title: &'static str) -> Self {
-        self.title = Some(RichText::new(title).strong().into());
-        self
-    }
-}
-
-impl WithTitle<RichText> for TabBuilder {
-    fn title(mut self, title: RichText) -> Self {
-        self.title = Some(title.into());
-        self
-    }
-}
-
-impl WithTitle<WidgetText> for TabBuilder {
-    fn title(mut self, title: WidgetText) -> Self {
-        self.title = Some(title);
-        self
-    }
-}
-
 impl TabBuilder {
     /// Constructs a `Tab` out of accumulated data.
     ///
@@ -70,6 +37,12 @@ impl TabBuilder {
             inner_margin: self.inner_margin,
             add_content: self.add_content.expect("Missing tab content"),
         }
+    }
+
+    /// Sets the text displayed in the tab bar.
+    pub fn title(mut self, title: impl Into<WidgetText>) -> Self {
+        self.title = Some(title.into());
+        self
     }
 
     /// Sets the margins around the tab's content.
