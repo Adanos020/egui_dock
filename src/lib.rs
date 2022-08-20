@@ -10,7 +10,7 @@
 //!
 //! ```rust
 //! use egui::{Color32, RichText, style::Margin};
-//! use egui_dock::{TabBuilder, Tree, WithTitle};
+//! use egui_dock::{TabBuilder, Tree};
 //!
 //! let tab1 = TabBuilder::default()
 //!     .title(RichText::new("Tab 1").color(Color32::BLUE))
@@ -39,17 +39,18 @@
 //! # });
 //! ```
 
+use egui::*;
+
+pub use style::{Style, StyleBuilder};
+use utils::*;
+
+pub use self::tab::{Tab, TabBuilder};
+pub use self::tree::{Node, NodeIndex, Split, Tree};
+
 mod style;
 mod tab;
 mod tree;
 mod utils;
-
-pub use self::tab::{Tab, TabBuilder, WithTitle};
-pub use self::tree::{Node, NodeIndex, Split, Tree};
-pub use style::{Style, StyleBuilder};
-
-use egui::*;
-use utils::*;
 
 struct HoverData {
     rect: Rect,
