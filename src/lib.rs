@@ -222,7 +222,6 @@ impl DockArea{
                     let tabs_response = ui.allocate_rect(tabbar, Sense::hover());
                     let mut tab_hover_rect = Option::None;
 
-                    //let mut to_remove = None;
                     // tabs
                     ui.scope(|ui| {
                         ui.painter().rect_filled(
@@ -363,16 +362,6 @@ impl DockArea{
                             pointer,
                         });
                     }
-
-                    // if let Option::Some(to_remove) = to_remove{
-                    //     if tabs[to_remove].on_close(){
-                    //         tabs.remove(to_remove);
-                    //         if to_remove <= *active{
-                    //             *active = active.checked_sub(1).unwrap_or(0);
-                    //         }
-                    //         removed = true;
-                    //     }
-                    // }
                 }
             }
         }

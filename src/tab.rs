@@ -17,7 +17,7 @@ pub trait Tab{
     /// This is called when the close button is pressed
     /// returning false will cancel closing the tab
     fn on_close(&mut self) -> bool{
-        false
+        true
     }
     /// This is called every frame
     /// return true and the tab will close 
