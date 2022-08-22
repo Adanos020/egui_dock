@@ -2,13 +2,18 @@ use egui::style::Margin;
 use egui::{Frame, ScrollArea, Ui, WidgetText};
 
 pub type TabContent = Box<dyn FnMut(&mut Ui) + 'static>;
+pub type OnClose = Box<dyn FnMut() -> bool + 'static>;
+pub type ForceClose = Box<dyn FnMut() -> bool + 'static>;
 
 pub struct TabBuilder {
     title: Option<WidgetText>,
     inner_margin: Margin,
     add_content: Option<TabContent>,
+    on_close: Option<OnClose>,
+    force_close: Option<ForceClose>,
 }
 
+/// Dockable tab that can be used in `Tree`s.
 pub trait Tab{
     ///Actual tab content
     fn ui(&mut self, ui: &mut egui::Ui);
@@ -27,11 +32,12 @@ pub trait Tab{
     }
 }
 
-/// Dockable tab that can be used in `Tree`s.
 pub struct BuiltTab {
     pub title: WidgetText,
     pub inner_margin: Margin,
     pub add_content: TabContent,
+    on_close: Option<OnClose>,
+    force_close: Option<ForceClose>,
 }
 impl Tab for BuiltTab{
     fn title(&mut self) -> egui::WidgetText {
@@ -50,6 +56,20 @@ impl Tab for BuiltTab{
                     });
             });
     }
+
+    fn on_close(&mut self) -> bool {
+        match &mut self.on_close{
+            Some(on_close) => on_close(),
+            None => true,
+        }
+    }
+
+    fn force_close(&mut self) -> bool {
+        match &mut self.force_close{
+            Some(force_close) => force_close(),
+            None => false,
+        }
+    }
 }
 
 impl Default for TabBuilder {
@@ -58,6 +78,8 @@ impl Default for TabBuilder {
             title: None,
             inner_margin: Margin::same(4.0),
             add_content: None,
+            on_close: None,
+            force_close: None,
         }
     }
 }
@@ -72,6 +94,8 @@ impl TabBuilder {
             title: self.title.expect("Missing tab title"),
             inner_margin: self.inner_margin,
             add_content: self.add_content.expect("Missing tab content"),
+            on_close: self.on_close,
+            force_close: self.force_close,
         })
     }
 
@@ -90,6 +114,21 @@ impl TabBuilder {
     /// Sets the function that adds content to the tab.
     pub fn content(mut self, add_content: impl FnMut(&mut Ui) + 'static) -> Self {
         self.add_content = Some(Box::new(add_content));
+        self
+    }
+    
+    /// Sets the function that runs when the close button is pressed
+    /// return true to close and false to block the close
+    pub fn on_close(mut self, on_close: impl FnMut() -> bool + 'static) -> Self {
+        self.on_close = Some(Box::new(on_close));
+        self
+    }
+    
+    /// Sets the function that checks if the tab should be closed every frame
+    /// return false to keep open and true to close the tab
+    /// returning true will NOT call the on_close function (if any)
+    pub fn force_close(mut self, force_close: impl FnMut() -> bool + 'static) -> Self {
+        self.force_close = Some(Box::new(force_close));
         self
     }
 }

@@ -487,6 +487,7 @@ impl Tree {
         }
     }
 
+    /// Push a tab to the first leaf it finds or creates a leaf if an empty spot is encountered
     pub fn push_to_first_leaf(&mut self, tab: Tab){
         for (index, node) in &mut self.tree.iter_mut().enumerate(){
             match node{
@@ -507,9 +508,12 @@ impl Tree {
         panic!();
     }
 
+    ///Currently focused leaf
     pub fn focused_leaf(&self) -> Option<NodeIndex>{
         self.focused_node
     }
+
+    ///Updates the focused leaf
     pub fn set_focused(&mut self, node: NodeIndex){
         if let Option::Some(Node::Leaf{..}) = self.tree.get(node.0){
             self.focused_node = Option::Some(node);
@@ -518,7 +522,10 @@ impl Tree {
         }
     }
 
-    pub fn push_to_active_leaf(&mut self, tab: Tab){
+    /// Pushes the new tab to the currently focused tab.
+    /// if there is none this function pushes the tab to the first leaf it finds
+    /// or if there isnt any creates one
+    pub fn push_to_focused_leaf(&mut self, tab: Tab){
         match self.focused_node{
             Some(node) => {
                 if self.tree.is_empty(){

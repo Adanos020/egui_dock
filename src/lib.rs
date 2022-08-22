@@ -26,16 +26,17 @@
 //!     })
 //!     .build();
 //! let mut tree = Tree::new(vec![tab1, tab2]);
+//! let mut dock = Dock::from_tree(tree);
 //! ```
 //!
 //! Then you can show the tree.
 //!
 //! ```rust
 //! # egui::__run_test_ui(|ui| {
-//! # let mut tree = egui_dock::Tree::new(vec![]);
+//! # let mut dock = egui_dock::DockArea::new_empty();
 //! let style = egui_dock::Style::default();
 //! let id = ui.id();
-//! egui_dock::show(ui, id, &style, &mut tree);
+//! dock.show(ui, id, &style);
 //! # });
 //! ```
 
@@ -140,7 +141,7 @@ impl DockArea{
     }
 
     pub fn push_to_active_leaf(&mut self, tab: impl Tab + 'static){
-        self.tree.push_to_active_leaf(Box::new(tab))
+        self.tree.push_to_focused_leaf(Box::new(tab))
     }
 
     /// Shows the docking hierarchy inside a `Ui`.
