@@ -55,14 +55,18 @@ mod utils;
 struct HoverData {
     rect: Rect,
     tabs: Option<Rect>,
+    tab: Option<(Rect, usize)>,
     dst: NodeIndex,
     pointer: Pos2,
 }
 
 impl HoverData {
-    fn resolve(&self) -> (Option<Split>, Rect) {
+    fn resolve(&self) -> (Option<Split>, Rect, Option<usize>) {
+        if let Some(tab) = self.tab{
+            return (None, tab.0, Option::Some(tab.1));
+        }
         if let Some(tabs) = self.tabs {
-            return (None, tabs);
+            return (None, tabs, None);
         }
 
         let (rect, pointer) = (self.rect, self.pointer);
@@ -92,7 +96,7 @@ impl HoverData {
             _ => unreachable!(),
         };
 
-        (target, rect.intersect(other))
+        (target, rect.intersect(other), None)
     }
 }
 
@@ -126,6 +130,11 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
             Stroke::new(margin.top, style.border_color),
         );
     }
+    
+    if tree.is_empty(){
+        ui.allocate_rect(rect, Sense::hover());
+        return;
+    }
 
     tree[NodeIndex::root()].set_rect(rect);
 
@@ -135,14 +144,22 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
     let pixels_per_point = ui.ctx().pixels_per_point();
     let px = pixels_per_point.recip();
 
+    let focused = tree.focused_leaf();
+
+    let mut removed = false;
+    let mut new_focused = None;
+
     for tree_index in 0..tree.len() {
         let tree_index = NodeIndex(tree_index);
+        
         match &mut tree[tree_index] {
             Node::None => (),
             Node::Horizontal { fraction, rect } => {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
-                let (left, _separator, right) = style.hsplit(ui, fraction, rect);
+                let (left, separator, right) = style.hsplit(ui, fraction, rect);
+
+                ui.painter().rect_filled(separator, Rounding::none(), style.separator_color);
 
                 tree[tree_index.left()].set_rect(left);
                 tree[tree_index.right()].set_rect(right);
@@ -150,7 +167,9 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
             Node::Vertical { fraction, rect } => {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
-                let (bottom, _separator, top) = style.vsplit(ui, fraction, rect);
+                let (bottom, separator, top) = style.vsplit(ui, fraction, rect);
+
+                ui.painter().rect_filled(separator, Rounding::none(), style.separator_color);
 
                 tree[tree_index.left()].set_rect(bottom);
                 tree[tree_index.right()].set_rect(top);
@@ -171,7 +190,9 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
 
                 let full_response = ui.allocate_rect(rect, Sense::hover());
                 let tabs_response = ui.allocate_rect(tabbar, Sense::hover());
+                let mut tab_hover_rect = Option::None;
 
+                let mut to_remove = None;
                 // tabs
                 ui.scope(|ui| {
                     ui.painter().rect_filled(
@@ -189,12 +210,13 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
                     ui.horizontal(|ui| {
-                        for (tab_index, tab) in tabs.iter().enumerate() {
+                        
+                        for (tab_index, tab) in tabs.iter_mut().enumerate() {
                             let id = Id::new((tree_index, tab_index, "tab"));
                             let is_being_dragged = ui.memory().is_being_dragged(id);
 
                             let is_active = *active == tab_index || is_being_dragged;
-                            let label = tab.title.clone();
+                            let label = tab.title();
 
                             if is_being_dragged {
                                 let layer_id = LayerId::new(Order::Tooltip, id);
@@ -204,7 +226,9 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
                                             ui,
                                             label.clone(),
                                             is_active,
+                                            is_active && Option::Some(tree_index) == focused,
                                             is_being_dragged,
+                                            id,
                                         )
                                     })
                                     .response;
@@ -228,14 +252,44 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
 
                                 if response.clicked() {
                                     *active = tab_index;
+                                    new_focused = Option::Some(tree_index);
+                                }
+                                if state.drag_start.is_some() {
+                                    if let Option::Some(pos) = ui.input().pointer.hover_pos() {
+                                        if response.rect.contains(pos){
+                                            tab_hover_rect = Option::Some((response.rect, tab_index));
+                                        }
+                                    }
                                 }
                             } else {
                                 let response =
-                                    style.tab_title(ui, label, is_active, is_being_dragged);
-                                let sense = Sense::click_and_drag();
-                                let response = ui.interact(response.rect, id, sense);
+                                    style.tab_title(
+                                        ui, 
+                                        label,  
+                                        is_active && Option::Some(tree_index) == focused, 
+                                        is_active, 
+                                        is_being_dragged, 
+                                        id);
+                                let sense;
+                                if response.1{
+                                    sense = Sense::click();
+                                }else{
+                                    sense = Sense::click_and_drag();
+                                }
+                                if response.2{
+                                    to_remove = Option::Some(tab_index);
+                                }
+                                let response = ui.interact(response.0.rect, id, sense);
                                 if response.drag_started() {
                                     state.drag_start = response.hover_pos();
+                                }
+                                
+                                if state.drag_start.is_some() {
+                                    if let Option::Some(pos) = ui.input().pointer.hover_pos() {
+                                        if response.rect.contains(pos){
+                                            tab_hover_rect = Option::Some((response.rect, tab_index));
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -250,6 +304,14 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
 
                     *viewport = rect;
 
+                    if ui.input().pointer.any_click(){
+                        if let Option::Some(pos) = ui.input().pointer.hover_pos(){
+                            if rect.contains(pos){
+                                new_focused = Option::Some(tree_index);
+                            }
+                        }
+                    }
+
                     ui.painter()
                         .rect_filled(rect, 0.0, style.tab_background_color);
 
@@ -263,18 +325,35 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
                         rect,
                         dst: tree_index,
                         tabs: tabs_response.hovered().then_some(tabs_response.rect),
+                        tab: tab_hover_rect,
                         pointer,
                     });
                 }
+
+                if let Option::Some(to_remove) = to_remove{
+                    if tabs[to_remove].close(){
+                        tabs.remove(to_remove);
+                        if to_remove <= *active{
+                            *active = active.checked_sub(1).unwrap_or(0);
+                        }
+                        removed = true;
+                    }
+                }
             }
         }
+    }
+    if removed{
+        tree.remove_empty_leaf();
+    }
+    if let Option::Some(focused) = new_focused{
+        tree.set_focused(focused);
     }
 
     if let (Some((src, tab_index)), Some(hover)) = (drag_data, hover_data) {
         let dst = hover.dst;
 
         if tree[src].is_leaf() && tree[dst].is_leaf() {
-            let (target, helper) = hover.resolve();
+            let (target, helper, tap_pos) = hover.resolve();
 
             let id = Id::new("helper");
             let layer_id = LayerId::new(Order::Foreground, id);
@@ -296,11 +375,16 @@ pub fn show(ui: &mut Ui, id: Id, style: &Style, tree: &mut Tree) {
                 if let Some(target) = target {
                     tree.split(dst, target, 0.5, Node::leaf(tab));
                 } else {
-                    tree[dst].append_tab(tab);
+                    if let Option::Some(index) = tap_pos{
+                        tree[dst].insert_tab(index, tab);
+                    }else{
+                        tree[dst].append_tab(tab);
+                    }
+                    tree.set_focused(dst);
                 }
 
                 tree.remove_empty_leaf();
-                for node in tree.iter_mut() {
+                for node in &mut tree.iter_mut() {
                     if let Node::Leaf { tabs, active, .. } = node {
                         if *active >= tabs.len() {
                             *active = 0;

@@ -1,6 +1,7 @@
-use crate::Tab;
+
 use egui::*;
 
+pub type Tab = Box<dyn crate::Tab>;
 pub type Tabs = Vec<Tab>;
 
 /// Represents an abstract node of a `Tree`.
@@ -80,7 +81,28 @@ impl Node {
     #[track_caller]
     pub fn append_tab(&mut self, tab: Tab) {
         match self {
-            Node::Leaf { tabs, .. } => tabs.push(tab),
+            Node::Leaf { tabs, active, .. } => {
+                tabs.push(tab);
+                *active = tabs.len() - 1;
+            },
+            _ => unreachable!(),
+        }
+        
+    }
+
+    /// Adds a `tab` to the node.
+    ///
+    /// # Panics
+    /// Panics if the new capacity of `tabs` exceeds isize::MAX bytes.
+    /// index > tabs_count()
+    #[track_caller]
+    pub fn insert_tab(&mut self, index: usize, tab: Tab) {
+        match self {
+            Node::Leaf { tabs, active, .. } => {
+                tabs.insert(index, tab);
+                *active = index;
+
+            },
             _ => unreachable!(),
         }
     }
@@ -185,6 +207,7 @@ pub enum Split {
 #[derive(Default)]
 pub struct Tree {
     tree: Vec<Node>,
+    focused_node: Option<NodeIndex>,
 }
 
 impl std::ops::Index<NodeIndex> for Tree {
@@ -208,7 +231,7 @@ impl Tree {
     #[inline(always)]
     pub fn new(tabs: Tabs) -> Self {
         let root = Node::leaf_with(tabs);
-        Self { tree: vec![root] }
+        Self { tree: vec![root], focused_node: None }
     }
 
     /// Returns the viewport `Rect` and the `Tab` inside the first leaf node, or `None` of no leaf exists in the `Tree`.
@@ -354,6 +377,8 @@ impl Tree {
         self[index[0]] = old;
         self[index[1]] = new;
 
+        self.focused_node = Option::Some(index[1]);
+
         index
     }
 
@@ -370,10 +395,62 @@ impl Tree {
             None => return,
         };
 
-        let parent = node.parent().unwrap();
+        let parent = match node.parent(){
+            Some(val) => val,
+            None => {
+                self.tree.clear();
+                return;
+            },
+        };
+
+
+        fn first_leaf(tree: &Tree, top: NodeIndex) -> Option<NodeIndex>{
+            let left = top.left();
+            let right = top.right();
+            match (tree.tree.get(left.0), tree.tree.get(right.0)){
+                (Some(&Node::Leaf{..}), _) => Option::Some(left),
+                (_, Some(&Node::Leaf{..})) => Option::Some(left),
+                
+                (Some(Node::Horizontal{..} | Node::Vertical{..}), Some(Node::Horizontal{..} | Node::Vertical{..})) => {
+                    match first_leaf(tree, left){
+                        ret @ Some(_) => ret,
+                        None => first_leaf(tree, right),
+                    }
+                },
+                (Some(Node::Horizontal{..} | Node::Vertical{..}), _) => first_leaf(tree, left),
+                (_, Some(Node::Horizontal{..} | Node::Vertical{..})) => first_leaf(tree, right),
+                
+                (None, None) 
+                | (Some(&Node::None), None)
+                | (None, Some(&Node::None))
+                | (Some(&Node::None), Some(&Node::None)) => None,
+            }
+        }
+
+        if Option::Some(node) == self.focused_node{
+            self.focused_node = Option::None;
+            let mut node = node;
+            while let Option::Some(parent) = node.parent(){
+                let next = if node.is_left(){
+                    parent.right()
+                }else{
+                    parent.left()
+                };
+                if let Option::Some(Node::Leaf{..}) = self.tree.get(next.0){
+                    self.focused_node = Option::Some(next);
+                    break;
+                }
+                if let Option::Some(node) = first_leaf(&self, next){
+                    self.focused_node = Option::Some(node);
+                    break;
+                }
+                node = parent;
+            }
+        }
 
         self[parent] = Node::None;
         self[node] = Node::None;
+
 
         let mut level = 0;
 
@@ -384,6 +461,9 @@ impl Tree {
                 for (dst, src) in dst.zip(src) {
                     if src >= self.tree.len() {
                         break 'left_end;
+                    }
+                    if Option::Some(NodeIndex(src)) == self.focused_node{
+                        self.focused_node = Option::Some(NodeIndex(dst));
                     }
                     self.tree[dst] = std::mem::replace(&mut self.tree[src], Node::None);
                 }
@@ -397,10 +477,78 @@ impl Tree {
                     if src >= self.tree.len() {
                         break 'right_end;
                     }
+                    if Option::Some(NodeIndex(src)) == self.focused_node{
+                        self.focused_node = Option::Some(NodeIndex(dst));
+                    }
                     self.tree[dst] = std::mem::replace(&mut self.tree[src], Node::None);
                 }
                 level += 1;
             }
+        }
+    }
+
+    pub fn push_to_first_leaf(&mut self, tab: Tab){
+        for (index, node) in &mut self.tree.iter_mut().enumerate(){
+            match node{
+                Node::Leaf { tabs, active, ..} => {
+                    tabs.push(tab);
+                    self.focused_node = Option::Some(NodeIndex(index));
+                    *active = tabs.len() - 1;
+                    return;
+                }, 
+                Node::None => {
+                    *node = Node::leaf(tab);
+                    self.focused_node = Option::Some(NodeIndex(index));
+                    return;
+                },
+                _ => {}
+            }
+        }
+        panic!();
+    }
+
+    pub fn focused_leaf(&self) -> Option<NodeIndex>{
+        self.focused_node
+    }
+    pub fn set_focused(&mut self, node: NodeIndex){
+        if let Option::Some(Node::Leaf{..}) = self.tree.get(node.0){
+            self.focused_node = Option::Some(node);
+        }else{
+           self.focused_node = None; 
+        }
+    }
+
+    pub fn push_to_active_leaf(&mut self, tab: Tab){
+        match self.focused_node{
+            Some(node) => {
+                if self.tree.is_empty(){
+                    self.tree.push(Node::leaf(tab));
+                    self.focused_node = Option::Some(NodeIndex::root());
+                }else{
+                    match &mut self[node]{
+                        Node::None => {
+                            self[node] = Node::leaf(tab);
+                            self.focused_node = Option::Some(node);
+                        },
+                        Node::Leaf { tabs, active, ..} => {
+                            tabs.push(tab);
+                            *active = tabs.len() - 1;
+                            self.focused_node = Option::Some(node);
+                        },
+                        _ => {
+                            self.push_to_first_leaf(tab);
+                        }
+                    }
+                }
+            },
+            None => {
+                if self.tree.is_empty(){
+                    self.tree.push(Node::leaf(tab));
+                    self.focused_node = Option::Some(NodeIndex::root());
+                }else{
+                    self.push_to_first_leaf(tab);
+                }
+            },
         }
     }
 }

@@ -9,11 +9,37 @@ pub struct TabBuilder {
     add_content: Option<TabContent>,
 }
 
+pub trait Tab{
+    fn ui(&mut self, ui: &mut egui::Ui);
+    fn title(&mut self) -> egui::WidgetText;
+    fn close(&mut self) -> bool{
+        true
+    }
+}
+
 /// Dockable tab that can be used in `Tree`s.
-pub struct Tab {
+pub struct BuiltTab {
     pub title: WidgetText,
     pub inner_margin: Margin,
     pub add_content: TabContent,
+}
+impl Tab for BuiltTab{
+    fn title(&mut self) -> egui::WidgetText {
+        self.title.clone()
+    }
+    fn ui(&mut self, ui: &mut egui::Ui) {
+        ScrollArea::both()
+            .id_source(self.title.text().to_string() + " - egui_dock::Tab")
+            .show(ui, |ui| {
+                Frame::none()
+                    .inner_margin(self.inner_margin)
+                    .show(ui, |ui| {
+                        let available_rect = ui.available_rect_before_wrap();
+                        ui.expand_to_include_rect(available_rect);
+                        (self.add_content)(ui);
+                    });
+            });
+    }
 }
 
 impl Default for TabBuilder {
@@ -31,12 +57,12 @@ impl TabBuilder {
     ///
     /// # Panics
     /// Panics if `title` or `add_contents` is unset.
-    pub fn build(self) -> Tab {
-        Tab {
+    pub fn build(self) -> Box<dyn Tab> {
+        Box::new(BuiltTab {
             title: self.title.expect("Missing tab title"),
             inner_margin: self.inner_margin,
             add_content: self.add_content.expect("Missing tab content"),
-        }
+        })
     }
 
     /// Sets the text displayed in the tab bar.
@@ -58,19 +84,3 @@ impl TabBuilder {
     }
 }
 
-impl Tab {
-    /// Displays the tab's content.
-    pub fn ui(&mut self, ui: &mut Ui) {
-        ScrollArea::both()
-            .id_source(self.title.text().to_string() + " - egui_dock::Tab")
-            .show(ui, |ui| {
-                Frame::none()
-                    .inner_margin(self.inner_margin)
-                    .show(ui, |ui| {
-                        let available_rect = ui.available_rect_before_wrap();
-                        ui.expand_to_include_rect(available_rect);
-                        (self.add_content)(ui);
-                    });
-            });
-    }
-}
