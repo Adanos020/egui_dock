@@ -10,10 +10,20 @@ pub struct TabBuilder {
 }
 
 pub trait Tab{
+    ///Actual tab content
     fn ui(&mut self, ui: &mut egui::Ui);
+    ///The title to be displayed
     fn title(&mut self) -> egui::WidgetText;
-    fn close(&mut self) -> bool{
-        true
+    /// This is called when the close button is pressed
+    /// returning false will cancel closing the tab
+    fn on_close(&mut self) -> bool{
+        false
+    }
+    /// This is called every frame
+    /// return true and the tab will close 
+    /// using this to close the tab will NOT call the on_close function!
+    fn force_close(&mut self) -> bool{
+        false
     }
 }
 

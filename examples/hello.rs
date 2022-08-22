@@ -3,7 +3,7 @@
 use eframe::{egui, NativeOptions};
 use egui::color_picker::{color_picker_color32, Alpha};
 use egui::{Color32, Id, LayerId, RichText, Slider, Ui};
-use egui_dock::{NodeIndex, Style, TabBuilder, Tree};
+use egui_dock::{NodeIndex, Style, TabBuilder, Tree, DockArea};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -25,7 +25,7 @@ struct MyContext {
 struct MyApp {
     _context: Rc<RefCell<MyContext>>,
     style: Rc<RefCell<Style>>,
-    tree: Tree,
+    dock: DockArea,
 }
 
 impl Default for MyApp {
@@ -171,7 +171,7 @@ impl Default for MyApp {
         Self {
             style,
             _context: context,
-            tree,
+            dock: DockArea::from_tree(tree),
         }
     }
 }
@@ -186,6 +186,6 @@ impl eframe::App for MyApp {
         let clip_rect = ctx.available_rect();
 
         let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
-        egui_dock::show(&mut ui, id, &style, &mut self.tree)
+        self.dock.show(&mut ui, id, &style)
     }
 }

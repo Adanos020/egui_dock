@@ -230,10 +230,10 @@ impl Style {
             _ => (),
         }
         
-
         let pos = Align2::LEFT_TOP
             .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
             .min;
+            
 
         ui.painter().galley(pos, galley.galley);
         
