@@ -199,7 +199,7 @@ impl Style {
             pos.x += offset.x + text_size.x + x_text_gap + x_size.x / 2.0;
             pos.y += rect.size().y / 2.0;
             x_rect = Rect::from_center_size(pos, x_size);
-            x_res = Option::Some(ui.interact(x_rect, id, Sense::click()));
+            x_res = Some(ui.interact(x_rect, id, Sense::click()));
         }else{
             x_rect = Rect::NOTHING;
             x_res = None;

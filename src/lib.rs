@@ -64,7 +64,7 @@ struct HoverData {
 impl HoverData {
     fn resolve(&self) -> (Option<Split>, Rect, Option<usize>) {
         if let Some(tab) = self.tab{
-            return (None, tab.0, Option::Some(tab.1));
+            return (None, tab.0, Some(tab.1));
         }
         if let Some(tabs) = self.tabs {
             return (None, tabs, None);
@@ -221,7 +221,7 @@ impl DockArea{
 
                     let full_response = ui.allocate_rect(rect, Sense::hover());
                     let tabs_response = ui.allocate_rect(tabbar, Sense::hover());
-                    let mut tab_hover_rect = Option::None;
+                    let mut tab_hover_rect = None;
 
                     // tabs
                     ui.scope(|ui| {
@@ -256,7 +256,7 @@ impl DockArea{
                                                 ui,
                                                 label.clone(),
                                                 is_active,
-                                                is_active && Option::Some(tree_index) == focused,
+                                                is_active && Some(tree_index) == focused,
                                                 is_being_dragged,
                                                 id,
                                             )
@@ -282,12 +282,12 @@ impl DockArea{
 
                                     if response.clicked() {
                                         *active = tab_index;
-                                        new_focused = Option::Some(tree_index);
+                                        new_focused = Some(tree_index);
                                     }
                                     if state.drag_start.is_some() {
-                                        if let Option::Some(pos) = ui.input().pointer.hover_pos() {
+                                        if let Some(pos) = ui.input().pointer.hover_pos() {
                                             if response.rect.contains(pos){
-                                                tab_hover_rect = Option::Some((response.rect, tab_index));
+                                                tab_hover_rect = Some((response.rect, tab_index));
                                             }
                                         }
                                     }
@@ -296,7 +296,7 @@ impl DockArea{
                                         style.tab_title(
                                             ui, 
                                             label,  
-                                            is_active && Option::Some(tree_index) == focused, 
+                                            is_active && Some(tree_index) == focused, 
                                             is_active, 
                                             is_being_dragged, 
                                             id);
@@ -319,9 +319,9 @@ impl DockArea{
                                     }
                                     
                                     if state.drag_start.is_some() {
-                                        if let Option::Some(pos) = ui.input().pointer.hover_pos() {
+                                        if let Some(pos) = ui.input().pointer.hover_pos() {
                                             if response.rect.contains(pos){
-                                                tab_hover_rect = Option::Some((response.rect, tab_index));
+                                                tab_hover_rect = Some((response.rect, tab_index));
                                             }
                                         }
                                     }
@@ -339,9 +339,9 @@ impl DockArea{
                         *viewport = rect;
 
                         if ui.input().pointer.any_click(){
-                            if let Option::Some(pos) = ui.input().pointer.hover_pos(){
+                            if let Some(pos) = ui.input().pointer.hover_pos(){
                                 if rect.contains(pos){
-                                    new_focused = Option::Some(tree_index);
+                                    new_focused = Some(tree_index);
                                 }
                             }
                         }
@@ -389,7 +389,7 @@ impl DockArea{
             tree.remove_empty_leaf()
         }
         
-        if let Option::Some(focused) = new_focused{
+        if let Some(focused) = new_focused{
             tree.set_focused(focused);
         }
 
@@ -419,7 +419,7 @@ impl DockArea{
                     if let Some(target) = target {
                         tree.split(dst, target, 0.5, Node::leaf(tab));
                     } else {
-                        if let Option::Some(index) = tap_pos{
+                        if let Some(index) = tap_pos{
                             tree[dst].insert_tab(index, tab);
                         }else{
                             tree[dst].append_tab(tab);

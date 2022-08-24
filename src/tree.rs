@@ -377,7 +377,7 @@ impl Tree {
         self[index[0]] = old;
         self[index[1]] = new;
 
-        self.focused_node = Option::Some(index[1]);
+        self.focused_node = Some(index[1]);
 
         index
     }
@@ -408,8 +408,8 @@ impl Tree {
             let left = top.left();
             let right = top.right();
             match (tree.tree.get(left.0), tree.tree.get(right.0)){
-                (Some(&Node::Leaf{..}), _) => Option::Some(left),
-                (_, Some(&Node::Leaf{..})) => Option::Some(left),
+                (Some(&Node::Leaf{..}), _) => Some(left),
+                (_, Some(&Node::Leaf{..})) => Some(left),
                 
                 (Some(Node::Horizontal{..} | Node::Vertical{..}), Some(Node::Horizontal{..} | Node::Vertical{..})) => {
                     match first_leaf(tree, left){
@@ -427,21 +427,21 @@ impl Tree {
             }
         }
 
-        if Option::Some(node) == self.focused_node{
-            self.focused_node = Option::None;
+        if Some(node) == self.focused_node{
+            self.focused_node = None;
             let mut node = node;
-            while let Option::Some(parent) = node.parent(){
+            while let Some(parent) = node.parent(){
                 let next = if node.is_left(){
                     parent.right()
                 }else{
                     parent.left()
                 };
-                if let Option::Some(Node::Leaf{..}) = self.tree.get(next.0){
-                    self.focused_node = Option::Some(next);
+                if let Some(Node::Leaf{..}) = self.tree.get(next.0){
+                    self.focused_node = Some(next);
                     break;
                 }
-                if let Option::Some(node) = first_leaf(&self, next){
-                    self.focused_node = Option::Some(node);
+                if let Some(node) = first_leaf(&self, next){
+                    self.focused_node = Some(node);
                     break;
                 }
                 node = parent;
@@ -462,8 +462,8 @@ impl Tree {
                     if src >= self.tree.len() {
                         break 'left_end;
                     }
-                    if Option::Some(NodeIndex(src)) == self.focused_node{
-                        self.focused_node = Option::Some(NodeIndex(dst));
+                    if Some(NodeIndex(src)) == self.focused_node{
+                        self.focused_node = Some(NodeIndex(dst));
                     }
                     self.tree[dst] = std::mem::replace(&mut self.tree[src], Node::None);
                 }
@@ -477,8 +477,8 @@ impl Tree {
                     if src >= self.tree.len() {
                         break 'right_end;
                     }
-                    if Option::Some(NodeIndex(src)) == self.focused_node{
-                        self.focused_node = Option::Some(NodeIndex(dst));
+                    if Some(NodeIndex(src)) == self.focused_node{
+                        self.focused_node = Some(NodeIndex(dst));
                     }
                     self.tree[dst] = std::mem::replace(&mut self.tree[src], Node::None);
                 }
@@ -493,13 +493,13 @@ impl Tree {
             match node{
                 Node::Leaf { tabs, active, ..} => {
                     tabs.push(tab);
-                    self.focused_node = Option::Some(NodeIndex(index));
+                    self.focused_node = Some(NodeIndex(index));
                     *active = tabs.len() - 1;
                     return;
                 }, 
                 Node::None => {
                     *node = Node::leaf(tab);
-                    self.focused_node = Option::Some(NodeIndex(index));
+                    self.focused_node = Some(NodeIndex(index));
                     return;
                 },
                 _ => {}
@@ -515,8 +515,8 @@ impl Tree {
 
     ///Updates the focused leaf
     pub fn set_focused(&mut self, node: NodeIndex){
-        if let Option::Some(Node::Leaf{..}) = self.tree.get(node.0){
-            self.focused_node = Option::Some(node);
+        if let Some(Node::Leaf{..}) = self.tree.get(node.0){
+            self.focused_node = Some(node);
         }else{
            self.focused_node = None; 
         }
@@ -530,17 +530,17 @@ impl Tree {
             Some(node) => {
                 if self.tree.is_empty(){
                     self.tree.push(Node::leaf(tab));
-                    self.focused_node = Option::Some(NodeIndex::root());
+                    self.focused_node = Some(NodeIndex::root());
                 }else{
                     match &mut self[node]{
                         Node::None => {
                             self[node] = Node::leaf(tab);
-                            self.focused_node = Option::Some(node);
+                            self.focused_node = Some(node);
                         },
                         Node::Leaf { tabs, active, ..} => {
                             tabs.push(tab);
                             *active = tabs.len() - 1;
-                            self.focused_node = Option::Some(node);
+                            self.focused_node = Some(node);
                         },
                         _ => {
                             self.push_to_first_leaf(tab);
@@ -551,7 +551,7 @@ impl Tree {
             None => {
                 if self.tree.is_empty(){
                     self.tree.push(Node::leaf(tab));
-                    self.focused_node = Option::Some(NodeIndex::root());
+                    self.focused_node = Some(NodeIndex::root());
                 }else{
                     self.push_to_first_leaf(tab);
                 }
