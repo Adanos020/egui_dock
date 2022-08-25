@@ -300,12 +300,9 @@ impl DockArea{
                                             is_active, 
                                             is_being_dragged, 
                                             id);
-                                    let sense;
-                                    if response.1{
-                                        sense = Sense::click();
-                                    }else{
-                                        sense = Sense::click_and_drag();
-                                    }
+                                    
+                                    let sense = if response.1 { Sense::click() } else { Sense::click_and_drag() };
+                                    
                                     if tab.force_close(){
                                         to_remove.push((tree_index, tab_index));
                                     }else if response.2{

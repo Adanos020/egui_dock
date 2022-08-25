@@ -192,19 +192,15 @@ impl Style {
         let (rect, response) = ui.allocate_at_least(desired_size, Sense::hover());
         let response = response.on_hover_cursor(CursorIcon::PointingHand);
 
-        let x_rect;
-        let x_res;
-        if (active || response.hovered()) && self.show_close_buttons{
+        let (x_rect, x_res) = if (active || response.hovered()) && self.show_close_buttons {
             let mut pos = rect.left_top();
             pos.x += offset.x + text_size.x + x_text_gap + x_size.x / 2.0;
             pos.y += rect.size().y / 2.0;
-            x_rect = Rect::from_center_size(pos, x_size);
-            x_res = Some(ui.interact(x_rect, id, Sense::click()));
-        }else{
-            x_rect = Rect::NOTHING;
-            x_res = None;
-        }
-
+            let x_rect = Rect::from_center_size(pos, x_size);
+            (x_rect, Some(ui.interact(x_rect, id, Sense::click())))
+        } else {
+            (Rect::NOTHING, None)
+        };
         match (active, is_being_dragged) {
             (true, false) => {
                 let mut tab = rect;
@@ -244,13 +240,11 @@ impl Style {
             }
             let x_rect = x_rect.shrink(1.75);
 
-            let color;
-            if x_res.as_ref().unwrap().interact_pointer_pos().is_some()
-                || focused{
-                color = self.close_tab_active_color;
-            }else{
-                color = self.close_tab_color
-            }
+            let color = if focused || x_res.as_ref().unwrap().interact_pointer_pos().is_some() {
+                self.close_tab_active_color
+            } else {
+                self.close_tab_color
+            };
             ui.painter().line_segment([x_rect.left_top(), x_rect.right_bottom()], Stroke::new(1.0, color));
             ui.painter().line_segment([x_rect.right_top(), x_rect.left_bottom()], Stroke::new(1.0, color));
             
