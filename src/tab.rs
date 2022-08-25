@@ -14,20 +14,20 @@ pub struct TabBuilder {
 }
 
 /// Dockable tab that can be used in `Tree`s.
-pub trait Tab{
-    ///Actual tab content
+pub trait Tab {
+    /// Actual tab content
     fn ui(&mut self, ui: &mut egui::Ui);
-    ///The title to be displayed
+    /// The title to be displayed
     fn title(&mut self) -> egui::WidgetText;
     /// This is called when the close button is pressed
     /// returning false will cancel closing the tab
-    fn on_close(&mut self) -> bool{
+    fn on_close(&mut self) -> bool {
         true
     }
     /// This is called every frame
-    /// return true and the tab will close 
+    /// return true and the tab will close
     /// using this to close the tab will NOT call the on_close function!
-    fn force_close(&mut self) -> bool{
+    fn force_close(&mut self) -> bool {
         false
     }
 }
@@ -39,10 +39,12 @@ pub struct BuiltTab {
     on_close: Option<OnClose>,
     force_close: Option<ForceClose>,
 }
-impl Tab for BuiltTab{
+
+impl Tab for BuiltTab {
     fn title(&mut self) -> egui::WidgetText {
         self.title.clone()
     }
+
     fn ui(&mut self, ui: &mut egui::Ui) {
         ScrollArea::both()
             .id_source(self.title.text().to_string() + " - egui_dock::Tab")
@@ -58,14 +60,14 @@ impl Tab for BuiltTab{
     }
 
     fn on_close(&mut self) -> bool {
-        match &mut self.on_close{
+        match &mut self.on_close {
             Some(on_close) => on_close(),
             None => true,
         }
     }
 
     fn force_close(&mut self) -> bool {
-        match &mut self.force_close{
+        match &mut self.force_close {
             Some(force_close) => force_close(),
             None => false,
         }
@@ -116,14 +118,14 @@ impl TabBuilder {
         self.add_content = Some(Box::new(add_content));
         self
     }
-    
+
     /// Sets the function that runs when the close button is pressed
     /// return true to close and false to block the close
     pub fn on_close(mut self, on_close: impl FnMut() -> bool + 'static) -> Self {
         self.on_close = Some(Box::new(on_close));
         self
     }
-    
+
     /// Sets the function that checks if the tab should be closed every frame
     /// return false to keep open and true to close the tab
     /// returning true will NOT call the on_close function (if any)
@@ -132,4 +134,3 @@ impl TabBuilder {
         self
     }
 }
-

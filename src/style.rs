@@ -70,7 +70,6 @@ impl Style {
             tab_outline_color: style.visuals.widgets.active.bg_fill,
             tab_background_color: style.visuals.window_fill(),
 
-
             close_tab_background_color: style.visuals.widgets.active.bg_fill,
             close_tab_color: style.visuals.text_color(),
             close_tab_active_color: style.visuals.strong_text_color(),
@@ -131,9 +130,9 @@ impl Style {
         let response = ui
             .allocate_rect(separator, Sense::click_and_drag())
             .on_hover_cursor(CursorIcon::ResizeVertical);
-        
+
         //ui.painter().line_segment([response.rect.center_top(), response.rect.center_bottom()], Stroke::new(self.separator_width, self.separator_color));
-        
+
         {
             let delta = response.drag_delta().y;
             let range = rect.max.y - rect.min.y;
@@ -177,17 +176,16 @@ impl Style {
         let galley = label.into_galley(ui, None, 14.0, TextStyle::Button);
 
         let x_text_gap = 5.0;
-        let x_size = Vec2::new(galley.size().y / 1.3, galley.size().y/ 1.3);
+        let x_size = Vec2::new(galley.size().y / 1.3, galley.size().y / 1.3);
 
         let offset = vec2(8.0, 0.0);
         let text_size = galley.size();
 
         let mut desired_size = text_size + offset * 2.0;
-        if self.show_close_buttons{
+        if self.show_close_buttons {
             desired_size.x += x_size.x + x_text_gap;
         }
         desired_size.y = 24.0;
-
 
         let (rect, response) = ui.allocate_at_least(desired_size, Sense::hover());
         let response = response.on_hover_cursor(CursorIcon::PointingHand);
@@ -226,17 +224,20 @@ impl Style {
             }
             _ => (),
         }
-        
+
         let pos = Align2::LEFT_TOP
             .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
             .min;
-            
 
         ui.painter().galley(pos, galley.galley);
-        
-        if (active || response.hovered()) && self.show_close_buttons{
-            if x_res.as_ref().unwrap().hovered(){
-                ui.painter().rect_filled(x_rect, Rounding::same(2.0), self.close_tab_background_color);
+
+        if (active || response.hovered()) && self.show_close_buttons {
+            if x_res.as_ref().unwrap().hovered() {
+                ui.painter().rect_filled(
+                    x_rect,
+                    Rounding::same(2.0),
+                    self.close_tab_background_color,
+                );
             }
             let x_rect = x_rect.shrink(1.75);
 
@@ -245,14 +246,19 @@ impl Style {
             } else {
                 self.close_tab_color
             };
-            ui.painter().line_segment([x_rect.left_top(), x_rect.right_bottom()], Stroke::new(1.0, color));
-            ui.painter().line_segment([x_rect.right_top(), x_rect.left_bottom()], Stroke::new(1.0, color));
-            
+            ui.painter().line_segment(
+                [x_rect.left_top(), x_rect.right_bottom()],
+                Stroke::new(1.0, color),
+            );
+            ui.painter().line_segment(
+                [x_rect.right_top(), x_rect.left_bottom()],
+                Stroke::new(1.0, color),
+            );
         }
 
-        match x_res{
+        match x_res {
             Some(some) => (response, some.hovered(), some.clicked()),
-            None =>  (response, false, false),
+            None => (response, false, false),
         }
     }
 }

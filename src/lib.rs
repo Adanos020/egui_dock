@@ -63,7 +63,7 @@ struct HoverData {
 
 impl HoverData {
     fn resolve(&self) -> (Option<Split>, Rect, Option<usize>) {
-        if let Some(tab) = self.tab{
+        if let Some(tab) = self.tab {
             return (None, tab.0, Some(tab.1));
         }
         if let Some(tabs) = self.tabs {
@@ -117,30 +117,35 @@ impl State {
 }
 
 #[derive(Default)]
-pub struct DockArea{
-    tree: Tree
+pub struct DockArea {
+    tree: Tree,
 }
 
-impl DockArea{
-
-    pub fn from_tree(tree: Tree) -> Self{
+impl DockArea {
+    pub fn from_tree(tree: Tree) -> Self {
         Self { tree }
     }
-    pub fn from_tabs(tabs: Vec<Box<dyn Tab>>) -> Self{
-        Self { tree: Tree::new(tabs) }
+    pub fn from_tabs(tabs: Vec<Box<dyn Tab>>) -> Self {
+        Self {
+            tree: Tree::new(tabs),
+        }
     }
-    pub fn from_tab(tab: Box<dyn Tab>) -> Self{
-        Self { tree: Tree::new(vec![tab]) }
+    pub fn from_tab(tab: Box<dyn Tab>) -> Self {
+        Self {
+            tree: Tree::new(vec![tab]),
+        }
     }
-    pub fn new_empty() -> Self{
-        Self { tree: Tree::default() }
+    pub fn new_empty() -> Self {
+        Self {
+            tree: Tree::default(),
+        }
     }
 
-    pub fn is_empty(&self) -> bool{
+    pub fn is_empty(&self) -> bool {
         self.tree.is_empty()
     }
 
-    pub fn push_to_active_leaf(&mut self, tab: impl Tab + 'static){
+    pub fn push_to_active_leaf(&mut self, tab: impl Tab + 'static) {
         self.tree.push_to_focused_leaf(Box::new(tab))
     }
 
@@ -160,8 +165,8 @@ impl DockArea{
                 Stroke::new(margin.top, style.border_color),
             );
         }
-        
-        if tree.is_empty(){
+
+        if tree.is_empty() {
             ui.allocate_rect(rect, Sense::hover());
             return;
         }
@@ -182,7 +187,7 @@ impl DockArea{
 
         for tree_index in 0..tree.len() {
             let tree_index = NodeIndex(tree_index);
-            
+
             match &mut tree[tree_index] {
                 Node::None => (),
                 Node::Horizontal { fraction, rect } => {
@@ -190,7 +195,8 @@ impl DockArea{
 
                     let (left, separator, right) = style.hsplit(ui, fraction, rect);
 
-                    ui.painter().rect_filled(separator, Rounding::none(), style.separator_color);
+                    ui.painter()
+                        .rect_filled(separator, Rounding::none(), style.separator_color);
 
                     tree[tree_index.left()].set_rect(left);
                     tree[tree_index.right()].set_rect(right);
@@ -200,7 +206,8 @@ impl DockArea{
 
                     let (bottom, separator, top) = style.vsplit(ui, fraction, rect);
 
-                    ui.painter().rect_filled(separator, Rounding::none(), style.separator_color);
+                    ui.painter()
+                        .rect_filled(separator, Rounding::none(), style.separator_color);
 
                     tree[tree_index.left()].set_rect(bottom);
                     tree[tree_index.right()].set_rect(top);
@@ -240,7 +247,6 @@ impl DockArea{
                         ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
                         ui.horizontal(|ui| {
-                            
                             for (tab_index, tab) in tabs.iter_mut().enumerate() {
                                 let id = Id::new((tree_index, tab_index, "tab"));
                                 let is_being_dragged = ui.memory().is_being_dragged(id);
@@ -286,27 +292,31 @@ impl DockArea{
                                     }
                                     if state.drag_start.is_some() {
                                         if let Some(pos) = ui.input().pointer.hover_pos() {
-                                            if response.rect.contains(pos){
+                                            if response.rect.contains(pos) {
                                                 tab_hover_rect = Some((response.rect, tab_index));
                                             }
                                         }
                                     }
                                 } else {
-                                    let response =
-                                        style.tab_title(
-                                            ui, 
-                                            label,  
-                                            is_active && Some(tree_index) == focused, 
-                                            is_active, 
-                                            is_being_dragged, 
-                                            id);
-                                    
-                                    let sense = if response.1 { Sense::click() } else { Sense::click_and_drag() };
-                                    
-                                    if tab.force_close(){
+                                    let response = style.tab_title(
+                                        ui,
+                                        label,
+                                        is_active && Some(tree_index) == focused,
+                                        is_active,
+                                        is_being_dragged,
+                                        id,
+                                    );
+
+                                    let sense = if response.1 {
+                                        Sense::click()
+                                    } else {
+                                        Sense::click_and_drag()
+                                    };
+
+                                    if tab.force_close() {
                                         to_remove.push((tree_index, tab_index));
-                                    }else if response.2{
-                                        if tab.on_close(){
+                                    } else if response.2 {
+                                        if tab.on_close() {
                                             to_remove.push((tree_index, tab_index));
                                         }
                                     }
@@ -314,10 +324,10 @@ impl DockArea{
                                     if response.drag_started() {
                                         state.drag_start = response.hover_pos();
                                     }
-                                    
+
                                     if state.drag_start.is_some() {
                                         if let Some(pos) = ui.input().pointer.hover_pos() {
-                                            if response.rect.contains(pos){
+                                            if response.rect.contains(pos) {
                                                 tab_hover_rect = Some((response.rect, tab_index));
                                             }
                                         }
@@ -335,9 +345,9 @@ impl DockArea{
 
                         *viewport = rect;
 
-                        if ui.input().pointer.any_click(){
-                            if let Some(pos) = ui.input().pointer.hover_pos(){
-                                if rect.contains(pos){
+                        if ui.input().pointer.any_click() {
+                            if let Some(pos) = ui.input().pointer.hover_pos() {
+                                if rect.contains(pos) {
                                     new_focused = Some(tree_index);
                                 }
                             }
@@ -365,28 +375,28 @@ impl DockArea{
         }
         let mut emptied = 0;
         let mut last = (NodeIndex(usize::MAX), usize::MAX);
-        for remove in to_remove.iter().rev(){
-            if let Node::Leaf{ tabs, active, .. } = &mut tree[remove.0]{
+        for remove in to_remove.iter().rev() {
+            if let Node::Leaf { tabs, active, .. } = &mut tree[remove.0] {
                 tabs.remove(remove.1);
-                if remove.1 <= *active{
+                if remove.1 <= *active {
                     *active = active.checked_sub(1).unwrap_or(0);
                 }
-                if tabs.is_empty(){
+                if tabs.is_empty() {
                     emptied += 1;
                 }
-                if last.0 == remove.0{
+                if last.0 == remove.0 {
                     assert!(last.1 > remove.1)
                 }
                 last = *remove;
-            }else{
+            } else {
                 panic!();
             }
         }
-        for _ in 0..emptied{
+        for _ in 0..emptied {
             tree.remove_empty_leaf()
         }
-        
-        if let Some(focused) = new_focused{
+
+        if let Some(focused) = new_focused {
             tree.set_focused(focused);
         }
 
@@ -416,9 +426,9 @@ impl DockArea{
                     if let Some(target) = target {
                         tree.split(dst, target, 0.5, Node::leaf(tab));
                     } else {
-                        if let Some(index) = tap_pos{
+                        if let Some(index) = tap_pos {
                             tree[dst].insert_tab(index, tab);
-                        }else{
+                        } else {
                             tree[dst].append_tab(tab);
                         }
                         tree.set_focused(dst);

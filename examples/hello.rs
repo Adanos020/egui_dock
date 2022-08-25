@@ -3,7 +3,7 @@
 use eframe::{egui, NativeOptions};
 use egui::color_picker::{color_picker_color32, Alpha};
 use egui::{Color32, Id, LayerId, RichText, Slider, Ui};
-use egui_dock::{NodeIndex, Style, TabBuilder, Tree, DockArea};
+use egui_dock::{DockArea, NodeIndex, Style, TabBuilder, Tree};
 use std::cell::RefCell;
 use std::rc::Rc;
 
