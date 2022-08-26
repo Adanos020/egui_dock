@@ -32,10 +32,10 @@
 //! Then you can show the dock.
 //!
 //! ```rust
-//! # use egui_dock::DockArea;
+//! # use egui_dock::{DockArea, Style};
 //! # egui::__run_test_ui(|ui| {
 //! # let mut dock = DockArea::new_empty();
-//! let style = egui_dock::Style::default();
+//! let style = Style::default();
 //! let id = ui.id();
 //! dock.show(ui, id, &style);
 //! # });
