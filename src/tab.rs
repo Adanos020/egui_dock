@@ -19,14 +19,21 @@ pub trait Tab {
     fn ui(&mut self, ui: &mut egui::Ui);
     /// The title to be displayed
     fn title(&mut self) -> egui::WidgetText;
-    /// This is called when the close button is pressed
-    /// returning false will cancel closing the tab
+
+    /// This is called when the tabs close button is pressed
+    ///
+    /// Returns weather or not the tab should close immediately
+    ///
+    /// NOTE if returning false `ui` will still be called once more if this tab is active
     fn on_close(&mut self) -> bool {
         true
     }
-    /// This is called every frame
-    /// return true and the tab will close
-    /// using this to close the tab will NOT call the on_close function!
+
+    /// This is called every frame after `ui` is called (if the tab is active)
+    ///
+    /// Returns wether or not the tab should be forced to close
+    ///
+    /// In the event this function returns true the tab will be removed without calling `on_close`
     fn force_close(&mut self) -> bool {
         false
     }
@@ -119,16 +126,21 @@ impl TabBuilder {
         self
     }
 
-    /// Sets the function that runs when the close button is pressed
-    /// return true to close and false to block the close
+    /// Sets the function that is called when the close button is pressed
+    ///
+    /// If no function is set the default behavior is to always return true
+    ///
+    /// See [Tab](crate::tab::Tab) `on_close` for more detail
     pub fn on_close(mut self, on_close: impl FnMut() -> bool + 'static) -> Self {
         self.on_close = Some(Box::new(on_close));
         self
     }
 
-    /// Sets the function that checks if the tab should be closed every frame
-    /// return false to keep open and true to close the tab
-    /// returning true will NOT call the on_close function (if any)
+    /// Sets the function that is called every frame to determine if the tab should close
+    ///
+    /// If no function is set the default behavior is to always return false
+    ///
+    /// See [Tab](crate::tab::Tab) `force_close` for more detail
     pub fn force_close(mut self, force_close: impl FnMut() -> bool + 'static) -> Self {
         self.force_close = Some(Box::new(force_close));
         self

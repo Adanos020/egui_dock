@@ -511,23 +511,27 @@ impl Tree {
         panic!();
     }
 
-    ///Currently focused leaf
+    /// Currently focused leaf
     pub fn focused_leaf(&self) -> Option<NodeIndex> {
         self.focused_node
     }
 
-    ///Updates the focused leaf
-    pub fn set_focused(&mut self, node: NodeIndex) {
-        if let Some(Node::Leaf { .. }) = self.tree.get(node.0) {
-            self.focused_node = Some(node);
+    /// Sets the currently focused leaf to `node_index`
+    ///
+    /// If the node at `node_index` isn't `Node::Leaf`
+    pub fn set_focused(&mut self, node_index: NodeIndex) {
+        if let Some(Node::Leaf { .. }) = self.tree.get(node_index.0) {
+            self.focused_node = Some(node_index);
         } else {
             self.focused_node = None;
         }
     }
 
-    /// Pushes the new tab to the currently focused tab.
-    /// if there is none this function pushes the tab to the first leaf it finds
-    /// or if there isnt any creates one
+    /// Pushes `tab` to the currently focused leaf.
+    ///
+    /// If no leaf is focused it will be pushed to the first available leaf.
+    ///
+    /// If no leaf is available then a new leaf will be created.
     pub fn push_to_focused_leaf(&mut self, tab: Tab) {
         match self.focused_node {
             Some(node) => {

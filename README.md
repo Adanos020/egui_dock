@@ -14,11 +14,11 @@ This fork aims to provide documentation and further development if necessary.
 
 ## Usage
 
-First, construct the initial tree:
+First, construct the initial dock:
 
 ```rust
 use egui::{Color32, RichText, style::Margin};
-use egui_dock::{TabBuilder, Tree};
+use egui_dock::{TabBuilder, Tree, DockArea};
 
 let tab1 = TabBuilder::default()
     .title(RichText::new("Tab 1").color(Color32::BLUE))
@@ -34,15 +34,15 @@ let tab2 = TabBuilder::default()
     })
     .build();
 
-let mut tree = Tree::new(vec![tab1, tab2]);
+let mut dock = DockArea::from_tabs(vec![tab1, tab2]);
 ```
 
-Then, you can show the tree.
+Then, you can show the dock.
 
 ```rust
 let style = egui_dock::Style::default();
 let id = ui.id();
-egui_dock::show(&mut ui, id, &style, &mut tree);
+dock.show(ui, id, &style);
 ```
 
 ## Contribution

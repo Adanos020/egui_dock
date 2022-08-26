@@ -6,11 +6,11 @@
 //!
 //! ## Usage
 //!
-//! First, construct the initial tree:
+//! First, construct the initial tabs and dock
 //!
 //! ```rust
 //! use egui::{Color32, RichText, style::Margin};
-//! use egui_dock::{TabBuilder, Tree};
+//! use egui_dock::{TabBuilder, Tree, DockArea};
 //!
 //! let tab1 = TabBuilder::default()
 //!     .title(RichText::new("Tab 1").color(Color32::BLUE))
@@ -25,15 +25,16 @@
 //!         ui.label("Tab 2");
 //!     })
 //!     .build();
-//! let mut tree = Tree::new(vec![tab1, tab2]);
-//! let mut dock = Dock::from_tree(tree);
+//!
+//! let mut dock = DockArea::from_tabs(vec![tab1, tab2]);
 //! ```
 //!
-//! Then you can show the tree.
+//! Then you can show the dock.
 //!
 //! ```rust
+//! # use egui_dock::DockArea;
 //! # egui::__run_test_ui(|ui| {
-//! # let mut dock = egui_dock::DockArea::new_empty();
+//! # let mut dock = DockArea::new_empty();
 //! let style = egui_dock::Style::default();
 //! let id = ui.id();
 //! dock.show(ui, id, &style);
@@ -116,25 +117,35 @@ impl State {
     }
 }
 
+/// Stores the layout and position of all its tabs
+///
+/// Keeps track of the currently focused leaf and currently active tabs
 #[derive(Default)]
 pub struct DockArea {
     tree: Tree,
 }
 
 impl DockArea {
+    /// Creates dock from a pre existing tree
     pub fn from_tree(tree: Tree) -> Self {
         Self { tree }
     }
+
+    /// Creates a dock with a single leaf containing the provided tabs
     pub fn from_tabs(tabs: Vec<Box<dyn Tab>>) -> Self {
         Self {
             tree: Tree::new(tabs),
         }
     }
+
+    /// Creates a dock with a single leaf containing the provided tab
     pub fn from_tab(tab: Box<dyn Tab>) -> Self {
         Self {
             tree: Tree::new(vec![tab]),
         }
     }
+
+    /// Creates an empty dock
     pub fn new_empty() -> Self {
         Self {
             tree: Tree::default(),
@@ -145,6 +156,11 @@ impl DockArea {
         self.tree.is_empty()
     }
 
+    /// Pushes `tab` to the currently focused leaf.
+    ///
+    /// If no leaf is focused it will be pushed to the first available leaf.
+    ///
+    /// If no leaf is available then a new leaf will be created.
     pub fn push_to_active_leaf(&mut self, tab: impl Tab + 'static) {
         self.tree.push_to_focused_leaf(Box::new(tab))
     }
@@ -313,11 +329,12 @@ impl DockArea {
                                         Sense::click_and_drag()
                                     };
 
-                                    if tab.force_close() {
-                                        to_remove.push((tree_index, tab_index));
-                                    } else if response.2 {
+                                    if response.2 {
                                         if tab.on_close() {
                                             to_remove.push((tree_index, tab_index));
+                                        } else {
+                                            *active = tab_index;
+                                            new_focused = Some(tree_index);
                                         }
                                     }
                                     let response = ui.interact(response.0.rect, id, sense);
@@ -357,7 +374,9 @@ impl DockArea {
                             .rect_filled(rect, 0.0, style.tab_background_color);
 
                         let mut ui = ui.child_ui(rect, Default::default());
-                        tab.ui(&mut ui);
+                        ui.push_id(tree_index, |ui| {
+                            tab.ui(ui);
+                        });
                     }
 
                     let is_being_dragged = ui.memory().is_anything_being_dragged();
@@ -370,9 +389,16 @@ impl DockArea {
                             pointer,
                         });
                     }
+
+                    for (tab_index, tab) in tabs.iter_mut().enumerate() {
+                        if tab.force_close() {
+                            to_remove.push((tree_index, tab_index));
+                        }
+                    }
                 }
             }
         }
+
         let mut emptied = 0;
         let mut last = (NodeIndex(usize::MAX), usize::MAX);
         for remove in to_remove.iter().rev() {

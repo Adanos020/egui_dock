@@ -53,7 +53,7 @@ impl Default for MyApp {
 
         let mut tree = Tree::new(vec![tab1, tab2]);
 
-        // You can modify the tree in runtime
+        // You can modify the tree before constructing the dock
         let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![tab3]);
         let [_, _] = tree.split_below(a, 0.7, vec![tab4]);
         let [_, _] = tree.split_below(b, 0.5, vec![tab5]);

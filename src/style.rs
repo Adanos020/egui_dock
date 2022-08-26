@@ -131,8 +131,6 @@ impl Style {
             .allocate_rect(separator, Sense::click_and_drag())
             .on_hover_cursor(CursorIcon::ResizeVertical);
 
-        //ui.painter().line_segment([response.rect.center_top(), response.rect.center_bottom()], Stroke::new(self.separator_width, self.separator_color));
-
         {
             let delta = response.drag_delta().y;
             let range = rect.max.y - rect.min.y;
@@ -349,6 +347,37 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn with_tab_background_color(mut self, tab_background: Color32) -> Self {
         self.style.tab_background_color = tab_background;
+        self
+    }
+
+    /// Sets `close_tab_color` for the close tab button color.
+    #[inline(always)]
+    pub fn with_close_tab_color(mut self, close_tab_color: Color32) -> Self {
+        self.style.close_tab_color = close_tab_color;
+        self
+    }
+
+    /// Sets `close_tab_active_color` for the active close tab button color.
+    #[inline(always)]
+    pub fn with_close_tab_active_color_color(mut self, close_tab_active_color: Color32) -> Self {
+        self.style.close_tab_active_color = close_tab_active_color;
+        self
+    }
+
+    /// Sets `close_tab_background_color` for the background close tab button color.
+    #[inline(always)]
+    pub fn with_close_tab_background_color_color(
+        mut self,
+        close_tab_background_color: Color32,
+    ) -> Self {
+        self.style.close_tab_background_color = close_tab_background_color;
+        self
+    }
+
+    /// Shows / Hides the tab close buttons.
+    #[inline(always)]
+    pub fn show_close_buttons(mut self, show_close_buttons: bool) -> Self {
+        self.style.show_close_buttons = show_close_buttons;
         self
     }
 
