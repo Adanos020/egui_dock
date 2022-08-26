@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 use egui::{Id, LayerId, Ui};
-use egui_dock::{NodeIndex, Style, TabBuilder, Tree};
+use egui_dock::{DockArea, NodeIndex, Style, TabBuilder, Tree};
 
 fn main() {
     let options = NativeOptions::default();
@@ -15,7 +15,7 @@ fn main() {
 
 struct MyApp {
     style: Style,
-    tree: Tree,
+    dock: DockArea,
 }
 
 impl Default for MyApp {
@@ -53,14 +53,14 @@ impl Default for MyApp {
 
         let mut tree = Tree::new(vec![tab1, tab2]);
 
-        // You can modify the tree in runtime
+        // You can modify the tree before constructing the dock
         let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![tab3]);
         let [_, _] = tree.split_below(a, 0.7, vec![tab4]);
         let [_, _] = tree.split_below(b, 0.5, vec![tab5]);
 
         Self {
             style: Style::default(),
-            tree,
+            dock: DockArea::from_tree(tree),
         }
     }
 }
@@ -75,6 +75,6 @@ impl eframe::App for MyApp {
         let clip_rect = ctx.available_rect();
 
         let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
-        egui_dock::show(&mut ui, id, &self.style, &mut self.tree)
+        self.dock.show(&mut ui, id, &self.style)
     }
 }
