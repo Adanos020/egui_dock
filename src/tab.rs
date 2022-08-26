@@ -15,25 +15,26 @@ pub struct TabBuilder {
 
 /// Dockable tab that can be used in `Tree`s.
 pub trait Tab {
-    /// Actual tab content
-    fn ui(&mut self, ui: &mut egui::Ui);
-    /// The title to be displayed
-    fn title(&mut self) -> egui::WidgetText;
+    /// Actual tab content.
+    fn ui(&mut self, ui: &mut Ui);
 
-    /// This is called when the tabs close button is pressed
+    /// The title to be displayed.
+    fn title(&mut self) -> WidgetText;
+
+    /// This is called when the tabs close button is pressed.
     ///
-    /// Returns weather or not the tab should close immediately
+    /// Returns `true` if the tab should close immediately, `false` otherwise.
     ///
-    /// NOTE if returning false `ui` will still be called once more if this tab is active
+    /// NOTE if returning false `ui` will still be called once more if this tab is active.
     fn on_close(&mut self) -> bool {
         true
     }
 
-    /// This is called every frame after `ui` is called (if the tab is active)
+    /// This is called every frame after `ui` is called (if the tab is active).
     ///
-    /// Returns wether or not the tab should be forced to close
+    /// Returns `true` if the tab should be forced to close, `false` otherwise.
     ///
-    /// In the event this function returns true the tab will be removed without calling `on_close`
+    /// In the event this function returns true the tab will be removed without calling `on_close`.
     fn force_close(&mut self) -> bool {
         false
     }
@@ -48,11 +49,7 @@ pub struct BuiltTab {
 }
 
 impl Tab for BuiltTab {
-    fn title(&mut self) -> egui::WidgetText {
-        self.title.clone()
-    }
-
-    fn ui(&mut self, ui: &mut egui::Ui) {
+    fn ui(&mut self, ui: &mut Ui) {
         ScrollArea::both()
             .id_source(self.title.text().to_string() + " - egui_dock::Tab")
             .show(ui, |ui| {
@@ -64,6 +61,10 @@ impl Tab for BuiltTab {
                         (self.add_content)(ui);
                     });
             });
+    }
+
+    fn title(&mut self) -> WidgetText {
+        self.title.clone()
     }
 
     fn on_close(&mut self) -> bool {
@@ -126,9 +127,10 @@ impl TabBuilder {
         self
     }
 
-    /// Sets the function that is called when the close button is pressed
+    /// Sets the function that is called when the close button is pressed.
+    /// The function should return `true` if the tab should close immediately, `false` otherwise.
     ///
-    /// If no function is set the default behavior is to always return true
+    /// If no function is set the default behavior is to always return true.
     ///
     /// See [Tab](crate::tab::Tab) `on_close` for more detail
     pub fn on_close(mut self, on_close: impl FnMut() -> bool + 'static) -> Self {
@@ -136,9 +138,10 @@ impl TabBuilder {
         self
     }
 
-    /// Sets the function that is called every frame to determine if the tab should close
+    /// Sets the function that is called every frame to determine if the tab should close.
+    /// The function should return `true` if the tab should be forced to close, `false` otherwise.
     ///
-    /// If no function is set the default behavior is to always return false
+    /// If no function is set the default behavior is to always return false.
     ///
     /// See [Tab](crate::tab::Tab) `force_close` for more detail
     pub fn force_close(mut self, force_close: impl FnMut() -> bool + 'static) -> Self {

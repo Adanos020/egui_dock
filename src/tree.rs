@@ -490,7 +490,7 @@ impl Tree {
         }
     }
 
-    /// Push a tab to the first leaf it finds or creates a leaf if an empty spot is encountered
+    /// Push a tab to the first leaf it finds or creates a leaf if an empty spot is encountered.
     pub fn push_to_first_leaf(&mut self, tab: Tab) {
         for (index, node) in &mut self.tree.iter_mut().enumerate() {
             match node {
@@ -511,14 +511,12 @@ impl Tree {
         panic!();
     }
 
-    /// Currently focused leaf
+    /// Currently focused leaf.
     pub fn focused_leaf(&self) -> Option<NodeIndex> {
         self.focused_node
     }
 
-    /// Sets the currently focused leaf to `node_index`
-    ///
-    /// If the node at `node_index` isn't `Node::Leaf`
+    /// Sets the currently focused leaf to `node_index` if the node at `node_index` isn't `Node::Leaf`.
     pub fn set_focused(&mut self, node_index: NodeIndex) {
         if let Some(Node::Leaf { .. }) = self.tree.get(node_index.0) {
             self.focused_node = Some(node_index);

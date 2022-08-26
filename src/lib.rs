@@ -197,7 +197,6 @@ impl DockArea {
 
         let focused = tree.focused_leaf();
 
-        //let mut removed = false;
         let mut to_remove = Vec::new();
         let mut new_focused = None;
 
