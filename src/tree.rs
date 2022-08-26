@@ -444,7 +444,7 @@ impl Tree {
                     self.focused_node = Some(next);
                     break;
                 }
-                if let Some(node) = first_leaf(&self, next) {
+                if let Some(node) = first_leaf(self, next) {
                     self.focused_node = Some(node);
                     break;
                 }
