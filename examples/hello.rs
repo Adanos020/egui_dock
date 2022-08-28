@@ -1,11 +1,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use eframe::{egui, NativeOptions};
-use egui::color_picker::{color_picker_color32, Alpha};
-use egui::{Color32, Id, LayerId, RichText, Slider, Ui};
-use egui_dock::{DockArea, NodeIndex, Style, TabBuilder, Tree};
 use std::cell::RefCell;
 use std::rc::Rc;
+
+use eframe::{egui, NativeOptions};
+use egui::color_picker::{color_picker_color32, Alpha};
+use egui::{Color32, RichText, Slider};
+
+use egui_dock::{DockArea, NodeIndex, Style, TabBuilder, Tree};
 
 fn main() {
     let options = NativeOptions::default();
@@ -25,7 +27,7 @@ struct MyContext {
 struct MyApp {
     _context: Rc<RefCell<MyContext>>,
     style: Rc<RefCell<Style>>,
-    dock: DockArea,
+    tree: Tree,
 }
 
 impl Default for MyApp {
@@ -171,21 +173,14 @@ impl Default for MyApp {
         Self {
             style,
             _context: context,
-            dock: DockArea::from_tree(tree),
+            tree,
         }
     }
 }
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let style = self.style.borrow().clone();
-
-        let id = Id::new("some hashable string");
-        let layer_id = LayerId::background();
-        let max_rect = ctx.available_rect();
-        let clip_rect = ctx.available_rect();
-
-        let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
-        self.dock.show(&mut ui, id, &style)
+        let style = { self.style.borrow().clone() };
+        DockArea::new(&mut self.tree).style(style).show(ctx);
     }
 }

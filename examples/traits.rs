@@ -2,10 +2,11 @@
 
 use eframe::{egui, NativeOptions};
 use egui::{
-    style::Margin, text::LayoutJob, Align, Color32, FontId, Frame, Id, LayerId, TextFormat, Ui,
+    style::Margin, text::LayoutJob, Align, Color32, FontId, Frame, TextFormat, TopBottomPanel, Ui,
     Window,
 };
-use egui_dock::{DockArea, NodeIndex, Style, Tab, TabBuilder, Tree};
+
+use egui_dock::{DockArea, NodeIndex, Tab, TabBuilder, Tree};
 
 fn main() {
     let options = NativeOptions::default();
@@ -17,8 +18,7 @@ fn main() {
 }
 
 struct MyApp {
-    style: Style,
-    dock: DockArea,
+    tree: Tree,
 }
 
 impl Default for MyApp {
@@ -57,33 +57,21 @@ impl Default for MyApp {
         let [_, _] = tree.split_below(a, 0.7, vec![tab4]);
         let [_, _] = tree.split_below(b, 0.5, vec![tab5]);
 
-        Self {
-            style: Style::default(),
-            dock: DockArea::from_tree(tree),
-        }
+        Self { tree }
     }
 }
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.style = Style::from_egui(ctx.style().as_ref());
-
-        let id = Id::new("some hashable string");
-        let layer_id = LayerId::background();
-        let max_rect = ctx.available_rect();
-        let clip_rect = ctx.available_rect();
-
-        let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
-        Frame::none()
-            .inner_margin(Margin::same(2.0))
-            .show(&mut ui, |ui| {
+        TopBottomPanel::top("top")
+            .frame(Frame::none().inner_margin(Margin::same(2.0)))
+            .show(ctx, |ui| {
                 if ui.button("Add Editor").clicked() {
-                    self.dock
-                        .push_to_active_leaf(Editor::new("New Text".into()));
+                    self.tree
+                        .push_to_focused_leaf(Box::new(Editor::new("New Text".into())));
                 }
             });
-        ui.separator();
-        Frame::none().show(&mut ui, |ui| self.dock.show(ui, id, &self.style));
+        DockArea::new(&mut self.tree).show(ctx);
     }
 }
 
@@ -113,7 +101,7 @@ impl Editor {
 }
 
 impl Tab for Editor {
-    fn ui(&mut self, ui: &mut egui::Ui) {
+    fn ui(&mut self, ui: &mut Ui) {
         if self.show_save {
             Window::new("Save")
                 .collapsible(false)
@@ -184,12 +172,12 @@ impl Tab for Editor {
         }
     }
 
-    fn force_close(&mut self) -> bool {
-        self.exit
-    }
-
     fn on_close(&mut self) -> bool {
         self.show_save = true;
         self.exit || !self.modified
+    }
+
+    fn force_close(&mut self) -> bool {
+        self.exit
     }
 }
