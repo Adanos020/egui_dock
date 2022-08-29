@@ -5,7 +5,7 @@
 - It is now possible to close tabs with a close button that can be shown/hidden through `Style`
 - When dragging tabs onto the tab bar if the tab will be inserted a highlighted region will show where the tab will end up if dropped.
 - The dock will keep track of the currently focused leaf.
-- Using `push_to_active_leaf` will push the given tab to the currently active leaf.
+- Using `Tree::push_to_focused_leaf` will push the given tab to the currently active leaf.
 - `StyleBuilder` for the `Style`
 - New fields in `Style:` `separator_color`, `border_color`, and `border_size` (last two for the cases when used `Margin`)
 - `TabBuilder` for the `BuiltTab`
@@ -21,7 +21,6 @@
 ## Breaking changes
 
 - Ui code of the dock has been moved into `DockArea` and is displayed with `DockArea::show`
-- `Tree` cannot be directly accessed through `DockArea`
 - Renamed `Style::border_size` to `Style::border_width`
 - Renamed `Style::separator_size` to `Style::separator_width`
 - Removed `Style::tab_text_color` as you can now set the tab text color of a tab by passing `RichText` for its title

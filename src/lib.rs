@@ -6,11 +6,11 @@
 //!
 //! ## Usage
 //!
-//! First, construct the initial tabs and dock
+//! First, construct the initial tree
 //!
 //! ```rust
 //! use egui::{Color32, RichText, style::Margin};
-//! use egui_dock::{TabBuilder, Tree, DockArea};
+//! use egui_dock::{TabBuilder, Tree, NodeIndex};
 //!
 //! let tab1 = TabBuilder::default()
 //!     .title(RichText::new("Tab 1").color(Color32::BLUE))
@@ -26,18 +26,18 @@
 //!     })
 //!     .build();
 //!
-//! let mut dock = DockArea::from_tabs(vec![tab1, tab2]);
+//! let mut tree = Tree::new(vec![tab1]);
+//!
+//! tree.split_left(NodeIndex::root(), 0.20, vec![tab2]);
 //! ```
 //!
-//! Then you can show the dock.
+//! Then, you can show the dock.
 //!
 //! ```rust
-//! # use egui_dock::{DockArea, Style};
-//! # egui::__run_test_ui(|ui| {
-//! # let mut dock = DockArea::new_empty();
-//! let style = Style::default();
-//! let id = ui.id();
-//! dock.show(ui, id, &style);
+//! # use egui_dock::{DockArea, Tree};
+//! # egui::__run_test_ctx(|ctx| {
+//! # let mut tree = Tree::new(vec![]);
+//! DockArea::new(&mut tree).show(ctx);
 //! # });
 //! ```
 
@@ -120,55 +120,50 @@ impl State {
 /// Stores the layout and position of all its tabs
 ///
 /// Keeps track of the currently focused leaf and currently active tabs
-#[derive(Default)]
-pub struct DockArea {
-    tree: Tree,
+pub struct DockArea<'tree> {
+    id: Id,
+    tree: &'tree mut Tree,
+    style: Option<Style>,
 }
 
-impl DockArea {
-    /// Creates dock from a pre existing tree
-    pub fn from_tree(tree: Tree) -> Self {
-        Self { tree }
-    }
-
-    /// Creates a dock with a single leaf containing the provided tabs
-    pub fn from_tabs(tabs: Vec<Box<dyn Tab>>) -> Self {
+impl<'tree> DockArea<'tree> {
+    pub fn new(tree: &'tree mut Tree) -> DockArea<'tree> {
         Self {
-            tree: Tree::new(tabs),
+            id: Id::new("egui_dock::DockArea"),
+            tree,
+            style: None,
         }
     }
 
-    /// Creates a dock with a single leaf containing the provided tab
-    pub fn from_tab(tab: Box<dyn Tab>) -> Self {
-        Self {
-            tree: Tree::new(vec![tab]),
-        }
+    /// Sets the [DockArea] id. Useful if you have more than one [DockArea].
+    pub fn id(mut self, id: Id) -> Self {
+        self.id = id;
+        self
     }
 
-    /// Creates an empty dock
-    pub fn new_empty() -> Self {
-        Self {
-            tree: Tree::default(),
-        }
+    /// Sets the dock area style.
+    pub fn style(mut self, style: Style) -> Self {
+        self.style = Some(style);
+        self
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.tree.is_empty()
-    }
+    /// Shows the docking area.
+    pub fn show(self, ctx: &Context) {
+        let layer_id = LayerId::background();
+        let max_rect = ctx.available_rect();
+        let clip_rect = ctx.available_rect();
 
-    /// Pushes `tab` to the currently focused leaf.
-    ///
-    /// If no leaf is focused it will be pushed to the first available leaf.
-    ///
-    /// If no leaf is available then a new leaf will be created.
-    pub fn push_to_active_leaf(&mut self, tab: impl Tab + 'static) {
-        self.tree.push_to_focused_leaf(Box::new(tab))
+        let mut ui = Ui::new(ctx.clone(), layer_id, self.id, max_rect, clip_rect);
+        self.show_inside(&mut ui);
     }
 
     /// Shows the docking hierarchy inside a `Ui`.
-    pub fn show(&mut self, ui: &mut Ui, id: Id, style: &Style) {
-        let tree = &mut self.tree;
-        let mut state = State::load(ui.ctx(), id);
+    pub fn show_inside(self, ui: &mut Ui) {
+        let style = self
+            .style
+            .unwrap_or_else(|| Style::from_egui(ui.style().as_ref()));
+
+        let mut state = State::load(ui.ctx(), self.id);
         let mut rect = ui.max_rect();
 
         if let Some(margin) = style.padding {
@@ -182,12 +177,12 @@ impl DockArea {
             );
         }
 
-        if tree.is_empty() {
+        if self.tree.is_empty() {
             ui.allocate_rect(rect, Sense::hover());
             return;
         }
 
-        tree[NodeIndex::root()].set_rect(rect);
+        self.tree[NodeIndex::root()].set_rect(rect);
 
         let mut drag_data = None;
         let mut hover_data = None;
@@ -195,15 +190,15 @@ impl DockArea {
         let pixels_per_point = ui.ctx().pixels_per_point();
         let px = pixels_per_point.recip();
 
-        let focused = tree.focused_leaf();
+        let focused = self.tree.focused_leaf();
 
         let mut to_remove = Vec::new();
         let mut new_focused = None;
 
-        for tree_index in 0..tree.len() {
+        for tree_index in 0..self.tree.len() {
             let tree_index = NodeIndex(tree_index);
 
-            match &mut tree[tree_index] {
+            match &mut self.tree[tree_index] {
                 Node::None => (),
                 Node::Horizontal { fraction, rect } => {
                     let rect = expand_to_pixel(*rect, pixels_per_point);
@@ -213,8 +208,8 @@ impl DockArea {
                     ui.painter()
                         .rect_filled(separator, Rounding::none(), style.separator_color);
 
-                    tree[tree_index.left()].set_rect(left);
-                    tree[tree_index.right()].set_rect(right);
+                    self.tree[tree_index.left()].set_rect(left);
+                    self.tree[tree_index.right()].set_rect(right);
                 }
                 Node::Vertical { fraction, rect } => {
                     let rect = expand_to_pixel(*rect, pixels_per_point);
@@ -224,8 +219,8 @@ impl DockArea {
                     ui.painter()
                         .rect_filled(separator, Rounding::none(), style.separator_color);
 
-                    tree[tree_index.left()].set_rect(bottom);
-                    tree[tree_index.right()].set_rect(top);
+                    self.tree[tree_index.left()].set_rect(bottom);
+                    self.tree[tree_index.right()].set_rect(top);
                 }
                 Node::Leaf {
                     rect,
@@ -401,7 +396,7 @@ impl DockArea {
         let mut emptied = 0;
         let mut last = (NodeIndex(usize::MAX), usize::MAX);
         for remove in to_remove.iter().rev() {
-            if let Node::Leaf { tabs, active, .. } = &mut tree[remove.0] {
+            if let Node::Leaf { tabs, active, .. } = &mut self.tree[remove.0] {
                 tabs.remove(remove.1);
                 if remove.1 <= *active {
                     *active = active.checked_sub(1).unwrap_or(0);
@@ -418,49 +413,49 @@ impl DockArea {
             }
         }
         for _ in 0..emptied {
-            tree.remove_empty_leaf()
+            self.tree.remove_empty_leaf()
         }
 
         if let Some(focused) = new_focused {
-            tree.set_focused(focused);
+            self.tree.set_focused(focused);
         }
 
         if let (Some((src, tab_index)), Some(hover)) = (drag_data, hover_data) {
             let dst = hover.dst;
 
-            if tree[src].is_leaf() && tree[dst].is_leaf() {
+            if self.tree[src].is_leaf() && self.tree[dst].is_leaf() {
                 let (target, helper, tap_pos) = hover.resolve();
 
                 let id = Id::new("helper");
                 let layer_id = LayerId::new(Order::Foreground, id);
                 let painter = ui.ctx().layer_painter(layer_id);
 
-                if src != dst || tree[dst].tabs_count() > 1 {
+                if src != dst || self.tree[dst].tabs_count() > 1 {
                     painter.rect_filled(helper, 0.0, style.selection_color);
                 }
 
                 if ui.input().pointer.any_released() {
-                    if let Node::Leaf { active, .. } = &mut tree[src] {
+                    if let Node::Leaf { active, .. } = &mut self.tree[src] {
                         if *active >= tab_index {
                             *active = active.saturating_sub(1);
                         }
                     }
 
-                    let tab = tree[src].remove_tab(tab_index).unwrap();
+                    let tab = self.tree[src].remove_tab(tab_index).unwrap();
 
                     if let Some(target) = target {
-                        tree.split(dst, target, 0.5, Node::leaf(tab));
+                        self.tree.split(dst, target, 0.5, Node::leaf(tab));
                     } else {
                         if let Some(index) = tap_pos {
-                            tree[dst].insert_tab(index, tab);
+                            self.tree[dst].insert_tab(index, tab);
                         } else {
-                            tree[dst].append_tab(tab);
+                            self.tree[dst].append_tab(tab);
                         }
-                        tree.set_focused(dst);
+                        self.tree.set_focused(dst);
                     }
 
-                    tree.remove_empty_leaf();
-                    for node in &mut tree.iter_mut() {
+                    self.tree.remove_empty_leaf();
+                    for node in self.tree.iter_mut() {
                         if let Node::Leaf { tabs, active, .. } = node {
                             if *active >= tabs.len() {
                                 *active = 0;
@@ -471,6 +466,6 @@ impl DockArea {
             }
         }
 
-        state.store(ui.ctx(), id);
+        state.store(ui.ctx(), self.id);
     }
 }

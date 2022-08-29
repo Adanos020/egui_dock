@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use eframe::{egui, NativeOptions};
-use egui::{Id, LayerId, Ui};
+
 use egui_dock::{DockArea, NodeIndex, Style, TabBuilder, Tree};
 
 fn main() {
@@ -14,8 +14,7 @@ fn main() {
 }
 
 struct MyApp {
-    style: Style,
-    dock: DockArea,
+    tree: Tree,
 }
 
 impl Default for MyApp {
@@ -58,23 +57,14 @@ impl Default for MyApp {
         let [_, _] = tree.split_below(a, 0.7, vec![tab4]);
         let [_, _] = tree.split_below(b, 0.5, vec![tab5]);
 
-        Self {
-            style: Style::default(),
-            dock: DockArea::from_tree(tree),
-        }
+        Self { tree }
     }
 }
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.style = Style::from_egui(ctx.style().as_ref());
-
-        let id = Id::new("some hashable string");
-        let layer_id = LayerId::background();
-        let max_rect = ctx.available_rect();
-        let clip_rect = ctx.available_rect();
-
-        let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
-        self.dock.show(&mut ui, id, &self.style)
+        DockArea::new(&mut self.tree)
+            .style(Style::from_egui(ctx.style().as_ref()))
+            .show(ctx);
     }
 }
