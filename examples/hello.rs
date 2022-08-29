@@ -180,7 +180,7 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let style = { self.style.borrow().clone() };
+        let style = self.style.borrow().clone();
         DockArea::new(&mut self.tree).style(style).show(ctx);
     }
 }

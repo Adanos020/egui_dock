@@ -14,7 +14,7 @@ This fork aims to provide documentation and further development if necessary.
 
 ## Usage
 
-First, construct the initial tree :
+First, construct the initial tree:
 
 ```rust
 use egui::{Color32, RichText, style::Margin};
