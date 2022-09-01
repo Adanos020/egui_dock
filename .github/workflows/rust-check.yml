@@ -8,6 +8,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+  RUSTDOCFLAGS: -D warnings
 
 jobs:
   windows:
@@ -59,6 +61,24 @@ jobs:
       - name: rustfmt
         run: cargo fmt -- --check
         continue-on-error: false
+
+      - name: Test doc-tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc --all-features
+
+      - name: cargo doc --lib
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --lib --no-deps --all-features
+
+      - name: cargo doc --document-private-items
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --document-private-items --no-deps --all-features
 
       - name: miri
         run: |
