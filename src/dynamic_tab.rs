@@ -132,7 +132,7 @@ impl TabBuilder {
     ///
     /// If no function is set the default behavior is to always return true.
     ///
-    /// See [Tab](crate::tab::Tab) `on_close` for more detail
+    /// See [`Tab::on_close`] for more detail
     pub fn on_close(mut self, on_close: impl FnMut() -> bool + 'static) -> Self {
         self.on_close = Some(Box::new(on_close));
         self
@@ -143,7 +143,7 @@ impl TabBuilder {
     ///
     /// If no function is set the default behavior is to always return false.
     ///
-    /// See [Tab](crate::tab::Tab) `force_close` for more detail
+    /// See [`Tab::force_close`] for more detail
     pub fn force_close(mut self, force_close: impl FnMut() -> bool + 'static) -> Self {
         self.force_close = Some(Box::new(force_close));
         self
@@ -152,10 +152,10 @@ impl TabBuilder {
 
 // ----------------------------------------------------------------------------
 
-/// A type-def for when using [`DyanicTab`] or [`TabBuilder`].
+/// A type-def for when using [`Tab`] or [`TabBuilder`].
 pub type DynamicTree = crate::Tree<Box<dyn Tab>>;
 
-/// For use with [`DockArea::show`] when using [`DynamicTree`].
+/// For use with [`crate::DockArea::show`] when using [`DynamicTree`].
 #[derive(Default)]
 pub struct DynamicTabViewer {}
 

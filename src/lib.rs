@@ -6,38 +6,56 @@
 //!
 //! ## Usage
 //!
-//! First, construct the initial tree
+//! The library is centered around the [`Tree`].
+//! It stores the layout of [`Node`]s which contains tabs.
+//!
+//! [`Tree`] is generic (`Tree<Tab>`) so you can use any data to represent a tab.
+//! You show the tabs using [`DockArea`] and specify how they are shown
+//! by implementing [`TabViewer`].
 //!
 //! ```rust
-//! use egui::{Color32, RichText, style::Margin};
-//! use egui_dock::{TabBuilder, Tree, NodeIndex};
+//! use egui_dock::{NodeIndex, Tree};
 //!
-//! let tab1 = TabBuilder::default()
-//!     .title(RichText::new("Tab 1").color(Color32::BLUE))
-//!     .content(|ui| {
-//!         ui.label("Tab 1");
-//!     })
-//!     .build();
-//! let tab2 = TabBuilder::default()
-//!     .title("Tab 2")
-//!     .inner_margin(Margin::same(4.0))
-//!     .content(|ui| {
-//!         ui.label("Tab 2");
-//!     })
-//!     .build();
+//! struct MyTabs {
+//!     tree: Tree<String>
+//! }
 //!
-//! let mut tree = Tree::new(vec![tab1]);
+//! impl MyTabs {
+//!     pub fn new() -> Self {
+//!         let tab1 = "tab1".to_string();
+//!         let tab2 = "tab2".to_string();
 //!
-//! tree.split_left(NodeIndex::root(), 0.20, vec![tab2]);
-//! ```
+//!         let mut tree = Tree::new(vec![tab1]);
+//!         tree.split_left(NodeIndex::root(), 0.20, vec![tab2]);
 //!
-//! Then, you can show the dock.
+//!         Self { tree }
+//!     }
 //!
-//! ```rust
-//! # use egui_dock::{DockArea, Tree};
+//!     fn ui(&mut self, ui: &mut egui::Ui) {
+//!         let style = egui_dock::Style::from_egui(ui.style().as_ref());
+//!         egui_dock::DockArea::new(&mut self.tree)
+//!             .style(style)
+//!             .show_inside(ui, &mut TabViewer {});
+//!     }
+//! }
+//!
+//! struct TabViewer {}
+//!
+//! impl egui_dock::TabViewer for TabViewer {
+//!     type Tab = String;
+//!
+//!     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+//!         ui.label(format!("Content of {tab}"));
+//!     }
+//!
+//!     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
+//!         (&*tab).into()
+//!     }
+//! }
+//!
+//! # let mut my_tabs = MyTabs::new();
 //! # egui::__run_test_ctx(|ctx| {
-//! # let mut tree = Tree::new(vec![]);
-//! DockArea::new(&mut tree).show(ctx);
+//! #     egui::CentralPanel::default().show(ctx, |ui| my_tabs.ui(ui));
 //! # });
 //! ```
 
