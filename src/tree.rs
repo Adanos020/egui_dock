@@ -224,10 +224,18 @@ pub enum Split {
 // ----------------------------------------------------------------------------
 
 /// Binary tree representing the relationships between `Node`s.
-#[derive(Default)]
 pub struct Tree<Tab> {
     tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
+}
+
+impl<Tab> Default for Tree<Tab> {
+    fn default() -> Self {
+        Self {
+            tree: Default::default(),
+            focused_node: Default::default(),
+        }
+    }
 }
 
 impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
