@@ -71,7 +71,7 @@ impl eframe::App for MyApp {
                         .push_to_focused_leaf(Box::new(Editor::new("New Text".into())));
                 }
             });
-        DockArea::new(&mut self.tree).show(ctx, &mut egui_dock::TabViewer {});
+        DockArea::new(&mut self.tree).show(ctx, &mut egui_dock::DynamicTabViewer {});
     }
 }
 

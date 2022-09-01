@@ -183,6 +183,6 @@ impl eframe::App for MyApp {
         let style = self.style.borrow().clone();
         DockArea::new(&mut self.tree)
             .style(style)
-            .show(ctx, &mut egui_dock::TabViewer {});
+            .show(ctx, &mut egui_dock::DynamicTabViewer {});
     }
 }

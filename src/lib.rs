@@ -47,7 +47,7 @@ pub use style::{Style, StyleBuilder};
 use tree::TabIndex;
 use utils::*;
 
-pub use self::dynamic_tab::{DynamicTree, Tab, TabBuilder, TabViewer};
+pub use self::dynamic_tab::{DynamicTabViewer, DynamicTree, Tab, TabBuilder};
 pub use self::tree::{Node, NodeIndex, Split, Tree};
 
 mod dynamic_tab;

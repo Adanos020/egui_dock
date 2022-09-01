@@ -157,9 +157,9 @@ pub type DynamicTree = crate::Tree<Box<dyn Tab>>;
 
 /// For use with [`DockArea::show`] when using [`DynamicTree`].
 #[derive(Default)]
-pub struct TabViewer {}
+pub struct DynamicTabViewer {}
 
-impl crate::TabViewer for TabViewer {
+impl crate::TabViewer for DynamicTabViewer {
     type Tab = Box<dyn Tab>;
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
