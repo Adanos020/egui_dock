@@ -47,13 +47,15 @@ pub use style::{Style, StyleBuilder};
 use tree::TabIndex;
 use utils::*;
 
-pub use self::tab::{TabBuilder, TabTrait};
+pub use self::dynamic_tab::{DynamicTree, Tab, TabBuilder, TabViewer};
 pub use self::tree::{Node, NodeIndex, Split, Tree};
 
+mod dynamic_tab;
 mod style;
-mod tab;
 mod tree;
 mod utils;
+
+// ----------------------------------------------------------------------------
 
 struct HoverData {
     rect: Rect,
@@ -120,6 +122,7 @@ impl State {
 
 // ----------------------------------------------------------------------------
 
+/// How we view a tab when its in a [`Tree`].
 pub trait TabViewer {
     type Tab;
 

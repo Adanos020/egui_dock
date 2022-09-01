@@ -6,7 +6,7 @@ use egui::{
     Window,
 };
 
-use egui_dock::{DockArea, NodeIndex, TabBuilder, TabTrait, Tree};
+use egui_dock::{DockArea, DynamicTree, NodeIndex, Tab, TabBuilder};
 
 fn main() {
     let options = NativeOptions::default();
@@ -18,7 +18,7 @@ fn main() {
 }
 
 struct MyApp {
-    tree: Tree,
+    tree: DynamicTree,
 }
 
 impl Default for MyApp {
@@ -50,7 +50,7 @@ impl Default for MyApp {
             })
             .build();
 
-        let mut tree = Tree::new(vec![tab1, tab2]);
+        let mut tree = DynamicTree::new(vec![tab1, tab2]);
 
         // You can modify the tree before constructing the dock
         let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![tab3]);
@@ -71,7 +71,7 @@ impl eframe::App for MyApp {
                         .push_to_focused_leaf(Box::new(Editor::new("New Text".into())));
                 }
             });
-        DockArea::new(&mut self.tree).show(ctx);
+        DockArea::new(&mut self.tree).show(ctx, &mut egui_dock::TabViewer {});
     }
 }
 
@@ -100,7 +100,7 @@ impl Editor {
     }
 }
 
-impl TabTrait for Editor {
+impl Tab for Editor {
     fn ui(&mut self, ui: &mut Ui) {
         if self.show_save {
             Window::new("Save")

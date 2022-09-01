@@ -13,8 +13,8 @@ pub struct TabBuilder {
     force_close: Option<ForceClose>,
 }
 
-/// Dockable tab that can be used in `Tree`s.
-pub trait TabTrait {
+/// Dockable tab that can be used in [`crate::Tree`]s.
+pub trait Tab {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui);
 
@@ -48,7 +48,7 @@ pub struct BuiltTab {
     force_close: Option<ForceClose>,
 }
 
-impl TabTrait for BuiltTab {
+impl Tab for BuiltTab {
     fn ui(&mut self, ui: &mut Ui) {
         ScrollArea::both()
             .id_source(self.title.text().to_string() + " - egui_dock::Tab")
@@ -99,7 +99,7 @@ impl TabBuilder {
     ///
     /// # Panics
     /// Panics if `title` or `add_contents` is unset.
-    pub fn build(self) -> Box<dyn TabTrait> {
+    pub fn build(self) -> Box<dyn Tab> {
         Box::new(BuiltTab {
             title: self.title.expect("Missing tab title"),
             inner_margin: self.inner_margin,
@@ -147,5 +147,34 @@ impl TabBuilder {
     pub fn force_close(mut self, force_close: impl FnMut() -> bool + 'static) -> Self {
         self.force_close = Some(Box::new(force_close));
         self
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+/// A type-def for when using [`DyanicTab`] or [`TabBuilder`].
+pub type DynamicTree = crate::Tree<Box<dyn Tab>>;
+
+/// For use with [`DockArea::show`] when using [`DynamicTree`].
+#[derive(Default)]
+pub struct TabViewer {}
+
+impl crate::TabViewer for TabViewer {
+    type Tab = Box<dyn Tab>;
+
+    fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
+        tab.ui(ui)
+    }
+
+    fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
+        tab.title()
+    }
+
+    fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
+        tab.on_close()
+    }
+
+    fn force_close(&mut self, tab: &mut Self::Tab) -> bool {
+        tab.force_close()
     }
 }
