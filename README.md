@@ -12,39 +12,6 @@ This fork aims to provide documentation and further development if necessary.
 
 ![demo](images/demo.gif "Demo")
 
-## Usage
-
-First, construct the initial tree:
-
-```rust
-use egui::{Color32, RichText, style::Margin};
-use egui_dock::{TabBuilder, Tree, NodeIndex};
-
-let tab1 = TabBuilder::default()
-    .title(RichText::new("Tab 1").color(Color32::BLUE))
-    .content(|ui| {
-        ui.label("Tab 1");
-    })
-    .build();
-let tab2 = TabBuilder::default()
-    .title("Tab 2")
-    .inner_margin(Margin::same(4.0))
-    .content(|ui| {
-        ui.label("Tab 2");
-    })
-    .build();
-
-let mut tree = Tree::new(vec![tab1]);
-
-tree.split_left(NodeIndex::root(), 0.20, vec![tab2]);
-```
-
-Then, you can show the dock.
-
-```rust
-DockArea::new(&mut tree).show(ctx);
-```
-
 ## Contribution
 
 Feel free to open issues and pull requests.
