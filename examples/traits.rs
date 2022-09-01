@@ -6,7 +6,7 @@ use egui::{
     Window,
 };
 
-use egui_dock::{DockArea, NodeIndex, Tab, TabBuilder, Tree};
+use egui_dock::{DockArea, NodeIndex, TabBuilder, TabTrait, Tree};
 
 fn main() {
     let options = NativeOptions::default();
@@ -100,7 +100,7 @@ impl Editor {
     }
 }
 
-impl Tab for Editor {
+impl TabTrait for Editor {
     fn ui(&mut self, ui: &mut Ui) {
         if self.show_save {
             Window::new("Save")

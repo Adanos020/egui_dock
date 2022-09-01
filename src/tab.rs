@@ -14,7 +14,7 @@ pub struct TabBuilder {
 }
 
 /// Dockable tab that can be used in `Tree`s.
-pub trait Tab {
+pub trait TabTrait {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui);
 
@@ -48,7 +48,7 @@ pub struct BuiltTab {
     force_close: Option<ForceClose>,
 }
 
-impl Tab for BuiltTab {
+impl TabTrait for BuiltTab {
     fn ui(&mut self, ui: &mut Ui) {
         ScrollArea::both()
             .id_source(self.title.text().to_string() + " - egui_dock::Tab")
@@ -99,7 +99,7 @@ impl TabBuilder {
     ///
     /// # Panics
     /// Panics if `title` or `add_contents` is unset.
-    pub fn build(self) -> Box<dyn Tab> {
+    pub fn build(self) -> Box<dyn TabTrait> {
         Box::new(BuiltTab {
             title: self.title.expect("Missing tab title"),
             inner_margin: self.inner_margin,

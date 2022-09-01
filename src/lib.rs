@@ -44,9 +44,10 @@
 use egui::*;
 
 pub use style::{Style, StyleBuilder};
+use tree::TabIndex;
 use utils::*;
 
-pub use self::tab::{Tab, TabBuilder};
+pub use self::tab::{TabBuilder, TabTrait};
 pub use self::tree::{Node, NodeIndex, Split, Tree};
 
 mod style;
@@ -57,13 +58,13 @@ mod utils;
 struct HoverData {
     rect: Rect,
     tabs: Option<Rect>,
-    tab: Option<(Rect, usize)>,
+    tab: Option<(Rect, TabIndex)>,
     dst: NodeIndex,
     pointer: Pos2,
 }
 
 impl HoverData {
-    fn resolve(&self) -> (Option<Split>, Rect, Option<usize>) {
+    fn resolve(&self) -> (Option<Split>, Rect, Option<TabIndex>) {
         if let Some(tab) = self.tab {
             return (None, tab.0, Some(tab.1));
         }
@@ -117,17 +118,49 @@ impl State {
     }
 }
 
+// ----------------------------------------------------------------------------
+
+pub trait TabViewer {
+    type Tab;
+
+    /// Actual tab content.
+    fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab);
+
+    /// The title to be displayed.
+    fn title(&mut self, tab: &mut Self::Tab) -> WidgetText;
+
+    /// This is called when the tabs close button is pressed.
+    ///
+    /// Returns `true` if the tab should close immediately, `false` otherwise.
+    ///
+    /// NOTE if returning false `ui` will still be called once more if this tab is active.
+    fn on_close(&mut self, _tab: &mut Self::Tab) -> bool {
+        true
+    }
+
+    /// This is called every frame after `ui` is called (if the tab is active).
+    ///
+    /// Returns `true` if the tab should be forced to close, `false` otherwise.
+    ///
+    /// In the event this function returns true the tab will be removed without calling `on_close`.
+    fn force_close(&mut self, _tab: &mut Self::Tab) -> bool {
+        false
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 /// Stores the layout and position of all its tabs
 ///
 /// Keeps track of the currently focused leaf and currently active tabs
-pub struct DockArea<'tree> {
+pub struct DockArea<'tree, Tab> {
     id: Id,
-    tree: &'tree mut Tree,
+    tree: &'tree mut Tree<Tab>,
     style: Option<Style>,
 }
 
-impl<'tree> DockArea<'tree> {
-    pub fn new(tree: &'tree mut Tree) -> DockArea<'tree> {
+impl<'tree, Tab> DockArea<'tree, Tab> {
+    pub fn new(tree: &'tree mut Tree<Tab>) -> DockArea<'tree, Tab> {
         Self {
             id: Id::new("egui_dock::DockArea"),
             tree,
@@ -148,17 +181,17 @@ impl<'tree> DockArea<'tree> {
     }
 
     /// Shows the docking area.
-    pub fn show(self, ctx: &Context) {
+    pub fn show(self, ctx: &Context, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         let layer_id = LayerId::background();
         let max_rect = ctx.available_rect();
         let clip_rect = ctx.available_rect();
 
         let mut ui = Ui::new(ctx.clone(), layer_id, self.id, max_rect, clip_rect);
-        self.show_inside(&mut ui);
+        self.show_inside(&mut ui, tab_viewer);
     }
 
     /// Shows the docking hierarchy inside a `Ui`.
-    pub fn show_inside(self, ui: &mut Ui) {
+    pub fn show_inside(self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         let style = self
             .style
             .unwrap_or_else(|| Style::from_egui(ui.style().as_ref()));
@@ -195,10 +228,10 @@ impl<'tree> DockArea<'tree> {
         let mut to_remove = Vec::new();
         let mut new_focused = None;
 
-        for tree_index in 0..self.tree.len() {
-            let tree_index = NodeIndex(tree_index);
+        for node_index in 0..self.tree.len() {
+            let node_index = NodeIndex(node_index);
 
-            match &mut self.tree[tree_index] {
+            match &mut self.tree[node_index] {
                 Node::None => (),
                 Node::Horizontal { fraction, rect } => {
                     let rect = expand_to_pixel(*rect, pixels_per_point);
@@ -208,8 +241,8 @@ impl<'tree> DockArea<'tree> {
                     ui.painter()
                         .rect_filled(separator, Rounding::none(), style.separator_color);
 
-                    self.tree[tree_index.left()].set_rect(left);
-                    self.tree[tree_index.right()].set_rect(right);
+                    self.tree[node_index.left()].set_rect(left);
+                    self.tree[node_index.right()].set_rect(right);
                 }
                 Node::Vertical { fraction, rect } => {
                     let rect = expand_to_pixel(*rect, pixels_per_point);
@@ -219,8 +252,8 @@ impl<'tree> DockArea<'tree> {
                     ui.painter()
                         .rect_filled(separator, Rounding::none(), style.separator_color);
 
-                    self.tree[tree_index.left()].set_rect(bottom);
-                    self.tree[tree_index.right()].set_rect(top);
+                    self.tree[node_index.left()].set_rect(bottom);
+                    self.tree[node_index.right()].set_rect(top);
                 }
                 Node::Leaf {
                     rect,
@@ -258,11 +291,12 @@ impl<'tree> DockArea<'tree> {
 
                         ui.horizontal(|ui| {
                             for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                                let id = Id::new((tree_index, tab_index, "tab"));
+                                let id = Id::new((node_index, tab_index, "tab"));
+                                let tab_index = TabIndex(tab_index);
                                 let is_being_dragged = ui.memory().is_being_dragged(id);
 
                                 let is_active = *active == tab_index || is_being_dragged;
-                                let label = tab.title();
+                                let label = tab_viewer.title(tab);
 
                                 if is_being_dragged {
                                     let layer_id = LayerId::new(Order::Tooltip, id);
@@ -272,7 +306,7 @@ impl<'tree> DockArea<'tree> {
                                                 ui,
                                                 label.clone(),
                                                 is_active,
-                                                is_active && Some(tree_index) == focused,
+                                                is_active && Some(node_index) == focused,
                                                 is_being_dragged,
                                                 id,
                                             )
@@ -292,13 +326,13 @@ impl<'tree> DockArea<'tree> {
                                         if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
                                             ui.ctx().translate_layer(layer_id, delta);
 
-                                            drag_data = Some((tree_index, tab_index));
+                                            drag_data = Some((node_index, tab_index));
                                         }
                                     }
 
                                     if response.clicked() {
                                         *active = tab_index;
-                                        new_focused = Some(tree_index);
+                                        new_focused = Some(node_index);
                                     }
                                     if state.drag_start.is_some() {
                                         if let Some(pos) = ui.input().pointer.hover_pos() {
@@ -311,7 +345,7 @@ impl<'tree> DockArea<'tree> {
                                     let response = style.tab_title(
                                         ui,
                                         label,
-                                        is_active && Some(tree_index) == focused,
+                                        is_active && Some(node_index) == focused,
                                         is_active,
                                         is_being_dragged,
                                         id,
@@ -324,11 +358,11 @@ impl<'tree> DockArea<'tree> {
                                     };
 
                                     if response.2 {
-                                        if tab.on_close() {
-                                            to_remove.push((tree_index, tab_index));
+                                        if tab_viewer.on_close(tab) {
+                                            to_remove.push((node_index, tab_index));
                                         } else {
                                             *active = tab_index;
-                                            new_focused = Some(tree_index);
+                                            new_focused = Some(node_index);
                                         }
                                     }
                                     let response = ui.interact(response.0.rect, id, sense);
@@ -349,7 +383,7 @@ impl<'tree> DockArea<'tree> {
                     });
 
                     // tab body
-                    if let Some(tab) = tabs.get_mut(*active) {
+                    if let Some(tab) = tabs.get_mut(active.0) {
                         let top_y = rect.min.y + height_topbar;
                         let rect = rect.intersect(Rect::everything_below(top_y));
                         let rect = expand_to_pixel(rect, pixels_per_point);
@@ -359,7 +393,7 @@ impl<'tree> DockArea<'tree> {
                         if ui.input().pointer.any_click() {
                             if let Some(pos) = ui.input().pointer.hover_pos() {
                                 if rect.contains(pos) {
-                                    new_focused = Some(tree_index);
+                                    new_focused = Some(node_index);
                                 }
                             }
                         }
@@ -368,8 +402,8 @@ impl<'tree> DockArea<'tree> {
                             .rect_filled(rect, 0.0, style.tab_background_color);
 
                         let mut ui = ui.child_ui(rect, Default::default());
-                        ui.push_id(tree_index, |ui| {
-                            tab.ui(ui);
+                        ui.push_id(node_index, |ui| {
+                            tab_viewer.ui(ui, tab);
                         });
                     }
 
@@ -377,7 +411,7 @@ impl<'tree> DockArea<'tree> {
                     if is_being_dragged && full_response.hovered() {
                         hover_data = ui.input().pointer.hover_pos().map(|pointer| HoverData {
                             rect,
-                            dst: tree_index,
+                            dst: node_index,
                             tabs: tabs_response.hovered().then_some(tabs_response.rect),
                             tab: tab_hover_rect,
                             pointer,
@@ -385,8 +419,8 @@ impl<'tree> DockArea<'tree> {
                     }
 
                     for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                        if tab.force_close() {
-                            to_remove.push((tree_index, tab_index));
+                        if tab_viewer.force_close(tab) {
+                            to_remove.push((node_index, TabIndex(tab_index)));
                         }
                     }
                 }
@@ -394,12 +428,12 @@ impl<'tree> DockArea<'tree> {
         }
 
         let mut emptied = 0;
-        let mut last = (NodeIndex(usize::MAX), usize::MAX);
+        let mut last = (NodeIndex(usize::MAX), TabIndex(usize::MAX));
         for remove in to_remove.iter().rev() {
             if let Node::Leaf { tabs, active, .. } = &mut self.tree[remove.0] {
-                tabs.remove(remove.1);
+                tabs.remove(remove.1 .0);
                 if remove.1 <= *active {
-                    *active = active.checked_sub(1).unwrap_or(0);
+                    active.0 = active.0.saturating_sub(1);
                 }
                 if tabs.is_empty() {
                     emptied += 1;
@@ -417,7 +451,7 @@ impl<'tree> DockArea<'tree> {
         }
 
         if let Some(focused) = new_focused {
-            self.tree.set_focused(focused);
+            self.tree.set_focused_node(focused);
         }
 
         if let (Some((src, tab_index)), Some(hover)) = (drag_data, hover_data) {
@@ -437,7 +471,7 @@ impl<'tree> DockArea<'tree> {
                 if ui.input().pointer.any_released() {
                     if let Node::Leaf { active, .. } = &mut self.tree[src] {
                         if *active >= tab_index {
-                            *active = active.saturating_sub(1);
+                            active.0 = active.0.saturating_sub(1);
                         }
                     }
 
@@ -451,14 +485,14 @@ impl<'tree> DockArea<'tree> {
                         } else {
                             self.tree[dst].append_tab(tab);
                         }
-                        self.tree.set_focused(dst);
+                        self.tree.set_focused_node(dst);
                     }
 
                     self.tree.remove_empty_leaf();
                     for node in self.tree.iter_mut() {
                         if let Node::Leaf { tabs, active, .. } = node {
-                            if *active >= tabs.len() {
-                                *active = 0;
+                            if active.0 >= tabs.len() {
+                                active.0 = 0;
                             }
                         }
                     }
