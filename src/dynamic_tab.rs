@@ -13,7 +13,7 @@ pub struct TabBuilder {
     force_close: Option<ForceClose>,
 }
 
-/// Dockable tab that can be used in `Tree`s.
+/// Dockable tab that can be used in [`crate::Tree`]s.
 pub trait Tab {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui);
@@ -132,7 +132,7 @@ impl TabBuilder {
     ///
     /// If no function is set the default behavior is to always return true.
     ///
-    /// See [Tab](crate::tab::Tab) `on_close` for more detail
+    /// See [`Tab::on_close`] for more detail
     pub fn on_close(mut self, on_close: impl FnMut() -> bool + 'static) -> Self {
         self.on_close = Some(Box::new(on_close));
         self
@@ -143,9 +143,38 @@ impl TabBuilder {
     ///
     /// If no function is set the default behavior is to always return false.
     ///
-    /// See [Tab](crate::tab::Tab) `force_close` for more detail
+    /// See [`Tab::force_close`] for more detail
     pub fn force_close(mut self, force_close: impl FnMut() -> bool + 'static) -> Self {
         self.force_close = Some(Box::new(force_close));
         self
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+/// A type-def for when using [`Tab`] or [`TabBuilder`].
+pub type DynamicTree = crate::Tree<Box<dyn Tab>>;
+
+/// For use with [`crate::DockArea::show`] when using [`DynamicTree`].
+#[derive(Default)]
+pub struct DynamicTabViewer {}
+
+impl crate::TabViewer for DynamicTabViewer {
+    type Tab = Box<dyn Tab>;
+
+    fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
+        tab.ui(ui)
+    }
+
+    fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
+        tab.title()
+    }
+
+    fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
+        tab.on_close()
+    }
+
+    fn force_close(&mut self, tab: &mut Self::Tab) -> bool {
+        tab.force_close()
     }
 }

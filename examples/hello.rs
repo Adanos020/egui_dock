@@ -7,7 +7,7 @@ use eframe::{egui, NativeOptions};
 use egui::color_picker::{color_picker_color32, Alpha};
 use egui::{Color32, RichText, Slider};
 
-use egui_dock::{DockArea, NodeIndex, Style, TabBuilder, Tree};
+use egui_dock::{DockArea, DynamicTree, NodeIndex, Style, TabBuilder};
 
 fn main() {
     let options = NativeOptions::default();
@@ -27,7 +27,7 @@ struct MyContext {
 struct MyApp {
     _context: Rc<RefCell<MyContext>>,
     style: Rc<RefCell<Style>>,
-    tree: Tree,
+    tree: DynamicTree,
 }
 
 impl Default for MyApp {
@@ -164,7 +164,7 @@ impl Default for MyApp {
             })
             .build();
 
-        let mut tree = Tree::new(vec![node_tree, style_editor]);
+        let mut tree = DynamicTree::new(vec![node_tree, style_editor]);
 
         let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![inspector]);
         let [_, _] = tree.split_below(a, 0.7, vec![files, assets]);
@@ -181,6 +181,8 @@ impl Default for MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let style = self.style.borrow().clone();
-        DockArea::new(&mut self.tree).style(style).show(ctx);
+        DockArea::new(&mut self.tree)
+            .style(style)
+            .show(ctx, &mut egui_dock::DynamicTabViewer {});
     }
 }
