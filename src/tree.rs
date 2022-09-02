@@ -623,6 +623,13 @@ impl<Tab> Tree<Tab>
 where
     Tab: PartialEq,
 {
+    /// Find the given tab.
+    ///
+    /// Returns which node the tab is in, and where in that node the tab is in.
+    ///
+    /// The returned [`NodeIndex`] will always point to a [`Node::Leaf`].
+    ///
+    /// In case there are several hits, only the first is returned.
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(NodeIndex, TabIndex)> {
         for (node_index, node) in self.tree.iter().enumerate() {
             if let Node::Leaf { tabs, .. } = node {
