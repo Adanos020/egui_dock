@@ -11,7 +11,8 @@
 - `TabBuilder` for the `BuiltTab`
 - Support for all implementations of `Into<WidgetText>` in tab titles
 - Style editor in the `hello` example
-- Added `Tree::find_tab`
+- Added `Tree::find_tab`, `TabViewer`, `DynamicTabViewer`, `DynamicTree`
+- Added a `text_editor` example
 
 ## Changed
 
