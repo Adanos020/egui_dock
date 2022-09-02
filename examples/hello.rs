@@ -3,8 +3,7 @@
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_picker_color32, Alpha},
-    style::Margin,
-    Frame, Id, LayerId, ScrollArea, Slider, Ui, WidgetText,
+    Id, LayerId, Slider, Ui, WidgetText,
 };
 
 use egui_dock::{DockArea, NodeIndex, Style, TabViewer, Tree};
@@ -33,19 +32,13 @@ impl TabViewer for MyContext {
     type Tab = String;
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
-        ScrollArea::both()
-            .id_source(tab.to_owned() + " - egui_dock::Tab")
-            .show(ui, |ui| {
-                Frame::none()
-                    .inner_margin(Margin::same(4.0))
-                    .show(ui, |ui| match tab.as_str() {
-                        "Simple Demo" => self.simple_demo(ui),
-                        "Style Editor" => self.style_editor(ui),
-                        _ => {
-                            ui.label(tab.as_str());
-                        }
-                    })
-            });
+        match tab.as_str() {
+            "Simple Demo" => self.simple_demo(ui),
+            "Style Editor" => self.style_editor(ui),
+            _ => {
+                ui.label(tab.as_str());
+            }
+        }
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {

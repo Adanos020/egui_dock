@@ -60,6 +60,7 @@
 //! ```
 
 use egui::*;
+use egui::style::Margin;
 
 pub use style::{Style, StyleBuilder};
 use tree::TabIndex;
@@ -166,6 +167,11 @@ pub trait TabViewer {
     /// In the event this function returns true the tab will be removed without calling `on_close`.
     fn force_close(&mut self, _tab: &mut Self::Tab) -> bool {
         false
+    }
+
+    /// Sets the margins between tab's borders and its contents.
+    fn inner_margin(&self) -> Margin {
+        Margin::same(4.0)
     }
 }
 
@@ -424,7 +430,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                         let mut ui = ui.child_ui(rect, Default::default());
                         ui.push_id(node_index, |ui| {
-                            tab_viewer.ui(ui, tab);
+                            ScrollArea::both()
+                                .id_source(tab_viewer.title(tab).text().to_owned() + " - egui_dock::Tab")
+                                .show(ui, |ui| {
+                                    Frame::none()
+                                        .inner_margin(tab_viewer.inner_margin())
+                                        .show(ui, |ui| {
+                                            let available_rect = ui.available_rect_before_wrap();
+                                            ui.expand_to_include_rect(available_rect);
+                                            tab_viewer.ui(ui, tab);
+                                        });
+                                });
                         });
                     }
 

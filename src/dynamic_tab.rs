@@ -1,5 +1,5 @@
 use egui::style::Margin;
-use egui::{Frame, ScrollArea, Ui, WidgetText};
+use egui::{Ui, WidgetText};
 
 pub type TabContent = Box<dyn FnMut(&mut Ui) + 'static>;
 pub type OnClose = Box<dyn FnMut() -> bool + 'static>;
@@ -50,17 +50,7 @@ pub struct BuiltTab {
 
 impl Tab for BuiltTab {
     fn ui(&mut self, ui: &mut Ui) {
-        ScrollArea::both()
-            .id_source(self.title.text().to_string() + " - egui_dock::Tab")
-            .show(ui, |ui| {
-                Frame::none()
-                    .inner_margin(self.inner_margin)
-                    .show(ui, |ui| {
-                        let available_rect = ui.available_rect_before_wrap();
-                        ui.expand_to_include_rect(available_rect);
-                        (self.add_content)(ui);
-                    });
-            });
+        (self.add_content)(ui);
     }
 
     fn title(&mut self) -> WidgetText {
