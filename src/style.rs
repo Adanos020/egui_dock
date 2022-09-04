@@ -56,19 +56,26 @@ impl Default for Style {
 impl Style {
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
-    /// Fields overwritten by [`egui::Style`] are: `selection`, `tab_bar_background_color`, `tab_text`,
-    /// `tab_outline_color`, `separator_color`, `border_color`, and `tab_background_color`,
-    /// `close_tab_background_color`, `close_tab_color`, `close_tab_active_color`,
+    /// Fields overwritten by [`egui::Style`] are:
+    /// - `selection_color`
+    /// - `tab_bar_background_color`
+    /// - `tab_outline_color`
+    /// - `tab_background_color`
+    /// - `separator_color`
+    /// - `border_color`
+    /// - `close_tab_background_color`
+    /// - `close_tab_color`
+    /// - `close_tab_active_color`
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
 
             tab_bar_background_color: style.visuals.faint_bg_color,
+            tab_outline_color: style.visuals.widgets.active.bg_fill,
+            tab_background_color: style.visuals.window_fill(),
 
             separator_color: style.visuals.widgets.active.bg_fill,
             border_color: style.visuals.widgets.active.bg_fill,
-            tab_outline_color: style.visuals.widgets.active.bg_fill,
-            tab_background_color: style.visuals.window_fill(),
 
             close_tab_background_color: style.visuals.widgets.active.bg_fill,
             close_tab_color: style.visuals.text_color(),

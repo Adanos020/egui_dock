@@ -16,7 +16,7 @@ impl From<usize> for TabIndex {
 /// Represents an abstract node of a `Tree`.
 pub enum Node<Tab> {
     /// Empty node
-    None,
+    Empty,
     /// Contains the actual tabs
     Leaf {
         rect: Rect,
@@ -55,21 +55,36 @@ impl<Tab> Node<Tab> {
     #[inline(always)]
     pub fn set_rect(&mut self, new_rect: Rect) {
         match self {
-            Self::None => (),
+            Self::Empty => (),
             Self::Leaf { rect, .. }
             | Self::Vertical { rect, .. }
             | Self::Horizontal { rect, .. } => *rect = new_rect,
         }
     }
 
-    /// Returns `true` if the node is a `None`, `false` otherwise.
-    pub const fn is_none(&self) -> bool {
-        matches!(self, Self::None)
+    /// Returns `true` if the node is a `Empty`, `false` otherwise.
+    pub const fn is_empty(&self) -> bool {
+        matches!(self, Self::Empty)
     }
 
     /// Returns `true` if the node is a `Leaf`, `false` otherwise.
     pub const fn is_leaf(&self) -> bool {
         matches!(self, Self::Leaf { .. })
+    }
+
+    /// Returns `true` if the node is a `Horizontal`, `false` otherwise.
+    pub const fn is_horizontal(&self) -> bool {
+        matches!(self, Self::Horizontal { .. })
+    }
+
+    /// Returns `true` if the node is a `Vertical`, `false` otherwise.
+    pub const fn is_vertical(&self) -> bool {
+        matches!(self, Self::Vertical { .. })
+    }
+
+    /// Returns `true` if the node is either `Horizontal` or `Vetical`, `false` otherwise.
+    pub const fn is_parent(&self) -> bool {
+        self.is_horizontal() || self.is_vertical()
     }
 
     /// Replaces the node with a `Horizontal` or `Vertical` one (depending on `split`) and assigns it an empty rect.
@@ -415,9 +430,9 @@ impl<Tab> Tree<Tab> {
         assert!(old.is_leaf());
 
         {
-            let index = self.tree.iter().rposition(|n| !n.is_none()).unwrap_or(0);
+            let index = self.tree.iter().rposition(|n| !n.is_empty()).unwrap_or(0);
             let level = NodeIndex(index).level();
-            self.tree.resize_with(1 << (level + 1), || Node::None);
+            self.tree.resize_with(1 << (level + 1), || Node::Empty);
         }
 
         let index = match split {
@@ -438,7 +453,7 @@ impl<Tab> Tree<Tab> {
         let right = top.right();
         match (self.tree.get(left.0), self.tree.get(right.0)) {
             (Some(&Node::Leaf { .. }), _) => Some(left),
-            (_, Some(&Node::Leaf { .. })) => Some(left),
+            (_, Some(&Node::Leaf { .. })) => Some(right),
 
             (
                 Some(Node::Horizontal { .. } | Node::Vertical { .. }),
@@ -451,9 +466,9 @@ impl<Tab> Tree<Tab> {
             (_, Some(Node::Horizontal { .. } | Node::Vertical { .. })) => self.first_leaf(right),
 
             (None, None)
-            | (Some(&Node::None), None)
-            | (None, Some(&Node::None))
-            | (Some(&Node::None), Some(&Node::None)) => None,
+            | (Some(&Node::Empty), None)
+            | (None, Some(&Node::Empty))
+            | (Some(&Node::Empty), Some(&Node::Empty)) => None,
         }
     }
 
@@ -499,8 +514,8 @@ impl<Tab> Tree<Tab> {
             }
         }
 
-        self[parent] = Node::None;
-        self[node] = Node::None;
+        self[parent] = Node::Empty;
+        self[node] = Node::Empty;
 
         let mut level = 0;
 
@@ -515,7 +530,7 @@ impl<Tab> Tree<Tab> {
                     if Some(NodeIndex(src)) == self.focused_node {
                         self.focused_node = Some(NodeIndex(dst));
                     }
-                    self.tree[dst] = std::mem::replace(&mut self.tree[src], Node::None);
+                    self.tree[dst] = std::mem::replace(&mut self.tree[src], Node::Empty);
                 }
                 level += 1;
             }
@@ -530,7 +545,7 @@ impl<Tab> Tree<Tab> {
                     if Some(NodeIndex(src)) == self.focused_node {
                         self.focused_node = Some(NodeIndex(dst));
                     }
-                    self.tree[dst] = std::mem::replace(&mut self.tree[src], Node::None);
+                    self.tree[dst] = std::mem::replace(&mut self.tree[src], Node::Empty);
                 }
                 level += 1;
             }
@@ -547,7 +562,7 @@ impl<Tab> Tree<Tab> {
                     self.focused_node = Some(NodeIndex(index));
                     return;
                 }
-                Node::None => {
+                Node::Empty => {
                     *node = Node::leaf(tab);
                     self.focused_node = Some(NodeIndex(index));
                     return;
@@ -592,7 +607,7 @@ impl<Tab> Tree<Tab> {
                     self.focused_node = Some(NodeIndex::root());
                 } else {
                     match &mut self[node] {
-                        Node::None => {
+                        Node::Empty => {
                             self[node] = Node::leaf(tab);
                             self.focused_node = Some(node);
                         }

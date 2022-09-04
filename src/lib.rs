@@ -62,12 +62,14 @@
 use egui::style::Margin;
 use egui::*;
 
-pub use style::{Style, StyleBuilder};
 use tree::TabIndex;
 use utils::*;
 
-pub use self::dynamic_tab::{DynamicTabViewer, DynamicTree, Tab, TabBuilder};
-pub use self::tree::{Node, NodeIndex, Split, Tree};
+pub use crate::{
+    dynamic_tab::{DynamicTabViewer, DynamicTree, Tab, TabBuilder},
+    style::{Style, StyleBuilder},
+    tree::{Node, NodeIndex, Split, Tree},
+};
 
 mod dynamic_tab;
 mod style;
@@ -255,213 +257,206 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let mut to_remove = Vec::new();
         let mut new_focused = None;
 
+        // Deal with Horizontal and Vertical nodes first
         for node_index in 0..self.tree.len() {
             let node_index = NodeIndex(node_index);
+            let is_horizontal = self.tree[node_index].is_horizontal();
+            if let Node::Horizontal { fraction, rect } | Node::Vertical { fraction, rect } =
+                &mut self.tree[node_index]
+            {
+                let rect = expand_to_pixel(*rect, pixels_per_point);
 
-            match &mut self.tree[node_index] {
-                Node::None => (),
-                Node::Horizontal { fraction, rect } => {
-                    let rect = expand_to_pixel(*rect, pixels_per_point);
+                let (left, separator, right) = if is_horizontal {
+                    style.hsplit(ui, fraction, rect)
+                } else {
+                    style.vsplit(ui, fraction, rect)
+                };
 
-                    let (left, separator, right) = style.hsplit(ui, fraction, rect);
+                ui.painter()
+                    .rect_filled(separator, Rounding::none(), style.separator_color);
 
+                self.tree[node_index.left()].set_rect(left);
+                self.tree[node_index.right()].set_rect(right);
+            }
+        }
+
+        // Then process Leaf nodes
+        for node_index in 0..self.tree.len() {
+            let node_index = NodeIndex(node_index);
+            if let Node::Leaf {
+                rect,
+                tabs,
+                active,
+                viewport,
+            } = &mut self.tree[node_index]
+            {
+                let rect = *rect;
+                ui.set_clip_rect(rect);
+
+                let height_topbar = 24.0;
+
+                let bottom_y = rect.min.y + height_topbar;
+                let tabbar = rect.intersect(Rect::everything_above(bottom_y));
+
+                let full_response = ui.allocate_rect(rect, Sense::hover());
+                let tabs_response = ui.allocate_rect(tabbar, Sense::hover());
+                let mut tab_hover_rect = None;
+
+                // tabs
+                ui.scope(|ui| {
+                    ui.painter().rect_filled(
+                        tabbar,
+                        style.tab_rounding,
+                        style.tab_bar_background_color,
+                    );
+
+                    let a = pos2(tabbar.min.x, tabbar.max.y - px);
+                    let b = pos2(tabbar.max.x, tabbar.max.y - px);
                     ui.painter()
-                        .rect_filled(separator, Rounding::none(), style.separator_color);
+                        .line_segment([a, b], (px, style.tab_outline_color));
 
-                    self.tree[node_index.left()].set_rect(left);
-                    self.tree[node_index.right()].set_rect(right);
-                }
-                Node::Vertical { fraction, rect } => {
-                    let rect = expand_to_pixel(*rect, pixels_per_point);
+                    let mut ui = ui.child_ui(tabbar, Default::default());
+                    ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
-                    let (bottom, separator, top) = style.vsplit(ui, fraction, rect);
+                    ui.horizontal(|ui| {
+                        for (tab_index, tab) in tabs.iter_mut().enumerate() {
+                            let id = Id::new((node_index, tab_index, "tab"));
+                            let tab_index = TabIndex(tab_index);
+                            let is_being_dragged = ui.memory().is_being_dragged(id);
 
-                    ui.painter()
-                        .rect_filled(separator, Rounding::none(), style.separator_color);
+                            let is_active = *active == tab_index || is_being_dragged;
+                            let label = tab_viewer.title(tab);
 
-                    self.tree[node_index.left()].set_rect(bottom);
-                    self.tree[node_index.right()].set_rect(top);
-                }
-                Node::Leaf {
-                    rect,
-                    tabs,
-                    active,
-                    viewport,
-                } => {
-                    let rect = *rect;
-                    ui.set_clip_rect(rect);
+                            let response = if is_being_dragged {
+                                let layer_id = LayerId::new(Order::Tooltip, id);
+                                let response = ui
+                                    .with_layer_id(layer_id, |ui| {
+                                        style.tab_title(
+                                            ui,
+                                            label.clone(),
+                                            is_active,
+                                            is_active && Some(node_index) == focused,
+                                            is_being_dragged,
+                                            id,
+                                        )
+                                    })
+                                    .response;
 
-                    let height_topbar = 24.0;
+                                let sense = Sense::click_and_drag();
+                                let response = ui
+                                    .interact(response.rect, id, sense)
+                                    .on_hover_cursor(CursorIcon::Grabbing);
 
-                    let bottom_y = rect.min.y + height_topbar;
-                    let tabbar = rect.intersect(Rect::everything_above(bottom_y));
+                                if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
+                                    let center = response.rect.center();
+                                    let start = state.drag_start.unwrap_or(center);
 
-                    let full_response = ui.allocate_rect(rect, Sense::hover());
-                    let tabs_response = ui.allocate_rect(tabbar, Sense::hover());
-                    let mut tab_hover_rect = None;
+                                    let delta = pointer_pos - start;
+                                    if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
+                                        ui.ctx().translate_layer(layer_id, delta);
 
-                    // tabs
-                    ui.scope(|ui| {
-                        ui.painter().rect_filled(
-                            tabbar,
-                            style.tab_rounding,
-                            style.tab_bar_background_color,
-                        );
-
-                        let a = pos2(tabbar.min.x, tabbar.max.y - px);
-                        let b = pos2(tabbar.max.x, tabbar.max.y - px);
-                        ui.painter()
-                            .line_segment([a, b], (px, style.tab_outline_color));
-
-                        let mut ui = ui.child_ui(tabbar, Default::default());
-                        ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-
-                        ui.horizontal(|ui| {
-                            for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                                let id = Id::new((node_index, tab_index, "tab"));
-                                let tab_index = TabIndex(tab_index);
-                                let is_being_dragged = ui.memory().is_being_dragged(id);
-
-                                let is_active = *active == tab_index || is_being_dragged;
-                                let label = tab_viewer.title(tab);
-
-                                if is_being_dragged {
-                                    let layer_id = LayerId::new(Order::Tooltip, id);
-                                    let response = ui
-                                        .with_layer_id(layer_id, |ui| {
-                                            style.tab_title(
-                                                ui,
-                                                label.clone(),
-                                                is_active,
-                                                is_active && Some(node_index) == focused,
-                                                is_being_dragged,
-                                                id,
-                                            )
-                                        })
-                                        .response;
-
-                                    let sense = egui::Sense::click_and_drag();
-                                    let response = ui
-                                        .interact(response.rect, id, sense)
-                                        .on_hover_cursor(CursorIcon::Grabbing);
-
-                                    if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
-                                        let center = response.rect.center();
-                                        let start = state.drag_start.unwrap_or(center);
-
-                                        let delta = pointer_pos - start;
-                                        if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
-                                            ui.ctx().translate_layer(layer_id, delta);
-
-                                            drag_data = Some((node_index, tab_index));
-                                        }
+                                        drag_data = Some((node_index, tab_index));
                                     }
+                                }
 
-                                    if response.clicked() {
+                                if response.clicked() {
+                                    *active = tab_index;
+                                    new_focused = Some(node_index);
+                                }
+
+                                response
+                            } else {
+                                let response = style.tab_title(
+                                    ui,
+                                    label,
+                                    is_active && Some(node_index) == focused,
+                                    is_active,
+                                    is_being_dragged,
+                                    id,
+                                );
+
+                                let sense = if response.1 {
+                                    Sense::click()
+                                } else {
+                                    Sense::click_and_drag()
+                                };
+
+                                if response.2 {
+                                    if tab_viewer.on_close(tab) {
+                                        to_remove.push((node_index, tab_index));
+                                    } else {
                                         *active = tab_index;
                                         new_focused = Some(node_index);
                                     }
-                                    if state.drag_start.is_some() {
-                                        if let Some(pos) = ui.input().pointer.hover_pos() {
-                                            if response.rect.contains(pos) {
-                                                tab_hover_rect = Some((response.rect, tab_index));
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    let response = style.tab_title(
-                                        ui,
-                                        label,
-                                        is_active && Some(node_index) == focused,
-                                        is_active,
-                                        is_being_dragged,
-                                        id,
-                                    );
+                                }
+                                let response = ui.interact(response.0.rect, id, sense);
+                                if response.drag_started() {
+                                    state.drag_start = response.hover_pos();
+                                }
 
-                                    let sense = if response.1 {
-                                        Sense::click()
-                                    } else {
-                                        Sense::click_and_drag()
-                                    };
-
-                                    if response.2 {
-                                        if tab_viewer.on_close(tab) {
-                                            to_remove.push((node_index, tab_index));
-                                        } else {
-                                            *active = tab_index;
-                                            new_focused = Some(node_index);
-                                        }
-                                    }
-                                    let response = ui.interact(response.0.rect, id, sense);
-                                    if response.drag_started() {
-                                        state.drag_start = response.hover_pos();
-                                    }
-
-                                    if state.drag_start.is_some() {
-                                        if let Some(pos) = ui.input().pointer.hover_pos() {
-                                            if response.rect.contains(pos) {
-                                                tab_hover_rect = Some((response.rect, tab_index));
-                                            }
-                                        }
+                                response
+                            };
+                            if state.drag_start.is_some() {
+                                if let Some(pos) = ui.input().pointer.hover_pos() {
+                                    if response.rect.contains(pos) {
+                                        tab_hover_rect = Some((response.rect, tab_index));
                                     }
                                 }
                             }
-                        });
+                        }
                     });
+                });
 
-                    // tab body
-                    if let Some(tab) = tabs.get_mut(active.0) {
-                        let top_y = rect.min.y + height_topbar;
-                        let rect = rect.intersect(Rect::everything_below(top_y));
-                        let rect = expand_to_pixel(rect, pixels_per_point);
+                // tab body
+                if let Some(tab) = tabs.get_mut(active.0) {
+                    let top_y = rect.min.y + height_topbar;
+                    let rect = rect.intersect(Rect::everything_below(top_y));
+                    let rect = expand_to_pixel(rect, pixels_per_point);
 
-                        *viewport = rect;
+                    *viewport = rect;
 
-                        if ui.input().pointer.any_click() {
-                            if let Some(pos) = ui.input().pointer.hover_pos() {
-                                if rect.contains(pos) {
-                                    new_focused = Some(node_index);
-                                }
+                    if ui.input().pointer.any_click() {
+                        if let Some(pos) = ui.input().pointer.hover_pos() {
+                            if rect.contains(pos) {
+                                new_focused = Some(node_index);
                             }
                         }
-
-                        ui.painter()
-                            .rect_filled(rect, 0.0, style.tab_background_color);
-
-                        let mut ui = ui.child_ui(rect, Default::default());
-                        ui.push_id(node_index, |ui| {
-                            ScrollArea::both()
-                                .id_source(
-                                    tab_viewer.title(tab).text().to_owned() + " - egui_dock::Tab",
-                                )
-                                .show(ui, |ui| {
-                                    Frame::none().inner_margin(tab_viewer.inner_margin()).show(
-                                        ui,
-                                        |ui| {
-                                            let available_rect = ui.available_rect_before_wrap();
-                                            ui.expand_to_include_rect(available_rect);
-                                            tab_viewer.ui(ui, tab);
-                                        },
-                                    );
-                                });
-                        });
                     }
 
-                    let is_being_dragged = ui.memory().is_anything_being_dragged();
-                    if is_being_dragged && full_response.hovered() {
-                        hover_data = ui.input().pointer.hover_pos().map(|pointer| HoverData {
-                            rect,
-                            dst: node_index,
-                            tabs: tabs_response.hovered().then_some(tabs_response.rect),
-                            tab: tab_hover_rect,
-                            pointer,
-                        });
-                    }
+                    ui.painter()
+                        .rect_filled(rect, 0.0, style.tab_background_color);
 
-                    for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                        if tab_viewer.force_close(tab) {
-                            to_remove.push((node_index, TabIndex(tab_index)));
-                        }
+                    let mut ui = ui.child_ui(rect, Default::default());
+                    ui.push_id(node_index, |ui| {
+                        ScrollArea::both()
+                            .id_source(Id::new((tab_viewer.title(tab).text(), "egui_dock::Tab")))
+                            .show(ui, |ui| {
+                                Frame::none().inner_margin(tab_viewer.inner_margin()).show(
+                                    ui,
+                                    |ui| {
+                                        let available_rect = ui.available_rect_before_wrap();
+                                        ui.expand_to_include_rect(available_rect);
+                                        tab_viewer.ui(ui, tab);
+                                    },
+                                );
+                            });
+                    });
+                }
+
+                let is_being_dragged = ui.memory().is_anything_being_dragged();
+                if is_being_dragged && full_response.hovered() {
+                    hover_data = ui.input().pointer.hover_pos().map(|pointer| HoverData {
+                        rect,
+                        dst: node_index,
+                        tabs: tabs_response.hovered().then_some(tabs_response.rect),
+                        tab: tab_hover_rect,
+                        pointer,
+                    });
+                }
+
+                for (tab_index, tab) in tabs.iter_mut().enumerate() {
+                    if tab_viewer.force_close(tab) {
+                        to_remove.push((node_index, TabIndex(tab_index)));
                     }
                 }
             }
