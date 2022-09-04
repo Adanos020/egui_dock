@@ -7,7 +7,7 @@
 - The dock will keep track of the currently focused leaf.
 - Using `Tree::push_to_focused_leaf` will push the given tab to the currently active leaf.
 - `StyleBuilder` for the `Style`.
-- New fields in `Style:` `separator_color`, `border_color`, and `border_size` (last two for the cases when used `Margin`).
+- New fields in `Style:` `separator_color`, `border_color`, and `border_width` (last two for the cases when used `Margin`).
 - `TabBuilder` for the `BuiltTab`.
 - Support for all implementations of `Into<WidgetText>` in tab titles.
 - Style editor in the `hello` example.
