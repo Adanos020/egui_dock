@@ -8,7 +8,7 @@ rust-version = "1.62"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/Adanos020/egui_dock"
-categories = ["gui", "game-development", "docking", "immediate mode"]
+categories = ["gui", "game-development"]
 
 [dependencies]
 egui = "0.19"
