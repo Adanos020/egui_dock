@@ -38,6 +38,11 @@ pub trait Tab {
     fn force_close(&mut self) -> bool {
         false
     }
+
+    /// Sets the margins between tab's borders and its contents.
+    fn inner_margin(&self) -> Margin {
+        Margin::same(4.0)
+    }
 }
 
 pub struct BuiltTab {
@@ -69,6 +74,10 @@ impl Tab for BuiltTab {
             Some(force_close) => force_close(),
             None => false,
         }
+    }
+
+    fn inner_margin(&self) -> Margin {
+        self.inner_margin
     }
 }
 
