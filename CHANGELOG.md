@@ -1,6 +1,10 @@
-# Unreleased
+# egui_dock changelog
 
-## Added
+## Unreleased
+
+## 0.2.0 - 2022-09-04
+
+### Added
 
 - It is now possible to close tabs with a close button that can be shown/hidden through `Style`.
 - When dragging tabs onto the tab bar if the tab will be inserted a highlighted region will show where the tab will end up if dropped.
@@ -14,14 +18,14 @@
 - Added `Tree::find_tab`, `TabViewer`, `DynamicTabViewer`, `DynamicTree`.
 - Added a `text_editor` example.
 
-## Changed
+### Changed
 
 - If a tab is dropped onto the tab bar it will be inserted into the index that it is dropped onto.
 - Now when you drag a tab it has an outline along the entire length of the edges of it.
 - Bumped MSRV to `1.62`.
 - `Tree` is now generic over how you want to represent a tab.
 
-## Breaking changes
+### Breaking changes
 
 - Ui code of the dock has been moved into `DockArea` and is displayed with `DockArea::show` or `DockArea::show_inside`.
 - Renamed `Style::border_size` to `Style::border_width`.
@@ -31,7 +35,7 @@
 - Renamed `Tree::set_focused` to `Tree::set_focused_node`.
 - Renamed `Node::None` to `Node::Empty`.
 
-## Fixed
+### Fixed
 
 - Now selection color of the placing area for the tab isn't showing if the tab is targeted on its own node when the tab is the only member of  this node.
 - Dock vertical and horizontal separators are now displayed properly.

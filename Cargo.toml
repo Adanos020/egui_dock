@@ -1,14 +1,14 @@
 [package]
 name = "egui_dock"
-description = "Docking support for `egui`"
+description = "Docking support for `egui` - an immediate-mode GUI library for Rust"
 authors = ["Iain-dono", "Adam Gąsior (Adanos020)"]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.62"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/Adanos020/egui_dock"
-categories = ["gui", "game-development"]
+categories = ["gui", "game-development", "docking", "immediate mode"]
 
 [dependencies]
 egui = "0.19"
