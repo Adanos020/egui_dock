@@ -29,6 +29,7 @@
 - Removed `Style::tab_text_color` as you can now set the tab text color of a tab by passing `RichText` for its title.
 - Removed the requirement of creating your own Context type.
 - Renamed `Tree::set_focused` to `Tree::set_focused_node`.
+- Renamed `Node::None` to `Node::Empty`.
 
 ## Fixed
 
@@ -36,3 +37,4 @@
 - Dock vertical and horizontal separators are now displayed properly.
 - Prevent Id clashes from multiple tabs being displayed at once.
 - Tab content is now displayed inside a `egui::ScrollArea`, so it's now accessible in its entirety even if the tab is too small to fit all of it.
+- Fixed an issue where some tabs couldn't be resized.
