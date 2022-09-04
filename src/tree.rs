@@ -82,7 +82,7 @@ impl<Tab> Node<Tab> {
         matches!(self, Self::Vertical { .. })
     }
 
-    /// Returns `true` if the node is either `Horizontal` or `Vetical`, `false` otherwise.
+    /// Returns `true` if the node is either `Horizontal` or `Vertical`, `false` otherwise.
     pub const fn is_parent(&self) -> bool {
         self.is_horizontal() || self.is_vertical()
     }
