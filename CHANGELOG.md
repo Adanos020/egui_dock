@@ -4,9 +4,11 @@
 
 ### Added
 - Added opt-in `serde` feature to enable serialization of `Tree`.
+- You can now change the tab text color with `Style::tab_text_color_unfocused` and `Style::tab_text_color_focused`.
 
 ### Fixed
-* `Tree::push_to_first_leaf` no longer panics when used on an empty `Tree`
+- `Tree::push_to_first_leaf` no longer panics when used on an empty `Tree`.
+- The tab text color will now follow the egui text color.
 
 
 ## 0.2.0 - 2022-09-04

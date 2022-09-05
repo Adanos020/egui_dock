@@ -20,6 +20,9 @@ pub struct Style {
     pub tab_rounding: Rounding,
     pub tab_background_color: Color32,
 
+    pub tab_text_color_unfocused: Color32,
+    pub tab_text_color_focused: Color32,
+
     pub close_tab_color: Color32,
     pub close_tab_active_color: Color32,
     pub close_tab_background_color: Color32,
@@ -42,8 +45,11 @@ impl Default for Style {
             tab_bar_background_color: Color32::WHITE,
 
             tab_outline_color: Color32::BLACK,
-            tab_background_color: Color32::WHITE,
             tab_rounding: Default::default(),
+            tab_background_color: Color32::WHITE,
+
+            tab_text_color_unfocused: Color32::DARK_GRAY,
+            tab_text_color_focused: Color32::BLACK,
 
             close_tab_color: Color32::WHITE,
             close_tab_active_color: Color32::WHITE,
@@ -73,6 +79,9 @@ impl Style {
             tab_bar_background_color: style.visuals.faint_bg_color,
             tab_outline_color: style.visuals.widgets.active.bg_fill,
             tab_background_color: style.visuals.window_fill(),
+
+            tab_text_color_unfocused: style.visuals.text_color(),
+            tab_text_color_focused: style.visuals.strong_text_color(),
 
             separator_color: style.visuals.widgets.active.bg_fill,
             border_color: style.visuals.widgets.active.bg_fill,
@@ -234,7 +243,20 @@ impl Style {
             .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
             .min;
 
-        ui.painter().galley(pos, galley.galley);
+        let override_text_color = if galley.galley_has_color {
+            None // respect the color the user has chosen
+        } else if focused {
+            Some(self.tab_text_color_focused)
+        } else {
+            Some(self.tab_text_color_unfocused)
+        };
+        ui.painter().add(epaint::TextShape {
+            pos,
+            galley: galley.galley,
+            underline: Stroke::none(),
+            override_text_color,
+            angle: 0.0,
+        });
 
         if (active || response.hovered()) && self.show_close_buttons {
             if x_res.as_ref().unwrap().hovered() {
