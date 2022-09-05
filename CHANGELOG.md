@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+- Added opt-in `serde` feature to enable serialization of `Tree`.
+
+
 ## 0.2.0 - 2022-09-04
 
 ### Added

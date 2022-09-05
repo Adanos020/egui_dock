@@ -2,6 +2,7 @@ use egui::*;
 
 /// Identifies a tab within a [`Node`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TabIndex(pub usize);
 
 impl From<usize> for TabIndex {
@@ -14,6 +15,7 @@ impl From<usize> for TabIndex {
 // ----------------------------------------------------------------------------
 
 /// Represents an abstract node of a `Tree`.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Node<Tab> {
     /// Empty node
     Empty,
@@ -154,6 +156,7 @@ impl<Tab> Node<Tab> {
 
 /// Wrapper around indices to the collection of nodes inside a `Tree`.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NodeIndex(pub usize);
 
 impl From<usize> for NodeIndex {
@@ -239,6 +242,7 @@ pub enum Split {
 // ----------------------------------------------------------------------------
 
 /// Binary tree representing the relationships between `Node`s.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree<Tab> {
     tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,

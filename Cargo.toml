@@ -10,8 +10,16 @@ readme = "README.md"
 repository = "https://github.com/Adanos020/egui_dock"
 categories = ["gui", "game-development"]
 
+[features]
+default = []
+
+# Enable serialization of `Tree`.
+serde = ["dep:serde", "egui/serde"]
+
+
 [dependencies]
 egui = "0.19"
+serde = { version = "1", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 eframe = "0.19"
