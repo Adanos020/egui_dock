@@ -191,7 +191,7 @@ impl Style {
         let px = ui.ctx().pixels_per_point().recip();
         let rounding = self.tab_rounding;
 
-        let galley = label.into_galley(ui, None, 14.0, TextStyle::Button);
+        let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
 
         let x_text_gap = 5.0;
         let x_size = Vec2::new(galley.size().y / 1.3, galley.size().y / 1.3);
