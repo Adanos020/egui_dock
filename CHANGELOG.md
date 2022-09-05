@@ -5,6 +5,9 @@
 ### Added
 - Added opt-in `serde` feature to enable serialization of `Tree`.
 
+### Fixed
+* `Tree::push_to_first_leaf` no longer panics when used on an empty `Tree`
+
 
 ## 0.2.0 - 2022-09-04
 

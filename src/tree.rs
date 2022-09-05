@@ -574,7 +574,9 @@ impl<Tab> Tree<Tab> {
                 _ => {}
             }
         }
-        panic!();
+        assert!(self.tree.is_empty());
+        self.tree.push(Node::leaf_with(vec![tab]));
+        self.focused_node = Some(NodeIndex(0));
     }
 
     /// Currently focused leaf.
