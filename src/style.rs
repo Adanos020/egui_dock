@@ -9,7 +9,10 @@ pub struct Style {
 
     pub border_color: Color32,
     pub border_width: f32,
+
+    /// Color used when previewing where a tab will end up.
     pub selection_color: Color32,
+
     pub separator_width: f32,
     pub separator_extra: f32,
     pub separator_color: Color32,
@@ -175,6 +178,7 @@ impl Style {
         )
     }
 
+    /// `active` means "the tab that is opened in the parent panel".
     pub(crate) fn tab_title(
         &self,
         ui: &mut Ui,
@@ -301,7 +305,7 @@ impl StyleBuilder {
         Self::default()
     }
 
-    /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.  
+    /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.
     #[inline(always)]
     pub fn with_padding(mut self, padding: Option<Margin>) -> Self {
         self.style.padding = padding;
