@@ -24,6 +24,7 @@ pub enum Node<Tab> {
         rect: Rect,
         viewport: Rect,
         tabs: Vec<Tab>,
+        /// The opened tab.
         active: TabIndex,
     },
     /// Parent node in the vertical orientation

@@ -9,7 +9,10 @@ pub struct Style {
 
     pub border_color: Color32,
     pub border_width: f32,
+
+    /// Color used when previewing where a tab will end up.
     pub selection_color: Color32,
+
     pub separator_width: f32,
     pub separator_extra: f32,
     pub separator_color: Color32,
@@ -19,6 +22,9 @@ pub struct Style {
     pub tab_outline_color: Color32,
     pub tab_rounding: Rounding,
     pub tab_background_color: Color32,
+
+    pub tab_text_color_unfocused: Color32,
+    pub tab_text_color_focused: Color32,
 
     pub close_tab_color: Color32,
     pub close_tab_active_color: Color32,
@@ -42,8 +48,11 @@ impl Default for Style {
             tab_bar_background_color: Color32::WHITE,
 
             tab_outline_color: Color32::BLACK,
-            tab_background_color: Color32::WHITE,
             tab_rounding: Default::default(),
+            tab_background_color: Color32::WHITE,
+
+            tab_text_color_unfocused: Color32::DARK_GRAY,
+            tab_text_color_focused: Color32::BLACK,
 
             close_tab_color: Color32::WHITE,
             close_tab_active_color: Color32::WHITE,
@@ -73,6 +82,9 @@ impl Style {
             tab_bar_background_color: style.visuals.faint_bg_color,
             tab_outline_color: style.visuals.widgets.active.bg_fill,
             tab_background_color: style.visuals.window_fill(),
+
+            tab_text_color_unfocused: style.visuals.text_color(),
+            tab_text_color_focused: style.visuals.strong_text_color(),
 
             separator_color: style.visuals.widgets.active.bg_fill,
             border_color: style.visuals.widgets.active.bg_fill,
@@ -166,6 +178,7 @@ impl Style {
         )
     }
 
+    /// `active` means "the tab that is opened in the parent panel".
     pub(crate) fn tab_title(
         &self,
         ui: &mut Ui,
@@ -178,7 +191,7 @@ impl Style {
         let px = ui.ctx().pixels_per_point().recip();
         let rounding = self.tab_rounding;
 
-        let galley = label.into_galley(ui, None, 14.0, TextStyle::Button);
+        let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
 
         let x_text_gap = 5.0;
         let x_size = Vec2::new(galley.size().y / 1.3, galley.size().y / 1.3);
@@ -234,7 +247,20 @@ impl Style {
             .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
             .min;
 
-        ui.painter().galley(pos, galley.galley);
+        let override_text_color = if galley.galley_has_color {
+            None // respect the color the user has chosen
+        } else if focused {
+            Some(self.tab_text_color_focused)
+        } else {
+            Some(self.tab_text_color_unfocused)
+        };
+        ui.painter().add(epaint::TextShape {
+            pos,
+            galley: galley.galley,
+            underline: Stroke::none(),
+            override_text_color,
+            angle: 0.0,
+        });
 
         if (active || response.hovered()) && self.show_close_buttons {
             if x_res.as_ref().unwrap().hovered() {
@@ -279,7 +305,7 @@ impl StyleBuilder {
         Self::default()
     }
 
-    /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.  
+    /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.
     #[inline(always)]
     pub fn with_padding(mut self, padding: Option<Margin>) -> Self {
         self.style.padding = padding;
