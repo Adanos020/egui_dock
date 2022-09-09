@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+
+## 0.2.1 - 2022-09-09
+
 ### Added
 - Added opt-in `serde` feature to enable serialization of `Tree`.
 - You can now change the tab text color with `Style::tab_text_color_unfocused` and `Style::tab_text_color_focused`.
