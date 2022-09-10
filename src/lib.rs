@@ -364,6 +364,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     new_focused = Some(node_index);
                                 }
 
+                                if response.middle_clicked() {
+                                    if tab_viewer.on_close(tab) {
+                                        to_remove.push((node_index, tab_index));
+                                    } else {
+                                        *active = tab_index;
+                                        new_focused = Some(node_index);
+                                    }
+                                }
+
                                 response
                             } else {
                                 let response = style.tab_title(
