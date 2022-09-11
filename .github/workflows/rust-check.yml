@@ -17,24 +17,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: test
-        run: cargo test --verbose -- --test-threads=1
-        continue-on-error: false
-
       - name: clippy all-features
         run: cargo clippy --all-targets --all-features -- -D warnings
         continue-on-error: false
 
       - name: rustfmt
         run: cargo fmt -- --check
-        continue-on-error: false
-
-      - name: miri
-        run: |
-          rustup toolchain install nightly --component miri
-          rustup override set nightly
-          cargo miri setup
-          cargo miri test
         continue-on-error: false
 
   linux:
@@ -42,10 +30,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: test
-        run: cargo test --verbose -- --test-threads=1
-        continue-on-error: false
-
       - name: clippy all-features
         run: cargo clippy --all-targets --all-features -- -D warnings
         continue-on-error: false
@@ -53,12 +37,6 @@ jobs:
       - name: rustfmt
         run: cargo fmt -- --check
         continue-on-error: false
-
-      - name: Test doc-tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc --all-features
 
       - name: cargo doc --lib
         uses: actions-rs/cargo@v1
@@ -71,13 +49,6 @@ jobs:
         with:
           command: doc
           args: --document-private-items --no-deps --all-features
-
-      - name: miri
-        run: |
-          rustup toolchain install nightly --component miri
-          rustup override set nightly
-          cargo miri setup
-          cargo miri test
         continue-on-error: false
 
   macos:
@@ -85,22 +56,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: test
-        run: cargo test --verbose -- --test-threads=1
-        continue-on-error: false
-
       - name: clippy all-features
         run: cargo clippy --all-targets --all-features -- -D warnings
         continue-on-error: false
 
       - name: rustfmt
         run: cargo fmt -- --check
-        continue-on-error: false
-
-      - name: miri
-        run: |
-          rustup toolchain install nightly --component miri
-          rustup override set nightly
-          cargo miri setup
-          cargo miri test
         continue-on-error: false
