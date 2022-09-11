@@ -38,12 +38,6 @@ jobs:
         run: cargo test --verbose -- --test-threads=1
         continue-on-error: false
 
-      - name: Test doc-tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc --all-features
-
       - name: miri
         run: |
           rustup toolchain install nightly --component miri
@@ -68,3 +62,14 @@ jobs:
           cargo miri setup
           cargo miri test
         continue-on-error: false
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Test doc-tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc --all-features
