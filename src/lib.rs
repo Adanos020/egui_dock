@@ -364,7 +364,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     new_focused = Some(node_index);
                                 }
 
-                                if response.middle_clicked() {
+                                if response.middle_clicked() && style.show_close_buttons {
                                     if tab_viewer.on_close(tab) {
                                         to_remove.push((node_index, tab_index));
                                     } else {
