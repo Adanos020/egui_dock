@@ -176,7 +176,7 @@ pub trait TabViewer {
         Margin::same(4.0)
     }
 
-    /// Whether the tab will be cleared with the color specified in [Style::tab_background_color`](crate::Style::tab_background_color)
+    /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`](crate::Style::tab_background_color)
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }
