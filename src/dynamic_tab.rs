@@ -11,6 +11,7 @@ pub struct TabBuilder {
     add_content: Option<TabContent>,
     on_close: Option<OnClose>,
     force_close: Option<ForceClose>,
+    clear_background: Option<bool>,
 }
 
 /// Dockable tab that can be used in [`crate::Tree`]s.
@@ -43,6 +44,11 @@ pub trait Tab {
     fn inner_margin(&self) -> Margin {
         Margin::same(4.0)
     }
+
+    /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`](crate::Style::tab_background_color)
+    fn clear_background(&self) -> bool {
+        true
+    }
 }
 
 pub struct BuiltTab {
@@ -51,6 +57,7 @@ pub struct BuiltTab {
     pub add_content: TabContent,
     on_close: Option<OnClose>,
     force_close: Option<ForceClose>,
+    clear_background: bool,
 }
 
 impl Tab for BuiltTab {
@@ -79,6 +86,10 @@ impl Tab for BuiltTab {
     fn inner_margin(&self) -> Margin {
         self.inner_margin
     }
+
+    fn clear_background(&self) -> bool {
+        self.clear_background
+    }
 }
 
 impl Default for TabBuilder {
@@ -89,6 +100,7 @@ impl Default for TabBuilder {
             add_content: None,
             on_close: None,
             force_close: None,
+            clear_background: None,
         }
     }
 }
@@ -105,6 +117,7 @@ impl TabBuilder {
             add_content: self.add_content.expect("Missing tab content"),
             on_close: self.on_close,
             force_close: self.force_close,
+            clear_background: self.clear_background.unwrap_or(true),
         })
     }
 
@@ -147,6 +160,14 @@ impl TabBuilder {
         self.force_close = Some(Box::new(force_close));
         self
     }
+
+    /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`](crate::Style::tab_background_color).
+    ///
+    /// See [`Tab::clear_background`] for more detail
+    pub fn clear_background(mut self, clear_background: bool) -> Self {
+        self.clear_background = Some(clear_background);
+        self
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -175,5 +196,9 @@ impl crate::TabViewer for DynamicTabViewer {
 
     fn force_close(&mut self, tab: &mut Self::Tab) -> bool {
         tab.force_close()
+    }
+
+    fn clear_background(&self, tab: &Self::Tab) -> bool {
+        tab.clear_background()
     }
 }

@@ -175,6 +175,11 @@ pub trait TabViewer {
     fn inner_margin(&self) -> Margin {
         Margin::same(4.0)
     }
+
+    /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`](crate::Style::tab_background_color)
+    fn clear_background(&self, _tab: &Self::Tab) -> bool {
+        true
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -423,8 +428,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         }
                     }
 
-                    ui.painter()
-                        .rect_filled(rect, 0.0, style.tab_background_color);
+                    if tab_viewer.clear_background(tab) {
+                        ui.painter()
+                            .rect_filled(rect, 0.0, style.tab_background_color);
+                    }
 
                     let mut ui = ui.child_ui(rect, Default::default());
                     ui.push_id(node_index, |ui| {
