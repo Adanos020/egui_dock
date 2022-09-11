@@ -17,10 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: check all-features
-        run: cargo check --all-targets --all-features --verbose
-        continue-on-error: false
-
       - name: test
         run: cargo test --verbose -- --test-threads=1
         continue-on-error: false
@@ -45,10 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: check all-features
-        run: cargo check --all-targets --all-features --verbose
-        continue-on-error: false
 
       - name: test
         run: cargo test --verbose -- --test-threads=1
@@ -92,10 +84,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: check all-features
-        run: cargo check --all-targets --all-features --verbose
-        continue-on-error: false
 
       - name: test
         run: cargo test --verbose -- --test-threads=1
