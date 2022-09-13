@@ -4,7 +4,7 @@
 [![Crates.io](https://img.shields.io/crates/v/egui_dock)](https://crates.io/crates/egui_dock)
 [![docs.rs](https://img.shields.io/docsrs/egui_dock)](https://docs.rs/egui_dock/)
 
-Credit goes to [@Iain-dono](https://github.com/lain-dono) for implementing the actual library.
+Credit goes to [@lain-dono](https://github.com/lain-dono) for implementing the actual library.
 
 This fork aims to provide documentation and further development if necessary.
 

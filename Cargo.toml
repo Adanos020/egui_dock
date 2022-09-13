@@ -1,7 +1,7 @@
 [package]
 name = "egui_dock"
 description = "Docking support for `egui` - an immediate-mode GUI library for Rust"
-authors = ["Iain-dono", "Adam Gąsior (Adanos020)"]
+authors = ["lain-dono", "Adam Gąsior (Adanos020)"]
 version = "0.2.1"
 edition = "2021"
 rust-version = "1.62"
