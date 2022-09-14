@@ -70,6 +70,7 @@ pub use crate::{
     style::{Style, StyleBuilder},
     tree::{Node, NodeIndex, Split, Tree},
 };
+pub use egui;
 
 mod dynamic_tab;
 mod style;
