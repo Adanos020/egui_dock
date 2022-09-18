@@ -100,7 +100,11 @@ impl MyContext {
             color_picker_color32(ui, &mut style.separator_color, Alpha::OnlyBlend);
         });
 
-        ui.collapsing("Tab", |ui| {
+        ui.collapsing("Tabs", |ui| {
+            ui.separator();
+
+            ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
+
             ui.separator();
 
             ui.label("Rounding");

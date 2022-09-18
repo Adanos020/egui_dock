@@ -1,11 +1,10 @@
 use super::utils::*;
-use egui::style::Margin;
-use egui::*;
+use egui::{style::Margin, *};
 
 /// Specifies the look and feel of egui_dock.
 #[derive(Clone)]
 pub struct Style {
-    pub padding: Option<Margin>,
+    pub dock_area_padding: Option<Margin>,
 
     pub border_color: Color32,
     pub border_width: f32,
@@ -26,6 +25,8 @@ pub struct Style {
     pub tab_text_color_unfocused: Color32,
     pub tab_text_color_focused: Color32,
 
+    pub tabs_are_draggable: bool,
+
     pub close_tab_color: Color32,
     pub close_tab_active_color: Color32,
     pub close_tab_background_color: Color32,
@@ -35,7 +36,7 @@ pub struct Style {
 impl Default for Style {
     fn default() -> Self {
         Self {
-            padding: None,
+            dock_area_padding: None,
 
             border_color: Color32::BLACK,
             border_width: Default::default(),
@@ -58,6 +59,8 @@ impl Default for Style {
             close_tab_active_color: Color32::WHITE,
             close_tab_background_color: Color32::GRAY,
             show_close_buttons: true,
+
+            tabs_are_draggable: true,
         }
     }
 }
@@ -308,7 +311,7 @@ impl StyleBuilder {
     /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.
     #[inline(always)]
     pub fn with_padding(mut self, padding: Option<Margin>) -> Self {
-        self.style.padding = padding;
+        self.style.dock_area_padding = padding;
         self
     }
 

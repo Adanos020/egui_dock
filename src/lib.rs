@@ -177,7 +177,7 @@ pub trait TabViewer {
         Margin::same(4.0)
     }
 
-    /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`](crate::Style::tab_background_color)
+    /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`]
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }
@@ -234,7 +234,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let mut state = State::load(ui.ctx(), self.id);
         let mut rect = ui.max_rect();
 
-        if let Some(margin) = style.padding {
+        if let Some(margin) = style.dock_area_padding {
             rect.min += margin.left_top();
             rect.max -= margin.right_bottom();
             ui.painter().rect(
@@ -328,7 +328,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         for (tab_index, tab) in tabs.iter_mut().enumerate() {
                             let id = Id::new((node_index, tab_index, "tab"));
                             let tab_index = TabIndex(tab_index);
-                            let is_being_dragged = ui.memory().is_being_dragged(id);
+                            let is_being_dragged =
+                                ui.memory().is_being_dragged(id) && style.tabs_are_draggable;
 
                             let is_active = *active == tab_index || is_being_dragged;
                             let label = tab_viewer.title(tab);
