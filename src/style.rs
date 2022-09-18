@@ -9,7 +9,6 @@ pub struct Style {
     pub border_color: Color32,
     pub border_width: f32,
 
-    /// Color used when previewing where a tab will end up.
     pub selection_color: Color32,
 
     pub separator_width: f32,
@@ -414,6 +413,27 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn show_close_buttons(mut self, show_close_buttons: bool) -> Self {
         self.style.show_close_buttons = show_close_buttons;
+        self
+    }
+
+    /// Color of tab title when the tab is unfocused.
+    #[inline(always)]
+    pub fn with_tab_text_color_unfocused(mut self, tab_text_color_unfocused: Color32) -> Self {
+        self.style.tab_text_color_unfocused = tab_text_color_unfocused;
+        self
+    }
+
+    /// Color of tab title when the tab is focused.
+    #[inline(always)]
+    pub fn with_tab_text_color_focused(mut self, tab_text_color_focused: Color32) -> Self {
+        self.style.tab_text_color_focused = tab_text_color_focused;
+        self
+    }
+
+    /// Whether tabs can be dragged between nodes and reordered on the tab bar.
+    #[inline(always)]
+    pub fn tabs_are_draggable(mut self, tabs_are_draggable: bool) -> Self {
+        self.style.tabs_are_draggable = tabs_are_draggable;
         self
     }
 
