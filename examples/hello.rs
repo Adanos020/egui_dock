@@ -127,6 +127,33 @@ impl MyContext {
 
             ui.separator();
 
+            ui.label("Title text color unfocused");
+            color_picker_color32(ui, &mut style.tab_text_color_unfocused, Alpha::OnlyBlend);
+
+            ui.label("Title text color focused");
+            color_picker_color32(ui, &mut style.tab_text_color_focused, Alpha::OnlyBlend);
+
+            ui.separator();
+
+            ui.checkbox(&mut style.show_close_buttons, "Allow closing tabs");
+
+            ui.separator();
+
+            ui.label("Close button color unfocused");
+            color_picker_color32(ui, &mut style.close_tab_color, Alpha::OnlyBlend);
+
+            ui.separator();
+
+            ui.label("Close button color focused");
+            color_picker_color32(ui, &mut style.close_tab_active_color, Alpha::OnlyBlend);
+
+            ui.separator();
+
+            ui.label("Close button background color");
+            color_picker_color32(ui, &mut style.close_tab_background_color, Alpha::OnlyBlend);
+
+            ui.separator();
+
             ui.label("Bar background color");
             color_picker_color32(ui, &mut style.tab_bar_background_color, Alpha::OnlyBlend);
 
