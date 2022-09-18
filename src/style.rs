@@ -310,8 +310,8 @@ impl StyleBuilder {
 
     /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.
     #[inline(always)]
-    pub fn with_padding(mut self, padding: Option<Margin>) -> Self {
-        self.style.dock_area_padding = padding;
+    pub fn with_padding(mut self, padding: Margin) -> Self {
+        self.style.dock_area_padding = Some(padding);
         self
     }
 
