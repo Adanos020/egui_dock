@@ -309,7 +309,7 @@ impl StyleBuilder {
 
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
-    /// See also: [Style::from_egui].
+    /// See also: [`Style::from_egui`].
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             style: Style::from_egui(style),
