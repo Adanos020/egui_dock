@@ -302,6 +302,21 @@ impl<Tab> Tree<Tab> {
         })
     }
 
+    /// Returns the viewport `Rect` and the `Tab` inside the focused leaf node or `None` if it does not exist.
+    pub fn find_active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
+        if let Some(Node::Leaf {
+            tabs,
+            active,
+            viewport,
+            ..
+        }) = self.focused_node.and_then(|idx| self.tree.get_mut(idx.0))
+        {
+            tabs.get_mut(active.0).map(|tab| (*viewport, tab))
+        } else {
+            None
+        }
+    }
+
     /// Returns the number of nodes in the `Tree`.
     #[inline(always)]
     pub fn len(&self) -> usize {

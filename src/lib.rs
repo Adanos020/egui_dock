@@ -326,7 +326,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                     ui.horizontal(|ui| {
                         for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                            let id = Id::new((node_index, tab_index, "tab"));
+                            let id = self.id.with((node_index, tab_index, "tab"));
                             let tab_index = TabIndex(tab_index);
                             let is_being_dragged =
                                 ui.memory().is_being_dragged(id) && style.tabs_are_draggable;
@@ -447,7 +447,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let mut ui = ui.child_ui(rect, Default::default());
                     ui.push_id(node_index, |ui| {
                         ScrollArea::both()
-                            .id_source(Id::new((tab_viewer.title(tab).text(), "egui_dock::Tab")))
+                            .id_source(self.id.with((tab_viewer.title(tab).text(), "egui_dock::Tab")))
                             .show(ui, |ui| {
                                 Frame::none().inner_margin(tab_viewer.inner_margin()).show(
                                     ui,
