@@ -307,6 +307,15 @@ impl StyleBuilder {
         Self::default()
     }
 
+    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    ///
+    /// See also: [`Style::from_egui`].
+    pub fn from_egui(style: &egui::Style) -> Self {
+        Self {
+            style: Style::from_egui(style),
+        }
+    }
+
     /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.
     #[inline(always)]
     pub fn with_padding(mut self, padding: Margin) -> Self {
