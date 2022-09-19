@@ -447,7 +447,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let mut ui = ui.child_ui(rect, Default::default());
                     ui.push_id(node_index, |ui| {
                         ScrollArea::both()
-                            .id_source(self.id.with((tab_viewer.title(tab).text(), "egui_dock::Tab")))
+                            .id_source(
+                                self.id
+                                    .with((tab_viewer.title(tab).text(), "egui_dock::Tab")),
+                            )
                             .show(ui, |ui| {
                                 Frame::none().inner_margin(tab_viewer.inner_margin()).show(
                                     ui,
