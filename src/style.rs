@@ -309,16 +309,7 @@ impl StyleBuilder {
 
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
-    /// Fields overwritten by [`egui::Style`] are:
-    /// - `selection_color`
-    /// - `tab_bar_background_color`
-    /// - `tab_outline_color`
-    /// - `tab_background_color`
-    /// - `separator_color`
-    /// - `border_color`
-    /// - `close_tab_background_color`
-    /// - `close_tab_color`
-    /// - `close_tab_active_color`
+    /// See also: [Style::from_egui].
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             style: Style::from_egui(style),
