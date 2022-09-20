@@ -340,7 +340,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     .with_layer_id(layer_id, |ui| {
                                         style.tab_title(
                                             ui,
-                                            label.clone(),
+                                            label,
                                             is_active,
                                             is_active && Some(node_index) == focused,
                                             is_being_dragged,
