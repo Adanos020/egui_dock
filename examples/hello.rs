@@ -104,6 +104,7 @@ impl MyContext {
             ui.separator();
 
             ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
+            ui.checkbox(&mut style.expand_tabs, "Expand tabs");
 
             ui.separator();
 
