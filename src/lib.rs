@@ -320,6 +320,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let b = pos2(tabbar.max.x, tabbar.max.y - px);
                     ui.painter()
                         .line_segment([a, b], (px, style.tab_outline_color));
+                    let expanded_width = (tabbar.max.x - tabbar.min.x) / (tabs.len() as f32);
 
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
@@ -345,6 +346,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                             is_active && Some(node_index) == focused,
                                             is_being_dragged,
                                             id,
+                                            expanded_width,
                                         )
                                     })
                                     .response;
@@ -389,6 +391,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     is_active,
                                     is_being_dragged,
                                     id,
+                                    expanded_width,
                                 );
 
                                 let sense = if response.1 {
