@@ -41,6 +41,11 @@ impl TabViewer for MyContext {
         }
     }
 
+    fn context_menu(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+        ui.label(format!("hello! {tab}"));
+        ui.label("This is a context menu");
+    }
+
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
         tab.as_str().into()
     }

@@ -151,6 +151,9 @@ pub trait TabViewer {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab);
 
+    /// Context menu
+    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab) {}
+
     /// The title to be displayed.
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText;
 
@@ -399,6 +402,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 } else {
                                     Sense::click_and_drag()
                                 };
+
+                                response.0.clone().context_menu(|ui| {
+                                    tab_viewer.context_menu(ui, tab)                                
+                                });
 
                                 if response.2 {
                                     if tab_viewer.on_close(tab) {
