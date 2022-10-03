@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+### Added
+- New option `expand_tabs` in `Style` causes tab titles to expand to fill the width of their tab bars.
 
 ## 0.2.1 - 2022-09-09
 
