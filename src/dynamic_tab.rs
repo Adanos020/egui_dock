@@ -19,6 +19,7 @@ pub trait Tab {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui);
 
+    /// Content inside context_menu.
     fn context_menu(&mut self, _ui: &mut Ui) {}
 
     /// The title to be displayed.

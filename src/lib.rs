@@ -151,7 +151,7 @@ pub trait TabViewer {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab);
 
-    /// Context menu
+    /// Content inside context_menu.
     fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab) {}
 
     /// The title to be displayed.

@@ -465,6 +465,7 @@ impl StyleBuilder {
         self
     }
 
+    /// Whether tabs show a context menu.
     #[inline(always)]
     pub fn show_context_menu(mut self, show_context_menu: bool) -> Self {
         self.style.show_context_menu = show_context_menu;
