@@ -404,7 +404,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 };
 
                                 response.0.clone().context_menu(|ui| {
-                                    tab_viewer.context_menu(ui, tab)                                
+                                    tab_viewer.context_menu(ui, tab);
+                                    if style.show_close_buttons && ui.button("close").clicked() {
+                                        if tab_viewer.on_close(tab) {
+                                            to_remove.push((node_index, tab_index));
+                                        } else {
+                                            *active = tab_index;
+                                            new_focused = Some(node_index);
+                                        }
+                                    }
                                 });
 
                                 if response.2 {
