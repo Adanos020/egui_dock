@@ -456,6 +456,13 @@ impl StyleBuilder {
         self
     }
 
+    /// Whether tab titles expand to fill the width of their tab bars.
+    #[inline(always)]
+    pub fn expand_tabs(mut self, expand_tabs: bool) -> Self {
+        self.style.expand_tabs = expand_tabs;
+        self
+    }
+
     /// Returns `Style` with set values.
     #[inline(always)]
     pub fn build(self) -> Style {
