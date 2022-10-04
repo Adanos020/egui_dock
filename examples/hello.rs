@@ -41,7 +41,7 @@ impl TabViewer for MyContext {
         }
     }
 
-    fn context_menu(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+    fn context_menu(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         match tab.as_str() {
             "Simple Demo" => self.simple_demo_menu(ui),
             _ => {
@@ -63,6 +63,7 @@ impl MyContext {
             ui.label("hello :)");
         });
     }
+
     fn simple_demo(&mut self, ui: &mut Ui) {
         ui.heading("My egui Application");
 
