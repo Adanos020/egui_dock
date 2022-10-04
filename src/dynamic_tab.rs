@@ -19,6 +19,9 @@ pub trait Tab {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui);
 
+    /// Content inside context_menu.
+    fn context_menu(&mut self, _ui: &mut Ui) {}
+
     /// The title to be displayed.
     fn title(&mut self) -> WidgetText;
 
@@ -62,6 +65,10 @@ pub struct BuiltTab {
 
 impl Tab for BuiltTab {
     fn ui(&mut self, ui: &mut Ui) {
+        (self.add_content)(ui);
+    }
+
+    fn context_menu(&mut self, ui: &mut Ui) {
         (self.add_content)(ui);
     }
 
@@ -181,6 +188,8 @@ pub struct DynamicTabViewer {}
 
 impl crate::TabViewer for DynamicTabViewer {
     type Tab = Box<dyn Tab>;
+
+    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab) {}
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         tab.ui(ui)

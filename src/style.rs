@@ -31,6 +31,7 @@ pub struct Style {
     pub close_tab_active_color: Color32,
     pub close_tab_background_color: Color32,
     pub show_close_buttons: bool,
+    pub show_context_menu: bool,
 }
 
 impl Default for Style {
@@ -62,6 +63,7 @@ impl Default for Style {
 
             tabs_are_draggable: true,
             expand_tabs: false,
+            show_context_menu: true,
         }
     }
 }
@@ -460,6 +462,13 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn expand_tabs(mut self, expand_tabs: bool) -> Self {
         self.style.expand_tabs = expand_tabs;
+        self
+    }
+
+    /// Whether tabs show a context menu.
+    #[inline(always)]
+    pub fn show_context_menu(mut self, show_context_menu: bool) -> Self {
+        self.style.show_context_menu = show_context_menu;
         self
     }
 
