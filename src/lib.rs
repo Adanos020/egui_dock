@@ -471,8 +471,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             ScrollArea::both()
                                 .id_source(
                                     self.id
-                                    .with((tab_viewer.title(tab).text(), "egui_dock::Tab")),
-                                    )
+                                        .with((tab_viewer.title(tab).text(), "egui_dock::Tab")),
+                                )
                                 .show(ui, |ui| {
                                     Frame::none().inner_margin(tab_viewer.inner_margin()).show(
                                         ui,
@@ -481,17 +481,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                             ui.expand_to_include_rect(available_rect);
                                             tab_viewer.ui(ui, tab);
                                         },
-                                        );
+                                    );
                                 });
                         } else {
-                            Frame::none().inner_margin(tab_viewer.inner_margin()).show(
-                                ui,
-                                |ui| {
+                            Frame::none()
+                                .inner_margin(tab_viewer.inner_margin())
+                                .show(ui, |ui| {
                                     let available_rect = ui.available_rect_before_wrap();
                                     ui.expand_to_include_rect(available_rect);
                                     tab_viewer.ui(ui, tab);
-                                },
-                                );
+                                });
                         }
                     });
                 }
