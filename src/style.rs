@@ -32,6 +32,7 @@ pub struct Style {
     pub close_tab_background_color: Color32,
     pub show_close_buttons: bool,
     pub show_context_menu: bool,
+    pub tab_include_scrollarea: bool,
 }
 
 impl Default for Style {
@@ -64,6 +65,7 @@ impl Default for Style {
             tabs_are_draggable: true,
             expand_tabs: false,
             show_context_menu: true,
+            tab_include_scrollarea: true,
         }
     }
 }
@@ -469,6 +471,13 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn show_context_menu(mut self, show_context_menu: bool) -> Self {
         self.style.show_context_menu = show_context_menu;
+        self
+    }
+
+    /// Whether tabs have a [`ScrollArea`](egui::containers::ScrollArea) out of the box.
+    #[inline(always)]
+    pub fn with_tab_scroll_area(mut self, tab_include_scrollarea: bool) -> Self {
+        self.style.tab_include_scrollarea = tab_include_scrollarea;
         self
     }
 
