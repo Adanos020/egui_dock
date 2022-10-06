@@ -487,8 +487,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             Frame::none()
                                 .inner_margin(tab_viewer.inner_margin())
                                 .show(ui, |ui| {
-                                    let available_rect = ui.available_rect_before_wrap();
-                                    ui.expand_to_include_rect(available_rect);
                                     tab_viewer.ui(ui, tab);
                                 });
                         }
