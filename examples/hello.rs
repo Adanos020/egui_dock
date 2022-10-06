@@ -80,7 +80,12 @@ impl MyContext {
 
     fn style_editor(&mut self, ui: &mut Ui) {
         ui.heading("Style Editor");
+        egui::ScrollArea::both().show(ui, |ui| {
+            self.style_editor_impl(ui);
+        });
+    }
 
+    fn style_editor_impl(&mut self, ui: &mut Ui) {
         let style = self.style.as_mut().unwrap();
 
         ui.collapsing("Border", |ui| {
