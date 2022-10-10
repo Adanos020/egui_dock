@@ -335,6 +335,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             let is_being_dragged =
                                 ui.memory().is_being_dragged(id) && style.tabs_are_draggable;
 
+                            if is_being_dragged {
+                                ui.output().cursor_icon = CursorIcon::Grabbing;
+                            }
+
                             let is_active = *active == tab_index || is_being_dragged;
                             let label = tab_viewer.title(tab);
 
@@ -355,9 +359,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     .response;
 
                                 let sense = Sense::click_and_drag();
-                                let response = ui
-                                    .interact(response.rect, id, sense)
-                                    .on_hover_cursor(CursorIcon::Grabbing);
+                                let response = ui.interact(response.rect, id, sense);
 
                                 if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
                                     let center = response.rect.center();
