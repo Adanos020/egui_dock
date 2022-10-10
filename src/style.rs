@@ -215,8 +215,10 @@ impl Style {
             vec2(galley.size().x + offset.x * 2.0, 24.0)
         };
 
-        let (rect, response) = ui.allocate_at_least(desired_size, Sense::hover());
-        let response = response.on_hover_cursor(CursorIcon::PointingHand);
+        let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
+        if !ui.memory().is_anything_being_dragged() {
+            response = response.on_hover_cursor(CursorIcon::Grab);
+        }
 
         let (x_rect, x_res) = if (active || response.hovered()) && self.show_close_buttons {
             let mut pos = rect.right_top();
