@@ -346,7 +346,13 @@ impl<Tab> Tree<Tab> {
 
     /// Number of tabs
     pub fn num_tabs(&self) -> usize {
-        self.tabs().count()
+        let mut count = 0;
+        for node in self.tree.iter() {
+            if let Node::Leaf { tabs, .. } = node {
+                count += tabs.len();
+            }
+        }
+        count
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
@@ -753,4 +759,6 @@ fn test_tabs_iter() {
 
     tree.push_to_focused_leaf(6);
     assert_eq!(tabs(&tree), vec![1, 2, 3, 4, 5, 6]);
+
+    assert_eq!(tree.num_tabs(), tree.tabs().count());
 }
