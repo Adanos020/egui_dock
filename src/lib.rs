@@ -151,6 +151,9 @@ pub trait TabViewer {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab);
 
+    /// Content inside context_menu.
+    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab) {}
+
     /// The title to be displayed.
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText;
 
@@ -328,6 +331,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let b = pos2(tabbar.max.x, tabbar.max.y - px);
                     ui.painter()
                         .line_segment([a, b], (px, style.tab_outline_color));
+                    let expanded_width = (tabbar.max.x - tabbar.min.x) / (tabs.len() as f32);
 
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
@@ -338,6 +342,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             let tab_index = TabIndex(tab_index);
                             let is_being_dragged =
                                 ui.memory().is_being_dragged(id) && style.tabs_are_draggable;
+
+                            if is_being_dragged {
+                                ui.output().cursor_icon = CursorIcon::Grabbing;
+                            }
 
                             let is_active = *active == tab_index || is_being_dragged;
                             let label = tab_viewer.title(tab);
@@ -353,14 +361,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                             is_active && Some(node_index) == focused,
                                             is_being_dragged,
                                             id,
+                                            expanded_width,
                                         )
                                     })
                                     .response;
 
                                 let sense = Sense::click_and_drag();
-                                let response = ui
-                                    .interact(response.rect, id, sense)
-                                    .on_hover_cursor(CursorIcon::Grabbing);
+                                let response = ui.interact(response.rect, id, sense);
 
                                 if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
                                     let center = response.rect.center();
@@ -397,6 +404,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     is_active,
                                     is_being_dragged,
                                     id,
+                                    expanded_width,
                                 );
 
                                 let sense = if response.1 {
@@ -404,6 +412,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 } else {
                                     Sense::click_and_drag()
                                 };
+
+                                if style.show_context_menu {
+                                    response.0.clone().context_menu(|ui| {
+                                        tab_viewer.context_menu(ui, tab);
+                                        if style.show_close_buttons && ui.button("Close").clicked()
+                                        {
+                                            if tab_viewer.on_close(tab) {
+                                                to_remove.push((node_index, tab_index));
+                                            } else {
+                                                *active = tab_index;
+                                                new_focused = Some(node_index);
+                                            }
+                                        }
+                                    });
+                                }
 
                                 if response.2 {
                                     if tab_viewer.on_close(tab) {
@@ -465,21 +488,29 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                     let mut ui = ui.child_ui(rect, Default::default());
                     ui.push_id(node_index, |ui| {
-                        ScrollArea::both()
-                            .id_source(
-                                self.id
-                                    .with((tab_viewer.title(tab).text(), "egui_dock::Tab")),
-                            )
-                            .show(ui, |ui| {
-                                Frame::none().inner_margin(tab_viewer.inner_margin()).show(
-                                    ui,
-                                    |ui| {
-                                        let available_rect = ui.available_rect_before_wrap();
-                                        ui.expand_to_include_rect(available_rect);
-                                        tab_viewer.ui(ui, tab);
-                                    },
-                                );
-                            });
+                        if style.tab_include_scrollarea {
+                            ScrollArea::both()
+                                .id_source(
+                                    self.id
+                                        .with((tab_viewer.title(tab).text(), "egui_dock::Tab")),
+                                )
+                                .show(ui, |ui| {
+                                    Frame::none().inner_margin(tab_viewer.inner_margin()).show(
+                                        ui,
+                                        |ui| {
+                                            let available_rect = ui.available_rect_before_wrap();
+                                            ui.expand_to_include_rect(available_rect);
+                                            tab_viewer.ui(ui, tab);
+                                        },
+                                    );
+                                });
+                        } else {
+                            Frame::none()
+                                .inner_margin(tab_viewer.inner_margin())
+                                .show(ui, |ui| {
+                                    tab_viewer.ui(ui, tab);
+                                });
+                        }
                     });
                 }
 

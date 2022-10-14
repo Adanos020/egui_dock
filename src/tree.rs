@@ -339,6 +339,22 @@ impl<Tab> Tree<Tab> {
         self.tree.iter_mut()
     }
 
+    /// Returns an iterator over all tabs in arbitrary order
+    pub fn tabs(&self) -> TabIter<'_, Tab> {
+        TabIter::new(self)
+    }
+
+    /// Number of tabs
+    pub fn num_tabs(&self) -> usize {
+        let mut count = 0;
+        for node in self.tree.iter() {
+            if let Node::Leaf { tabs, .. } = node {
+                count += tabs.len();
+            }
+        }
+        count
+    }
+
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
@@ -679,4 +695,70 @@ where
         }
         None
     }
+}
+
+// ----------------------------------------------------------------------------
+
+/// Iterates over all tabs in a [`Tree`].
+pub struct TabIter<'a, Tab> {
+    tree: &'a Tree<Tab>,
+    node_idx: usize,
+    tab_idx: usize,
+}
+
+impl<'a, Tab> TabIter<'a, Tab> {
+    fn new(tree: &'a Tree<Tab>) -> Self {
+        Self {
+            tree,
+            node_idx: 0,
+            tab_idx: 0,
+        }
+    }
+}
+
+impl<'a, Tab> Iterator for TabIter<'a, Tab> {
+    type Item = &'a Tab;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let node = self.tree.tree.get(self.node_idx)?;
+            match node {
+                Node::Leaf { tabs, .. } => match tabs.get(self.tab_idx) {
+                    Some(tab) => {
+                        self.tab_idx += 1;
+                        return Some(tab);
+                    }
+                    None => {
+                        self.node_idx += 1;
+                        self.tab_idx = 0;
+                    }
+                },
+                _ => {
+                    self.node_idx += 1;
+                    self.tab_idx = 0;
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn test_tabs_iter() {
+    fn tabs(tree: &Tree<i32>) -> Vec<i32> {
+        tree.tabs().copied().collect()
+    }
+
+    let mut tree = Tree::new(vec![1, 2, 3]);
+    assert_eq!(tabs(&tree), vec![1, 2, 3]);
+
+    tree.push_to_first_leaf(4);
+    assert_eq!(tabs(&tree), vec![1, 2, 3, 4]);
+
+    tree.push_to_first_leaf(5);
+    assert_eq!(tabs(&tree), vec![1, 2, 3, 4, 5]);
+
+    tree.push_to_focused_leaf(6);
+    assert_eq!(tabs(&tree), vec![1, 2, 3, 4, 5, 6]);
+
+    assert_eq!(tree.num_tabs(), tree.tabs().count());
 }

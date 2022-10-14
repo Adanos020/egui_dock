@@ -41,12 +41,29 @@ impl TabViewer for MyContext {
         }
     }
 
+    fn context_menu(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
+        match tab.as_str() {
+            "Simple Demo" => self.simple_demo_menu(ui),
+            _ => {
+                ui.label(tab.to_string());
+                ui.label("This is a context menu");
+            }
+        }
+    }
+
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
         tab.as_str().into()
     }
 }
 
 impl MyContext {
+    fn simple_demo_menu(&mut self, ui: &mut Ui) {
+        ui.label("Egui widget example");
+        ui.menu_button("Sub menu", |ui| {
+            ui.label("hello :)");
+        });
+    }
+
     fn simple_demo(&mut self, ui: &mut Ui) {
         ui.heading("My egui Application");
 
@@ -104,6 +121,12 @@ impl MyContext {
             ui.separator();
 
             ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
+            ui.checkbox(&mut style.expand_tabs, "Expand tabs");
+            ui.checkbox(&mut style.show_context_menu, "Show context_menu");
+            ui.checkbox(
+                &mut style.tab_include_scrollarea,
+                "Include ScrollArea inside of tabs",
+            );
 
             ui.separator();
 

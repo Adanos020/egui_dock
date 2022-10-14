@@ -33,6 +33,7 @@ pub struct Style {
     pub tab_text_color_focused: Color32,
 
     pub tabs_are_draggable: bool,
+    pub expand_tabs: bool,
 
     pub close_tab_color: Color32,
     pub close_tab_active_color: Color32,
@@ -44,6 +45,9 @@ pub struct Style {
     pub add_tab_active_color: Color32,
     pub add_tab_background_color: Color32,
     pub show_add_buttons: bool,
+
+    pub show_context_menu: bool,
+    pub tab_include_scrollarea: bool,
 }
 
 impl Default for Style {
@@ -80,6 +84,9 @@ impl Default for Style {
             show_add_buttons: false,
 
             tabs_are_draggable: true,
+            expand_tabs: false,
+            show_context_menu: true,
+            tab_include_scrollarea: true,
         }
     }
 }
@@ -246,6 +253,7 @@ impl Style {
     }
 
     /// `active` means "the tab that is opened in the parent panel".
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn tab_title(
         &self,
         ui: &mut Ui,
@@ -254,30 +262,33 @@ impl Style {
         active: bool,
         is_being_dragged: bool,
         id: Id,
+        expanded_width: f32,
     ) -> (Response, bool, bool) {
         let px = ui.ctx().pixels_per_point().recip();
         let rounding = self.tab_rounding;
 
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
 
-        let x_text_gap = 5.0;
         let x_size = Vec2::new(galley.size().y / 1.3, galley.size().y / 1.3);
 
         let offset = vec2(8.0, 0.0);
-        let text_size = galley.size();
 
-        let mut desired_size = text_size + offset * 2.0;
-        if self.show_close_buttons {
-            desired_size.x += x_size.x + x_text_gap;
+        let desired_size = if self.expand_tabs {
+            vec2(expanded_width, 24.0)
+        } else if self.show_close_buttons {
+            vec2(galley.size().x + offset.x * 2.0 + x_size.x + 5.0, 24.0)
+        } else {
+            vec2(galley.size().x + offset.x * 2.0, 24.0)
+        };
+
+        let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
+        if !ui.memory().is_anything_being_dragged() {
+            response = response.on_hover_cursor(CursorIcon::Grab);
         }
-        desired_size.y = 24.0;
-
-        let (rect, response) = ui.allocate_at_least(desired_size, Sense::hover());
-        let response = response.on_hover_cursor(CursorIcon::PointingHand);
 
         let (x_rect, x_res) = if (active || response.hovered()) && self.show_close_buttons {
-            let mut pos = rect.left_top();
-            pos.x += offset.x + text_size.x + x_text_gap + x_size.x / 2.0;
+            let mut pos = rect.right_top();
+            pos.x -= offset.x + x_size.x / 2.0;
             pos.y += rect.size().y / 2.0;
             let x_rect = Rect::from_center_size(pos, x_size);
             (x_rect, Some(ui.interact(x_rect, id, Sense::click())))
@@ -310,9 +321,15 @@ impl Style {
             _ => (),
         }
 
-        let pos = Align2::LEFT_TOP
-            .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
-            .min;
+        let pos = if self.expand_tabs {
+            let mut pos = Align2::CENTER_TOP.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
+            pos.x -= galley.size().x / 2.0;
+            pos
+        } else {
+            Align2::LEFT_TOP
+                .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
+                .min
+        };
 
         let override_text_color = if galley.galley_has_color {
             None // respect the color the user has chosen
@@ -546,6 +563,27 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn tabs_are_draggable(mut self, tabs_are_draggable: bool) -> Self {
         self.style.tabs_are_draggable = tabs_are_draggable;
+        self
+    }
+
+    /// Whether tab titles expand to fill the width of their tab bars.
+    #[inline(always)]
+    pub fn expand_tabs(mut self, expand_tabs: bool) -> Self {
+        self.style.expand_tabs = expand_tabs;
+        self
+    }
+
+    /// Whether tabs show a context menu.
+    #[inline(always)]
+    pub fn show_context_menu(mut self, show_context_menu: bool) -> Self {
+        self.style.show_context_menu = show_context_menu;
+        self
+    }
+
+    /// Whether tabs have a [`ScrollArea`](egui::containers::ScrollArea) out of the box.
+    #[inline(always)]
+    pub fn with_tab_scroll_area(mut self, tab_include_scrollarea: bool) -> Self {
+        self.style.tab_include_scrollarea = tab_include_scrollarea;
         self
     }
 
