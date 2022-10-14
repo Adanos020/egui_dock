@@ -8,6 +8,16 @@
 - The `ScrollArea` inside a Tab is now Optional via `Style` ([#49](https://github.com/Adanos020/egui_dock/pull/49)).
 - `Tree::tabs`: an iterator over the tabs in a tree ([#53](https://github.com/Adanos020/egui_dock/pull/53)).
 
+### Deprecated (will be deleted in the next release)
+- `dynamic_tab::TabContent`
+- `dynamic_tab::OnClose`
+- `dynamic_tab::ForceClose`
+- `dynamic_tab::TabBuilder`
+- `dynamic_tab::Tab`
+- `dynamic_tab::BuiltTab`
+- `dynamic_tab::DynamicTree`
+- `dynamic_tab::DynamicTabViewer`
+
 ## 0.2.1 - 2022-09-09
 
 ### Added
