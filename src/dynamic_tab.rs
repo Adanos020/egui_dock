@@ -1,10 +1,16 @@
+#![allow(deprecated, dead_code)]
+
 use egui::style::Margin;
 use egui::{Ui, WidgetText};
 
+#[deprecated]
 pub type TabContent = Box<dyn FnMut(&mut Ui) + 'static>;
+#[deprecated]
 pub type OnClose = Box<dyn FnMut() -> bool + 'static>;
+#[deprecated]
 pub type ForceClose = Box<dyn FnMut() -> bool + 'static>;
 
+#[deprecated]
 pub struct TabBuilder {
     title: Option<WidgetText>,
     inner_margin: Margin,
@@ -15,6 +21,7 @@ pub struct TabBuilder {
 }
 
 /// Dockable tab that can be used in [`crate::Tree`]s.
+#[deprecated]
 pub trait Tab {
     /// Actual tab content.
     fn ui(&mut self, ui: &mut Ui);
@@ -54,6 +61,7 @@ pub trait Tab {
     }
 }
 
+#[deprecated]
 pub struct BuiltTab {
     pub title: WidgetText,
     pub inner_margin: Margin,
@@ -180,20 +188,22 @@ impl TabBuilder {
 // ----------------------------------------------------------------------------
 
 /// A type-def for when using [`Tab`] or [`TabBuilder`].
+#[deprecated]
 pub type DynamicTree = crate::Tree<Box<dyn Tab>>;
 
 /// For use with [`crate::DockArea::show`] when using [`DynamicTree`].
 #[derive(Default)]
+#[deprecated]
 pub struct DynamicTabViewer {}
 
 impl crate::TabViewer for DynamicTabViewer {
     type Tab = Box<dyn Tab>;
 
-    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab) {}
-
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         tab.ui(ui)
     }
+
+    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab) {}
 
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
         tab.title()

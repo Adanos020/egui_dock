@@ -65,6 +65,7 @@ use egui::*;
 use tree::TabIndex;
 use utils::*;
 
+#[allow(deprecated)]
 pub use crate::{
     dynamic_tab::{DynamicTabViewer, DynamicTree, Tab, TabBuilder},
     style::{Style, StyleBuilder},
