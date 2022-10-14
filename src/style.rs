@@ -1,7 +1,7 @@
 use super::utils::*;
 use egui::{style::Margin, *};
 
-/// left or right alignment for tab add button.
+/// Left or right alignment for tab add button.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum TabAddAlign {
@@ -219,12 +219,12 @@ impl Style {
         let desired_size = Vec2::splat(24.0);
 
         let mut rect = ui.available_rect_before_wrap();
-        rect.max.x = rect.min.x + desired_size.x;
 
         match self.add_tab_align {
-            TabAddAlign::Left => rect.min.x = rect.max.x - desired_size.x,
-            TabAddAlign::Right => rect = rect.shrink(3.0),
+            TabAddAlign::Left => rect.max.x = rect.min.x + desired_size.x,
+            TabAddAlign::Right => rect.min.x = rect.max.x - desired_size.x,
         }
+        rect = rect.shrink(3.0);
 
         let response = ui
             .allocate_rect(rect, Sense::hover())
