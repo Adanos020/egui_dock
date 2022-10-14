@@ -163,6 +163,14 @@ pub trait TabViewer {
         true
     }
 
+    /// This is called when the tabs add button is pressed.
+    ///
+    /// This requires the dock style's `show_add_buttons` to be `true`.
+    ///
+    /// The `_node` specifies which `Node` or split of the tree that this
+    /// particular add button was pressed on.
+    fn on_add(&mut self, _node: NodeIndex) {}
+
     /// This is called every frame after `ui` is called (if the tab is active).
     ///
     /// Returns `true` if the tab should be forced to close, `false` otherwise.
@@ -420,6 +428,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 }
                             }
                         }
+
+                        // Add button at the end of the tab bar
+                        if style.show_add_buttons {
+                            let id = self.id.with((node_index, "tab_add"));
+                            let response = style.tab_plus(ui);
+
+                            let response = ui.interact(response.rect, id, Sense::click());
+                            if response.clicked() {
+                                tab_viewer.on_add(node_index);
+                            }
+                        };
                     });
                 });
 

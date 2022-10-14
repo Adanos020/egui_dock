@@ -1,6 +1,14 @@
 use super::utils::*;
 use egui::{style::Margin, *};
 
+/// left or right alignment for tab add button.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+pub enum TabAddAlign {
+    Left,
+    Right,
+}
+
 /// Specifies the look and feel of egui_dock.
 #[derive(Clone)]
 pub struct Style {
@@ -30,6 +38,12 @@ pub struct Style {
     pub close_tab_active_color: Color32,
     pub close_tab_background_color: Color32,
     pub show_close_buttons: bool,
+
+    pub add_tab_align: TabAddAlign,
+    pub add_tab_color: Color32,
+    pub add_tab_active_color: Color32,
+    pub add_tab_background_color: Color32,
+    pub show_add_buttons: bool,
 }
 
 impl Default for Style {
@@ -59,6 +73,12 @@ impl Default for Style {
             close_tab_background_color: Color32::GRAY,
             show_close_buttons: true,
 
+            add_tab_align: TabAddAlign::Right,
+            add_tab_color: Color32::WHITE,
+            add_tab_active_color: Color32::WHITE,
+            add_tab_background_color: Color32::GRAY,
+            show_add_buttons: false,
+
             tabs_are_draggable: true,
         }
     }
@@ -77,6 +97,10 @@ impl Style {
     /// - `close_tab_background_color`
     /// - `close_tab_color`
     /// - `close_tab_active_color`
+    /// - `add_tab_align`
+    /// - `add_tab_background_color`
+    /// - `add_tab_color`
+    /// - `add_tab_active_color`
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
@@ -94,6 +118,10 @@ impl Style {
             close_tab_background_color: style.visuals.widgets.active.bg_fill,
             close_tab_color: style.visuals.text_color(),
             close_tab_active_color: style.visuals.strong_text_color(),
+
+            add_tab_background_color: style.visuals.widgets.active.bg_fill,
+            add_tab_color: style.visuals.text_color(),
+            add_tab_active_color: style.visuals.strong_text_color(),
             ..Self::default()
         }
     }
@@ -178,6 +206,43 @@ impl Style {
             separator,
             rect.intersect(Rect::everything_below(separator.max.y)),
         )
+    }
+
+    pub(crate) fn tab_plus(&self, ui: &mut Ui) -> Response {
+        let desired_size = Vec2::splat(24.0);
+
+        let mut rect = ui.available_rect_before_wrap();
+        rect.max.x = rect.min.x + desired_size.x;
+
+        match self.add_tab_align {
+            TabAddAlign::Left => rect.min.x = rect.max.x - desired_size.x,
+            TabAddAlign::Right => rect = rect.shrink(3.0),
+        }
+
+        let response = ui
+            .allocate_rect(rect, Sense::hover())
+            .on_hover_cursor(CursorIcon::PointingHand);
+        let rect = rect.shrink(4.0);
+
+        let color = if response.hovered() {
+            self.add_tab_active_color
+        } else {
+            self.add_tab_color
+        };
+        if response.hovered() {
+            ui.painter()
+                .rect_filled(rect, Rounding::same(2.0), self.add_tab_background_color);
+        }
+        ui.painter().line_segment(
+            [rect.center_top(), rect.center_bottom()],
+            Stroke::new(1.0, color),
+        );
+        ui.painter().line_segment(
+            [rect.right_center(), rect.left_center()],
+            Stroke::new(1.0, color),
+        );
+
+        response
     }
 
     /// `active` means "the tab that is opened in the parent panel".
@@ -422,6 +487,44 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn show_close_buttons(mut self, show_close_buttons: bool) -> Self {
         self.style.show_close_buttons = show_close_buttons;
+        self
+    }
+    
+    /// Sets `add_tab_align` for the add tab button color.
+    #[inline(always)]
+    pub fn with_add_tab_align(mut self, add_tab_align: TabAddAlign) -> Self {
+        self.style.add_tab_align = add_tab_align;
+        self
+    }
+
+    /// Sets `add_tab_color` for the add tab button color.
+    #[inline(always)]
+    pub fn with_add_tab_color(mut self, add_tab_color: Color32) -> Self {
+        self.style.add_tab_color = add_tab_color;
+        self
+    }
+
+    /// Sets `add_tab_active_color` for the active add tab button color.
+    #[inline(always)]
+    pub fn with_add_tab_active_color_color(mut self, add_tab_active_color: Color32) -> Self {
+        self.style.add_tab_active_color = add_tab_active_color;
+        self
+    }
+
+    /// Sets `add_tab_background_color` for the background add tab button color.
+    #[inline(always)]
+    pub fn with_add_tab_background_color_color(
+        mut self,
+        add_tab_background_color: Color32,
+    ) -> Self {
+        self.style.add_tab_background_color = add_tab_background_color;
+        self
+    }
+
+    /// Shows / Hides the tab add buttons.
+    #[inline(always)]
+    pub fn show_add_buttons(mut self, show_add_buttons: bool) -> Self {
+        self.style.show_add_buttons = show_add_buttons;
         self
     }
 
