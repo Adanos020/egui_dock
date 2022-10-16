@@ -5,8 +5,9 @@
 ### Added
 - New option `expand_tabs` in `Style` causes tab titles to expand to fill the width of their tab bars.
 - Added `context_menu` into `TabViewer` ([#46](https://github.com/Adanos020/egui_dock/pull/46)).        
-- The `ScrollArea` inside a Tab is now Optional via `Style` ([#49](https://github.com/Adanos020/egui_dock/pull/49)).
+- The `ScrollArea` inside a tab is now optional via `Style` ([#49](https://github.com/Adanos020/egui_dock/pull/49)).
 - `Tree::tabs`: an iterator over the tabs in a tree ([#53](https://github.com/Adanos020/egui_dock/pull/53)).
+- `Style` now includes an option to show the hoverd tab's name ([#56](https://github.com/Adanos020/egui_dock/pull/56)) 
 
 ## 0.2.1 - 2022-09-09
 
