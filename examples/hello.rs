@@ -120,6 +120,7 @@ impl MyContext {
         ui.collapsing("Tabs", |ui| {
             ui.separator();
 
+            ui.checkbox(&mut style.tab_hover_name, "Show tab name when hoverd over them");
             ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
             ui.checkbox(&mut style.expand_tabs, "Expand tabs");
             ui.checkbox(&mut style.show_context_menu, "Show context_menu");

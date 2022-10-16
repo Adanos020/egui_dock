@@ -405,6 +405,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     Sense::click_and_drag()
                                 };
 
+                                if style.tab_hover_name {
+                                    response.0.clone().on_hover_ui(|ui| {
+                                        ui.label(tab_viewer.title(tab));
+                                    });
+                                }
+
                                 if style.show_context_menu {
                                     response.0.clone().context_menu(|ui| {
                                         tab_viewer.context_menu(ui, tab);
