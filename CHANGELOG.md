@@ -9,6 +9,16 @@
 - `Tree::tabs`: an iterator over the tabs in a tree ([#53](https://github.com/Adanos020/egui_dock/pull/53)).
 - `Style` now includes an option to show the hoverd tab's name ([#56](https://github.com/Adanos020/egui_dock/pull/56)) 
 
+### Deprecated (will be deleted in the next release)
+- `dynamic_tab::TabContent`
+- `dynamic_tab::OnClose`
+- `dynamic_tab::ForceClose`
+- `dynamic_tab::TabBuilder`
+- `dynamic_tab::Tab`
+- `dynamic_tab::BuiltTab`
+- `dynamic_tab::DynamicTree`
+- `dynamic_tab::DynamicTabViewer`
+
 ## 0.2.1 - 2022-09-09
 
 ### Added
