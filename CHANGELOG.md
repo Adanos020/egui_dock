@@ -3,11 +3,16 @@
 ## Unreleased
 
 ### Added
-- New option `expand_tabs` in `Style` causes tab titles to expand to fill the width of their tab bars.
-- Added `context_menu` into `TabViewer` ([#46](https://github.com/Adanos020/egui_dock/pull/46)).        
-- The `ScrollArea` inside a tab is now optional via `Style` ([#49](https://github.com/Adanos020/egui_dock/pull/49)).
-- `Tree::tabs`: an iterator over the tabs in a tree ([#53](https://github.com/Adanos020/egui_dock/pull/53)).
-- `Style` now includes an option to show the hoverd tab's name ([#56](https://github.com/Adanos020/egui_dock/pull/56)) 
+- `TabViewer::clear_background` method that returns if current tab's background should be cleared. ([#35](https://github.com/Adanos020/egui_dock/pull/35))
+- You can now close tabs with middle mouse button if `Style::show_close_buttons` is true. ([#34](https://github.com/Adanos020/egui_dock/pull/34))
+- Option to disable dragging tabs.
+- New option `expand_tabs` in `Style` and `StyleBuiler` causes tab titles to expand to fill the width of their tab bars.
+- `StyleBuilder::from_egui`. ([#40](https://github.com/Adanos020/egui_dock/pull/40))
+- `Tree::find_active_focused`. ([#40](https://github.com/Adanos020/egui_dock/pull/40))
+- Added `context_menu` into `TabViewer`. ([#46](https://github.com/Adanos020/egui_dock/pull/46))
+- The `ScrollArea` inside a tab is now optional via `Style`. ([#49](https://github.com/Adanos020/egui_dock/pull/49))
+- `Tree::tabs`: an iterator over the tabs in a tree. ([#53](https://github.com/Adanos020/egui_dock/pull/53))
+- `Style` now includes an option to show the hoverd tab's name. ([#56](https://github.com/Adanos020/egui_dock/pull/56))
 
 ### Deprecated (will be deleted in the next release)
 - `dynamic_tab::TabContent`
