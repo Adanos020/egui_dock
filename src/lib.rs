@@ -67,7 +67,7 @@ use utils::*;
 
 pub use crate::{
     dynamic_tab::{DynamicTabViewer, DynamicTree, Tab, TabBuilder},
-    style::{Style, StyleBuilder},
+    style::{Style, StyleBuilder, TabAddAlign},
     tree::{Node, NodeIndex, Split, Tree},
 };
 pub use egui;

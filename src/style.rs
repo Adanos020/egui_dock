@@ -104,7 +104,6 @@ impl Style {
     /// - `close_tab_background_color`
     /// - `close_tab_color`
     /// - `close_tab_active_color`
-    /// - `add_tab_align`
     /// - `add_tab_background_color`
     /// - `add_tab_color`
     /// - `add_tab_active_color`
@@ -506,7 +505,7 @@ impl StyleBuilder {
         self.style.show_close_buttons = show_close_buttons;
         self
     }
-    
+
     /// Sets `add_tab_align` for the add tab button color.
     #[inline(always)]
     pub fn with_add_tab_align(mut self, add_tab_align: TabAddAlign) -> Self {
