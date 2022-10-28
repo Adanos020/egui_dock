@@ -227,7 +227,10 @@ impl Style {
             pos.x -= offset.x + x_size.x / 2.0;
             pos.y += rect.size().y / 2.0;
             let x_rect = Rect::from_center_size(pos, x_size);
-            (x_rect, Some(ui.interact(x_rect, id, Sense::click())))
+            let response = ui
+                .interact(x_rect, id, Sense::click())
+                .on_hover_cursor(CursorIcon::PointingHand);
+            (x_rect, Some(response))
         } else {
             (Rect::NOTHING, None)
         };
