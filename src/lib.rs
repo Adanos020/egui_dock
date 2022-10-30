@@ -62,16 +62,14 @@
 use egui::style::Margin;
 use egui::*;
 
-use tree::TabIndex;
-use utils::*;
-
 #[allow(deprecated)]
 pub use crate::{
     dynamic_tab::{DynamicTabViewer, DynamicTree, Tab, TabBuilder},
     style::{Style, StyleBuilder},
-    tree::{Node, NodeIndex, Split, Tree},
+    tree::{Node, NodeIndex, Split, TabIndex, Tree},
 };
 pub use egui;
+use utils::*;
 
 mod dynamic_tab;
 mod style;
