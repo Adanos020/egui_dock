@@ -731,6 +731,22 @@ impl<Tab> Tree<Tab> {
         }
         tab
     }
+
+    /// Returns a new Tree while mapping the tab type
+    pub fn map_tabs<F, NewTab>(&self, function: F) -> Tree<NewTab>
+    where
+        F: FnMut(&Tab) -> NewTab + Clone,
+    {
+        let Tree { focused_node, tree } = self;
+        let tree = tree
+            .iter()
+            .map(|node| node.map_tabs(function.clone()))
+            .collect();
+        Tree {
+            tree,
+            focused_node: *focused_node,
+        }
+    }
 }
 
 impl<Tab> Tree<Tab>
