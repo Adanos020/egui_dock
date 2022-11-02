@@ -48,6 +48,7 @@ pub struct Style {
 
     pub show_context_menu: bool,
     pub tab_include_scrollarea: bool,
+    pub tab_hover_name: bool,
 }
 
 impl Default for Style {
@@ -87,6 +88,7 @@ impl Default for Style {
             expand_tabs: false,
             show_context_menu: true,
             tab_include_scrollarea: true,
+            tab_hover_name: false,
         }
     }
 }
@@ -290,7 +292,10 @@ impl Style {
             pos.x -= offset.x + x_size.x / 2.0;
             pos.y += rect.size().y / 2.0;
             let x_rect = Rect::from_center_size(pos, x_size);
-            (x_rect, Some(ui.interact(x_rect, id, Sense::click())))
+            let response = ui
+                .interact(x_rect, id, Sense::click())
+                .on_hover_cursor(CursorIcon::PointingHand);
+            (x_rect, Some(response))
         } else {
             (Rect::NOTHING, None)
         };
@@ -583,6 +588,13 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn with_tab_scroll_area(mut self, tab_include_scrollarea: bool) -> Self {
         self.style.tab_include_scrollarea = tab_include_scrollarea;
+        self
+    }
+
+    /// Wheter tabs show their name when hoverd over them.
+    #[inline(always)]
+    pub fn show_name_when_hovered(mut self, tab_hover_name: bool) -> Self {
+        self.style.tab_hover_name = tab_hover_name;
         self
     }
 

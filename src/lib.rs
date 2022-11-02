@@ -62,15 +62,14 @@
 use egui::style::Margin;
 use egui::*;
 
-use tree::TabIndex;
-use utils::*;
-
+#[allow(deprecated)]
 pub use crate::{
     dynamic_tab::{DynamicTabViewer, DynamicTree, Tab, TabBuilder},
     style::{Style, StyleBuilder, TabAddAlign},
-    tree::{Node, NodeIndex, Split, Tree},
+    tree::{Node, NodeIndex, Split, TabIndex, Tree},
 };
 pub use egui;
+use utils::*;
 
 mod dynamic_tab;
 mod style;
@@ -412,6 +411,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 } else {
                                     Sense::click_and_drag()
                                 };
+
+                                if style.tab_hover_name {
+                                    response.0.clone().on_hover_ui(|ui| {
+                                        ui.label(tab_viewer.title(tab));
+                                    });
+                                }
 
                                 if style.show_context_menu {
                                     response.0.clone().context_menu(|ui| {
