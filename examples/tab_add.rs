@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
-use egui_dock::{DockArea, NodeIndex, Style, Tree, StyleBuilder};
+use egui_dock::{DockArea, NodeIndex, Tree, StyleBuilder};
 
 fn main() {
     let options = NativeOptions::default();
