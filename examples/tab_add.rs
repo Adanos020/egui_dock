@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
-use egui_dock::{DockArea, NodeIndex, Tree, StyleBuilder};
+use egui_dock::{DockArea, NodeIndex, StyleBuilder, Tree};
 
 fn main() {
     let options = NativeOptions::default();
@@ -14,7 +14,7 @@ fn main() {
 }
 
 struct TabViewer<'a> {
-    added_nodes: &'a mut Vec<NodeIndex>
+    added_nodes: &'a mut Vec<NodeIndex>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_> {
@@ -35,7 +35,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
 struct MyApp {
     tree: Tree<usize>,
-    counter: usize
+    counter: usize,
 }
 
 impl Default for MyApp {
@@ -55,9 +55,18 @@ impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let mut added_nodes = Vec::new();
         DockArea::new(&mut self.tree)
-            .style(StyleBuilder::from_egui(ctx.style().as_ref()).show_add_buttons(true).build())
-            .show(ctx, &mut TabViewer { added_nodes: &mut added_nodes });
-        
+            .style(
+                StyleBuilder::from_egui(ctx.style().as_ref())
+                    .show_add_buttons(true)
+                    .build(),
+            )
+            .show(
+                ctx,
+                &mut TabViewer {
+                    added_nodes: &mut added_nodes,
+                },
+            );
+
         added_nodes.drain(..).for_each(|node| {
             self.tree.set_focused_node(node);
             self.tree.push_to_focused_leaf(self.counter);
