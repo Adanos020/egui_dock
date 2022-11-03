@@ -24,6 +24,7 @@ pub struct Style {
     pub separator_color: Color32,
 
     pub tab_bar_background_color: Color32,
+    pub tab_bar_height: f32,
 
     pub tab_outline_color: Color32,
     pub tab_rounding: Rounding,
@@ -65,6 +66,7 @@ impl Default for Style {
             separator_color: Color32::BLACK,
 
             tab_bar_background_color: Color32::WHITE,
+            tab_bar_height: 24.0,
 
             tab_outline_color: Color32::BLACK,
             tab_rounding: Default::default(),
@@ -217,7 +219,7 @@ impl Style {
     }
 
     pub(crate) fn tab_plus(&self, ui: &mut Ui) -> Response {
-        let desired_size = Vec2::splat(24.0);
+        let desired_size = Vec2::splat(self.tab_bar_height);
 
         let mut rect = ui.available_rect_before_wrap();
 
@@ -275,11 +277,14 @@ impl Style {
         let offset = vec2(8.0, 0.0);
 
         let desired_size = if self.expand_tabs {
-            vec2(expanded_width, 24.0)
+            vec2(expanded_width, self.tab_bar_height)
         } else if self.show_close_buttons {
-            vec2(galley.size().x + offset.x * 2.0 + x_size.x + 5.0, 24.0)
+            vec2(
+                galley.size().x + offset.x * 2.0 + x_size.x + 5.0,
+                self.tab_bar_height,
+            )
         } else {
-            vec2(galley.size().x + offset.x * 2.0, 24.0)
+            vec2(galley.size().x + offset.x * 2.0, self.tab_bar_height)
         };
 
         let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
@@ -330,9 +335,8 @@ impl Style {
             pos.x -= galley.size().x / 2.0;
             pos
         } else {
-            Align2::LEFT_TOP
-                .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
-                .min
+            Align2::LEFT_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)))
+                - vec2(0.0, galley.size().y / 2.0)
         };
 
         let override_text_color = if galley.galley_has_color {
@@ -456,6 +460,13 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn with_tab_bar_background(mut self, tab_bar_background_color: Color32) -> Self {
         self.style.tab_bar_background_color = tab_bar_background_color;
+        self
+    }
+
+    /// Sets `tab_bar_height` for the color of tab bar. By `Default` it's `24.0`.
+    #[inline(always)]
+    pub fn with_tab_bar_height(mut self, tab_bar_height: f32) -> Self {
+        self.style.tab_bar_height = tab_bar_height;
         self
     }
 
