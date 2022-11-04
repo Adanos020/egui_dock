@@ -232,7 +232,15 @@ impl Style {
         let response = ui
             .allocate_rect(rect, Sense::hover())
             .on_hover_cursor(CursorIcon::PointingHand);
-        let rect = rect.shrink(4.0);
+        let rect = {
+            let size = FontSelection::Style(TextStyle::Body)
+                .resolve(ui.style())
+                .size;
+            let mut pos = rect.right_top();
+            pos.x -= size / 2.0;
+            pos.y += rect.size().y / 2.0;
+            Rect::from_center_size(pos, Vec2::splat(size))
+        };
 
         let color = if response.hovered() {
             self.add_tab_active_color
@@ -243,6 +251,8 @@ impl Style {
             ui.painter()
                 .rect_filled(rect, Rounding::same(2.0), self.add_tab_background_color);
         }
+
+        let rect = rect.shrink(1.75);
         ui.painter().line_segment(
             [rect.center_top(), rect.center_bottom()],
             Stroke::new(1.0, color),
@@ -272,7 +282,7 @@ impl Style {
 
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
 
-        let x_size = Vec2::new(galley.size().y / 1.3, galley.size().y / 1.3);
+        let x_size = Vec2::splat(galley.size().y / 1.3);
 
         let offset = vec2(8.0, 0.0);
 
