@@ -126,11 +126,19 @@ impl MyContext {
             );
             ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
             ui.checkbox(&mut style.expand_tabs, "Expand tabs");
-            ui.checkbox(&mut style.show_context_menu, "Show context_menu");
+            ui.checkbox(&mut style.show_context_menu, "Show context menu");
+            ui.checkbox(&mut style.show_add_buttons, "Show add buttons");
             ui.checkbox(
                 &mut style.tab_include_scrollarea,
                 "Include ScrollArea inside of tabs",
             );
+
+            ui.separator();
+
+            ui.horizontal(|ui| {
+                ui.add(Slider::new(&mut style.tab_bar_height, 20.0..=50.0));
+                ui.label("Tab bar height");
+            });
 
             ui.separator();
 
