@@ -45,6 +45,7 @@ pub struct Style {
     pub add_tab_active_color: Color32,
     pub add_tab_background_color: Color32,
     pub show_add_buttons: bool,
+    pub show_add_popup: bool,
 
     pub show_context_menu: bool,
     pub tab_include_scrollarea: bool,
@@ -83,6 +84,7 @@ impl Default for Style {
             add_tab_active_color: Color32::WHITE,
             add_tab_background_color: Color32::GRAY,
             show_add_buttons: false,
+            show_add_popup: false,
 
             tabs_are_draggable: true,
             expand_tabs: false,
@@ -546,6 +548,13 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn show_add_buttons(mut self, show_add_buttons: bool) -> Self {
         self.style.show_add_buttons = show_add_buttons;
+        self
+    }
+
+    /// Shows / Hides the add button popup.
+    #[inline(always)]
+    pub fn show_add_popup(mut self, show_add_popup: bool) -> Self {
+        self.style.show_add_popup = show_add_popup;
         self
     }
 

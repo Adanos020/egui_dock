@@ -72,6 +72,7 @@ pub use egui;
 use utils::*;
 
 mod dynamic_tab;
+mod popup;
 mod style;
 mod tree;
 mod utils;
@@ -172,6 +173,12 @@ pub trait TabViewer {
     /// The `_node` specifies which `Node` or split of the tree that this
     /// particular add button was pressed on.
     fn on_add(&mut self, _node: NodeIndex) {}
+
+    /// Content of add_popup. Displays a popup under the add button. Useful for selecting
+    /// what type of tab to add.
+    ///
+    /// This requires the dock style's `show_add_buttons` and `show_add_popup` to be `true`.
+    fn add_popup(&mut self, _ui: &mut Ui, _node: NodeIndex) {}
 
     /// This is called every frame after `ui` is called (if the tab is active).
     ///
@@ -463,7 +470,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             let response = style.tab_plus(ui);
 
                             let response = ui.interact(response.rect, id, Sense::click());
+                            let popup_id = id.with("tab_add_popup");
+
+                            popup::popup_under_widget(ui, popup_id, &response, |ui| {
+                                tab_viewer.add_popup(ui, node_index);
+                            });
+
                             if response.clicked() {
+                                if style.show_add_popup {
+                                    ui.memory().toggle_popup(popup_id);
+                                }
                                 tab_viewer.on_add(node_index);
                             }
                         };
