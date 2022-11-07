@@ -43,7 +43,6 @@ impl MyTab {
             MyTabKind::Regular => format!("Regular Tab {}", self.node.0),
             MyTabKind::Fancy => format!("Fancy Tab {}", self.node.0),
         }
-        .to_owned()
     }
 
     fn content(&self) -> RichText {
@@ -59,7 +58,6 @@ impl MyTab {
             .size(20.0)
             .color(Color32::from_rgb(255, 128, 64)),
         }
-        .to_owned()
     }
 }
 
