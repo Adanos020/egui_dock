@@ -287,7 +287,7 @@ impl Style {
         };
 
         let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
-        if !ui.memory().is_anything_being_dragged() {
+        if !ui.memory().is_anything_being_dragged() && is_being_dragged {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 
