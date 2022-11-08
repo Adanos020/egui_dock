@@ -13,6 +13,10 @@
 - The `ScrollArea` inside a tab is now optional via `Style`. ([#49](https://github.com/Adanos020/egui_dock/pull/49))
 - `Tree::tabs`: an iterator over the tabs in a tree. ([#53](https://github.com/Adanos020/egui_dock/pull/53))
 - `Style` now includes an option to show the hoverd tab's name. ([#56](https://github.com/Adanos020/egui_dock/pull/56))
+- `Style` now includes an option to change default inner_margin. ([#67](https://github.com/Adanos020/egui_dock/pull/67))
+
+### Breaking changes
+- Renamed `TabViewer::inner_margin` to `TabViewer::inner_margin_override`. ([#67](https://github.com/Adanos020/egui_dock/pull/67))
 
 ### Deprecated (will be deleted in the next release)
 - `dynamic_tab::TabContent`

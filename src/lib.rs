@@ -190,8 +190,8 @@ pub trait TabViewer {
     }
 
     /// Sets the margins between tab's borders and its contents.
-    fn inner_margin(&self) -> Margin {
-        Margin::same(4.0)
+    fn inner_margin_override(&self, style: &Style) -> Margin {
+        style.default_inner_margin
     }
 
     /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`]
@@ -520,18 +520,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                         .with((tab_viewer.title(tab).text(), "egui_dock::Tab")),
                                 )
                                 .show(ui, |ui| {
-                                    Frame::none().inner_margin(tab_viewer.inner_margin()).show(
-                                        ui,
-                                        |ui| {
+                                    Frame::none()
+                                        .inner_margin(tab_viewer.inner_margin_override(&style))
+                                        .show(ui, |ui| {
                                             let available_rect = ui.available_rect_before_wrap();
                                             ui.expand_to_include_rect(available_rect);
                                             tab_viewer.ui(ui, tab);
-                                        },
-                                    );
+                                        });
                                 });
                         } else {
                             Frame::none()
-                                .inner_margin(tab_viewer.inner_margin())
+                                .inner_margin(tab_viewer.inner_margin_override(&style))
                                 .show(ui, |ui| {
                                     tab_viewer.ui(ui, tab);
                                 });
