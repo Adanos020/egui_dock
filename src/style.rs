@@ -216,8 +216,10 @@ impl Style {
         )
     }
 
+    pub(crate) const TAB_PLUS_SIZE: f32 = 24.0;
+
     pub(crate) fn tab_plus(&self, ui: &mut Ui) -> Response {
-        let desired_size = Vec2::splat(24.0);
+        let desired_size = Vec2::splat(Self::TAB_PLUS_SIZE);
 
         let mut rect = ui.available_rect_before_wrap();
 

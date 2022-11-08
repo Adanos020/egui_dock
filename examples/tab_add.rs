@@ -58,6 +58,7 @@ impl eframe::App for MyApp {
             .style(
                 StyleBuilder::from_egui(ctx.style().as_ref())
                     .show_add_buttons(true)
+                    .expand_tabs(true)
                     .build(),
             )
             .show(

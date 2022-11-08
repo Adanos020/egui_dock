@@ -330,7 +330,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let b = pos2(tabbar.max.x, tabbar.max.y - px);
                     ui.painter()
                         .line_segment([a, b], (px, style.tab_outline_color));
-                    let expanded_width = (tabbar.max.x - tabbar.min.x) / (tabs.len() as f32);
+                    let mut available_width = tabbar.max.x - tabbar.min.x;
+                    if style.show_add_buttons {
+                        available_width -= Style::TAB_PLUS_SIZE;
+                    }
+                    let expanded_width = available_width / (tabs.len() as f32);
 
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
