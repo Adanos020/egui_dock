@@ -13,6 +13,7 @@ pub enum TabAddAlign {
 #[derive(Clone)]
 pub struct Style {
     pub dock_area_padding: Option<Margin>,
+    pub default_inner_margin: Margin,
 
     pub border_color: Color32,
     pub border_width: f32,
@@ -56,6 +57,7 @@ impl Default for Style {
     fn default() -> Self {
         Self {
             dock_area_padding: None,
+            default_inner_margin: Margin::same(4.0),
 
             border_color: Color32::BLACK,
             border_width: Default::default(),
