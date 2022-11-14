@@ -22,7 +22,9 @@ pub struct Style {
 
     pub separator_width: f32,
     pub separator_extra: f32,
-    pub separator_color: Color32,
+    pub separator_color_idle: Color32,
+    pub separator_color_hovered: Color32,
+    pub separator_color_dragged: Color32,
 
     pub tab_bar_background_color: Color32,
 
@@ -65,7 +67,9 @@ impl Default for Style {
             selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
             separator_width: 1.0,
             separator_extra: 175.0,
-            separator_color: Color32::BLACK,
+            separator_color_idle: Color32::BLACK,
+            separator_color_hovered: Color32::GRAY,
+            separator_color_dragged: Color32::WHITE,
 
             tab_bar_background_color: Color32::WHITE,
 
@@ -124,7 +128,10 @@ impl Style {
             tab_text_color_unfocused: style.visuals.text_color(),
             tab_text_color_focused: style.visuals.strong_text_color(),
 
-            separator_color: style.visuals.widgets.active.bg_fill,
+            separator_color_idle: style.visuals.widgets.noninteractive.bg_stroke.color,
+            separator_color_hovered: style.visuals.widgets.hovered.bg_stroke.color,
+            separator_color_dragged: style.visuals.widgets.active.bg_stroke.color,
+
             border_color: style.visuals.widgets.active.bg_fill,
 
             close_tab_background_color: style.visuals.widgets.active.bg_fill,
@@ -138,7 +145,12 @@ impl Style {
         }
     }
 
-    pub(crate) fn hsplit(&self, ui: &mut Ui, fraction: &mut f32, rect: Rect) -> (Rect, Rect, Rect) {
+    pub(crate) fn hsplit(
+        &self,
+        ui: &mut Ui,
+        fraction: &mut f32,
+        rect: Rect,
+    ) -> (Response, Rect, Rect, Rect) {
         let pixels_per_point = ui.ctx().pixels_per_point();
 
         let mut separator = rect;
@@ -173,13 +185,19 @@ impl Style {
         );
 
         (
+            response,
             rect.intersect(Rect::everything_right_of(separator.max.x)),
             separator,
             rect.intersect(Rect::everything_left_of(separator.min.x)),
         )
     }
 
-    pub(crate) fn vsplit(&self, ui: &mut Ui, fraction: &mut f32, rect: Rect) -> (Rect, Rect, Rect) {
+    pub(crate) fn vsplit(
+        &self,
+        ui: &mut Ui,
+        fraction: &mut f32,
+        rect: Rect,
+    ) -> (Response, Rect, Rect, Rect) {
         let pixels_per_point = ui.ctx().pixels_per_point();
 
         let mut separator = rect;
@@ -214,6 +232,7 @@ impl Style {
         );
 
         (
+            response,
             rect.intersect(Rect::everything_above(separator.min.y)),
             separator,
             rect.intersect(Rect::everything_below(separator.max.y)),
@@ -451,10 +470,24 @@ impl StyleBuilder {
         self
     }
 
-    /// Sets `separator_color`for the rectangle separator. By `Default` it's [`Color32::BLACK`].
+    /// Sets the idle color for the rectangle separator. By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
-    pub fn with_separator_color(mut self, separator_color: Color32) -> Self {
-        self.style.separator_color = separator_color;
+    pub fn with_separator_color_idle(mut self, separator_color_idle: Color32) -> Self {
+        self.style.separator_color_idle = separator_color_idle;
+        self
+    }
+
+    /// Sets the hovered color for the rectangle separator. By `Default` it's [`Color32::GRAY`].
+    #[inline(always)]
+    pub fn with_separator_color_hovered(mut self, separator_color_hovered: Color32) -> Self {
+        self.style.separator_color_hovered = separator_color_hovered;
+        self
+    }
+
+    /// Sets the dragged color for the rectangle separator. By `Default` it's [`Color32::WHITE`].
+    #[inline(always)]
+    pub fn with_separator_color_dragged(mut self, separator_color_dragged: Color32) -> Self {
+        self.style.separator_color_dragged = separator_color_dragged;
         self
     }
 

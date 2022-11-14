@@ -113,8 +113,14 @@ impl MyContext {
 
             ui.separator();
 
-            ui.label("Color");
-            color_picker_color32(ui, &mut style.separator_color, Alpha::OnlyBlend);
+            ui.label("Idle color");
+            color_picker_color32(ui, &mut style.separator_color_idle, Alpha::OnlyBlend);
+
+            ui.label("Hovered color");
+            color_picker_color32(ui, &mut style.separator_color_hovered, Alpha::OnlyBlend);
+
+            ui.label("Dragged color");
+            color_picker_color32(ui, &mut style.separator_color_dragged, Alpha::OnlyBlend);
         });
 
         ui.collapsing("Tabs", |ui| {
