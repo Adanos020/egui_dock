@@ -14,4 +14,4 @@ This fork aims to provide documentation and further development if necessary.
 
 ## Contribution
 
-Feel free to open issues and pull requests.
+Before contributing, please read [the contribution guide](CONTRIBUTING.md).
