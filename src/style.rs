@@ -105,18 +105,22 @@ impl Style {
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - `selection_color`
-    /// - `tab_bar_background_color`
-    /// - `tab_outline_color`
-    /// - `tab_background_color`
-    /// - `separator_color`
-    /// - `border_color`
-    /// - `close_tab_background_color`
-    /// - `close_tab_color`
-    /// - `close_tab_active_color`
-    /// - `add_tab_background_color`
-    /// - `add_tab_color`
-    /// - `add_tab_active_color`
+    /// - [`Self::selection_color`]
+    /// - [`Self::tab_bar_background_color`]
+    /// - [`Self::tab_outline_color`]
+    /// - [`Self::tab_background_color`]
+    /// - [`Self::tab_text_color_unfocused`]
+    /// - [`Self::tab_text_color_focused`]
+    /// - [`Self::separator_color_idle`]
+    /// - [`Self::separator_color_hovered`]
+    /// - [`Self::separator_color_dragged`]
+    /// - [`Self::border_color`]
+    /// - [`Self::close_tab_background_color`]
+    /// - [`Self::close_tab_color`]
+    /// - [`Self::close_tab_active_color`]
+    /// - [`Self::add_tab_background_color`]
+    /// - [`Self::add_tab_color`]
+    /// - [`Self::add_tab_active_color`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
