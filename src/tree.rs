@@ -1,4 +1,4 @@
-use egui::*;
+use egui::Rect;
 
 /// Identifies a tab within a [`Node`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]

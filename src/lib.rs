@@ -59,8 +59,10 @@
 //! # });
 //! ```
 
-use egui::style::Margin;
-use egui::*;
+use egui::{
+    pos2, style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect,
+    Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
+};
 
 #[allow(deprecated)]
 pub use crate::{
@@ -69,7 +71,8 @@ pub use crate::{
     tree::{Node, NodeIndex, Split, TabIndex, Tree},
 };
 pub use egui;
-use utils::*;
+
+use utils::expand_to_pixel;
 
 mod dynamic_tab;
 mod popup;
