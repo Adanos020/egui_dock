@@ -59,8 +59,10 @@
 //! # });
 //! ```
 
-use egui::style::Margin;
-use egui::*;
+use egui::{
+    pos2, style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect,
+    Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
+};
 
 #[allow(deprecated)]
 pub use crate::{
@@ -69,7 +71,8 @@ pub use crate::{
     tree::{Node, NodeIndex, Split, TabIndex, Tree},
 };
 pub use egui;
-use utils::*;
+
+use utils::expand_to_pixel;
 
 mod dynamic_tab;
 mod popup;
@@ -257,7 +260,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             ui.painter().rect(
                 rect,
                 margin.top,
-                style.separator_color,
+                style.separator_color_idle,
                 Stroke::new(margin.top, style.border_color),
             );
         }
@@ -289,14 +292,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
-                let (left, separator, right) = if is_horizontal {
+                let (response, left, separator, right) = if is_horizontal {
                     style.hsplit(ui, fraction, rect)
                 } else {
                     style.vsplit(ui, fraction, rect)
                 };
 
-                ui.painter()
-                    .rect_filled(separator, Rounding::none(), style.separator_color);
+                let color = if response.dragged() {
+                    style.separator_color_dragged
+                } else if response.hovered() {
+                    style.separator_color_hovered
+                } else {
+                    style.separator_color_idle
+                };
+
+                ui.painter().rect_filled(separator, Rounding::none(), color);
 
                 self.tree[node_index.left()].set_rect(left);
                 self.tree[node_index.right()].set_rect(right);
