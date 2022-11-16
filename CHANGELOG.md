@@ -14,9 +14,11 @@
 - `Tree::tabs`: an iterator over the tabs in a tree. ([#53](https://github.com/Adanos020/egui_dock/pull/53))
 - `Style` now includes an option to show the hoverd tab's name. ([#56](https://github.com/Adanos020/egui_dock/pull/56))
 - `Style` now includes an option to change default inner_margin. ([#67](https://github.com/Adanos020/egui_dock/pull/67))
+- The split separator now highlights on hover ([#68](https://github.com/Adanos020/egui_dock/pull/68))
 
 ### Breaking changes
 - Renamed `TabViewer::inner_margin` to `TabViewer::inner_margin_override`. ([#67](https://github.com/Adanos020/egui_dock/pull/67))
+- `Style::with_separator_color` has been split into `separator_color_idle`, `separator_color_hovered`, `separator_color_dragged` ([#68](https://github.com/Adanos020/egui_dock/pull/68))
 
 ### Deprecated (will be deleted in the next release)
 - `dynamic_tab::TabContent`
