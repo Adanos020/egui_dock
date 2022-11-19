@@ -670,6 +670,31 @@ impl<Tab> Tree<Tab> {
             }
         }
     }
+
+    pub fn remove_tab(&mut self, remove: (NodeIndex, TabIndex)) -> Option<Tab> {
+        let mut emptied = 0;
+
+        let tab = if let Node::Leaf { tabs, active, .. } = &mut self[remove.0] {
+            let tab = tabs.remove(remove.1 .0);
+
+            if remove.1 <= *active {
+                active.0 = active.0.saturating_sub(1);
+            }
+            if tabs.is_empty() {
+                emptied += 1;
+            }
+
+            Some(tab)
+        } else {
+            None
+        };
+
+        for _ in 0..emptied {
+            self.remove_empty_leaf()
+        }
+
+        tab
+    }
 }
 
 impl<Tab> Tree<Tab>
