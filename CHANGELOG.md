@@ -15,6 +15,7 @@
 - `Style` now includes an option to show the hoverd tab's name. ([#56](https://github.com/Adanos020/egui_dock/pull/56))
 - `Style` now includes an option to change default inner_margin. ([#67](https://github.com/Adanos020/egui_dock/pull/67))
 - The split separator now highlights on hover ([#68](https://github.com/Adanos020/egui_dock/pull/68))
+- Tabs can now be removed with `Tree::remove_tab` ([#70](https://github.com/Adanos020/egui_dock/pull/70))
 
 ### Breaking changes
 - Renamed `TabViewer::inner_margin` to `TabViewer::inner_margin_override`. ([#67](https://github.com/Adanos020/egui_dock/pull/67))
