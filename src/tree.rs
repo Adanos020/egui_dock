@@ -35,6 +35,7 @@ pub enum Node<Tab> {
 
 impl<Tab> Node<Tab> {
     /// Constructs a leaf node with a given `tab`.
+    #[inline(always)]
     pub fn leaf(tab: Tab) -> Self {
         Self::Leaf {
             rect: Rect::NOTHING,
@@ -45,6 +46,7 @@ impl<Tab> Node<Tab> {
     }
 
     /// Constructs a leaf node with a given list of `tabs`.
+    #[inline(always)]
     pub const fn leaf_with(tabs: Vec<Tab>) -> Self {
         Self::Leaf {
             rect: Rect::NOTHING,
@@ -55,7 +57,7 @@ impl<Tab> Node<Tab> {
     }
 
     /// Sets the area occupied by the node.
-    #[inline(always)]
+    #[inline]
     pub fn set_rect(&mut self, new_rect: Rect) {
         match self {
             Self::Empty => (),
@@ -66,26 +68,31 @@ impl<Tab> Node<Tab> {
     }
 
     /// Returns `true` if the node is a `Empty`, `false` otherwise.
+    #[inline(always)]
     pub const fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
     }
 
     /// Returns `true` if the node is a `Leaf`, `false` otherwise.
+    #[inline(always)]
     pub const fn is_leaf(&self) -> bool {
         matches!(self, Self::Leaf { .. })
     }
 
     /// Returns `true` if the node is a `Horizontal`, `false` otherwise.
+    #[inline(always)]
     pub const fn is_horizontal(&self) -> bool {
         matches!(self, Self::Horizontal { .. })
     }
 
     /// Returns `true` if the node is a `Vertical`, `false` otherwise.
+    #[inline(always)]
     pub const fn is_vertical(&self) -> bool {
         matches!(self, Self::Vertical { .. })
     }
 
     /// Returns `true` if the node is either `Horizontal` or `Vertical`, `false` otherwise.
+    #[inline(always)]
     pub const fn is_parent(&self) -> bool {
         self.is_horizontal() || self.is_vertical()
     }
@@ -106,6 +113,7 @@ impl<Tab> Node<Tab> {
     /// # Panics
     /// Panics if the new capacity of `tabs` exceeds isize::MAX bytes.
     #[track_caller]
+    #[inline]
     pub fn append_tab(&mut self, tab: Tab) {
         match self {
             Node::Leaf { tabs, active, .. } => {
@@ -122,6 +130,7 @@ impl<Tab> Node<Tab> {
     /// Panics if the new capacity of `tabs` exceeds isize::MAX bytes.
     /// index > tabs_count()
     #[track_caller]
+    #[inline]
     pub fn insert_tab(&mut self, index: TabIndex, tab: Tab) {
         match self {
             Node::Leaf { tabs, active, .. } => {
@@ -137,6 +146,7 @@ impl<Tab> Node<Tab> {
     ///
     /// # Panics
     /// Panics if `index` is out of bounds.
+    #[inline]
     pub fn remove_tab(&mut self, tab_index: TabIndex) -> Option<Tab> {
         match self {
             Node::Leaf { tabs, .. } => Some(tabs.remove(tab_index.0)),
@@ -144,7 +154,7 @@ impl<Tab> Node<Tab> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn tabs_count(&self) -> usize {
         match self {
             Node::Leaf { tabs, .. } => tabs.len(),
@@ -161,7 +171,7 @@ impl<Tab> Node<Tab> {
 pub struct NodeIndex(pub usize);
 
 impl From<usize> for NodeIndex {
-    #[inline]
+    #[inline(always)]
     fn from(index: usize) -> Self {
         NodeIndex(index)
     }
@@ -169,21 +179,25 @@ impl From<usize> for NodeIndex {
 
 impl NodeIndex {
     /// Returns the index of the root node.
+    #[inline(always)]
     pub const fn root() -> Self {
         Self(0)
     }
 
     /// Returns the index of the node to the left of the current one.
+    #[inline(always)]
     pub const fn left(self) -> Self {
         Self(self.0 * 2 + 1)
     }
 
     /// Returns the index of the node to the right of the current one.
+    #[inline(always)]
     pub const fn right(self) -> Self {
         Self(self.0 * 2 + 2)
     }
 
     /// Returns the index of the parent node or `None` if current node is the root.
+    #[inline]
     pub const fn parent(self) -> Option<Self> {
         if self.0 > 0 {
             Some(Self((self.0 - 1) / 2))
@@ -193,20 +207,24 @@ impl NodeIndex {
     }
 
     /// Returns the number of nodes leading from the root to the current node, including `self`.
+    #[inline(always)]
     pub const fn level(self) -> usize {
         (usize::BITS - (self.0 + 1).leading_zeros()) as usize
     }
 
     /// Returns true if current node is the left node of its parent, false otherwise.
+    #[inline(always)]
     pub const fn is_left(self) -> bool {
         self.0 % 2 != 0
     }
 
     /// Returns true if current node is the right node of its parent, false otherwise.
+    #[inline(always)]
     pub const fn is_right(self) -> bool {
         self.0 % 2 == 0
     }
 
+    #[inline]
     const fn children_at(self, level: usize) -> std::ops::Range<usize> {
         let base = 1 << level;
         let s = (self.0 + 1) * base - 1;
@@ -214,6 +232,7 @@ impl NodeIndex {
         s..e
     }
 
+    #[inline]
     const fn children_left(self, level: usize) -> std::ops::Range<usize> {
         let base = 1 << level;
         let s = (self.0 + 1) * base - 1;
@@ -221,6 +240,7 @@ impl NodeIndex {
         s..e
     }
 
+    #[inline]
     const fn children_right(self, level: usize) -> std::ops::Range<usize> {
         let base = 1 << level;
         let s = (self.0 + 1) * base + base / 2 - 1;
@@ -244,18 +264,10 @@ pub enum Split {
 
 /// Binary tree representing the relationships between `Node`s.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[derive(Default)]
 pub struct Tree<Tab> {
     tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
-}
-
-impl<Tab> Default for Tree<Tab> {
-    fn default() -> Self {
-        Self {
-            tree: Default::default(),
-            focused_node: Default::default(),
-        }
-    }
 }
 
 impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
@@ -286,6 +298,7 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Returns the viewport `Rect` and the `Tab` inside the first leaf node, or `None` of no leaf exists in the `Tree`.
+    #[inline]
     pub fn find_active(&mut self) -> Option<(Rect, &mut Tab)> {
         self.tree.iter_mut().find_map(|node| {
             if let Node::Leaf {
@@ -303,6 +316,7 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Returns the viewport `Rect` and the `Tab` inside the focused leaf node or `None` if it does not exist.
+    #[inline]
     pub fn find_active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
         if let Some(Node::Leaf {
             tabs,
@@ -330,21 +344,25 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Returns `Iter` of the underlying collection of nodes.
+    #[inline(always)]
     pub fn iter(&self) -> std::slice::Iter<'_, Node<Tab>> {
         self.tree.iter()
     }
 
     /// Returns `IterMut` of the underlying collection of nodes.
+    #[inline(always)]
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Node<Tab>> {
         self.tree.iter_mut()
     }
 
     /// Returns an iterator over all tabs in arbitrary order
+    #[inline(always)]
     pub fn tabs(&self) -> TabIter<'_, Tab> {
         TabIter::new(self)
     }
 
     /// Number of tabs
+    #[inline]
     pub fn num_tabs(&self) -> usize {
         let mut count = 0;
         for node in self.tree.iter() {
@@ -364,6 +382,7 @@ impl<Tab> Tree<Tab> {
     /// The new node is placed relatively to the old node, in the direction specified by `split`.
     ///
     /// Returns the indices of the old node and the new node.
+    #[inline(always)]
     pub fn split_tabs(
         &mut self,
         parent: NodeIndex,
@@ -383,6 +402,7 @@ impl<Tab> Tree<Tab> {
     /// The new node is placed above the old node.
     ///
     /// Returns the indices of the old node and the new node.
+    #[inline(always)]
     pub fn split_above(
         &mut self,
         parent: NodeIndex,
@@ -401,6 +421,7 @@ impl<Tab> Tree<Tab> {
     /// The new node is placed below the old node.
     ///
     /// Returns the indices of the old node and the new node.
+    #[inline(always)]
     pub fn split_below(
         &mut self,
         parent: NodeIndex,
@@ -419,6 +440,7 @@ impl<Tab> Tree<Tab> {
     /// The new node is placed to the left of the old node.
     ///
     /// Returns the indices of the old node and the new node.
+    #[inline(always)]
     pub fn split_left(
         &mut self,
         parent: NodeIndex,
@@ -437,6 +459,7 @@ impl<Tab> Tree<Tab> {
     /// The new node is placed to the right of the old node.
     ///
     /// Returns the indices of the old node and the new node.
+    #[inline(always)]
     pub fn split_right(
         &mut self,
         parent: NodeIndex,
@@ -612,11 +635,13 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Currently focused leaf.
+    #[inline]
     pub fn focused_leaf(&self) -> Option<NodeIndex> {
         self.focused_node
     }
 
     /// Sets the currently focused leaf to `node_index` if the node at `node_index` is a leaf.
+    #[inline]
     pub fn set_focused_node(&mut self, node_index: NodeIndex) {
         if let Some(Node::Leaf { .. }) = self.tree.get(node_index.0) {
             self.focused_node = Some(node_index);
@@ -626,6 +651,7 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Sets which is the active tab within a specific node.
+    #[inline]
     pub fn set_active_tab(&mut self, node_index: NodeIndex, tab_index: TabIndex) {
         if let Some(Node::Leaf { active, .. }) = self.tree.get_mut(node_index.0) {
             *active = tab_index;

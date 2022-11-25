@@ -136,10 +136,12 @@ struct State {
 }
 
 impl State {
+    #[inline(always)]
     pub fn load(ctx: &Context, id: Id) -> Self {
         ctx.data().get_temp(id).unwrap_or(Self { drag_start: None })
     }
 
+    #[inline(always)]
     fn store(self, ctx: &Context, id: Id) {
         ctx.data().insert_temp(id, self);
     }
@@ -215,6 +217,7 @@ pub struct DockArea<'tree, Tab> {
 }
 
 impl<'tree, Tab> DockArea<'tree, Tab> {
+    #[inline(always)]
     pub fn new(tree: &'tree mut Tree<Tab>) -> DockArea<'tree, Tab> {
         Self {
             id: Id::new("egui_dock::DockArea"),
@@ -224,18 +227,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     }
 
     /// Sets the [DockArea] id. Useful if you have more than one [DockArea].
+    #[inline(always)]
     pub fn id(mut self, id: Id) -> Self {
         self.id = id;
         self
     }
 
     /// Sets the dock area style.
+    #[inline(always)]
     pub fn style(mut self, style: Style) -> Self {
         self.style = Some(style);
         self
     }
 
     /// Shows the docking area.
+    #[inline]
     pub fn show(self, ctx: &Context, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         let layer_id = LayerId::background();
         let max_rect = ctx.available_rect();

@@ -18,55 +18,55 @@ pub(crate) fn popup_under_widget<R>(
     widget_response: &Response,
     add_contents: impl FnOnce(&mut Ui) -> R,
 ) -> Option<R> {
-    if ui.memory().is_popup_open(popup_id) {
-        let state: Option<State> = ui.data().get_temp(popup_id);
-
-        // If this is the first draw, we don't know the popup size yet, so we don't know how to
-        // position the popup
-        if state.is_none() {
-            ui.ctx().request_repaint();
-        }
-
-        let mut state = state.unwrap_or_default();
-
-        let rect = Rect {
-            min: widget_response.rect.left_bottom(),
-            max: widget_response.rect.left_bottom() + state.size,
-        };
-        let inner = Area::new(popup_id)
-            .order(Order::Foreground)
-            .fixed_pos(constrain_window_rect_to_area(ui.ctx(), rect, None).min)
-            .movable(true)
-            .show(ui.ctx(), |ui| {
-                // Note: we use a separate clip-rect for this area, so the popup can be outside the parent.
-                // See https://github.com/emilk/egui/issues/825
-                let frame = Frame::popup(ui.style());
-                let frame_margin = frame.inner_margin + frame.outer_margin;
-                let result = frame
-                    .show(ui, |ui| {
-                        ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
-                            ui.set_width(widget_response.rect.width() - frame_margin.sum().x);
-                            add_contents(ui)
-                        })
-                        .inner
-                    })
-                    .inner;
-
-                state.size = ui.min_rect().size();
-
-                result
-            })
-            .inner;
-
-        *ui.data().get_temp_mut_or_default(popup_id) = state;
-
-        if ui.input().key_pressed(Key::Escape) || widget_response.clicked_elsewhere() {
-            ui.memory().close_popup();
-        }
-        Some(inner)
-    } else {
-        None
+    if !ui.memory().is_popup_open(popup_id) {
+        return None;
     }
+
+    let state: Option<State> = ui.data().get_temp(popup_id);
+
+    // If this is the first draw, we don't know the popup size yet, so we don't know how to
+    // position the popup
+    if state.is_none() {
+        ui.ctx().request_repaint();
+    }
+
+    let mut state = state.unwrap_or_default();
+
+    let rect = Rect {
+        min: widget_response.rect.left_bottom(),
+        max: widget_response.rect.left_bottom() + state.size,
+    };
+    let inner = Area::new(popup_id)
+        .order(Order::Foreground)
+        .fixed_pos(constrain_window_rect_to_area(ui.ctx(), rect, None).min)
+        .movable(true)
+        .show(ui.ctx(), |ui| {
+            // Note: we use a separate clip-rect for this area, so the popup can be outside the parent.
+            // See https://github.com/emilk/egui/issues/825
+            let frame = Frame::popup(ui.style());
+            let frame_margin = frame.inner_margin + frame.outer_margin;
+            let result = frame
+                .show(ui, |ui| {
+                    ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
+                        ui.set_width(widget_response.rect.width() - frame_margin.sum().x);
+                        add_contents(ui)
+                    })
+                    .inner
+                })
+                .inner;
+
+            state.size = ui.min_rect().size();
+
+            result
+        })
+        .inner;
+
+    *ui.data().get_temp_mut_or_default(popup_id) = state;
+
+    if ui.input().key_pressed(Key::Escape) || widget_response.clicked_elsewhere() {
+        ui.memory().close_popup();
+    }
+    Some(inner)
 }
 
 /// Copied egui because it is a private function on `egui::Context`
