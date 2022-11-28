@@ -696,6 +696,29 @@ impl<Tab> Tree<Tab> {
             }
         }
     }
+
+    /// Removes the tab at the given ([`NodeIndex`], [`TabIndex`]) pair.
+    ///
+    /// If the node is emptied after the tab is removed, the node will also be removed.
+    ///
+    /// Returns the removed tab if it exists, or `None` otherwise.
+    pub fn remove_tab(&mut self, remove: (NodeIndex, TabIndex)) -> Option<Tab> {
+        match &mut self[remove.0] {
+            Node::Leaf { tabs, active, .. } => {
+                let tab = tabs.remove(remove.1 .0);
+
+                if remove.1 <= *active {
+                    active.0 = active.0.saturating_sub(1);
+                }
+                if tabs.is_empty() {
+                    self.remove_empty_leaf();
+                }
+
+                Some(tab)
+            }
+            _ => None,
+        }
+    }
 }
 
 impl<Tab> Tree<Tab>
