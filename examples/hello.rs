@@ -225,13 +225,10 @@ impl Default for MyApp {
         let mut open_tabs = HashSet::new();
 
         for node in tree.iter() {
-            match node {
-                Node::Leaf { tabs, .. } => {
-                    for tab in tabs {
-                        open_tabs.insert(tab.clone());
-                    }
+            if let Node::Leaf { tabs, .. } = node {
+                for tab in tabs {
+                    open_tabs.insert(tab.clone());
                 }
-                _ => (),
             }
         }
         let context = MyContext {
@@ -247,7 +244,7 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        TopBottomPanel::top("egui_dock::MenuBar").show(&ctx, |ui| {
+        TopBottomPanel::top("egui_dock::MenuBar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("View", |ui| {
                     // allow certain tabs to be toggled
