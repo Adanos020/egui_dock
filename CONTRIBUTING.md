@@ -1,6 +1,14 @@
 # Contributing
 
-In order to contribute to this project, please follow the guide below:
+In order to contribute to this project, please follow the guide below.
+
+## Issues
+
+File an issue only if you want to report a bug or request a feature.
+
+Bug reports should include how to reproduce said bug, if known.
+
+## Pull requests
 
 1. Fork this repository.
 2. In your fork create a branch for your changes - do **not** submit directly to `main`.
@@ -8,7 +16,7 @@ In order to contribute to this project, please follow the guide below:
     - If your changes are not complete but e.g. you want feedback on your idea before fully committing to it, open a draft PR.
     - Otherwise, feel free to open a regular PR.
 
-Before your contribution is merged, it needs to be approved by one of the maintainers.
+Before your PR is merged, it needs to be approved by one of the maintainers.
 To minimize the review time, make sure all the following requirements are met:
 
 - Code must be formatted with `cargo fmt` (checked by CI).
@@ -25,3 +33,8 @@ To minimize the review time, make sure all the following requirements are met:
 - All fields of `Style` must have a corresponding field and setter method in `StyleBuilder`, and also be included
   in `style_editor` in the `hello` example.
 - All major features are included in an example app found in `examples/`.
+- The following files and directories are **not** included:
+  - .idea/
+  - .vs/
+  - target/
+  - Cargo.lock
