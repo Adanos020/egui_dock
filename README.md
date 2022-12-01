@@ -8,10 +8,10 @@ Credit goes to [@lain-dono](https://github.com/lain-dono) for implementing the a
 
 This fork aims to provide documentation and further development if necessary.
 
+## How to contribute
+
+Before contributing, please read [the contribution guide](CONTRIBUTING.md).
+
 ## Demo
 
 ![demo](images/demo.gif "Demo")
-
-## Contribution
-
-Feel free to open issues and pull requests.
