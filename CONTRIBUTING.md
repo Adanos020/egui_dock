@@ -11,7 +11,7 @@ Bug reports should include how to reproduce said bug, if known.
 ## Pull requests
 
 1. Fork this repository.
-2. In your fork create a branch for your changes - do **not** submit directly to `main`.
+2. In your fork create a branch for your changes – do **not** submit directly to `main`.
 3. Make your changes and open a pull request.
     - If your changes are not complete but e.g. you want feedback on your idea before fully committing to it, open a draft PR.
     - Otherwise, feel free to open a regular PR.
@@ -19,6 +19,7 @@ Bug reports should include how to reproduce said bug, if known.
 Before your PR is merged, it needs to be approved by one of the maintainers.
 To minimize the review time, make sure all the following requirements are met:
 
+- Your PR is linked to the related issue – if one doesn't exist, create it first.
 - Code must be formatted with `cargo fmt` (checked by CI).
 - Submitted code must compile and pass all tests (checked by CI).
 - All conversations started in a code review must be resolved once you make the requested changes.
