@@ -1,6 +1,6 @@
 # Contributing
 
-In order to contribute to this project, please follow the guide below.
+Before contributing to this project, please follow the guide below.
 
 ## Issues
 
