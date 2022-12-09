@@ -19,8 +19,8 @@ serde = ["dep:serde", "egui/serde"]
 
 
 [dependencies]
-egui = "0.19"
+egui = "0.20"
 serde = { version = "1", optional = true, features = ["derive"] }
 
 [dev-dependencies]
-eframe = "0.19"
+eframe = "0.20"

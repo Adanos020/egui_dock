@@ -374,7 +374,7 @@ impl Style {
         ui.painter().add(epaint::TextShape {
             pos,
             galley: galley.galley,
-            underline: Stroke::none(),
+            underline: Stroke::NONE,
             override_text_color,
             angle: 0.0,
         });
