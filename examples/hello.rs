@@ -1,12 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
+use std::collections::HashSet;
+
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_picker_color32, Alpha},
-    Id, LayerId, Slider, Ui, WidgetText,
+    CentralPanel, Id, LayerId, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
-use egui_dock::{DockArea, NodeIndex, Style, TabViewer, Tree};
+use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
 
 fn main() {
     let options = NativeOptions::default();
@@ -21,6 +23,7 @@ struct MyContext {
     pub title: String,
     pub age: u32,
     pub style: Option<Style>,
+    open_tabs: HashSet<String>,
 }
 
 struct MyApp {
@@ -53,6 +56,11 @@ impl TabViewer for MyContext {
 
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
         tab.as_str().into()
+    }
+
+    fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
+        self.open_tabs.remove(tab);
+        true
     }
 }
 
@@ -113,8 +121,14 @@ impl MyContext {
 
             ui.separator();
 
-            ui.label("Color");
-            color_picker_color32(ui, &mut style.separator_color, Alpha::OnlyBlend);
+            ui.label("Idle color");
+            color_picker_color32(ui, &mut style.separator_color_idle, Alpha::OnlyBlend);
+
+            ui.label("Hovered color");
+            color_picker_color32(ui, &mut style.separator_color_hovered, Alpha::OnlyBlend);
+
+            ui.label("Dragged color");
+            color_picker_color32(ui, &mut style.separator_color_dragged, Alpha::OnlyBlend);
         });
 
         ui.collapsing("Tabs", |ui| {
@@ -207,12 +221,6 @@ impl MyContext {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let context = MyContext {
-            title: "Hello".to_string(),
-            age: 24,
-            style: None,
-        };
-
         let mut tree = Tree::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
         let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec!["Inspector".to_owned()]);
         let [_, _] = tree.split_below(
@@ -222,25 +230,66 @@ impl Default for MyApp {
         );
         let [_, _] = tree.split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
 
+        let mut open_tabs = HashSet::new();
+
+        for node in tree.iter() {
+            if let Node::Leaf { tabs, .. } = node {
+                for tab in tabs {
+                    open_tabs.insert(tab.clone());
+                }
+            }
+        }
+        let context = MyContext {
+            title: "Hello".to_string(),
+            age: 24,
+            style: None,
+            open_tabs,
+        };
+
         Self { context, tree }
     }
 }
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let layer_id = LayerId::background();
-        let max_rect = ctx.available_rect();
-        let clip_rect = ctx.available_rect();
-        let id = Id::new("egui_dock::DockArea");
-        let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
+        TopBottomPanel::top("egui_dock::MenuBar").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                ui.menu_button("View", |ui| {
+                    // allow certain tabs to be toggled
+                    for tab in &["File Browser", "Asset Manager"] {
+                        if ui
+                            .selectable_label(self.context.open_tabs.contains(*tab), *tab)
+                            .clicked()
+                        {
+                            if let Some(index) = self.tree.find_tab(&tab.to_string()) {
+                                self.tree.remove_tab(index);
+                                self.context.open_tabs.remove(*tab);
+                            } else {
+                                self.tree.push_to_focused_leaf(tab.to_string());
+                            }
 
-        let style = self
-            .context
-            .style
-            .get_or_insert(Style::from_egui(&ui.ctx().style()))
-            .clone();
-        DockArea::new(&mut self.tree)
-            .style(style)
-            .show_inside(&mut ui, &mut self.context);
+                            ui.close_menu();
+                        }
+                    }
+                });
+            })
+        });
+
+        CentralPanel::default().show(ctx, |_ui| {
+            let layer_id = LayerId::background();
+            let max_rect = ctx.available_rect();
+            let clip_rect = ctx.available_rect();
+            let id = Id::new("egui_dock::DockArea");
+            let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
+
+            let style = self
+                .context
+                .style
+                .get_or_insert(Style::from_egui(&ui.ctx().style()))
+                .clone();
+            DockArea::new(&mut self.tree)
+                .style(style)
+                .show_inside(&mut ui, &mut self.context);
+        });
     }
 }

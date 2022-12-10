@@ -59,8 +59,10 @@
 //! # });
 //! ```
 
-use egui::style::Margin;
-use egui::*;
+use egui::{
+    pos2, style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect,
+    Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
+};
 
 #[allow(deprecated)]
 pub use crate::{
@@ -69,9 +71,11 @@ pub use crate::{
     tree::{Node, NodeIndex, Split, TabIndex, Tree},
 };
 pub use egui;
-use utils::*;
+
+use utils::expand_to_pixel;
 
 mod dynamic_tab;
+mod popup;
 mod style;
 mod tree;
 mod utils;
@@ -132,10 +136,12 @@ struct State {
 }
 
 impl State {
+    #[inline(always)]
     pub fn load(ctx: &Context, id: Id) -> Self {
         ctx.data().get_temp(id).unwrap_or(Self { drag_start: None })
     }
 
+    #[inline(always)]
     fn store(self, ctx: &Context, id: Id) {
         ctx.data().insert_temp(id, self);
     }
@@ -173,6 +179,12 @@ pub trait TabViewer {
     /// particular add button was pressed on.
     fn on_add(&mut self, _node: NodeIndex) {}
 
+    /// Content of add_popup. Displays a popup under the add button. Useful for selecting
+    /// what type of tab to add.
+    ///
+    /// This requires the dock style's `show_add_buttons` and `show_add_popup` to be `true`.
+    fn add_popup(&mut self, _ui: &mut Ui, _node: NodeIndex) {}
+
     /// This is called every frame after `ui` is called (if the tab is active).
     ///
     /// Returns `true` if the tab should be forced to close, `false` otherwise.
@@ -183,8 +195,8 @@ pub trait TabViewer {
     }
 
     /// Sets the margins between tab's borders and its contents.
-    fn inner_margin(&self) -> Margin {
-        Margin::same(4.0)
+    fn inner_margin_override(&self, style: &Style) -> Margin {
+        style.default_inner_margin
     }
 
     /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`]
@@ -205,6 +217,7 @@ pub struct DockArea<'tree, Tab> {
 }
 
 impl<'tree, Tab> DockArea<'tree, Tab> {
+    #[inline(always)]
     pub fn new(tree: &'tree mut Tree<Tab>) -> DockArea<'tree, Tab> {
         Self {
             id: Id::new("egui_dock::DockArea"),
@@ -214,18 +227,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     }
 
     /// Sets the [DockArea] id. Useful if you have more than one [DockArea].
+    #[inline(always)]
     pub fn id(mut self, id: Id) -> Self {
         self.id = id;
         self
     }
 
     /// Sets the dock area style.
+    #[inline(always)]
     pub fn style(mut self, style: Style) -> Self {
         self.style = Some(style);
         self
     }
 
     /// Shows the docking area.
+    #[inline]
     pub fn show(self, ctx: &Context, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         let layer_id = LayerId::background();
         let max_rect = ctx.available_rect();
@@ -250,7 +266,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             ui.painter().rect(
                 rect,
                 margin.top,
-                style.separator_color,
+                style.separator_color_idle,
                 Stroke::new(margin.top, style.border_color),
             );
         }
@@ -282,14 +298,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
-                let (left, separator, right) = if is_horizontal {
+                let (response, left, separator, right) = if is_horizontal {
                     style.hsplit(ui, fraction, rect)
                 } else {
                     style.vsplit(ui, fraction, rect)
                 };
 
-                ui.painter()
-                    .rect_filled(separator, Rounding::none(), style.separator_color);
+                let color = if response.dragged() {
+                    style.separator_color_dragged
+                } else if response.hovered() {
+                    style.separator_color_hovered
+                } else {
+                    style.separator_color_idle
+                };
+
+                ui.painter().rect_filled(separator, Rounding::none(), color);
 
                 self.tree[node_index.left()].set_rect(left);
                 self.tree[node_index.right()].set_rect(right);
@@ -330,7 +353,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let b = pos2(tabbar.max.x, tabbar.max.y - px);
                     ui.painter()
                         .line_segment([a, b], (px, style.tab_outline_color));
-                    let expanded_width = (tabbar.max.x - tabbar.min.x) / (tabs.len() as f32);
+                    let mut available_width = tabbar.max.x - tabbar.min.x;
+                    if style.show_add_buttons {
+                        available_width -= Style::TAB_PLUS_SIZE;
+                    }
+                    let expanded_width = available_width / (tabs.len() as f32);
 
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
@@ -463,7 +490,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             let response = style.tab_plus(ui);
 
                             let response = ui.interact(response.rect, id, Sense::click());
+                            let popup_id = id.with("tab_add_popup");
+
+                            popup::popup_under_widget(ui, popup_id, &response, |ui| {
+                                tab_viewer.add_popup(ui, node_index);
+                            });
+
                             if response.clicked() {
+                                if style.show_add_popup {
+                                    ui.memory().toggle_popup(popup_id);
+                                }
                                 tab_viewer.on_add(node_index);
                             }
                         };
@@ -500,18 +536,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                         .with((tab_viewer.title(tab).text(), "egui_dock::Tab")),
                                 )
                                 .show(ui, |ui| {
-                                    Frame::none().inner_margin(tab_viewer.inner_margin()).show(
-                                        ui,
-                                        |ui| {
+                                    Frame::none()
+                                        .inner_margin(tab_viewer.inner_margin_override(&style))
+                                        .show(ui, |ui| {
                                             let available_rect = ui.available_rect_before_wrap();
                                             ui.expand_to_include_rect(available_rect);
                                             tab_viewer.ui(ui, tab);
-                                        },
-                                    );
+                                        });
                                 });
                         } else {
                             Frame::none()
-                                .inner_margin(tab_viewer.inner_margin())
+                                .inner_margin(tab_viewer.inner_margin_override(&style))
                                 .show(ui, |ui| {
                                     tab_viewer.ui(ui, tab);
                                 });

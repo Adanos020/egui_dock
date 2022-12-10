@@ -13,6 +13,7 @@ pub enum TabAddAlign {
 #[derive(Clone)]
 pub struct Style {
     pub dock_area_padding: Option<Margin>,
+    pub default_inner_margin: Margin,
 
     pub border_color: Color32,
     pub border_width: f32,
@@ -21,7 +22,9 @@ pub struct Style {
 
     pub separator_width: f32,
     pub separator_extra: f32,
-    pub separator_color: Color32,
+    pub separator_color_idle: Color32,
+    pub separator_color_hovered: Color32,
+    pub separator_color_dragged: Color32,
 
     pub tab_bar_background_color: Color32,
     pub tab_bar_height: f32,
@@ -46,6 +49,7 @@ pub struct Style {
     pub add_tab_active_color: Color32,
     pub add_tab_background_color: Color32,
     pub show_add_buttons: bool,
+    pub show_add_popup: bool,
 
     pub show_context_menu: bool,
     pub tab_include_scrollarea: bool,
@@ -56,6 +60,7 @@ impl Default for Style {
     fn default() -> Self {
         Self {
             dock_area_padding: None,
+            default_inner_margin: Margin::same(4.0),
 
             border_color: Color32::BLACK,
             border_width: Default::default(),
@@ -63,7 +68,9 @@ impl Default for Style {
             selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
             separator_width: 1.0,
             separator_extra: 175.0,
-            separator_color: Color32::BLACK,
+            separator_color_idle: Color32::BLACK,
+            separator_color_hovered: Color32::GRAY,
+            separator_color_dragged: Color32::WHITE,
 
             tab_bar_background_color: Color32::WHITE,
             tab_bar_height: 24.0,
@@ -85,6 +92,7 @@ impl Default for Style {
             add_tab_active_color: Color32::WHITE,
             add_tab_background_color: Color32::GRAY,
             show_add_buttons: false,
+            show_add_popup: false,
 
             tabs_are_draggable: true,
             expand_tabs: false,
@@ -99,18 +107,22 @@ impl Style {
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - `selection_color`
-    /// - `tab_bar_background_color`
-    /// - `tab_outline_color`
-    /// - `tab_background_color`
-    /// - `separator_color`
-    /// - `border_color`
-    /// - `close_tab_background_color`
-    /// - `close_tab_color`
-    /// - `close_tab_active_color`
-    /// - `add_tab_background_color`
-    /// - `add_tab_color`
-    /// - `add_tab_active_color`
+    /// - [`Self::selection_color`]
+    /// - [`Self::tab_bar_background_color`]
+    /// - [`Self::tab_outline_color`]
+    /// - [`Self::tab_background_color`]
+    /// - [`Self::tab_text_color_unfocused`]
+    /// - [`Self::tab_text_color_focused`]
+    /// - [`Self::separator_color_idle`]
+    /// - [`Self::separator_color_hovered`]
+    /// - [`Self::separator_color_dragged`]
+    /// - [`Self::border_color`]
+    /// - [`Self::close_tab_background_color`]
+    /// - [`Self::close_tab_color`]
+    /// - [`Self::close_tab_active_color`]
+    /// - [`Self::add_tab_background_color`]
+    /// - [`Self::add_tab_color`]
+    /// - [`Self::add_tab_active_color`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
@@ -122,7 +134,10 @@ impl Style {
             tab_text_color_unfocused: style.visuals.text_color(),
             tab_text_color_focused: style.visuals.strong_text_color(),
 
-            separator_color: style.visuals.widgets.active.bg_fill,
+            separator_color_idle: style.visuals.widgets.noninteractive.bg_stroke.color,
+            separator_color_hovered: style.visuals.widgets.hovered.bg_stroke.color,
+            separator_color_dragged: style.visuals.widgets.active.bg_stroke.color,
+
             border_color: style.visuals.widgets.active.bg_fill,
 
             close_tab_background_color: style.visuals.widgets.active.bg_fill,
@@ -136,7 +151,12 @@ impl Style {
         }
     }
 
-    pub(crate) fn hsplit(&self, ui: &mut Ui, fraction: &mut f32, rect: Rect) -> (Rect, Rect, Rect) {
+    pub(crate) fn hsplit(
+        &self,
+        ui: &mut Ui,
+        fraction: &mut f32,
+        rect: Rect,
+    ) -> (Response, Rect, Rect, Rect) {
         let pixels_per_point = ui.ctx().pixels_per_point();
 
         let mut separator = rect;
@@ -171,13 +191,19 @@ impl Style {
         );
 
         (
+            response,
             rect.intersect(Rect::everything_right_of(separator.max.x)),
             separator,
             rect.intersect(Rect::everything_left_of(separator.min.x)),
         )
     }
 
-    pub(crate) fn vsplit(&self, ui: &mut Ui, fraction: &mut f32, rect: Rect) -> (Rect, Rect, Rect) {
+    pub(crate) fn vsplit(
+        &self,
+        ui: &mut Ui,
+        fraction: &mut f32,
+        rect: Rect,
+    ) -> (Response, Rect, Rect, Rect) {
         let pixels_per_point = ui.ctx().pixels_per_point();
 
         let mut separator = rect;
@@ -212,14 +238,17 @@ impl Style {
         );
 
         (
+            response,
             rect.intersect(Rect::everything_above(separator.min.y)),
             separator,
             rect.intersect(Rect::everything_below(separator.max.y)),
         )
     }
 
+    pub(crate) const TAB_PLUS_SIZE: f32 = 24.0;
+
     pub(crate) fn tab_plus(&self, ui: &mut Ui) -> Response {
-        let desired_size = Vec2::splat(self.tab_bar_height);
+        let desired_size = Vec2::splat(Self::TAB_PLUS_SIZE);
 
         let mut rect = ui.available_rect_before_wrap();
 
@@ -298,7 +327,7 @@ impl Style {
         };
 
         let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
-        if !ui.memory().is_anything_being_dragged() {
+        if !ui.memory().is_anything_being_dragged() && is_being_dragged {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 
@@ -359,7 +388,7 @@ impl Style {
         ui.painter().add(epaint::TextShape {
             pos,
             galley: galley.galley,
-            underline: Stroke::none(),
+            underline: Stroke::NONE,
             override_text_color,
             angle: 0.0,
         });
@@ -459,10 +488,24 @@ impl StyleBuilder {
         self
     }
 
-    /// Sets `separator_color`for the rectangle separator. By `Default` it's [`Color32::BLACK`].
+    /// Sets the idle color for the rectangle separator. By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
-    pub fn with_separator_color(mut self, separator_color: Color32) -> Self {
-        self.style.separator_color = separator_color;
+    pub fn with_separator_color_idle(mut self, separator_color_idle: Color32) -> Self {
+        self.style.separator_color_idle = separator_color_idle;
+        self
+    }
+
+    /// Sets the hovered color for the rectangle separator. By `Default` it's [`Color32::GRAY`].
+    #[inline(always)]
+    pub fn with_separator_color_hovered(mut self, separator_color_hovered: Color32) -> Self {
+        self.style.separator_color_hovered = separator_color_hovered;
+        self
+    }
+
+    /// Sets the dragged color for the rectangle separator. By `Default` it's [`Color32::WHITE`].
+    #[inline(always)]
+    pub fn with_separator_color_dragged(mut self, separator_color_dragged: Color32) -> Self {
+        self.style.separator_color_dragged = separator_color_dragged;
         self
     }
 
@@ -567,6 +610,13 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn show_add_buttons(mut self, show_add_buttons: bool) -> Self {
         self.style.show_add_buttons = show_add_buttons;
+        self
+    }
+
+    /// Shows / Hides the add button popup.
+    #[inline(always)]
+    pub fn show_add_popup(mut self, show_add_popup: bool) -> Self {
+        self.style.show_add_popup = show_add_popup;
         self
     }
 
