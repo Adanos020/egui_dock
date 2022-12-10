@@ -258,18 +258,17 @@ impl Style {
         }
         rect = rect.shrink(3.0);
 
-        let response = ui
-            .allocate_rect(rect, Sense::hover())
-            .on_hover_cursor(CursorIcon::PointingHand);
         let rect = {
-            let size = FontSelection::Style(TextStyle::Body)
-                .resolve(ui.style())
-                .size;
+            let size = Self::TAB_PLUS_SIZE / 2.0;
             let mut pos = rect.right_top();
             pos.x -= size / 2.0;
             pos.y += rect.size().y / 2.0;
             Rect::from_center_size(pos, Vec2::splat(size))
         };
+
+        let response = ui
+            .allocate_rect(rect, Sense::hover())
+            .on_hover_cursor(CursorIcon::PointingHand);
 
         let color = if response.hovered() {
             self.add_tab_active_color
@@ -370,12 +369,13 @@ impl Style {
         }
 
         let pos = if self.expand_tabs {
-            let mut pos = Align2::CENTER_TOP.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
-            pos.x -= galley.size().x / 2.0;
+            let mut pos = Align2::CENTER_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
+            pos -= galley.size() / 2.0;
             pos
         } else {
-            Align2::LEFT_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)))
-                - vec2(0.0, galley.size().y / 2.0)
+            let mut pos = Align2::LEFT_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
+            pos.y -= galley.size().y / 2.0;
+            pos
         };
 
         let override_text_color = if galley.galley_has_color {
