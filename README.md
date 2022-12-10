@@ -24,7 +24,8 @@ egui_dock = "0.2"
 Instead of explicitly depending on `egui`, prefer using `egui_dock_::egui` since it is the compatible version.
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
-More details on the usage of `egui_dock` can be found in the [documentation](https://docs.rs/egui_dock/latest/egui_dock/).
+Once that's done, you can start using `egui_dock` – more details on that can be found in the
+[documentation](https://docs.rs/egui_dock/latest/egui_dock/).
 
 ## Demo
 
