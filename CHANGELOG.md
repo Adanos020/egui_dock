@@ -20,6 +20,7 @@
 ### Breaking changes
 - Renamed `TabViewer::inner_margin` to `TabViewer::inner_margin_override`. ([#67](https://github.com/Adanos020/egui_dock/pull/67))
 - `Style::with_separator_color` has been split into `separator_color_idle`, `separator_color_hovered`, `separator_color_dragged` ([#68](https://github.com/Adanos020/egui_dock/pull/68))
+- Updated `egui` to 0.20.0 [#77](https://github.com/Adanos020/egui_dock/pull/77)
 
 ### Deprecated (will be deleted in the next release)
 - `dynamic_tab::TabContent`
