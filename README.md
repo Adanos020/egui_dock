@@ -22,7 +22,7 @@ Add `egui_dock` to your project's dependencies.
 egui_dock = "0.3"
 ```
 
-Instead of explicitly depending on `egui`, prefer using `egui_dock_::egui` since it is the compatible version.
+Instead of explicitly depending on `egui`, prefer using `egui_dock::egui` since it's the compatible version.
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
 Once that's done, you can start using `egui_dock` – more details on that can be found in the
