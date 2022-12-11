@@ -27,6 +27,7 @@ pub struct Style {
     pub separator_color_dragged: Color32,
 
     pub tab_bar_background_color: Color32,
+    pub tab_bar_height: f32,
 
     pub tab_outline_color: Color32,
     pub tab_rounding: Rounding,
@@ -72,6 +73,7 @@ impl Default for Style {
             separator_color_dragged: Color32::WHITE,
 
             tab_bar_background_color: Color32::WHITE,
+            tab_bar_height: 24.0,
 
             tab_outline_color: Color32::BLACK,
             tab_rounding: Default::default(),
@@ -256,10 +258,17 @@ impl Style {
         }
         rect = rect.shrink(3.0);
 
+        let rect = {
+            let size = Self::TAB_PLUS_SIZE / 2.0;
+            let mut pos = rect.right_top();
+            pos.x -= size / 2.0;
+            pos.y += rect.size().y / 2.0;
+            Rect::from_center_size(pos, Vec2::splat(size))
+        };
+
         let response = ui
             .allocate_rect(rect, Sense::hover())
             .on_hover_cursor(CursorIcon::PointingHand);
-        let rect = rect.shrink(4.0);
 
         let color = if response.hovered() {
             self.add_tab_active_color
@@ -270,6 +279,8 @@ impl Style {
             ui.painter()
                 .rect_filled(rect, Rounding::same(2.0), self.add_tab_background_color);
         }
+
+        let rect = rect.shrink(1.75);
         ui.painter().line_segment(
             [rect.center_top(), rect.center_bottom()],
             Stroke::new(1.0, color),
@@ -299,16 +310,19 @@ impl Style {
 
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
 
-        let x_size = Vec2::new(galley.size().y / 1.3, galley.size().y / 1.3);
+        let x_size = Vec2::splat(galley.size().y / 1.3);
 
         let offset = vec2(8.0, 0.0);
 
         let desired_size = if self.expand_tabs {
-            vec2(expanded_width, 24.0)
+            vec2(expanded_width, self.tab_bar_height)
         } else if self.show_close_buttons {
-            vec2(galley.size().x + offset.x * 2.0 + x_size.x + 5.0, 24.0)
+            vec2(
+                galley.size().x + offset.x * 2.0 + x_size.x + 5.0,
+                self.tab_bar_height,
+            )
         } else {
-            vec2(galley.size().x + offset.x * 2.0, 24.0)
+            vec2(galley.size().x + offset.x * 2.0, self.tab_bar_height)
         };
 
         let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
@@ -355,13 +369,13 @@ impl Style {
         }
 
         let pos = if self.expand_tabs {
-            let mut pos = Align2::CENTER_TOP.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
-            pos.x -= galley.size().x / 2.0;
+            let mut pos = Align2::CENTER_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
+            pos -= galley.size() / 2.0;
             pos
         } else {
-            Align2::LEFT_TOP
-                .anchor_rect(rect.shrink2(vec2(8.0, 5.0)))
-                .min
+            let mut pos = Align2::LEFT_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
+            pos.y -= galley.size().y / 2.0;
+            pos
         };
 
         let override_text_color = if galley.galley_has_color {
@@ -499,6 +513,13 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn with_tab_bar_background(mut self, tab_bar_background_color: Color32) -> Self {
         self.style.tab_bar_background_color = tab_bar_background_color;
+        self
+    }
+
+    /// Sets `tab_bar_height` for the color of tab bar. By `Default` it's `24.0`.
+    #[inline(always)]
+    pub fn with_tab_bar_height(mut self, tab_bar_height: f32) -> Self {
+        self.style.tab_bar_height = tab_bar_height;
         self
     }
 

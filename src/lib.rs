@@ -332,7 +332,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let rect = *rect;
                 ui.set_clip_rect(rect);
 
-                let height_topbar = 24.0;
+                let height_topbar = style.tab_bar_height;
 
                 let bottom_y = rect.min.y + height_topbar;
                 let tabbar = rect.intersect(Rect::everything_above(bottom_y));
