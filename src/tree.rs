@@ -264,10 +264,18 @@ pub enum Split {
 
 /// Binary tree representing the relationships between `Node`s.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[derive(Default)]
 pub struct Tree<Tab> {
     tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
+}
+
+impl<Tab> Default for Tree<Tab> {
+    fn default() -> Self {
+        Self {
+            tree: Vec::new(),
+            focused_node: None,
+        }
+    }
 }
 
 impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
