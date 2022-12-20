@@ -266,7 +266,6 @@ pub enum Split {
 
 /// Binary tree representing the relationships between `Node`s.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[derive(Default)]
 pub struct Tree<Tab> {
     tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
@@ -277,6 +276,15 @@ impl<Tab> fmt::Debug for Tree<Tab> {
         fmtr.debug_struct("Tree")
             .field("focused_node", &self.focused_node)
             .finish_non_exhaustive()
+    }
+}
+
+impl<Tab> Default for Tree<Tab> {
+    fn default() -> Self {
+        Self {
+            tree: Vec::new(),
+            focused_node: None,
+        }
     }
 }
 
