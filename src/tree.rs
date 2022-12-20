@@ -1,4 +1,5 @@
 use egui::Rect;
+use std::fmt;
 
 /// Identifies a tab within a [`Node`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
@@ -15,6 +16,7 @@ impl From<usize> for TabIndex {
 // ----------------------------------------------------------------------------
 
 /// Represents an abstract node of a `Tree`.
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Node<Tab> {
     /// Empty node
@@ -252,7 +254,7 @@ impl NodeIndex {
 // ----------------------------------------------------------------------------
 
 /// Direction in which a new node is created relatively to the parent node at which the split occurs.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Split {
     Left,
     Right,
@@ -268,6 +270,14 @@ pub enum Split {
 pub struct Tree<Tab> {
     tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
+}
+
+impl<Tab> fmt::Debug for Tree<Tab> {
+    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmtr.debug_struct("Tree")
+            .field("focused_node", &self.focused_node)
+            .finish_non_exhaustive()
+    }
 }
 
 impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
@@ -788,6 +798,12 @@ impl<'a, Tab> Iterator for TabIter<'a, Tab> {
                 }
             }
         }
+    }
+}
+
+impl<'a, Tab> fmt::Debug for TabIter<'a, Tab> {
+    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmtr.debug_struct("TabIter").finish_non_exhaustive()
     }
 }
 

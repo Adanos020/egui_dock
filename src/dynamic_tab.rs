@@ -2,6 +2,7 @@
 
 use egui::style::Margin;
 use egui::{Ui, WidgetText};
+use std::fmt;
 
 #[deprecated]
 pub type TabContent = Box<dyn FnMut(&mut Ui) + 'static>;
@@ -120,6 +121,16 @@ impl Default for TabBuilder {
     }
 }
 
+impl fmt::Debug for TabBuilder {
+    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmtr.debug_struct("TabBuilder")
+            .field("title", &self.title.as_ref().map(|t| t.text()))
+            .field("inner_margin", &self.inner_margin)
+            .field("clear_background", &self.clear_background)
+            .finish_non_exhaustive()
+    }
+}
+
 impl TabBuilder {
     /// Constructs a `Tab` out of accumulated data.
     ///
@@ -192,7 +203,7 @@ impl TabBuilder {
 pub type DynamicTree = crate::Tree<Box<dyn Tab>>;
 
 /// For use with [`crate::DockArea::show`] when using [`DynamicTree`].
-#[derive(Default)]
+#[derive(Default, Debug)]
 #[deprecated]
 pub struct DynamicTabViewer {}
 

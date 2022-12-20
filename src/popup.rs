@@ -1,6 +1,6 @@
 use egui::{Align, Area, Frame, Id, Key, Layout, NumExt, Order, Rect, Response, Ui, Vec2};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 struct State {
     size: Vec2,
 }

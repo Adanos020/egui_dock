@@ -10,7 +10,7 @@ pub enum TabAddAlign {
 }
 
 /// Specifies the look and feel of egui_dock.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Style {
     pub dock_area_padding: Option<Margin>,
     pub default_inner_margin: Margin,

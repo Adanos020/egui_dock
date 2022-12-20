@@ -73,6 +73,7 @@ pub use crate::{
 pub use egui;
 
 use utils::expand_to_pixel;
+use std::fmt;
 
 mod dynamic_tab;
 mod popup;
@@ -647,5 +648,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         state.store(ui.ctx(), self.id);
+    }
+}
+
+impl<'tree, Tab> fmt::Debug for DockArea<'tree, Tab> {
+    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmtr.debug_struct("DockArea").finish_non_exhaustive()
     }
 }
