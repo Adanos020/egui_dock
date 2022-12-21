@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## Unreleased
+
+### Breaking changes
+- Deleted `dynamic_tab` which was deprecated in 0.3.0
+
 ## 0.3.1 - 2022-12-21
 
 ### Added
