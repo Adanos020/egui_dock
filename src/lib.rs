@@ -64,9 +64,7 @@ use egui::{
     Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
 };
 
-#[allow(deprecated)]
 pub use crate::{
-    dynamic_tab::{DynamicTabViewer, DynamicTree, Tab, TabBuilder},
     style::{Style, StyleBuilder, TabAddAlign},
     tree::{Node, NodeIndex, Split, TabIndex, Tree},
 };
@@ -75,7 +73,6 @@ pub use egui;
 use std::fmt;
 use utils::expand_to_pixel;
 
-mod dynamic_tab;
 mod popup;
 mod style;
 mod tree;
