@@ -72,8 +72,8 @@ pub use crate::{
 };
 pub use egui;
 
-use utils::expand_to_pixel;
 use std::fmt;
+use utils::expand_to_pixel;
 
 mod dynamic_tab;
 mod popup;
