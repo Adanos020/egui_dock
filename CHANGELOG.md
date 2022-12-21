@@ -1,10 +1,13 @@
 # egui_dock changelog
 
-## Unreleased
+## 0.3.1 - 2022-12-21
 
 ### Added
 - `Style` now includes an option to change the tab's height - `tab_bar_height`. ([#62](https://github.com/Adanos020/egui_dock/pull/62))
 - Implemented the `std::fmt::Debug` trait on all exported types. ([#84](https://github.com/Adanos020/egui_dock/pull/84))
+
+### Fixed
+- Errors in the README
 
 ## 0.3.0 - 2022-12-10
 
