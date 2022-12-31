@@ -12,7 +12,7 @@ fn main() {
     eframe::run_native(
         "Text editor examples",
         options,
-        Box::new(|_cc| Box::new(MyApp::default())),
+        Box::new(|_cc| Box::<MyApp>::default()),
     );
 }
 
