@@ -23,3 +23,6 @@ serde = { version = "1", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 eframe = "0.20"
+
+[patch.crates-io]
+egui = { git = "https://github.com/emilk/egui", rev = "7744da1fbe8ffc48cb54359c7301417729a21cca" } # TODO: don't merge this to main!
