@@ -15,6 +15,7 @@ pub struct Style {
     pub dock_area_padding: Option<Margin>,
     pub default_inner_margin: Margin,
 
+    // TODO: this should be `egui::Stroke`.
     pub border_color: Color32,
     pub border_width: f32,
 
@@ -293,7 +294,8 @@ impl Style {
         response
     }
 
-    /// `active` means "the tab that is opened in the parent panel".
+    /// * `active` means "the tab that is opened in the parent panel".
+    /// * `focused` means "the tab that was last interacted with".
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn tab_title(
         &self,
