@@ -143,7 +143,7 @@ impl MyContext {
 
             ui.checkbox(
                 &mut style.tab_hover_name,
-                "Show tab name when hoverd over them",
+                "Show tab name when hovered over them",
             );
             ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
             ui.checkbox(&mut style.expand_tabs, "Expand tabs");
@@ -216,8 +216,15 @@ impl MyContext {
                 color_edit_button_srgba(ui, &mut style.tab_bar_background_color, Alpha::OnlyBlend);
                 ui.end_row();
 
-                ui.label("Outline color:");
+                ui.label("Outline color:")
+                    .on_hover_text("The outline around the active tab name.");
                 color_edit_button_srgba(ui, &mut style.tab_outline_color, Alpha::OnlyBlend);
+                ui.end_row();
+
+                ui.label("Horizontal line color:").on_hover_text(
+                    "The line separating the tab name area from the tab content area",
+                );
+                color_edit_button_srgba(ui, &mut style.hline_color, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Background color:");

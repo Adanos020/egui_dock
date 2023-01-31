@@ -21,6 +21,7 @@ pub struct Style {
 
     pub selection_color: Color32,
 
+    // The resizable separator:
     pub separator_width: f32,
     pub separator_extra: f32,
     pub separator_color_idle: Color32,
@@ -30,7 +31,11 @@ pub struct Style {
     pub tab_bar_background_color: Color32,
     pub tab_bar_height: f32,
 
+    /// The outline around the active tab name.
     pub tab_outline_color: Color32,
+
+    /// The line separating the tab name area from the tab content area
+    pub hline_color: Color32,
     pub tab_rounding: Rounding,
     pub tab_background_color: Color32,
 
@@ -77,6 +82,7 @@ impl Default for Style {
             tab_bar_height: 24.0,
 
             tab_outline_color: Color32::BLACK,
+            hline_color: Color32::BLACK,
             tab_rounding: Default::default(),
             tab_background_color: Color32::WHITE,
 
@@ -111,6 +117,7 @@ impl Style {
     /// - [`Self::selection_color`]
     /// - [`Self::tab_bar_background_color`]
     /// - [`Self::tab_outline_color`]
+    /// - [`Self::hline_color`]
     /// - [`Self::tab_background_color`]
     /// - [`Self::tab_text_color_unfocused`]
     /// - [`Self::tab_text_color_focused`]
@@ -130,6 +137,7 @@ impl Style {
 
             tab_bar_background_color: style.visuals.faint_bg_color,
             tab_outline_color: style.visuals.widgets.active.bg_fill,
+            hline_color: style.visuals.widgets.active.bg_fill,
             tab_background_color: style.visuals.window_fill(),
 
             tab_text_color_unfocused: style.visuals.text_color(),
@@ -358,7 +366,7 @@ impl Style {
             }
         }
 
-        let pos = if self.expand_tabs {
+        let text_pos = if self.expand_tabs {
             let mut pos = Align2::CENTER_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
             pos -= galley.size() / 2.0;
             pos
@@ -376,7 +384,7 @@ impl Style {
             Some(self.tab_text_color_unfocused)
         };
         ui.painter().add(epaint::TextShape {
-            pos,
+            pos: text_pos,
             galley: galley.galley,
             underline: Stroke::NONE,
             override_text_color,
@@ -517,6 +525,15 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn with_tab_outline_color(mut self, tab_outline_color: Color32) -> Self {
         self.style.tab_outline_color = tab_outline_color;
+        self
+    }
+
+    /// Sets [`Self::hline_color`], the line separating the tab name area from the tab content area.
+    ///
+    /// By `Default` it's [`Color32::BLACK`].
+    #[inline(always)]
+    pub fn with_hline_color(mut self, hline_color: Color32) -> Self {
+        self.style.hline_color = hline_color;
         self
     }
 
