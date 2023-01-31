@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 use eframe::{egui, NativeOptions};
 use egui::{
-    color_picker::{color_picker_color32, Alpha},
+    color_picker::{color_edit_button_srgba, Alpha},
     CentralPanel, Id, LayerId, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
@@ -100,14 +100,14 @@ impl MyContext {
             ui.separator();
 
             ui.label("Color");
-            color_picker_color32(ui, &mut style.border_color, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.border_color, Alpha::OnlyBlend);
         });
 
         ui.collapsing("Selection", |ui| {
             ui.separator();
 
             ui.label("Color");
-            color_picker_color32(ui, &mut style.selection_color, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.selection_color, Alpha::OnlyBlend);
         });
 
         ui.collapsing("Separator", |ui| {
@@ -122,13 +122,13 @@ impl MyContext {
             ui.separator();
 
             ui.label("Idle color");
-            color_picker_color32(ui, &mut style.separator_color_idle, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.separator_color_idle, Alpha::OnlyBlend);
 
             ui.label("Hovered color");
-            color_picker_color32(ui, &mut style.separator_color_hovered, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.separator_color_hovered, Alpha::OnlyBlend);
 
             ui.label("Dragged color");
-            color_picker_color32(ui, &mut style.separator_color_dragged, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.separator_color_dragged, Alpha::OnlyBlend);
         });
 
         ui.collapsing("Tabs", |ui| {
@@ -177,10 +177,10 @@ impl MyContext {
             ui.separator();
 
             ui.label("Title text color unfocused");
-            color_picker_color32(ui, &mut style.tab_text_color_unfocused, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.tab_text_color_unfocused, Alpha::OnlyBlend);
 
             ui.label("Title text color focused");
-            color_picker_color32(ui, &mut style.tab_text_color_focused, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.tab_text_color_focused, Alpha::OnlyBlend);
 
             ui.separator();
 
@@ -189,32 +189,32 @@ impl MyContext {
             ui.separator();
 
             ui.label("Close button color unfocused");
-            color_picker_color32(ui, &mut style.close_tab_color, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.close_tab_color, Alpha::OnlyBlend);
 
             ui.separator();
 
             ui.label("Close button color focused");
-            color_picker_color32(ui, &mut style.close_tab_active_color, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.close_tab_active_color, Alpha::OnlyBlend);
 
             ui.separator();
 
             ui.label("Close button background color");
-            color_picker_color32(ui, &mut style.close_tab_background_color, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.close_tab_background_color, Alpha::OnlyBlend);
 
             ui.separator();
 
             ui.label("Bar background color");
-            color_picker_color32(ui, &mut style.tab_bar_background_color, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.tab_bar_background_color, Alpha::OnlyBlend);
 
             ui.separator();
 
             ui.label("Outline color");
-            color_picker_color32(ui, &mut style.tab_outline_color, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.tab_outline_color, Alpha::OnlyBlend);
 
             ui.separator();
 
             ui.label("Background color");
-            color_picker_color32(ui, &mut style.tab_background_color, Alpha::OnlyBlend);
+            color_edit_button_srgba(ui, &mut style.tab_background_color, Alpha::OnlyBlend);
         });
     }
 }
