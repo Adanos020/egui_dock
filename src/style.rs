@@ -343,20 +343,19 @@ impl Style {
         } else {
             (Rect::NOTHING, None)
         };
-        match (active, is_being_dragged) {
-            (true, false) => {
-                let stroke = egui::Stroke::new(1.0, self.tab_outline_color);
-                ui.painter()
-                    .rect(rect, rounding, self.tab_background_color, stroke);
-            }
-            (true, true) => {
+
+        if active {
+            if is_being_dragged {
                 ui.painter().rect_stroke(
                     rect,
                     self.tab_rounding,
                     Stroke::new(1.0, self.tab_outline_color),
                 );
+            } else {
+                let stroke = egui::Stroke::new(1.0, self.tab_outline_color);
+                ui.painter()
+                    .rect(rect, rounding, self.tab_background_color, stroke);
             }
-            _ => (),
         }
 
         let pos = if self.expand_tabs {
