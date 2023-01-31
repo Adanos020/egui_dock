@@ -188,12 +188,28 @@ impl MyContext {
             ui.separator();
 
             egui::Grid::new("tabs_colors").show(ui, |ui| {
-                ui.label("Title text color unfocused:");
+                ui.label("Title text color, inactive and unfocused:");
                 color_edit_button_srgba(ui, &mut style.tab_text_color_unfocused, Alpha::OnlyBlend);
                 ui.end_row();
 
-                ui.label("Title text color focused:");
+                ui.label("Title text color, inactive and focused:");
                 color_edit_button_srgba(ui, &mut style.tab_text_color_focused, Alpha::OnlyBlend);
+                ui.end_row();
+
+                ui.label("Title text color, active and unfocused:");
+                color_edit_button_srgba(
+                    ui,
+                    &mut style.tab_text_color_active_unfocused,
+                    Alpha::OnlyBlend,
+                );
+                ui.end_row();
+
+                ui.label("Title text color, active and focused:");
+                color_edit_button_srgba(
+                    ui,
+                    &mut style.tab_text_color_active_focused,
+                    Alpha::OnlyBlend,
+                );
                 ui.end_row();
 
                 ui.label("Close button color unfocused:");

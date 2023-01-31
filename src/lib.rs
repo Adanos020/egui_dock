@@ -60,8 +60,8 @@
 //! ```
 
 use egui::{
-    pos2, style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect,
-    Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
+    style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect, Rounding,
+    ScrollArea, Sense, Stroke, Ui, WidgetText,
 };
 
 pub use crate::{

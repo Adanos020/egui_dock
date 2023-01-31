@@ -41,6 +41,8 @@ pub struct Style {
 
     pub tab_text_color_unfocused: Color32,
     pub tab_text_color_focused: Color32,
+    pub tab_text_color_active_unfocused: Color32,
+    pub tab_text_color_active_focused: Color32,
 
     pub tabs_are_draggable: bool,
     pub expand_tabs: bool,
@@ -88,6 +90,8 @@ impl Default for Style {
 
             tab_text_color_unfocused: Color32::DARK_GRAY,
             tab_text_color_focused: Color32::BLACK,
+            tab_text_color_active_unfocused: Color32::DARK_GRAY,
+            tab_text_color_active_focused: Color32::BLACK,
 
             close_tab_color: Color32::WHITE,
             close_tab_active_color: Color32::WHITE,
@@ -121,6 +125,8 @@ impl Style {
     /// - [`Self::tab_background_color`]
     /// - [`Self::tab_text_color_unfocused`]
     /// - [`Self::tab_text_color_focused`]
+    /// - [`Self::tab_text_color_active_unfocused`]
+    /// - [`Self::tab_text_color_active_focused`]
     /// - [`Self::separator_color_idle`]
     /// - [`Self::separator_color_hovered`]
     /// - [`Self::separator_color_dragged`]
@@ -142,6 +148,8 @@ impl Style {
 
             tab_text_color_unfocused: style.visuals.text_color(),
             tab_text_color_focused: style.visuals.strong_text_color(),
+            tab_text_color_active_unfocused: style.visuals.text_color(),
+            tab_text_color_active_focused: style.visuals.strong_text_color(),
 
             separator_color_idle: style.visuals.widgets.noninteractive.bg_stroke.color,
             separator_color_hovered: style.visuals.widgets.hovered.bg_stroke.color,
@@ -378,11 +386,15 @@ impl Style {
 
         let override_text_color = if galley.galley_has_color {
             None // respect the color the user has chosen
-        } else if focused {
-            Some(self.tab_text_color_focused)
         } else {
-            Some(self.tab_text_color_unfocused)
+            Some(match (active, focused) {
+                (false, false) => self.tab_text_color_unfocused,
+                (false, true) => self.tab_text_color_focused,
+                (true, false) => self.tab_text_color_active_unfocused,
+                (true, true) => self.tab_text_color_active_focused,
+            })
         };
+
         ui.painter().add(epaint::TextShape {
             pos: text_pos,
             galley: galley.galley,
@@ -627,17 +639,37 @@ impl StyleBuilder {
         self
     }
 
-    /// Color of tab title when the tab is unfocused.
+    /// Color of tab title when an inactive tab is unfocused.
     #[inline(always)]
     pub fn with_tab_text_color_unfocused(mut self, tab_text_color_unfocused: Color32) -> Self {
         self.style.tab_text_color_unfocused = tab_text_color_unfocused;
         self
     }
 
-    /// Color of tab title when the tab is focused.
+    /// Color of tab title when an inactive tab is focused.
     #[inline(always)]
     pub fn with_tab_text_color_focused(mut self, tab_text_color_focused: Color32) -> Self {
         self.style.tab_text_color_focused = tab_text_color_focused;
+        self
+    }
+
+    /// Color of tab title when an active tab is unfocused.
+    #[inline(always)]
+    pub fn with_tab_text_color_active_unfocused(
+        mut self,
+        tab_text_color_active_unfocused: Color32,
+    ) -> Self {
+        self.style.tab_text_color_active_unfocused = tab_text_color_active_unfocused;
+        self
+    }
+
+    /// Color of tab title when an active tab is focused.
+    #[inline(always)]
+    pub fn with_tab_text_color_active_focused(
+        mut self,
+        tab_text_color_active_focused: Color32,
+    ) -> Self {
+        self.style.tab_text_color_active_focused = tab_text_color_active_focused;
         self
     }
 
