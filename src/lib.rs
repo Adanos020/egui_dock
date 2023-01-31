@@ -348,10 +348,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         style.tab_bar_background_color,
                     );
 
-                    let a = pos2(tabbar.min.x, tabbar.max.y - px);
-                    let b = pos2(tabbar.max.x, tabbar.max.y - px);
-                    ui.painter()
-                        .line_segment([a, b], (px, style.tab_outline_color));
                     let mut available_width = tabbar.max.x - tabbar.min.x;
                     if style.show_add_buttons {
                         available_width -= Style::TAB_PLUS_SIZE;
@@ -504,6 +500,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         };
                     });
                 });
+
+                ui.painter()
+                    .hline(tabbar.x_range(), tabbar.max.y - px, (px, style.hline_color));
 
                 // tab body
                 if let Some(tab) = tabs.get_mut(active.0) {
