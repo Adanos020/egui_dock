@@ -11,7 +11,10 @@ use egui::{
 use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
 
 fn main() -> eframe::Result<()> {
-    let options = NativeOptions::default();
+    let options = NativeOptions {
+        initial_window_size: Some(egui::vec2(1024.0, 1024.0)),
+        ..Default::default()
+    };
     eframe::run_native(
         "My egui App",
         options,
@@ -92,43 +95,47 @@ impl MyContext {
         let style = self.style.as_mut().unwrap();
 
         ui.collapsing("Border", |ui| {
-            ui.separator();
+            egui::Grid::new("border").show(ui, |ui| {
+                ui.label("Width:");
+                ui.add(Slider::new(&mut style.border_width, 1.0..=50.0));
+                ui.end_row();
 
-            ui.label("Width");
-            ui.add(Slider::new(&mut style.border_width, 1.0..=50.0));
-
-            ui.separator();
-
-            ui.label("Color");
-            color_edit_button_srgba(ui, &mut style.border_color, Alpha::OnlyBlend);
+                ui.label("Color:");
+                color_edit_button_srgba(ui, &mut style.border_color, Alpha::OnlyBlend);
+                ui.end_row();
+            });
         });
 
         ui.collapsing("Selection", |ui| {
-            ui.separator();
-
-            ui.label("Color");
-            color_edit_button_srgba(ui, &mut style.selection_color, Alpha::OnlyBlend);
+            egui::Grid::new("selection").show(ui, |ui| {
+                ui.label("Color:");
+                color_edit_button_srgba(ui, &mut style.selection_color, Alpha::OnlyBlend);
+                ui.end_row();
+            });
         });
 
         ui.collapsing("Separator", |ui| {
-            ui.separator();
+            egui::Grid::new("separator").show(ui, |ui| {
+                ui.label("Width:");
+                ui.add(Slider::new(&mut style.separator_width, 1.0..=50.0));
+                ui.end_row();
 
-            ui.label("Width");
-            ui.add(Slider::new(&mut style.separator_width, 1.0..=50.0));
+                ui.label("Offset limit:");
+                ui.add(Slider::new(&mut style.separator_extra, 1.0..=300.0));
+                ui.end_row();
 
-            ui.label("Offset limit");
-            ui.add(Slider::new(&mut style.separator_extra, 1.0..=300.0));
+                ui.label("Idle color:");
+                color_edit_button_srgba(ui, &mut style.separator_color_idle, Alpha::OnlyBlend);
+                ui.end_row();
 
-            ui.separator();
+                ui.label("Hovered color:");
+                color_edit_button_srgba(ui, &mut style.separator_color_hovered, Alpha::OnlyBlend);
+                ui.end_row();
 
-            ui.label("Idle color");
-            color_edit_button_srgba(ui, &mut style.separator_color_idle, Alpha::OnlyBlend);
-
-            ui.label("Hovered color");
-            color_edit_button_srgba(ui, &mut style.separator_color_hovered, Alpha::OnlyBlend);
-
-            ui.label("Dragged color");
-            color_edit_button_srgba(ui, &mut style.separator_color_dragged, Alpha::OnlyBlend);
+                ui.label("Dragged color:");
+                color_edit_button_srgba(ui, &mut style.separator_color_dragged, Alpha::OnlyBlend);
+                ui.end_row();
+            });
         });
 
         ui.collapsing("Tabs", |ui| {
@@ -176,45 +183,47 @@ impl MyContext {
 
             ui.separator();
 
-            ui.label("Title text color unfocused");
-            color_edit_button_srgba(ui, &mut style.tab_text_color_unfocused, Alpha::OnlyBlend);
-
-            ui.label("Title text color focused");
-            color_edit_button_srgba(ui, &mut style.tab_text_color_focused, Alpha::OnlyBlend);
-
-            ui.separator();
-
             ui.checkbox(&mut style.show_close_buttons, "Allow closing tabs");
 
             ui.separator();
 
-            ui.label("Close button color unfocused");
-            color_edit_button_srgba(ui, &mut style.close_tab_color, Alpha::OnlyBlend);
+            egui::Grid::new("tabs_colors").show(ui, |ui| {
+                ui.label("Title text color unfocused:");
+                color_edit_button_srgba(ui, &mut style.tab_text_color_unfocused, Alpha::OnlyBlend);
+                ui.end_row();
 
-            ui.separator();
+                ui.label("Title text color focused:");
+                color_edit_button_srgba(ui, &mut style.tab_text_color_focused, Alpha::OnlyBlend);
+                ui.end_row();
 
-            ui.label("Close button color focused");
-            color_edit_button_srgba(ui, &mut style.close_tab_active_color, Alpha::OnlyBlend);
+                ui.label("Close button color unfocused:");
+                color_edit_button_srgba(ui, &mut style.close_tab_color, Alpha::OnlyBlend);
+                ui.end_row();
 
-            ui.separator();
+                ui.label("Close button color focused:");
+                color_edit_button_srgba(ui, &mut style.close_tab_active_color, Alpha::OnlyBlend);
+                ui.end_row();
 
-            ui.label("Close button background color");
-            color_edit_button_srgba(ui, &mut style.close_tab_background_color, Alpha::OnlyBlend);
+                ui.label("Close button background color:");
+                color_edit_button_srgba(
+                    ui,
+                    &mut style.close_tab_background_color,
+                    Alpha::OnlyBlend,
+                );
+                ui.end_row();
 
-            ui.separator();
+                ui.label("Bar background color:");
+                color_edit_button_srgba(ui, &mut style.tab_bar_background_color, Alpha::OnlyBlend);
+                ui.end_row();
 
-            ui.label("Bar background color");
-            color_edit_button_srgba(ui, &mut style.tab_bar_background_color, Alpha::OnlyBlend);
+                ui.label("Outline color:");
+                color_edit_button_srgba(ui, &mut style.tab_outline_color, Alpha::OnlyBlend);
+                ui.end_row();
 
-            ui.separator();
-
-            ui.label("Outline color");
-            color_edit_button_srgba(ui, &mut style.tab_outline_color, Alpha::OnlyBlend);
-
-            ui.separator();
-
-            ui.label("Background color");
-            color_edit_button_srgba(ui, &mut style.tab_background_color, Alpha::OnlyBlend);
+                ui.label("Background color:");
+                color_edit_button_srgba(ui, &mut style.tab_background_color, Alpha::OnlyBlend);
+                ui.end_row();
+            });
         });
     }
 }
