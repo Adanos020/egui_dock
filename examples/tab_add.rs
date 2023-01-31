@@ -4,13 +4,13 @@ use eframe::{egui, NativeOptions};
 
 use egui_dock::{DockArea, NodeIndex, StyleBuilder, Tree};
 
-fn main() {
+fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
     eframe::run_native(
         "My egui App",
         options,
         Box::new(|_cc| Box::<MyApp>::default()),
-    );
+    )
 }
 
 struct TabViewer<'a> {

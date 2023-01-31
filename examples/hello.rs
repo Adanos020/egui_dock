@@ -10,13 +10,13 @@ use egui::{
 
 use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
 
-fn main() {
+fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
     eframe::run_native(
         "My egui App",
         options,
         Box::new(|_cc| Box::<MyApp>::default()),
-    );
+    )
 }
 
 struct MyContext {
