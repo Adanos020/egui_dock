@@ -307,7 +307,6 @@ impl Style {
         id: Id,
         expanded_width: f32,
     ) -> (Response, bool, bool) {
-        let px = ui.ctx().pixels_per_point().recip();
         let rounding = self.tab_rounding;
 
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
@@ -346,23 +345,13 @@ impl Style {
         };
         match (active, is_being_dragged) {
             (true, false) => {
-                let mut tab = rect;
-                tab.min.x -= px;
-                tab.max.x += px;
+                let stroke = egui::Stroke::new(1.0, self.tab_outline_color);
                 ui.painter()
-                    .rect_filled(tab, rounding, self.tab_outline_color);
-
-                tab.min.x += px;
-                tab.max.x -= px;
-                tab.min.y += px;
-                ui.painter()
-                    .rect_filled(tab, rounding, self.tab_background_color);
+                    .rect(rect, rounding, self.tab_background_color, stroke);
             }
             (true, true) => {
-                let tab = rect;
-
                 ui.painter().rect_stroke(
-                    tab,
+                    rect,
                     self.tab_rounding,
                     Stroke::new(1.0, self.tab_outline_color),
                 );
@@ -664,7 +653,7 @@ impl StyleBuilder {
         self
     }
 
-    /// Wheter tabs show their name when hoverd over them.
+    /// Whether tabs show their name when hovered over them.
     #[inline(always)]
     pub fn show_name_when_hovered(mut self, tab_hover_name: bool) -> Self {
         self.style.tab_hover_name = tab_hover_name;
