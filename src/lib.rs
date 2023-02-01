@@ -356,6 +356,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
+                    if !style.hline_below_active_tab_name {
+                        ui.painter().hline(
+                            tabbar.x_range(),
+                            tabbar.max.y - px,
+                            (px, style.hline_color),
+                        );
+                    }
+
                     ui.horizontal(|ui| {
                         for (tab_index, tab) in tabs.iter_mut().enumerate() {
                             let id = self.id.with((node_index, tab_index, "tab"));
@@ -500,8 +508,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     });
                 });
 
-                ui.painter()
-                    .hline(tabbar.x_range(), tabbar.max.y - px, (px, style.hline_color));
+                if style.hline_below_active_tab_name {
+                    ui.painter().hline(
+                        tabbar.x_range(),
+                        tabbar.max.y - px,
+                        (px, style.hline_color),
+                    );
+                }
 
                 // tab body
                 if let Some(tab) = tabs.get_mut(active.0) {

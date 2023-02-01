@@ -154,6 +154,11 @@ impl MyContext {
                 "Include ScrollArea inside of tabs",
             );
 
+            ui.checkbox(
+                &mut style.hline_below_active_tab_name,
+                "Show a line below the active tab name",
+            );
+
             ui.separator();
 
             ui.horizontal(|ui| {

@@ -36,6 +36,12 @@ pub struct Style {
 
     /// The line separating the tab name area from the tab content area
     pub hline_color: Color32,
+
+    /// If `true`, show the hline below the active tabs name.
+    /// If `false`, show the active tab as merged with the tab ui area.
+    /// Default: `false`.
+    pub hline_below_active_tab_name: bool,
+
     pub tab_rounding: Rounding,
     pub tab_background_color: Color32,
 
@@ -85,6 +91,7 @@ impl Default for Style {
 
             tab_outline_color: Color32::BLACK,
             hline_color: Color32::BLACK,
+            hline_below_active_tab_name: false,
             tab_rounding: Default::default(),
             tab_background_color: Color32::WHITE,
 
@@ -368,9 +375,16 @@ impl Style {
                     Stroke::new(1.0, self.tab_outline_color),
                 );
             } else {
-                let stroke = egui::Stroke::new(1.0, self.tab_outline_color);
+                let stroke = Stroke::new(1.0, self.tab_outline_color);
                 ui.painter()
                     .rect(rect, rounding, self.tab_background_color, stroke);
+
+                // Make the tab name area connect with the tab ui area:
+                ui.painter().hline(
+                    rect.x_range(),
+                    rect.bottom(),
+                    Stroke::new(2.0, self.tab_background_color),
+                );
             }
         }
 
@@ -546,6 +560,17 @@ impl StyleBuilder {
     #[inline(always)]
     pub fn with_hline_color(mut self, hline_color: Color32) -> Self {
         self.style.hline_color = hline_color;
+        self
+    }
+
+    /// Sets [`Self::hline_below_active_tab_name`].
+    ///
+    /// If `true`, show the hline below the active tabs name.
+    /// If `false`, show the active tab as merged with the tab ui area.
+    /// Default: `false`.
+    #[inline(always)]
+    pub fn with_hline_below_active_tab_name(mut self, hline_below_active_tab_name: bool) -> Self {
+        self.style.hline_below_active_tab_name = hline_below_active_tab_name;
         self
     }
 
