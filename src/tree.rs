@@ -23,9 +23,15 @@ pub enum Node<Tab> {
     Empty,
     /// Contains the actual tabs
     Leaf {
+        /// The full rectangle - tab bar plus tab body
         rect: Rect,
+
+        /// The tab body rectangle
         viewport: Rect,
+
+        /// All the tabs in this node.
         tabs: Vec<Tab>,
+
         /// The opened tab.
         active: TabIndex,
     },
