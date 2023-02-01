@@ -161,6 +161,9 @@ pub trait TabViewer {
     /// The title to be displayed.
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText;
 
+    /// Called after each tab button is shown, so you can add a tooltip, check for clicks, etc.
+    fn on_tab_button(&mut self, _tab: &mut Self::Tab, _response: &egui::Response) {}
+
     /// This is called when the tabs close button is pressed.
     ///
     /// Returns `true` if the tab should close immediately, `false` otherwise.
@@ -482,6 +485,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     }
                                 }
                             }
+
+                            tab_viewer.on_tab_button(tab, &response);
                         }
 
                         // Add button at the end of the tab bar
