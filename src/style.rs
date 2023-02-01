@@ -312,6 +312,8 @@ impl Style {
 
     /// * `active` means "the tab that is opened in the parent panel".
     /// * `focused` means "the tab that was last interacted with".
+    ///
+    /// Returns the main button response plus the response of the close button, if any.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn tab_title(
         &self,
@@ -322,7 +324,7 @@ impl Style {
         is_being_dragged: bool,
         id: Id,
         expanded_width: f32,
-    ) -> (Response, bool, bool) {
+    ) -> (Response, Option<Response>) {
         let rounding = self.tab_rounding;
 
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
@@ -347,18 +349,19 @@ impl Style {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 
-        let (x_rect, x_res) = if (active || response.hovered()) && self.show_close_buttons {
-            let mut pos = rect.right_top();
-            pos.x -= offset.x + x_size.x / 2.0;
-            pos.y += rect.size().y / 2.0;
-            let x_rect = Rect::from_center_size(pos, x_size);
-            let response = ui
-                .interact(x_rect, id, Sense::click())
-                .on_hover_cursor(CursorIcon::PointingHand);
-            (x_rect, Some(response))
-        } else {
-            (Rect::NOTHING, None)
-        };
+        let (close_rect, close_response) =
+            if (active || response.hovered()) && self.show_close_buttons {
+                let mut pos = rect.right_top();
+                pos.x -= offset.x + x_size.x / 2.0;
+                pos.y += rect.size().y / 2.0;
+                let x_rect = Rect::from_center_size(pos, x_size);
+                let response = ui
+                    .interact(x_rect, id, Sense::click())
+                    .on_hover_cursor(CursorIcon::PointingHand);
+                (x_rect, Some(response))
+            } else {
+                (Rect::NOTHING, None)
+            };
 
         if active {
             if is_being_dragged {
@@ -404,16 +407,22 @@ impl Style {
         });
 
         if (active || response.hovered()) && self.show_close_buttons {
-            if x_res.as_ref().unwrap().hovered() {
+            if close_response.as_ref().unwrap().hovered() {
                 ui.painter().rect_filled(
-                    x_rect,
+                    close_rect,
                     Rounding::same(2.0),
                     self.close_tab_background_color,
                 );
             }
-            let x_rect = x_rect.shrink(1.75);
+            let x_rect = close_rect.shrink(1.75);
 
-            let color = if focused || x_res.as_ref().unwrap().interact_pointer_pos().is_some() {
+            let color = if focused
+                || close_response
+                    .as_ref()
+                    .unwrap()
+                    .interact_pointer_pos()
+                    .is_some()
+            {
                 self.close_tab_active_color
             } else {
                 self.close_tab_color
@@ -428,10 +437,11 @@ impl Style {
             );
         }
 
-        match x_res {
-            Some(some) => (response, some.hovered(), some.clicked()),
-            None => (response, false, false),
-        }
+        (response, close_response)
+        // match close_response {
+        //     Some(some) => (response, some.hovered(), some.clicked()),
+        //     None => (response, false, false),
+        // }
     }
 }
 

@@ -418,7 +418,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                                 response
                             } else {
-                                let response = style.tab_title(
+                                let (mut response, close_response) = style.tab_title(
                                     ui,
                                     label,
                                     is_active && Some(node_index) == focused,
@@ -428,20 +428,25 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     expanded_width,
                                 );
 
-                                let sense = if response.1 {
+                                let (close_hovered, close_clicked) = match close_response {
+                                    Some(res) => (res.hovered(), res.clicked()),
+                                    None => (false, false),
+                                };
+
+                                let sense = if close_hovered {
                                     Sense::click()
                                 } else {
                                     Sense::click_and_drag()
                                 };
 
                                 if style.tab_hover_name {
-                                    response.0.clone().on_hover_ui(|ui| {
+                                    response = response.on_hover_ui(|ui| {
                                         ui.label(tab_viewer.title(tab));
                                     });
                                 }
 
                                 if style.show_context_menu {
-                                    response.0.clone().context_menu(|ui| {
+                                    response = response.context_menu(|ui| {
                                         tab_viewer.context_menu(ui, tab);
                                         if style.show_close_buttons && ui.button("Close").clicked()
                                         {
@@ -455,7 +460,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     });
                                 }
 
-                                if response.2 {
+                                if close_clicked {
                                     if tab_viewer.on_close(tab) {
                                         to_remove.push((node_index, tab_index));
                                     } else {
@@ -463,7 +468,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                         new_focused = Some(node_index);
                                     }
                                 }
-                                let response = ui.interact(response.0.rect, id, sense);
+                                let response = ui.interact(response.rect, id, sense);
                                 if response.drag_started() {
                                     state.drag_start = response.hover_pos();
                                 }
