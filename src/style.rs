@@ -554,7 +554,7 @@ impl StyleBuilder {
         self
     }
 
-    /// Sets [`Self::hline_color`], the line separating the tab name area from the tab content area.
+    /// Sets [`Style::hline_color`], the line separating the tab name area from the tab content area.
     ///
     /// By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
@@ -563,7 +563,7 @@ impl StyleBuilder {
         self
     }
 
-    /// Sets [`Self::hline_below_active_tab_name`].
+    /// Sets [`Style::hline_below_active_tab_name`].
     ///
     /// If `true`, show the hline below the active tabs name.
     /// If `false`, show the active tab as merged with the tab ui area.
