@@ -62,8 +62,8 @@
 #![forbid(unsafe_code)]
 
 use egui::{
-    pos2, style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect,
-    Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
+    style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect, Rounding,
+    ScrollArea, Sense, Stroke, Ui, WidgetText,
 };
 
 pub use crate::{
@@ -349,10 +349,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         style.tab_bar_background_color,
                     );
 
-                    let a = pos2(tabbar.min.x, tabbar.max.y - px);
-                    let b = pos2(tabbar.max.x, tabbar.max.y - px);
-                    ui.painter()
-                        .line_segment([a, b], (px, style.tab_outline_color));
                     let mut available_width = tabbar.max.x - tabbar.min.x;
                     if style.show_add_buttons {
                         available_width -= Style::TAB_PLUS_SIZE;
@@ -361,6 +357,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
+
+                    if !style.hline_below_active_tab_name {
+                        ui.painter().hline(
+                            tabbar.x_range(),
+                            tabbar.max.y - px,
+                            (px, style.hline_color),
+                        );
+                    }
 
                     ui.horizontal(|ui| {
                         for (tab_index, tab) in tabs.iter_mut().enumerate() {
@@ -378,7 +382,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                             let response = if is_being_dragged {
                                 let layer_id = LayerId::new(Order::Tooltip, id);
-                                let response = ui
+                                let mut response = ui
                                     .with_layer_id(layer_id, |ui| {
                                         style.tab_title(
                                             ui,
@@ -393,7 +397,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     .response;
 
                                 let sense = Sense::click_and_drag();
-                                let response = ui.interact(response.rect, id, sense);
+                                response = ui.interact(response.rect, id, sense);
 
                                 if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
                                     let center = response.rect.center();
@@ -409,7 +413,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                                 response
                             } else {
-                                let response = style.tab_title(
+                                let (mut response, close_response) = style.tab_title(
                                     ui,
                                     label,
                                     is_active && Some(node_index) == focused,
@@ -419,20 +423,25 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     expanded_width,
                                 );
 
-                                let sense = if response.1 {
+                                let (close_hovered, close_clicked) = match close_response {
+                                    Some(res) => (res.hovered(), res.clicked()),
+                                    None => (false, false),
+                                };
+
+                                let sense = if close_hovered {
                                     Sense::click()
                                 } else {
                                     Sense::click_and_drag()
                                 };
 
                                 if style.tab_hover_name {
-                                    response.0.clone().on_hover_ui(|ui| {
+                                    response = response.on_hover_ui(|ui| {
                                         ui.label(tab_viewer.title(tab));
                                     });
                                 }
 
                                 if style.show_context_menu {
-                                    response.0.clone().context_menu(|ui| {
+                                    response = response.context_menu(|ui| {
                                         tab_viewer.context_menu(ui, tab);
                                         if style.show_close_buttons && ui.button("Close").clicked()
                                         {
@@ -446,7 +455,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     });
                                 }
 
-                                if response.2 {
+                                if close_clicked {
                                     if tab_viewer.on_close(tab) {
                                         to_remove.push((node_index, tab_index));
                                     } else {
@@ -454,7 +463,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                         new_focused = Some(node_index);
                                     }
                                 }
-                                let response = ui.interact(response.0.rect, id, sense);
+                                let response = ui.interact(response.rect, id, sense);
                                 if response.drag_started() {
                                     state.drag_start = response.hover_pos();
                                 }
@@ -506,6 +515,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         };
                     });
                 });
+
+                if style.hline_below_active_tab_name {
+                    ui.painter().hline(
+                        tabbar.x_range(),
+                        tabbar.max.y - px,
+                        (px, style.hline_color),
+                    );
+                }
 
                 // tab body
                 if let Some(tab) = tabs.get_mut(active.0) {

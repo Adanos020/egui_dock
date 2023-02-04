@@ -15,11 +15,13 @@ pub struct Style {
     pub dock_area_padding: Option<Margin>,
     pub default_inner_margin: Margin,
 
+    // TODO: this should be `egui::Stroke`.
     pub border_color: Color32,
     pub border_width: f32,
 
     pub selection_color: Color32,
 
+    // The resizable separator:
     pub separator_width: f32,
     pub separator_extra: f32,
     pub separator_color_idle: Color32,
@@ -29,12 +31,24 @@ pub struct Style {
     pub tab_bar_background_color: Color32,
     pub tab_bar_height: f32,
 
+    /// The outline around the active tab name.
     pub tab_outline_color: Color32,
+
+    /// The line separating the tab name area from the tab content area
+    pub hline_color: Color32,
+
+    /// If `true`, show the hline below the active tabs name.
+    /// If `false`, show the active tab as merged with the tab ui area.
+    /// Default: `false`.
+    pub hline_below_active_tab_name: bool,
+
     pub tab_rounding: Rounding,
     pub tab_background_color: Color32,
 
     pub tab_text_color_unfocused: Color32,
     pub tab_text_color_focused: Color32,
+    pub tab_text_color_active_unfocused: Color32,
+    pub tab_text_color_active_focused: Color32,
 
     pub tabs_are_draggable: bool,
     pub expand_tabs: bool,
@@ -76,11 +90,15 @@ impl Default for Style {
             tab_bar_height: 24.0,
 
             tab_outline_color: Color32::BLACK,
+            hline_color: Color32::BLACK,
+            hline_below_active_tab_name: false,
             tab_rounding: Default::default(),
             tab_background_color: Color32::WHITE,
 
             tab_text_color_unfocused: Color32::DARK_GRAY,
             tab_text_color_focused: Color32::BLACK,
+            tab_text_color_active_unfocused: Color32::DARK_GRAY,
+            tab_text_color_active_focused: Color32::BLACK,
 
             close_tab_color: Color32::WHITE,
             close_tab_active_color: Color32::WHITE,
@@ -110,9 +128,12 @@ impl Style {
     /// - [`Self::selection_color`]
     /// - [`Self::tab_bar_background_color`]
     /// - [`Self::tab_outline_color`]
+    /// - [`Self::hline_color`]
     /// - [`Self::tab_background_color`]
     /// - [`Self::tab_text_color_unfocused`]
     /// - [`Self::tab_text_color_focused`]
+    /// - [`Self::tab_text_color_active_unfocused`]
+    /// - [`Self::tab_text_color_active_focused`]
     /// - [`Self::separator_color_idle`]
     /// - [`Self::separator_color_hovered`]
     /// - [`Self::separator_color_dragged`]
@@ -129,10 +150,13 @@ impl Style {
 
             tab_bar_background_color: style.visuals.faint_bg_color,
             tab_outline_color: style.visuals.widgets.active.bg_fill,
+            hline_color: style.visuals.widgets.active.bg_fill,
             tab_background_color: style.visuals.window_fill(),
 
             tab_text_color_unfocused: style.visuals.text_color(),
             tab_text_color_focused: style.visuals.strong_text_color(),
+            tab_text_color_active_unfocused: style.visuals.text_color(),
+            tab_text_color_active_focused: style.visuals.strong_text_color(),
 
             separator_color_idle: style.visuals.widgets.noninteractive.bg_stroke.color,
             separator_color_hovered: style.visuals.widgets.hovered.bg_stroke.color,
@@ -293,7 +317,10 @@ impl Style {
         response
     }
 
-    /// `active` means "the tab that is opened in the parent panel".
+    /// * `active` means "the tab that is opened in the parent panel".
+    /// * `focused` means "the tab that was last interacted with".
+    ///
+    /// Returns the main button response plus the response of the close button, if any.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn tab_title(
         &self,
@@ -304,8 +331,7 @@ impl Style {
         is_being_dragged: bool,
         id: Id,
         expanded_width: f32,
-    ) -> (Response, bool, bool) {
-        let px = ui.ctx().pixels_per_point().recip();
+    ) -> (Response, Option<Response>) {
         let rounding = self.tab_rounding;
 
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
@@ -326,49 +352,46 @@ impl Style {
         };
 
         let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
-        if !ui.memory().is_anything_being_dragged() && is_being_dragged {
+        if !ui.memory().is_anything_being_dragged() {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 
-        let (x_rect, x_res) = if (active || response.hovered()) && self.show_close_buttons {
-            let mut pos = rect.right_top();
-            pos.x -= offset.x + x_size.x / 2.0;
-            pos.y += rect.size().y / 2.0;
-            let x_rect = Rect::from_center_size(pos, x_size);
-            let response = ui
-                .interact(x_rect, id, Sense::click())
-                .on_hover_cursor(CursorIcon::PointingHand);
-            (x_rect, Some(response))
-        } else {
-            (Rect::NOTHING, None)
-        };
-        match (active, is_being_dragged) {
-            (true, false) => {
-                let mut tab = rect;
-                tab.min.x -= px;
-                tab.max.x += px;
-                ui.painter()
-                    .rect_filled(tab, rounding, self.tab_outline_color);
+        let (close_rect, close_response) =
+            if (active || response.hovered()) && self.show_close_buttons {
+                let mut pos = rect.right_top();
+                pos.x -= offset.x + x_size.x / 2.0;
+                pos.y += rect.size().y / 2.0;
+                let x_rect = Rect::from_center_size(pos, x_size);
+                let response = ui
+                    .interact(x_rect, id, Sense::click())
+                    .on_hover_cursor(CursorIcon::PointingHand);
+                (x_rect, Some(response))
+            } else {
+                (Rect::NOTHING, None)
+            };
 
-                tab.min.x += px;
-                tab.max.x -= px;
-                tab.min.y += px;
-                ui.painter()
-                    .rect_filled(tab, rounding, self.tab_background_color);
-            }
-            (true, true) => {
-                let tab = rect;
-
+        if active {
+            if is_being_dragged {
                 ui.painter().rect_stroke(
-                    tab,
+                    rect,
                     self.tab_rounding,
                     Stroke::new(1.0, self.tab_outline_color),
                 );
+            } else {
+                let stroke = Stroke::new(1.0, self.tab_outline_color);
+                ui.painter()
+                    .rect(rect, rounding, self.tab_background_color, stroke);
+
+                // Make the tab name area connect with the tab ui area:
+                ui.painter().hline(
+                    rect.x_range(),
+                    rect.bottom(),
+                    Stroke::new(2.0, self.tab_background_color),
+                );
             }
-            _ => (),
         }
 
-        let pos = if self.expand_tabs {
+        let text_pos = if self.expand_tabs {
             let mut pos = Align2::CENTER_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
             pos -= galley.size() / 2.0;
             pos
@@ -380,13 +403,17 @@ impl Style {
 
         let override_text_color = if galley.galley_has_color {
             None // respect the color the user has chosen
-        } else if focused {
-            Some(self.tab_text_color_focused)
         } else {
-            Some(self.tab_text_color_unfocused)
+            Some(match (active, focused) {
+                (false, false) => self.tab_text_color_unfocused,
+                (false, true) => self.tab_text_color_focused,
+                (true, false) => self.tab_text_color_active_unfocused,
+                (true, true) => self.tab_text_color_active_focused,
+            })
         };
+
         ui.painter().add(epaint::TextShape {
-            pos,
+            pos: text_pos,
             galley: galley.galley,
             underline: Stroke::NONE,
             override_text_color,
@@ -394,16 +421,22 @@ impl Style {
         });
 
         if (active || response.hovered()) && self.show_close_buttons {
-            if x_res.as_ref().unwrap().hovered() {
+            if close_response.as_ref().unwrap().hovered() {
                 ui.painter().rect_filled(
-                    x_rect,
+                    close_rect,
                     Rounding::same(2.0),
                     self.close_tab_background_color,
                 );
             }
-            let x_rect = x_rect.shrink(1.75);
+            let x_rect = close_rect.shrink(1.75);
 
-            let color = if focused || x_res.as_ref().unwrap().interact_pointer_pos().is_some() {
+            let color = if focused
+                || close_response
+                    .as_ref()
+                    .unwrap()
+                    .interact_pointer_pos()
+                    .is_some()
+            {
                 self.close_tab_active_color
             } else {
                 self.close_tab_color
@@ -418,10 +451,11 @@ impl Style {
             );
         }
 
-        match x_res {
-            Some(some) => (response, some.hovered(), some.clicked()),
-            None => (response, false, false),
-        }
+        (response, close_response)
+        // match close_response {
+        //     Some(some) => (response, some.hovered(), some.clicked()),
+        //     None => (response, false, false),
+        // }
     }
 }
 
@@ -530,6 +564,26 @@ impl StyleBuilder {
         self
     }
 
+    /// Sets [`Style::hline_color`], the line separating the tab name area from the tab content area.
+    ///
+    /// By `Default` it's [`Color32::BLACK`].
+    #[inline(always)]
+    pub fn with_hline_color(mut self, hline_color: Color32) -> Self {
+        self.style.hline_color = hline_color;
+        self
+    }
+
+    /// Sets [`Style::hline_below_active_tab_name`].
+    ///
+    /// If `true`, show the hline below the active tabs name.
+    /// If `false`, show the active tab as merged with the tab ui area.
+    /// Default: `false`.
+    #[inline(always)]
+    pub fn with_hline_below_active_tab_name(mut self, hline_below_active_tab_name: bool) -> Self {
+        self.style.hline_below_active_tab_name = hline_below_active_tab_name;
+        self
+    }
+
     /// Sets `tab_rounding` for the tab rounding.
     #[inline(always)]
     pub fn with_tab_rounding(mut self, tab_rounding: Rounding) -> Self {
@@ -620,17 +674,37 @@ impl StyleBuilder {
         self
     }
 
-    /// Color of tab title when the tab is unfocused.
+    /// Color of tab title when an inactive tab is unfocused.
     #[inline(always)]
     pub fn with_tab_text_color_unfocused(mut self, tab_text_color_unfocused: Color32) -> Self {
         self.style.tab_text_color_unfocused = tab_text_color_unfocused;
         self
     }
 
-    /// Color of tab title when the tab is focused.
+    /// Color of tab title when an inactive tab is focused.
     #[inline(always)]
     pub fn with_tab_text_color_focused(mut self, tab_text_color_focused: Color32) -> Self {
         self.style.tab_text_color_focused = tab_text_color_focused;
+        self
+    }
+
+    /// Color of tab title when an active tab is unfocused.
+    #[inline(always)]
+    pub fn with_tab_text_color_active_unfocused(
+        mut self,
+        tab_text_color_active_unfocused: Color32,
+    ) -> Self {
+        self.style.tab_text_color_active_unfocused = tab_text_color_active_unfocused;
+        self
+    }
+
+    /// Color of tab title when an active tab is focused.
+    #[inline(always)]
+    pub fn with_tab_text_color_active_focused(
+        mut self,
+        tab_text_color_active_focused: Color32,
+    ) -> Self {
+        self.style.tab_text_color_active_focused = tab_text_color_active_focused;
         self
     }
 
@@ -662,7 +736,7 @@ impl StyleBuilder {
         self
     }
 
-    /// Wheter tabs show their name when hoverd over them.
+    /// Whether tabs show their name when hovered over them.
     #[inline(always)]
     pub fn show_name_when_hovered(mut self, tab_hover_name: bool) -> Self {
         self.style.tab_hover_name = tab_hover_name;
