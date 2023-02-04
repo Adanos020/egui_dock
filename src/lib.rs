@@ -380,7 +380,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                             let response = if is_being_dragged {
                                 let layer_id = LayerId::new(Order::Tooltip, id);
-                                let response = ui
+                                let mut response = ui
                                     .with_layer_id(layer_id, |ui| {
                                         style.tab_title(
                                             ui,
@@ -395,7 +395,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     .response;
 
                                 let sense = Sense::click_and_drag();
-                                let response = ui.interact(response.rect, id, sense);
+                                response = ui.interact(response.rect, id, sense);
 
                                 if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
                                     let center = response.rect.center();
