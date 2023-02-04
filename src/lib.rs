@@ -59,6 +59,8 @@
 //! # });
 //! ```
 
+#![forbid(unsafe_code)]
+
 use egui::{
     style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect, Rounding,
     ScrollArea, Sense, Stroke, Ui, WidgetText,
@@ -360,6 +362,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
+                    if !style.hline_below_active_tab_name {
+                        ui.painter().hline(
+                            tabbar.x_range(),
+                            tabbar.max.y - px,
+                            (px, style.hline_color),
+                        );
+                    }
+
                     ui.horizontal(|ui| {
                         for (tab_index, tab) in tabs.iter_mut().enumerate() {
                             let id = self.id.with((node_index, tab_index, "tab"));
@@ -376,7 +386,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                             let response = if is_being_dragged {
                                 let layer_id = LayerId::new(Order::Tooltip, id);
-                                let response = ui
+                                let mut response = ui
                                     .with_layer_id(layer_id, |ui| {
                                         style.tab_title(
                                             ui,
@@ -391,7 +401,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     .response;
 
                                 let sense = Sense::click_and_drag();
-                                let response = ui.interact(response.rect, id, sense);
+                                response = ui.interact(response.rect, id, sense);
 
                                 if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
                                     let center = response.rect.center();
@@ -402,20 +412,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                         ui.ctx().translate_layer(layer_id, delta);
 
                                         drag_data = Some((node_index, tab_index));
-                                    }
-                                }
-
-                                if response.clicked() {
-                                    *active = tab_index;
-                                    new_focused = Some(node_index);
-                                }
-
-                                if response.middle_clicked() && style.show_close_buttons {
-                                    if tab_viewer.on_close(tab) {
-                                        to_remove.push((node_index, tab_index));
-                                    } else {
-                                        *active = tab_index;
-                                        new_focused = Some(node_index);
                                     }
                                 }
 
@@ -478,6 +474,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                                 response
                             };
+
+                            if response.clicked() {
+                                *active = tab_index;
+                                new_focused = Some(node_index);
+                            }
+
+                            if response.middle_clicked() && style.show_close_buttons {
+                                if tab_viewer.on_close(tab) {
+                                    to_remove.push((node_index, tab_index));
+                                } else {
+                                    *active = tab_index;
+                                    new_focused = Some(node_index);
+                                }
+                            }
+
                             if state.drag_start.is_some() {
                                 if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
                                     if response.rect.contains(pos) {
@@ -511,8 +522,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     });
                 });
 
-                ui.painter()
-                    .hline(tabbar.x_range(), tabbar.max.y - px, (px, style.hline_color));
+                if style.hline_below_active_tab_name {
+                    ui.painter().hline(
+                        tabbar.x_range(),
+                        tabbar.max.y - px,
+                        (px, style.hline_color),
+                    );
+                }
 
                 // tab body
                 if let Some(tab) = tabs.get_mut(active.0) {
