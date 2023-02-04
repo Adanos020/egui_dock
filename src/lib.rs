@@ -405,20 +405,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     }
                                 }
 
-                                if response.clicked() {
-                                    *active = tab_index;
-                                    new_focused = Some(node_index);
-                                }
-
-                                if response.middle_clicked() && style.show_close_buttons {
-                                    if tab_viewer.on_close(tab) {
-                                        to_remove.push((node_index, tab_index));
-                                    } else {
-                                        *active = tab_index;
-                                        new_focused = Some(node_index);
-                                    }
-                                }
-
                                 response
                             } else {
                                 let response = style.tab_title(
@@ -473,6 +459,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                                 response
                             };
+
+                            if response.clicked() {
+                                *active = tab_index;
+                                new_focused = Some(node_index);
+                            }
+
+                            if response.middle_clicked() && style.show_close_buttons {
+                                if tab_viewer.on_close(tab) {
+                                    to_remove.push((node_index, tab_index));
+                                } else {
+                                    *active = tab_index;
+                                    new_focused = Some(node_index);
+                                }
+                            }
+
                             if state.drag_start.is_some() {
                                 if let Some(pos) = ui.input().pointer.hover_pos() {
                                     if response.rect.contains(pos) {
