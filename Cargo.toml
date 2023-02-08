@@ -18,13 +18,8 @@ default = []
 serde = ["dep:serde", "egui/serde"]
 
 [dependencies]
-egui = "0.20"
+egui = "0.21"
 serde = { version = "1", optional = true, features = ["derive"] }
 
 [dev-dependencies]
-eframe = "0.20"
-
-[patch.crates-io]
-# egui master 2023-01-31 - DON'T MERGE THIS:
-egui = { git = "https://github.com/emilk/egui", rev = "d01e4342f080ef4f6648c77ba3e1fa5512471ebd" }
-eframe = { git = "https://github.com/emilk/egui", rev = "d01e4342f080ef4f6648c77ba3e1fa5512471ebd" }
+eframe = { version = "0.21", default-features = false, features = ["glow"] }
