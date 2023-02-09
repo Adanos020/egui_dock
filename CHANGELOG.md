@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 - 2023-02-09
+
 ### Added
 - Added `TabViewer::on_tab_button` ([#93](https://github.com/Adanos020/egui_dock/pull/93)).
 
