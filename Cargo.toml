@@ -18,8 +18,11 @@ default = []
 serde = ["dep:serde", "egui/serde"]
 
 [dependencies]
-egui = "0.20"
+egui = { version = "0.21", default-features = false }
 serde = { version = "1", optional = true, features = ["derive"] }
 
 [dev-dependencies]
-eframe = "0.20"
+eframe = { version = "0.21", default-features = false, features = [
+    "default_fonts",
+    "glow",
+] }

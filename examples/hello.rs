@@ -10,7 +10,7 @@ use egui::{
 
 use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
 
-fn main() {
+fn main() -> eframe::Result<()> {
     let options = NativeOptions {
         initial_window_size: Some(egui::vec2(1024.0, 1024.0)),
         ..Default::default()
@@ -19,7 +19,7 @@ fn main() {
         "My egui App",
         options,
         Box::new(|_cc| Box::<MyApp>::default()),
-    );
+    )
 }
 
 struct MyContext {

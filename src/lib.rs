@@ -138,12 +138,13 @@ struct State {
 impl State {
     #[inline(always)]
     pub fn load(ctx: &Context, id: Id) -> Self {
-        ctx.data().get_temp(id).unwrap_or(Self { drag_start: None })
+        ctx.data_mut(|d| d.get_temp(id))
+            .unwrap_or(Self { drag_start: None })
     }
 
     #[inline(always)]
     fn store(self, ctx: &Context, id: Id) {
-        ctx.data().insert_temp(id, self);
+        ctx.data_mut(|d| d.insert_temp(id, self));
     }
 }
 
@@ -161,6 +162,9 @@ pub trait TabViewer {
 
     /// The title to be displayed.
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText;
+
+    /// Called after each tab button is shown, so you can add a tooltip, check for clicks, etc.
+    fn on_tab_button(&mut self, _tab: &mut Self::Tab, _response: &egui::Response) {}
 
     /// This is called when the tabs close button is pressed.
     ///
@@ -370,11 +374,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         for (tab_index, tab) in tabs.iter_mut().enumerate() {
                             let id = self.id.with((node_index, tab_index, "tab"));
                             let tab_index = TabIndex(tab_index);
-                            let is_being_dragged =
-                                ui.memory().is_being_dragged(id) && style.tabs_are_draggable;
+                            let is_being_dragged = ui.memory(|mem| mem.is_being_dragged(id))
+                                && style.tabs_are_draggable;
 
                             if is_being_dragged {
-                                ui.output().cursor_icon = CursorIcon::Grabbing;
+                                ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
                             }
 
                             let is_active = *active == tab_index || is_being_dragged;
@@ -486,12 +490,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             }
 
                             if state.drag_start.is_some() {
-                                if let Some(pos) = ui.input().pointer.hover_pos() {
+                                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
                                     if response.rect.contains(pos) {
                                         tab_hover_rect = Some((response.rect, tab_index));
                                     }
                                 }
                             }
+
+                            tab_viewer.on_tab_button(tab, &response);
                         }
 
                         // Add button at the end of the tab bar
@@ -508,7 +514,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                             if response.clicked() {
                                 if style.show_add_popup {
-                                    ui.memory().toggle_popup(popup_id);
+                                    ui.memory_mut(|mem| mem.toggle_popup(popup_id));
                                 }
                                 tab_viewer.on_add(node_index);
                             }
@@ -532,8 +538,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                     *viewport = rect;
 
-                    if ui.input().pointer.any_click() {
-                        if let Some(pos) = ui.input().pointer.hover_pos() {
+                    if ui.input(|i| i.pointer.any_click()) {
+                        if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
                             if rect.contains(pos) {
                                 new_focused = Some(node_index);
                             }
@@ -572,15 +578,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     });
                 }
 
-                let is_being_dragged = ui.memory().is_anything_being_dragged();
+                let is_being_dragged = ui.memory(|mem| mem.is_anything_being_dragged());
                 if is_being_dragged && full_response.hovered() {
-                    hover_data = ui.input().pointer.hover_pos().map(|pointer| HoverData {
-                        rect,
-                        dst: node_index,
-                        tabs: tabs_response.hovered().then_some(tabs_response.rect),
-                        tab: tab_hover_rect,
-                        pointer,
-                    });
+                    hover_data = ui
+                        .input(|i| i.pointer.hover_pos())
+                        .map(|pointer| HoverData {
+                            rect,
+                            dst: node_index,
+                            tabs: tabs_response.hovered().then_some(tabs_response.rect),
+                            tab: tab_hover_rect,
+                            pointer,
+                        });
                 }
 
                 for (tab_index, tab) in tabs.iter_mut().enumerate() {
@@ -632,7 +640,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     painter.rect_filled(helper, 0.0, style.selection_color);
                 }
 
-                if ui.input().pointer.any_released() {
+                if ui.input(|i| i.pointer.any_released()) {
                     if let Node::Leaf { active, .. } = &mut self.tree[src] {
                         if *active >= tab_index {
                             active.0 = active.0.saturating_sub(1);

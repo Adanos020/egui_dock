@@ -18,11 +18,11 @@ pub(crate) fn popup_under_widget<R>(
     widget_response: &Response,
     add_contents: impl FnOnce(&mut Ui) -> R,
 ) -> Option<R> {
-    if !ui.memory().is_popup_open(popup_id) {
+    if !ui.memory(|mem| mem.is_popup_open(popup_id)) {
         return None;
     }
 
-    let state: Option<State> = ui.data().get_temp(popup_id);
+    let state: Option<State> = ui.data_mut(|d| d.get_temp(popup_id));
 
     // If this is the first draw, we don't know the popup size yet, so we don't know how to
     // position the popup
@@ -61,10 +61,10 @@ pub(crate) fn popup_under_widget<R>(
         })
         .inner;
 
-    *ui.data().get_temp_mut_or_default(popup_id) = state;
+    ui.data_mut(|d| *d.get_temp_mut_or_default(popup_id) = state);
 
-    if ui.input().key_pressed(Key::Escape) || widget_response.clicked_elsewhere() {
-        ui.memory().close_popup();
+    if ui.input(|i| i.key_pressed(Key::Escape)) || widget_response.clicked_elsewhere() {
+        ui.memory_mut(|mem| mem.close_popup());
     }
     Some(inner)
 }
@@ -80,13 +80,13 @@ pub(crate) fn constrain_window_rect_to_area(
     if window.width() > area.width() {
         // Allow overlapping side bars.
         // This is important for small screens, e.g. mobiles running the web demo.
-        area.max.x = ctx.input().screen_rect().max.x;
-        area.min.x = ctx.input().screen_rect().min.x;
+        area.max.x = ctx.input(|i| i.screen_rect()).max.x;
+        area.min.x = ctx.input(|i| i.screen_rect()).min.x;
     }
     if window.height() > area.height() {
         // Allow overlapping top/bottom bars:
-        area.max.y = ctx.input().screen_rect().max.y;
-        area.min.y = ctx.input().screen_rect().min.y;
+        area.max.y = ctx.input(|i| i.screen_rect()).max.y;
+        area.min.y = ctx.input(|i| i.screen_rect()).min.y;
     }
 
     let mut pos = window.min;

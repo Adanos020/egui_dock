@@ -158,9 +158,10 @@ impl Style {
             tab_text_color_active_unfocused: style.visuals.text_color(),
             tab_text_color_active_focused: style.visuals.strong_text_color(),
 
-            separator_color_idle: style.visuals.widgets.noninteractive.bg_stroke.color,
-            separator_color_hovered: style.visuals.widgets.hovered.bg_stroke.color,
-            separator_color_dragged: style.visuals.widgets.active.bg_stroke.color,
+            // Same as egui panel resize colors:
+            separator_color_idle: style.visuals.widgets.noninteractive.bg_stroke.color, // dim
+            separator_color_hovered: style.visuals.widgets.hovered.fg_stroke.color,     // bright
+            separator_color_dragged: style.visuals.widgets.active.fg_stroke.color,      // bright
 
             border_color: style.visuals.widgets.active.bg_fill,
 
@@ -352,7 +353,7 @@ impl Style {
         };
 
         let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
-        if !ui.memory().is_anything_being_dragged() {
+        if !ui.memory(|mem| mem.is_anything_being_dragged()) {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 

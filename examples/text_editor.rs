@@ -7,13 +7,13 @@ use eframe::{egui, NativeOptions};
 /// We identify tabs by the title of the file we are editing.
 type Title = String;
 
-fn main() {
+fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
     eframe::run_native(
         "Text editor examples",
         options,
         Box::new(|_cc| Box::<MyApp>::default()),
-    );
+    )
 }
 
 struct Buffers {

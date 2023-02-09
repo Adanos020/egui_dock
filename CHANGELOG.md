@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+### Added
+- Added `TabViewer::on_tab_button` ([#93](https://github.com/Adanos020/egui_dock/pull/93)).
+
 ### Breaking changes
+- Updated to egui 0.21
 - Deleted `dynamic_tab` which was deprecated in 0.3.0
 
 ## 0.3.1 - 2022-12-21
