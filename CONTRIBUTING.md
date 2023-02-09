@@ -16,6 +16,11 @@ Bug reports should include how to reproduce said bug, if known.
     - If your changes are not complete but e.g. you want feedback on your idea before fully committing to it, open a draft PR.
     - Otherwise, feel free to open a regular PR.
 
+**Important:** Open PRs to the `main` branch only if your changes do not introduce incompatibilities with the latest
+release of `egui_dock`, a.k.a. breaking changes. All breaking changes should be merged into a special `release-0.XYZ`
+branch instead. This is to make it possible to release non-breaking bugfixes without requiring to update to a new incompatible
+release.
+
 Before your PR is merged, it needs to be approved by one of the maintainers.
 To minimize the review time, make sure all the following requirements are met:
 
