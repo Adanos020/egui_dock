@@ -62,8 +62,8 @@
 #![forbid(unsafe_code)]
 
 use egui::{
-    style::Margin, vec2, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect, Rounding,
-    ScrollArea, Sense, Stroke, Ui, WidgetText,
+    style::Margin, vec2, CentralPanel, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect,
+    Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
 };
 
 pub use crate::{
@@ -244,18 +244,43 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self
     }
 
-    /// Shows the docking area.
+    /// Show the `DockArea` at the top level.
+    ///
+    /// This is the same as doing:
+    /// ```
+    /// # use egui_dock::{DockArea, Tree};
+    /// # use egui::{CentralPanel, Frame};
+    /// # struct TabViewer {}
+    /// # impl egui_dock::TabViewer for TabViewer {
+    /// #     type Tab = String;
+    /// #     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {}
+    /// #     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText { (&*tab).into() }
+    /// # }
+    /// # let mut tree: Tree<String> = Tree::new(vec![]);
+    /// # let mut tab_viewer = TabViewer {};
+    /// # egui::__run_test_ctx(|ctx| {
+    /// CentralPanel::default()
+    ///     .frame(Frame::central_panel(&ctx.style()).inner_margin(0.))
+    ///     .show(ctx, |ui| {
+    ///         DockArea::new(&mut tree).show_inside(ui, &mut tab_viewer);
+    ///     });
+    /// # });
+    /// ```
+    /// So you can't use the [`CentralPanel::show`] when using `DockArea`'s one.
+    ///
+    /// See also [`show_inside`](Self::show_inside).
     #[inline]
     pub fn show(self, ctx: &Context, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
-        let layer_id = LayerId::background();
-        let max_rect = ctx.available_rect();
-        let clip_rect = ctx.available_rect();
-
-        let mut ui = Ui::new(ctx.clone(), layer_id, self.id, max_rect, clip_rect);
-        self.show_inside(&mut ui, tab_viewer);
+        CentralPanel::default()
+            .frame(Frame::central_panel(&ctx.style()).inner_margin(0.))
+            .show(ctx, |ui| {
+                self.show_inside(ui, tab_viewer);
+            });
     }
 
-    /// Shows the docking hierarchy inside a `Ui`.
+    /// Shows the docking hierarchy inside a [`Ui`].
+    ///
+    /// See also [`show`](Self::show).
     pub fn show_inside(self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         let style = self
             .style
