@@ -192,15 +192,21 @@ impl Style {
 
         let response = ui
             .allocate_rect(separator, Sense::click_and_drag())
-            .on_hover_cursor(CursorIcon::ResizeHorizontal);
+            .on_hover_and_drag_cursor(CursorIcon::ResizeHorizontal);
 
-        {
+        if let Some(pos) = response.interact_pointer_pos() {
+            let x = pos.x;
             let delta = response.drag_delta().x;
-            let range = rect.max.x - rect.min.x;
-            let min = (self.separator_extra / range).min(1.0);
-            let max = 1.0 - min;
-            let (min, max) = (min.min(max), max.max(min));
-            *fraction = (*fraction + delta / range).clamp(min, max);
+
+            if (delta > 0. && x > midpoint && x < rect.max.x)
+                || (delta < 0. && x < midpoint && x > rect.min.x)
+            {
+                let range = rect.max.x - rect.min.x;
+                let min = (self.separator_extra / range).min(1.0);
+                let max = 1.0 - min;
+                let (min, max) = (min.min(max), max.max(min));
+                *fraction = (*fraction + delta / range).clamp(min, max);
+            }
         }
 
         let midpoint = rect.min.x + rect.width() * *fraction;
@@ -239,15 +245,22 @@ impl Style {
 
         let response = ui
             .allocate_rect(separator, Sense::click_and_drag())
-            .on_hover_cursor(CursorIcon::ResizeVertical);
+            .on_hover_and_drag_cursor(CursorIcon::ResizeVertical);
 
-        {
+        if let Some(pos) = response.interact_pointer_pos() {
+            let y = pos.y;
             let delta = response.drag_delta().y;
-            let range = rect.max.y - rect.min.y;
-            let min = (self.separator_extra / range).min(1.0);
-            let max = 1.0 - min;
-            let (min, max) = (min.min(max), max.max(min));
-            *fraction = (*fraction + delta / range).clamp(min, max);
+
+            if (delta > 0. && y > midpoint && y < rect.max.y)
+                || (delta < 0. && y < midpoint && y > rect.min.y)
+            {
+                let delta = response.drag_delta().y;
+                let range = rect.max.y - rect.min.y;
+                let min = (self.separator_extra / range).min(1.0);
+                let max = 1.0 - min;
+                let (min, max) = (min.min(max), max.max(min));
+                *fraction = (*fraction + delta / range).clamp(min, max);
+            }
         }
 
         let midpoint = rect.min.y + rect.height() * *fraction;
