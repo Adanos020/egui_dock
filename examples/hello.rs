@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
-    CentralPanel, Id, LayerId, Slider, TopBottomPanel, Ui, WidgetText,
+    CentralPanel, Color32, Frame, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
 use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
@@ -312,21 +312,18 @@ impl eframe::App for MyApp {
             })
         });
 
-        CentralPanel::default().show(ctx, |_ui| {
-            let layer_id = LayerId::background();
-            let max_rect = ctx.available_rect();
-            let clip_rect = ctx.available_rect();
-            let id = Id::new("egui_dock::DockArea");
-            let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
+        CentralPanel::default()
+            // When displaying a DockArea in another UI, it looks better
+            // to set inner margins to 0.
+            .frame(Frame::central_panel(&ctx.style()).inner_margin(0.))
+            .show(ctx, |ui| {
+                // Customize DockArea style.
+                let mut style = egui_dock::Style::from_egui(&ctx.style());
+                style.selection_color = Color32::BLUE;
 
-            let style = self
-                .context
-                .style
-                .get_or_insert(Style::from_egui(&ui.ctx().style()))
-                .clone();
-            DockArea::new(&mut self.tree)
-                .style(style)
-                .show_inside(&mut ui, &mut self.context);
-        });
+                DockArea::new(&mut self.tree)
+                    .style(style)
+                    .show_inside(ui, &mut self.context);
+            });
     }
 }

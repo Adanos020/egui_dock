@@ -262,7 +262,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .unwrap_or_else(|| Style::from_egui(ui.style().as_ref()));
 
         let mut state = State::load(ui.ctx(), self.id);
-        let mut rect = ui.max_rect();
+        let mut rect = ui.available_rect_before_wrap();
 
         if let Some(margin) = style.dock_area_padding {
             rect.min += margin.left_top();
