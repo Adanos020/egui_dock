@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
-    CentralPanel, Color32, Frame, Slider, TopBottomPanel, Ui, WidgetText,
+    CentralPanel, Frame, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
 use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
@@ -317,9 +317,11 @@ impl eframe::App for MyApp {
             // to set inner margins to 0.
             .frame(Frame::central_panel(&ctx.style()).inner_margin(0.))
             .show(ctx, |ui| {
-                // Customize DockArea style.
-                let mut style = egui_dock::Style::from_egui(&ctx.style());
-                style.selection_color = Color32::BLUE;
+                let style = self
+                    .context
+                    .style
+                    .get_or_insert(Style::from_egui(ui.style()))
+                    .clone();
 
                 DockArea::new(&mut self.tree)
                     .style(style)
