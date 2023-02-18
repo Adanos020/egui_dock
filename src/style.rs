@@ -4,13 +4,17 @@ use egui::{style::Margin, *};
 /// Left or right alignment for tab add button.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[allow(missing_docs)]
 pub enum TabAddAlign {
     Left,
     Right,
 }
 
 /// Specifies the look and feel of egui_dock.
+///
+/// See [`StyleBuilder`] for fields details.
 #[derive(Clone, Debug)]
+#[allow(missing_docs)]
 pub struct Style {
     pub dock_area_padding: Option<Margin>,
     pub default_inner_margin: Margin,
@@ -473,6 +477,7 @@ impl Style {
     }
 }
 
+/// Builds a [`Style`] with custom configuration values.
 #[derive(Default)]
 pub struct StyleBuilder {
     style: Style,
@@ -480,6 +485,7 @@ pub struct StyleBuilder {
 
 impl StyleBuilder {
     #[inline(always)]
+    /// Creates a new [StyleBuilder].
     pub fn new() -> Self {
         Self::default()
     }
