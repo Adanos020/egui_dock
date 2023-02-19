@@ -15,7 +15,7 @@ impl From<usize> for TabIndex {
 
 // ----------------------------------------------------------------------------
 
-/// Represents an abstract node of a `Tree`.
+/// Represents an abstract node of a [`Tree`].
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Node<Tab> {
@@ -36,9 +36,21 @@ pub enum Node<Tab> {
         active: TabIndex,
     },
     /// Parent node in the vertical orientation
-    Vertical { rect: Rect, fraction: f32 },
+    Vertical {
+        /// The rectangle in which all children of this node are drawn.
+        rect: Rect,
+
+        /// The fraction taken by the top child of this node.
+        fraction: f32,
+    },
     /// Parent node in the horizontal orientation
-    Horizontal { rect: Rect, fraction: f32 },
+    Horizontal {
+        /// The rectangle in which all children of this node are drawn.
+        rect: Rect,
+
+        /// The fraction taken by the left child of this node.
+        fraction: f32,
+    },
 }
 
 impl<Tab> Node<Tab> {
@@ -162,6 +174,7 @@ impl<Tab> Node<Tab> {
         }
     }
 
+    /// Gets the number of tabs in the node.
     #[inline]
     pub fn tabs_count(&self) -> usize {
         match self {
@@ -173,7 +186,7 @@ impl<Tab> Node<Tab> {
 
 // ----------------------------------------------------------------------------
 
-/// Wrapper around indices to the collection of nodes inside a `Tree`.
+/// Wrapper around indices to the collection of nodes inside a [`Tree`].
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NodeIndex(pub usize);
@@ -261,6 +274,7 @@ impl NodeIndex {
 
 /// Direction in which a new node is created relatively to the parent node at which the split occurs.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[allow(missing_docs)]
 pub enum Split {
     Left,
     Right,
@@ -270,7 +284,15 @@ pub enum Split {
 
 // ----------------------------------------------------------------------------
 
-/// Binary tree representing the relationships between `Node`s.
+/// Binary tree representing the relationships between [`Node`]s.
+///
+/// # Implementation details
+///
+/// The binary tree is stored in a [`Vec`] indexed by [`NodeIndex`].
+/// The root is always at index *0*.
+/// For a given node *n*:
+///  - left child of *n* will be at index *n * 2 + 1*.
+///  - right child of *n* will be at index *n * 2 + 2*.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree<Tab> {

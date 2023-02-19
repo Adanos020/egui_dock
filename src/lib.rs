@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 //! # `egui_dock`: docking support for `egui`
 //!
 //! Credit goes to @lain-dono for implementing the actual library.
@@ -150,8 +152,9 @@ impl State {
 
 // ----------------------------------------------------------------------------
 
-/// How we view a tab when its in a [`Tree`].
+/// How to display a tab inside a [`Tree`].
 pub trait TabViewer {
+    /// The type of tab in which you can store state to be drawn in your tabs.
     type Tab;
 
     /// Actual tab content.
@@ -211,9 +214,7 @@ pub trait TabViewer {
 
 // ----------------------------------------------------------------------------
 
-/// Stores the layout and position of all its tabs
-///
-/// Keeps track of the currently focused leaf and currently active tabs
+/// Displays a [`Tree`] in `egui`.
 pub struct DockArea<'tree, Tab> {
     id: Id,
     tree: &'tree mut Tree<Tab>,
@@ -221,6 +222,7 @@ pub struct DockArea<'tree, Tab> {
 }
 
 impl<'tree, Tab> DockArea<'tree, Tab> {
+    /// Creates a new [DockArea] from the provided [`Tree`].
     #[inline(always)]
     pub fn new(tree: &'tree mut Tree<Tab>) -> DockArea<'tree, Tab> {
         Self {
