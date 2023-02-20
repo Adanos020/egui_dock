@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Breaking changes
+- Remove `remove_empty_leaf` which was used for internal usage and should not be needed by users.
+
 ### Fixed
 - Make splitter drag behave like egui `DragValue` ([#103](https://github.com/Adanos020/egui_dock/pull/103))
 

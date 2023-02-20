@@ -169,7 +169,15 @@ impl<Tab> Node<Tab> {
     #[inline]
     pub fn remove_tab(&mut self, tab_index: TabIndex) -> Option<Tab> {
         match self {
-            Node::Leaf { tabs, .. } => Some(tabs.remove(tab_index.0)),
+            Node::Leaf { tabs, active, .. } => {
+                let tab = tabs.remove(tab_index.0);
+
+                if tab_index <= *active {
+                    active.0 = active.0.saturating_sub(1);
+                }
+
+                Some(tab)
+            }
             _ => None,
         }
     }
@@ -578,18 +586,9 @@ impl<Tab> Tree<Tab> {
         }
     }
 
-    /// Removes the first node containing 0 tabs.
-    pub fn remove_empty_leaf(&mut self) {
-        let mut nodes = self.tree.iter().enumerate();
-        let node = nodes.find_map(|(index, node)| match node {
-            Node::Leaf { tabs, .. } if tabs.is_empty() => Some(index),
-            _ => None,
-        });
-
-        let node = match node {
-            Some(node) => NodeIndex(node),
-            None => return,
-        };
+    /// Removes the given node from the [Tree].
+    pub fn remove_leaf(&mut self, node: NodeIndex) {
+        assert!(self[node].is_leaf());
 
         let parent = match node.parent() {
             Some(val) => val,
@@ -749,22 +748,13 @@ impl<Tab> Tree<Tab> {
     /// If the node is emptied after the tab is removed, the node will also be removed.
     ///
     /// Returns the removed tab if it exists, or `None` otherwise.
-    pub fn remove_tab(&mut self, remove: (NodeIndex, TabIndex)) -> Option<Tab> {
-        match &mut self[remove.0] {
-            Node::Leaf { tabs, active, .. } => {
-                let tab = tabs.remove(remove.1 .0);
-
-                if remove.1 <= *active {
-                    active.0 = active.0.saturating_sub(1);
-                }
-                if tabs.is_empty() {
-                    self.remove_empty_leaf();
-                }
-
-                Some(tab)
-            }
-            _ => None,
+    pub fn remove_tab(&mut self, (node_index, tab_index): (NodeIndex, TabIndex)) -> Option<Tab> {
+        let node = &mut self[node_index];
+        let tab = node.remove_tab(tab_index);
+        if node.tabs_count() == 0 {
+            self.remove_leaf(node_index);
         }
+        tab
     }
 }
 

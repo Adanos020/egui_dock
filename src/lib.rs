@@ -626,27 +626,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
         }
 
-        let mut emptied = 0;
-        let mut last = (NodeIndex(usize::MAX), TabIndex(usize::MAX));
-        for remove in to_remove.iter().rev() {
-            if let Node::Leaf { tabs, active, .. } = &mut self.tree[remove.0] {
-                tabs.remove(remove.1 .0);
-                if remove.1 <= *active {
-                    active.0 = active.0.saturating_sub(1);
-                }
-                if tabs.is_empty() {
-                    emptied += 1;
-                }
-                if last.0 == remove.0 {
-                    assert!(last.1 > remove.1)
-                }
-                last = *remove;
-            } else {
-                panic!();
-            }
-        }
-        for _ in 0..emptied {
-            self.tree.remove_empty_leaf()
+        for index in to_remove.iter().copied().rev() {
+            self.tree.remove_tab(index);
         }
 
         if let Some(focused) = new_focused {
@@ -668,12 +649,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
 
                 if ui.input(|i| i.pointer.any_released()) {
-                    if let Node::Leaf { active, .. } = &mut self.tree[src] {
-                        if *active >= tab_index {
-                            active.0 = active.0.saturating_sub(1);
-                        }
-                    }
-
+                    // Call `remove_tab` on Node directly to avoid auto remove of
+                    // the node by `remove_tab` from Tree.
                     let tab = self.tree[src].remove_tab(tab_index).unwrap();
 
                     if let Some(target) = target {
@@ -687,13 +664,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         self.tree.set_focused_node(dst);
                     }
 
-                    self.tree.remove_empty_leaf();
-                    for node in self.tree.iter_mut() {
-                        if let Node::Leaf { tabs, active, .. } = node {
-                            if active.0 >= tabs.len() {
-                                active.0 = 0;
-                            }
-                        }
+                    if self.tree[src].is_leaf() && self.tree[src].tabs_count() == 0 {
+                        self.tree.remove_leaf(src);
                     }
                 }
             }
