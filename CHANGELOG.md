@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+# Added
+- Added `Tree::move_tab` method that allow moving a tab from one node to the other.
+
 ### Breaking changes
 - Remove `remove_empty_leaf` which was used for internal usage and should not be needed by users.
 

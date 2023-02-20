@@ -70,7 +70,7 @@ use egui::{
 
 pub use crate::{
     style::{Style, StyleBuilder, TabAddAlign},
-    tree::{Node, NodeIndex, Split, TabIndex, Tree},
+    tree::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree},
 };
 pub use egui;
 
@@ -93,12 +93,12 @@ struct HoverData {
 }
 
 impl HoverData {
-    fn resolve(&self) -> (Option<Split>, Rect, Option<TabIndex>) {
+    fn resolve(&self) -> (Rect, TabDestination) {
         if let Some(tab) = self.tab {
-            return (None, tab.0, Some(tab.1));
+            return (tab.0, TabDestination::Insert(tab.1));
         }
         if let Some(tabs) = self.tabs {
-            return (None, tabs, None);
+            return (tabs, TabDestination::Append);
         }
 
         let (rect, pointer) = (self.rect, self.pointer);
@@ -119,16 +119,28 @@ impl HoverData {
             .map(|(idx, _)| idx)
             .unwrap();
 
-        let (target, other) = match position {
-            0 => (None, Rect::EVERYTHING),
-            1 => (Some(Split::Left), Rect::everything_left_of(center.x)),
-            2 => (Some(Split::Right), Rect::everything_right_of(center.x)),
-            3 => (Some(Split::Above), Rect::everything_above(center.y)),
-            4 => (Some(Split::Below), Rect::everything_below(center.y)),
+        let (tab_dst, other) = match position {
+            0 => (TabDestination::Append, Rect::EVERYTHING),
+            1 => (
+                TabDestination::Split(Split::Left),
+                Rect::everything_left_of(center.x),
+            ),
+            2 => (
+                TabDestination::Split(Split::Right),
+                Rect::everything_right_of(center.x),
+            ),
+            3 => (
+                TabDestination::Split(Split::Above),
+                Rect::everything_above(center.y),
+            ),
+            4 => (
+                TabDestination::Split(Split::Below),
+                Rect::everything_below(center.y),
+            ),
             _ => unreachable!(),
         };
 
-        (target, rect.intersect(other), None)
+        (rect.intersect(other), tab_dst)
     }
 }
 
@@ -638,35 +650,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let dst = hover.dst;
 
             if self.tree[src].is_leaf() && self.tree[dst].is_leaf() {
-                let (target, helper, tap_pos) = hover.resolve();
-
-                let id = Id::new("helper");
-                let layer_id = LayerId::new(Order::Foreground, id);
-                let painter = ui.ctx().layer_painter(layer_id);
+                let (overlay, tab_dst) = hover.resolve();
 
                 if src != dst || self.tree[dst].tabs_count() > 1 {
-                    painter.rect_filled(helper, 0.0, style.selection_color);
+                    let id = Id::new("overlay");
+                    let layer_id = LayerId::new(Order::Foreground, id);
+                    let painter = ui.ctx().layer_painter(layer_id);
+                    painter.rect_filled(overlay, 0.0, style.selection_color);
                 }
 
                 if ui.input(|i| i.pointer.any_released()) {
-                    // Call `remove_tab` on Node directly to avoid auto remove of
-                    // the node by `remove_tab` from Tree.
-                    let tab = self.tree[src].remove_tab(tab_index).unwrap();
-
-                    if let Some(target) = target {
-                        self.tree.split(dst, target, 0.5, Node::leaf(tab));
-                    } else {
-                        if let Some(index) = tap_pos {
-                            self.tree[dst].insert_tab(index, tab);
-                        } else {
-                            self.tree[dst].append_tab(tab);
-                        }
-                        self.tree.set_focused_node(dst);
-                    }
-
-                    if self.tree[src].is_leaf() && self.tree[src].tabs_count() == 0 {
-                        self.tree.remove_leaf(src);
-                    }
+                    self.tree.move_tab((src, tab_index), (dst, tab_dst));
                 }
             }
         }

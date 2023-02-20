@@ -562,6 +562,30 @@ impl<Tab> Tree<Tab> {
         index
     }
 
+    /// Moves a tab from a node to another node, you specify how the tab should
+    /// be moved with [`TabDestination`].
+    pub fn move_tab(
+        &mut self,
+        (src_node, src_tab): (NodeIndex, TabIndex),
+        (dst_node, dst_tab): (NodeIndex, TabDestination),
+    ) {
+        // Call `Node::remove_tab` to avoid auto remove of the node by
+        // `Tree::remove_tab` from Tree.
+        let tab = self[src_node].remove_tab(src_tab).unwrap();
+
+        match dst_tab {
+            TabDestination::Split(split) => {
+                self.split(dst_node, split, 0.5, Node::leaf(tab));
+            }
+            TabDestination::Insert(index) => self[dst_node].insert_tab(index, tab),
+            TabDestination::Append => self[dst_node].append_tab(tab),
+        };
+
+        if self[src_node].is_leaf() && self[src_node].tabs_count() == 0 {
+            self.remove_leaf(src_node);
+        }
+    }
+
     fn first_leaf(&self, top: NodeIndex) -> Option<NodeIndex> {
         let left = top.left();
         let right = top.right();
@@ -781,6 +805,16 @@ where
         }
         None
     }
+}
+
+/// Specify how a tab should be added to a Node.
+pub enum TabDestination {
+    /// Split the node in the given direction.
+    Split(Split),
+    /// Insert the tab at the given index.
+    Insert(TabIndex),
+    /// Append the tab to the node.
+    Append,
 }
 
 // ----------------------------------------------------------------------------
