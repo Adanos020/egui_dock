@@ -170,13 +170,11 @@ impl<Tab> Node<Tab> {
     pub fn remove_tab(&mut self, tab_index: TabIndex) -> Option<Tab> {
         match self {
             Node::Leaf { tabs, active, .. } => {
-                let tab = tabs.remove(tab_index.0);
-
                 if tab_index <= *active {
                     active.0 = active.0.saturating_sub(1);
                 }
 
-                Some(tab)
+                Some(tabs.remove(tab_index.0))
             }
             _ => None,
         }

@@ -105,42 +105,39 @@ impl HoverData {
 
         let center = rect.center();
         let pts = [
-            center.distance(pointer),
-            rect.left_center().distance(pointer),
-            rect.right_center().distance(pointer),
-            rect.center_top().distance(pointer),
-            rect.center_bottom().distance(pointer),
-        ];
-
-        let position = pts
-            .into_iter()
-            .enumerate()
-            .min_by(|(_, lhs), (_, rhs)| lhs.total_cmp(rhs))
-            .map(|(idx, _)| idx)
-            .unwrap();
-
-        let (tab_dst, other) = match position {
-            0 => (TabDestination::Append, Rect::EVERYTHING),
-            1 => (
+            (
+                center.distance(pointer),
+                TabDestination::Append,
+                Rect::EVERYTHING,
+            ),
+            (
+                rect.left_center().distance(pointer),
                 TabDestination::Split(Split::Left),
                 Rect::everything_left_of(center.x),
             ),
-            2 => (
+            (
+                rect.right_center().distance(pointer),
                 TabDestination::Split(Split::Right),
                 Rect::everything_right_of(center.x),
             ),
-            3 => (
+            (
+                rect.center_top().distance(pointer),
                 TabDestination::Split(Split::Above),
                 Rect::everything_above(center.y),
             ),
-            4 => (
+            (
+                rect.center_bottom().distance(pointer),
                 TabDestination::Split(Split::Below),
                 Rect::everything_below(center.y),
             ),
-            _ => unreachable!(),
-        };
+        ];
 
-        (rect.intersect(other), tab_dst)
+        let (_, tab_dst, overlay) = pts
+            .into_iter()
+            .min_by(|(lhs, ..), (rhs, ..)| lhs.total_cmp(rhs))
+            .unwrap();
+
+        (rect.intersect(overlay), tab_dst)
     }
 }
 
