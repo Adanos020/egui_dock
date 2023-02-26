@@ -69,7 +69,7 @@ use egui::{
 
 pub use crate::{
     style::{Style, StyleBuilder, TabAddAlign},
-    tree::{Node, NodeIndex, Split, TabIndex, Tree},
+    tree::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree},
 };
 pub use egui;
 
@@ -92,42 +92,51 @@ struct HoverData {
 }
 
 impl HoverData {
-    fn resolve(&self) -> (Option<Split>, Rect, Option<TabIndex>) {
+    fn resolve(&self) -> (Rect, TabDestination) {
         if let Some(tab) = self.tab {
-            return (None, tab.0, Some(tab.1));
+            return (tab.0, TabDestination::Insert(tab.1));
         }
         if let Some(tabs) = self.tabs {
-            return (None, tabs, None);
+            return (tabs, TabDestination::Append);
         }
 
         let (rect, pointer) = (self.rect, self.pointer);
 
         let center = rect.center();
         let pts = [
-            center.distance(pointer),
-            rect.left_center().distance(pointer),
-            rect.right_center().distance(pointer),
-            rect.center_top().distance(pointer),
-            rect.center_bottom().distance(pointer),
+            (
+                center.distance(pointer),
+                TabDestination::Append,
+                Rect::EVERYTHING,
+            ),
+            (
+                rect.left_center().distance(pointer),
+                TabDestination::Split(Split::Left),
+                Rect::everything_left_of(center.x),
+            ),
+            (
+                rect.right_center().distance(pointer),
+                TabDestination::Split(Split::Right),
+                Rect::everything_right_of(center.x),
+            ),
+            (
+                rect.center_top().distance(pointer),
+                TabDestination::Split(Split::Above),
+                Rect::everything_above(center.y),
+            ),
+            (
+                rect.center_bottom().distance(pointer),
+                TabDestination::Split(Split::Below),
+                Rect::everything_below(center.y),
+            ),
         ];
 
-        let position = pts
+        let (_, tab_dst, overlay) = pts
             .into_iter()
-            .enumerate()
-            .min_by(|(_, lhs), (_, rhs)| lhs.total_cmp(rhs))
-            .map(|(idx, _)| idx)
+            .min_by(|(lhs, ..), (rhs, ..)| lhs.total_cmp(rhs))
             .unwrap();
 
-        let (target, other) = match position {
-            0 => (None, Rect::EVERYTHING),
-            1 => (Some(Split::Left), Rect::everything_left_of(center.x)),
-            2 => (Some(Split::Right), Rect::everything_right_of(center.x)),
-            3 => (Some(Split::Above), Rect::everything_above(center.y)),
-            4 => (Some(Split::Below), Rect::everything_below(center.y)),
-            _ => unreachable!(),
-        };
-
-        (target, rect.intersect(other), None)
+        (rect.intersect(overlay), tab_dst)
     }
 }
 
@@ -629,27 +638,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
         }
 
-        let mut emptied = 0;
-        let mut last = (NodeIndex(usize::MAX), TabIndex(usize::MAX));
-        for remove in to_remove.iter().rev() {
-            if let Node::Leaf { tabs, active, .. } = &mut self.tree[remove.0] {
-                tabs.remove(remove.1 .0);
-                if remove.1 <= *active {
-                    active.0 = active.0.saturating_sub(1);
-                }
-                if tabs.is_empty() {
-                    emptied += 1;
-                }
-                if last.0 == remove.0 {
-                    assert!(last.1 > remove.1)
-                }
-                last = *remove;
-            } else {
-                panic!();
-            }
-        }
-        for _ in 0..emptied {
-            self.tree.remove_empty_leaf()
+        for index in to_remove.iter().copied().rev() {
+            self.tree.remove_tab(index);
         }
 
         if let Some(focused) = new_focused {
@@ -660,44 +650,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let dst = hover.dst;
 
             if self.tree[src].is_leaf() && self.tree[dst].is_leaf() {
-                let (target, helper, tap_pos) = hover.resolve();
-
-                let id = Id::new("helper");
-                let layer_id = LayerId::new(Order::Foreground, id);
-                let painter = ui.ctx().layer_painter(layer_id);
+                let (overlay, tab_dst) = hover.resolve();
 
                 if src != dst || self.tree[dst].tabs_count() > 1 {
-                    painter.rect_filled(helper, 0.0, style.selection_color);
+                    let id = Id::new("overlay");
+                    let layer_id = LayerId::new(Order::Foreground, id);
+                    let painter = ui.ctx().layer_painter(layer_id);
+                    painter.rect_filled(overlay, 0.0, style.selection_color);
                 }
 
                 if ui.input(|i| i.pointer.any_released()) {
-                    if let Node::Leaf { active, .. } = &mut self.tree[src] {
-                        if *active >= tab_index {
-                            active.0 = active.0.saturating_sub(1);
-                        }
-                    }
-
-                    let tab = self.tree[src].remove_tab(tab_index).unwrap();
-
-                    if let Some(target) = target {
-                        self.tree.split(dst, target, 0.5, Node::leaf(tab));
-                    } else {
-                        if let Some(index) = tap_pos {
-                            self.tree[dst].insert_tab(index, tab);
-                        } else {
-                            self.tree[dst].append_tab(tab);
-                        }
-                        self.tree.set_focused_node(dst);
-                    }
-
-                    self.tree.remove_empty_leaf();
-                    for node in self.tree.iter_mut() {
-                        if let Node::Leaf { tabs, active, .. } = node {
-                            if active.0 >= tabs.len() {
-                                active.0 = 0;
-                            }
-                        }
-                    }
+                    self.tree.move_tab((src, tab_index), (dst, tab_dst));
                 }
             }
         }

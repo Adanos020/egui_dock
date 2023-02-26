@@ -169,7 +169,13 @@ impl<Tab> Node<Tab> {
     #[inline]
     pub fn remove_tab(&mut self, tab_index: TabIndex) -> Option<Tab> {
         match self {
-            Node::Leaf { tabs, .. } => Some(tabs.remove(tab_index.0)),
+            Node::Leaf { tabs, active, .. } => {
+                if tab_index <= *active {
+                    active.0 = active.0.saturating_sub(1);
+                }
+
+                Some(tabs.remove(tab_index.0))
+            }
             _ => None,
         }
     }
@@ -554,6 +560,30 @@ impl<Tab> Tree<Tab> {
         index
     }
 
+    /// Moves a tab from a node to another node, you specify how the tab should
+    /// be moved with [`TabDestination`].
+    pub fn move_tab(
+        &mut self,
+        (src_node, src_tab): (NodeIndex, TabIndex),
+        (dst_node, dst_tab): (NodeIndex, TabDestination),
+    ) {
+        // Call `Node::remove_tab` to avoid auto remove of the node by
+        // `Tree::remove_tab` from Tree.
+        let tab = self[src_node].remove_tab(src_tab).unwrap();
+
+        match dst_tab {
+            TabDestination::Split(split) => {
+                self.split(dst_node, split, 0.5, Node::leaf(tab));
+            }
+            TabDestination::Insert(index) => self[dst_node].insert_tab(index, tab),
+            TabDestination::Append => self[dst_node].append_tab(tab),
+        };
+
+        if self[src_node].is_leaf() && self[src_node].tabs_count() == 0 {
+            self.remove_leaf(src_node);
+        }
+    }
+
     fn first_leaf(&self, top: NodeIndex) -> Option<NodeIndex> {
         let left = top.left();
         let right = top.right();
@@ -578,18 +608,9 @@ impl<Tab> Tree<Tab> {
         }
     }
 
-    /// Removes the first node containing 0 tabs.
-    pub fn remove_empty_leaf(&mut self) {
-        let mut nodes = self.tree.iter().enumerate();
-        let node = nodes.find_map(|(index, node)| match node {
-            Node::Leaf { tabs, .. } if tabs.is_empty() => Some(index),
-            _ => None,
-        });
-
-        let node = match node {
-            Some(node) => NodeIndex(node),
-            None => return,
-        };
+    /// Removes the given node from the [Tree].
+    pub fn remove_leaf(&mut self, node: NodeIndex) {
+        assert!(self[node].is_leaf());
 
         let parent = match node.parent() {
             Some(val) => val,
@@ -749,22 +770,13 @@ impl<Tab> Tree<Tab> {
     /// If the node is emptied after the tab is removed, the node will also be removed.
     ///
     /// Returns the removed tab if it exists, or `None` otherwise.
-    pub fn remove_tab(&mut self, remove: (NodeIndex, TabIndex)) -> Option<Tab> {
-        match &mut self[remove.0] {
-            Node::Leaf { tabs, active, .. } => {
-                let tab = tabs.remove(remove.1 .0);
-
-                if remove.1 <= *active {
-                    active.0 = active.0.saturating_sub(1);
-                }
-                if tabs.is_empty() {
-                    self.remove_empty_leaf();
-                }
-
-                Some(tab)
-            }
-            _ => None,
+    pub fn remove_tab(&mut self, (node_index, tab_index): (NodeIndex, TabIndex)) -> Option<Tab> {
+        let node = &mut self[node_index];
+        let tab = node.remove_tab(tab_index);
+        if node.tabs_count() == 0 {
+            self.remove_leaf(node_index);
         }
+        tab
     }
 }
 
@@ -791,6 +803,16 @@ where
         }
         None
     }
+}
+
+/// Specify how a tab should be added to a Node.
+pub enum TabDestination {
+    /// Split the node in the given direction.
+    Split(Split),
+    /// Insert the tab at the given index.
+    Insert(TabIndex),
+    /// Append the tab to the node.
+    Append,
 }
 
 // ----------------------------------------------------------------------------

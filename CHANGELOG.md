@@ -14,6 +14,17 @@
 
 ## 0.4.0 - 2023-02-09
 
+# Added
+- Added `Tree::move_tab` method that allows moving a tab from one node to the other.
+
+### Breaking changes
+- Remove `remove_empty_leaf` which was used for internal usage and should not be needed by users.
+
+### Fixed
+- Make splitter drag behave like egui `DragValue` ([#103](https://github.com/Adanos020/egui_dock/pull/103))
+
+## 0.4.0 - 2023-02-09
+
 ### Added
 - Added `TabViewer::on_tab_button` ([#93](https://github.com/Adanos020/egui_dock/pull/93)).
 
