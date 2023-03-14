@@ -1,9 +1,11 @@
 # egui_dock changelog
 
-## Unreleased
+## 0.4.1 - 2023-03-14
 
 ### Fixed
-- Make splitter drag behave like egui `DragValue` ([#103](https://github.com/Adanos020/egui_dock/pull/103))
+- Light mode now works in tabs ([528b892](https://github.com/Adanos020/egui_dock/commit/528b89245928d055dabb00cd9001c22d275f789b))
+- `DockArea::show_inside` no longer obscures previously added elements ([#102](https://github.com/Adanos020/egui_dock/pull/102))
+- Splitter drag now behaves like egui `DragValue` ([#103](https://github.com/Adanos020/egui_dock/pull/103))
 
 ## 0.4.0 - 2023-02-09
 
