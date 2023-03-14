@@ -2,9 +2,8 @@
 
 //! # `egui_dock`: docking support for `egui`
 //!
-//! Credit goes to @lain-dono for implementing the actual library.
-//!
-//! This fork aims to provide documentation and further development if necessary.
+//! Originally created by [@lain-dono](https://github.com/lain-dono), this library provides docking support for `egui`.
+//! It lets you open and close tabs, freely move them around, insert them in selected parts of the [`DockArea`], and resize them.
 //!
 //! ## Usage
 //!
