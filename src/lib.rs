@@ -63,8 +63,8 @@
 #![forbid(unsafe_code)]
 
 use egui::{
-    style::Margin, vec2, CentralPanel, Context, CursorIcon, Frame, Id, LayerId, Order, Pos2, Rect,
-    Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
+    style::Margin, vec2, CentralPanel, Color32, Context, CursorIcon, Frame, Id, LayerId, Order,
+    Pos2, Rect, Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
 };
 
 pub use crate::{
@@ -273,7 +273,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     #[inline]
     pub fn show(self, ctx: &Context, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         CentralPanel::default()
-            .frame(Frame::central_panel(&ctx.style()).inner_margin(0.))
+            .frame(
+                Frame::central_panel(&ctx.style())
+                    .inner_margin(0.)
+                    .fill(Color32::TRANSPARENT),
+            )
             .show(ctx, |ui| {
                 self.show_inside(ui, tab_viewer);
             });
