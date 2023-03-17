@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.4.2 - 2023-03-17
+
+### Fixed
+- `TabViewer::clear_background` works again ([#110](https://github.com/Adanos020/egui_dock/pull/110))
+
 ## 0.4.1 - 2023-03-14
 
 ### Fixed
