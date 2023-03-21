@@ -1,5 +1,54 @@
 # egui_dock changelog
 
+## 0.5.0 - TBD
+
+### Added
+- `Tree::move_tab` method that allows moving a tab from one node to the other
+- `Tree::remove_leaf` method that deletes a selected leaf node
+
+### Breaking changes
+- Remove `remove_empty_leaf` which was used for internal usage and should not be needed by users
+- `Style` is now split up into smaller structs for maintainability and consistence with `egui::Style` ([#115](https://github.com/Adanos020/egui_dock/pull/115))
+
+| Old name(s) and location(s)                     | New name(s) and location(s)                        |
+|-------------------------------------------------|----------------------------------------------------|
+| `Style::border_color` and `Style::border_width` | `Visuals::border` (which is now an `egui::Stroke`) |
+| `Style::selection_color`                        | `Visuals::selection_colour`                        |
+| `Style::separator_width`                        | `visuals::Separator::width`                        |
+| `Style::separator_extra`                        | `visuals::Separator::extra`                        |
+| `Style::separator_color_idle`                   | `visuals::Separator::color_idle`                   |
+| `Style::separator_color_hovered`                | `visuals::Separator::color_hovered`                |
+| `Style::separator_color_dragged`                | `visuals::Separator::color_dragged`                |
+| `Style::tab_bar_background_color`               | `visuals::TabBar::bg_fill`                         |
+| `Style::tab_bar_height`                         | `visuals::TabBar::height`                          |
+| `Style::tab_outline_color`                      | `visuals::Tabs::outline_color`                     |
+| `Style::hline_color`                            | `visuals::Tabs::hline_color`                       |
+| `Style::hline_below_active_tab_name`            | `visuals::Tabs::hline_below_active_tab_name`       |
+| `Style::tab_rounding`                           | `visuals::Tabs::rounding`                          |
+| `Style::tab_background_color`                   | `visuals::Tabs::bg_fill`                           |
+| `Style::tab_text_color_unfocused`               | `visuals::Tabs::text_color_unfocused`              |
+| `Style::tab_text_color_focused`                 | `visuals::Tabs::text_color_focused`                |
+| `Style::tab_text_color_active_unfocused`        | `visuals::Tabs::text_color_active_unfocused`       |
+| `Style::tab_text_color_active_focused`          | `visuals::Tabs::text_color_active_focused`         |
+| `Style::expand_tabs`                            | `visuals::Tabs::fill_tab_bar`                      |
+| `Style::close_tab_color`                        | `visuals::Buttons::close_tab_color`                |
+| `Style::close_tab_active_color`                 | `visuals::Buttons::close_tab_active_color`         |
+| `Style::close_tab_background_color`             | `visuals::Buttons::close_tab_bg_fill`              |
+| `Style::add_tab_align`                          | `visuals::Buttons::add_tab_align`                  |
+| `Style::add_tab_color`                          | `visuals::Buttons::add_tab_color`                  |
+| `Style::add_tab_active_color`                   | `visuals::Buttons::add_tab_active_color`           |
+| `Style::add_tab_background_color`               | `visuals::Buttons::add_tab_bg_fill`                |
+| `Style::show_add_popup`                         | `Interaction::show_add_popup`                      |
+| `Style::show_add_buttons`                       | `interaction::Buttons::show_add`                   |
+| `Style::show_close_buttons`                     | `interaction::Buttons::show_close`                 |
+| `Style::tabs_are_draggable`                     | `interaction::Tabs::draggable`                     |
+| `Style::show_context_menu`                      | `interaction::Tabs::show_context_menu`             |
+| `Style::tab_include_scrollarea`                 | `interaction::Tabs::tab_include_scrollarea`        |
+| `Style::tab_hover_name`                         | `interaction::Tabs::show_name_on_hover`            |
+
+### Deprecated
+- `StyleBuilder`
+
 ## 0.4.2 - 2023-03-17
 
 ### Fixed
@@ -14,23 +63,15 @@
 
 ## 0.4.0 - 2023-02-09
 
-# Added
-- Added `Tree::move_tab` method that allows moving a tab from one node to the other.
-
-### Breaking changes
-- Remove `remove_empty_leaf` which was used for internal usage and should not be needed by users.
-
-### Fixed
-- Make splitter drag behave like egui `DragValue` ([#103](https://github.com/Adanos020/egui_dock/pull/103))
-
-## 0.4.0 - 2023-02-09
-
 ### Added
 - Added `TabViewer::on_tab_button` ([#93](https://github.com/Adanos020/egui_dock/pull/93)).
 
 ### Breaking changes
 - Updated to egui 0.21
 - Deleted `dynamic_tab` which was deprecated in 0.3.0
+
+### Fixed
+- Make splitter drag behave like egui `DragValue` ([#103](https://github.com/Adanos020/egui_dock/pull/103))
 
 ## 0.3.1 - 2022-12-21
 
