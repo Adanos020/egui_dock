@@ -309,8 +309,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             ui.painter().rect(
                 rect,
                 margin.top,
-                style.separator_color_idle,
-                Stroke::new(margin.top, style.border_color),
+                style.visuals.separator.color_idle,
+                Stroke::new(margin.top, style.visuals.border.color),
             );
         }
 
@@ -348,11 +348,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 };
 
                 let color = if response.dragged() {
-                    style.separator_color_dragged
+                    style.visuals.separator.color_dragged
                 } else if response.hovered() {
-                    style.separator_color_hovered
+                    style.visuals.separator.color_hovered
                 } else {
-                    style.separator_color_idle
+                    style.visuals.separator.color_idle
                 };
 
                 ui.painter().rect_filled(separator, Rounding::none(), color);
@@ -375,7 +375,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let rect = *rect;
                 ui.set_clip_rect(rect);
 
-                let height_topbar = style.tab_bar_height;
+                let height_topbar = style.visuals.tab_bar.height;
 
                 let bottom_y = rect.min.y + height_topbar;
                 let tabbar = rect.intersect(Rect::everything_above(bottom_y));
@@ -388,12 +388,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui.scope(|ui| {
                     ui.painter().rect_filled(
                         tabbar,
-                        style.tab_rounding,
-                        style.tab_bar_background_color,
+                        style.visuals.tabs.rounding,
+                        style.visuals.tab_bar.bg_fill,
                     );
 
                     let mut available_width = tabbar.max.x - tabbar.min.x;
-                    if style.show_add_buttons {
+                    if style.interaction.buttons.show_add {
                         available_width -= Style::TAB_PLUS_SIZE;
                     }
                     let expanded_width = available_width / (tabs.len() as f32);
@@ -401,11 +401,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
-                    if !style.hline_below_active_tab_name {
+                    if !style.visuals.tabs.hline_below_active_tab_name {
                         ui.painter().hline(
                             tabbar.x_range(),
                             tabbar.max.y - px,
-                            (px, style.hline_color),
+                            (px, style.visuals.tabs.hline_color),
                         );
                     }
 
@@ -414,7 +414,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             let id = self.id.with((node_index, tab_index, "tab"));
                             let tab_index = TabIndex(tab_index);
                             let is_being_dragged = ui.memory(|mem| mem.is_being_dragged(id))
-                                && style.tabs_are_draggable;
+                                && style.interaction.tabs.draggable;
 
                             if is_being_dragged {
                                 ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
@@ -477,16 +477,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     Sense::click_and_drag()
                                 };
 
-                                if style.tab_hover_name {
+                                if style.interaction.tabs.show_name_on_hover {
                                     response = response.on_hover_ui(|ui| {
                                         ui.label(tab_viewer.title(tab));
                                     });
                                 }
 
-                                if style.show_context_menu {
+                                if style.interaction.tabs.show_context_menu {
                                     response = response.context_menu(|ui| {
                                         tab_viewer.context_menu(ui, tab);
-                                        if style.show_close_buttons && ui.button("Close").clicked()
+                                        if style.interaction.buttons.show_close
+                                            && ui.button("Close").clicked()
                                         {
                                             if tab_viewer.on_close(tab) {
                                                 to_remove.push((node_index, tab_index));
@@ -519,7 +520,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 new_focused = Some(node_index);
                             }
 
-                            if response.middle_clicked() && style.show_close_buttons {
+                            if response.middle_clicked() && style.interaction.buttons.show_close {
                                 if tab_viewer.on_close(tab) {
                                     to_remove.push((node_index, tab_index));
                                 } else {
@@ -540,7 +541,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         }
 
                         // Add button at the end of the tab bar
-                        if style.show_add_buttons {
+                        if style.interaction.buttons.show_add {
                             let id = self.id.with((node_index, "tab_add"));
                             let response = style.tab_plus(ui);
 
@@ -552,7 +553,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             });
 
                             if response.clicked() {
-                                if style.show_add_popup {
+                                if style.interaction.show_add_popup {
                                     ui.memory_mut(|mem| mem.toggle_popup(popup_id));
                                 }
                                 tab_viewer.on_add(node_index);
@@ -561,11 +562,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     });
                 });
 
-                if style.hline_below_active_tab_name {
+                if style.visuals.tabs.hline_below_active_tab_name {
                     ui.painter().hline(
                         tabbar.x_range(),
                         tabbar.max.y - px,
-                        (px, style.hline_color),
+                        (px, style.visuals.tabs.hline_color),
                     );
                 }
 
@@ -587,12 +588,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                     if tab_viewer.clear_background(tab) {
                         ui.painter()
-                            .rect_filled(rect, 0.0, style.tab_background_color);
+                            .rect_filled(rect, 0.0, style.visuals.tabs.bg_fill);
                     }
 
                     let mut ui = ui.child_ui(rect, Default::default());
                     ui.push_id(node_index, |ui| {
-                        if style.tab_include_scrollarea {
+                        if style.interaction.tabs.include_scroll_area {
                             ScrollArea::both()
                                 .id_source(
                                     self.id
@@ -656,7 +657,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let id = Id::new("overlay");
                     let layer_id = LayerId::new(Order::Foreground, id);
                     let painter = ui.ctx().layer_painter(layer_id);
-                    painter.rect_filled(overlay, 0.0, style.selection_color);
+                    painter.rect_filled(overlay, 0.0, style.visuals.selection_color);
                 }
 
                 if ui.input(|i| i.pointer.any_released()) {
