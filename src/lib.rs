@@ -67,6 +67,7 @@ use egui::{
     Pos2, Rect, Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
 };
 
+#[allow(deprecated)]
 pub use crate::{
     style::{Style, StyleBuilder, TabAddAlign},
     tree::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree},

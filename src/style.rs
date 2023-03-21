@@ -35,7 +35,7 @@ impl Default for Style {
 }
 
 mod interaction {
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Default)]
     pub struct Interaction {
         pub buttons: Buttons,
         pub tabs: Tabs,
@@ -66,16 +66,6 @@ mod interaction {
 
         /// Whether tabs have a [`ScrollArea`] out of the box.
         pub include_scroll_area: bool,
-    }
-
-    impl Default for Interaction {
-        fn default() -> Self {
-            Self {
-                buttons: Buttons::default(),
-                tabs: Tabs::default(),
-                show_add_popup: false,
-            }
-        }
     }
 
     impl Default for Buttons {
@@ -643,10 +633,12 @@ impl Style {
 
 /// Builds a [`Style`] with custom configuration values.
 #[derive(Default)]
+#[deprecated]
 pub struct StyleBuilder {
     style: Style,
 }
 
+#[allow(deprecated)]
 impl StyleBuilder {
     #[inline(always)]
     /// Creates a new [`StyleBuilder`].
