@@ -3,48 +3,57 @@
 ## 0.5.0 - TBD
 
 ### Added
-- `Tree::move_tab` method that allows moving a tab from one node to the other
-- `Tree::remove_leaf` method that deletes a selected leaf node
+- `Tree::move_tab` method that allows moving a tab from one node to the other ([#115](https://github.com/Adanos020/egui_dock/pull/107))
+- `Tree::remove_leaf` method that deletes a selected leaf node ([#115](https://github.com/Adanos020/egui_dock/pull/107))
+- New methods in `DockArea` ([#115](https://github.com/Adanos020/egui_dock/pull/115))
+  - `show_add_popup`
+  - `show_add_buttons`
+  - `show_close_buttons`
+  - `draggable_tabs`
+  - `tab_context_menus`
+  - `scroll_area_in_tabs`
+  - `show_tab_name_on_hover`
 
 ### Breaking changes
-- Remove `remove_empty_leaf` which was used for internal usage and should not be needed by users
+- Removed `remove_empty_leaf` which was used for internal usage and should not be needed by users ([#115](https://github.com/Adanos020/egui_dock/pull/107))
+- Removed `show_close_buttons` from `StyleBuilder` ([#115](https://github.com/Adanos020/egui_dock/pull/115))
+- Moved the following fields from `Style` to `DockArea` ([#115](https://github.com/Adanos020/egui_dock/pull/115))
+  - `show_add_popup`
+  - `show_add_buttons`
+  - `show_close_buttons`
+  - `tabs_are_draggable` (renamed to `draggable_tabs`)
+  - `show_context_menu` (renamed to `tab_context_menus`)
+  - `tab_include_scrollarea` (renamed to `scroll_area_in_tabs`)
+  - `tab_hover_name` (renamed to `show_tab_name_on_hover`)
 - `Style` is now split up into smaller structs for maintainability and consistence with `egui::Style` ([#115](https://github.com/Adanos020/egui_dock/pull/115))
 
-| Old name(s) and location(s)                     | New name(s) and location(s)                        |
+| Old names and locations                         | New names and locations                            |
 |-------------------------------------------------|----------------------------------------------------|
-| `Style::border_color` and `Style::border_width` | `Visuals::border` (which is now an `egui::Stroke`) |
-| `Style::selection_color`                        | `Visuals::selection_colour`                        |
-| `Style::separator_width`                        | `visuals::Separator::width`                        |
-| `Style::separator_extra`                        | `visuals::Separator::extra`                        |
-| `Style::separator_color_idle`                   | `visuals::Separator::color_idle`                   |
-| `Style::separator_color_hovered`                | `visuals::Separator::color_hovered`                |
-| `Style::separator_color_dragged`                | `visuals::Separator::color_dragged`                |
-| `Style::tab_bar_background_color`               | `visuals::TabBar::bg_fill`                         |
-| `Style::tab_bar_height`                         | `visuals::TabBar::height`                          |
-| `Style::tab_outline_color`                      | `visuals::Tabs::outline_color`                     |
-| `Style::hline_color`                            | `visuals::Tabs::hline_color`                       |
-| `Style::hline_below_active_tab_name`            | `visuals::Tabs::hline_below_active_tab_name`       |
-| `Style::tab_rounding`                           | `visuals::Tabs::rounding`                          |
-| `Style::tab_background_color`                   | `visuals::Tabs::bg_fill`                           |
-| `Style::tab_text_color_unfocused`               | `visuals::Tabs::text_color_unfocused`              |
-| `Style::tab_text_color_focused`                 | `visuals::Tabs::text_color_focused`                |
-| `Style::tab_text_color_active_unfocused`        | `visuals::Tabs::text_color_active_unfocused`       |
-| `Style::tab_text_color_active_focused`          | `visuals::Tabs::text_color_active_focused`         |
-| `Style::expand_tabs`                            | `visuals::Tabs::fill_tab_bar`                      |
-| `Style::close_tab_color`                        | `visuals::Buttons::close_tab_color`                |
-| `Style::close_tab_active_color`                 | `visuals::Buttons::close_tab_active_color`         |
-| `Style::close_tab_background_color`             | `visuals::Buttons::close_tab_bg_fill`              |
-| `Style::add_tab_align`                          | `visuals::Buttons::add_tab_align`                  |
-| `Style::add_tab_color`                          | `visuals::Buttons::add_tab_color`                  |
-| `Style::add_tab_active_color`                   | `visuals::Buttons::add_tab_active_color`           |
-| `Style::add_tab_background_color`               | `visuals::Buttons::add_tab_bg_fill`                |
-| `Style::show_add_popup`                         | `Interaction::show_add_popup`                      |
-| `Style::show_add_buttons`                       | `interaction::Buttons::show_add`                   |
-| `Style::show_close_buttons`                     | `interaction::Buttons::show_close`                 |
-| `Style::tabs_are_draggable`                     | `interaction::Tabs::draggable`                     |
-| `Style::show_context_menu`                      | `interaction::Tabs::show_context_menu`             |
-| `Style::tab_include_scrollarea`                 | `interaction::Tabs::tab_include_scrollarea`        |
-| `Style::tab_hover_name`                         | `interaction::Tabs::show_name_on_hover`            |
+| `Style::border_color` and `Style::border_width` | `Style::border` (which is now an `egui::Stroke`)   |
+| `Style::separator_width`                        | `Separator::width`                                 |
+| `Style::separator_extra`                        | `Separator::extra`                                 |
+| `Style::separator_color_idle`                   | `Separator::color_idle`                            |
+| `Style::separator_color_hovered`                | `Separator::color_hovered`                         |
+| `Style::separator_color_dragged`                | `Separator::color_dragged`                         |
+| `Style::tab_bar_background_color`               | `TabBar::bg_fill`                                  |
+| `Style::tab_bar_height`                         | `TabBar::height`                                   |
+| `Style::tab_outline_color`                      | `Tabs::outline_color`                              |
+| `Style::hline_color`                            | `Tabs::hline_color`                                |
+| `Style::hline_below_active_tab_name`            | `Tabs::hline_below_active_tab_name`                |
+| `Style::tab_rounding`                           | `Tabs::rounding`                                   |
+| `Style::tab_background_color`                   | `Tabs::bg_fill`                                    |
+| `Style::tab_text_color_unfocused`               | `Tabs::text_color_unfocused`                       |
+| `Style::tab_text_color_focused`                 | `Tabs::text_color_focused`                         |
+| `Style::tab_text_color_active_unfocused`        | `Tabs::text_color_active_unfocused`                |
+| `Style::tab_text_color_active_focused`          | `Tabs::text_color_active_focused`                  |
+| `Style::expand_tabs`                            | `Tabs::fill_tab_bar`                               |
+| `Style::close_tab_color`                        | `Buttons::close_tab_color`                         |
+| `Style::close_tab_active_color`                 | `Buttons::close_tab_active_color`                  |
+| `Style::close_tab_background_color`             | `Buttons::close_tab_bg_fill`                       |
+| `Style::add_tab_align`                          | `Buttons::add_tab_align`                           |
+| `Style::add_tab_color`                          | `Buttons::add_tab_color`                           |
+| `Style::add_tab_active_color`                   | `Buttons::add_tab_active_color`                    |
+| `Style::add_tab_background_color`               | `Buttons::add_tab_bg_fill`                         |
 
 ### Deprecated
 - `StyleBuilder`

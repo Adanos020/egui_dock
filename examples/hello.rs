@@ -97,11 +97,11 @@ impl MyContext {
         ui.collapsing("Border", |ui| {
             egui::Grid::new("border").show(ui, |ui| {
                 ui.label("Width:");
-                ui.add(Slider::new(&mut style.visuals.border.width, 1.0..=50.0));
+                ui.add(Slider::new(&mut style.border.width, 1.0..=50.0));
                 ui.end_row();
 
                 ui.label("Color:");
-                color_edit_button_srgba(ui, &mut style.visuals.border.color, Alpha::OnlyBlend);
+                color_edit_button_srgba(ui, &mut style.border.color, Alpha::OnlyBlend);
                 ui.end_row();
             });
         });
@@ -109,7 +109,7 @@ impl MyContext {
         ui.collapsing("Selection", |ui| {
             egui::Grid::new("selection").show(ui, |ui| {
                 ui.label("Color:");
-                color_edit_button_srgba(ui, &mut style.visuals.selection_color, Alpha::OnlyBlend);
+                color_edit_button_srgba(ui, &mut style.selection_color, Alpha::OnlyBlend);
                 ui.end_row();
             });
         });
@@ -117,17 +117,17 @@ impl MyContext {
         ui.collapsing("Separator", |ui| {
             egui::Grid::new("separator").show(ui, |ui| {
                 ui.label("Width:");
-                ui.add(Slider::new(&mut style.visuals.separator.width, 1.0..=50.0));
+                ui.add(Slider::new(&mut style.separator.width, 1.0..=50.0));
                 ui.end_row();
 
                 ui.label("Offset limit:");
-                ui.add(Slider::new(&mut style.visuals.separator.extra, 1.0..=300.0));
+                ui.add(Slider::new(&mut style.separator.extra, 1.0..=300.0));
                 ui.end_row();
 
                 ui.label("Idle color:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.separator.color_idle,
+                    &mut style.separator.color_idle,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -135,7 +135,7 @@ impl MyContext {
                 ui.label("Hovered color:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.separator.color_hovered,
+                    &mut style.separator.color_hovered,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -143,7 +143,7 @@ impl MyContext {
                 ui.label("Dragged color:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.separator.color_dragged,
+                    &mut style.separator.color_dragged,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -153,31 +153,16 @@ impl MyContext {
         ui.collapsing("Tabs", |ui| {
             ui.separator();
 
+            ui.checkbox(&mut style.tabs.fill_tab_bar, "Expand tabs");
             ui.checkbox(
-                &mut style.interaction.tabs.show_name_on_hover,
-                "Show tab name when hovered over them",
-            );
-            ui.checkbox(&mut style.interaction.tabs.draggable, "Tabs are draggable");
-            ui.checkbox(&mut style.visuals.tabs.fill_tab_bar, "Expand tabs");
-            ui.checkbox(
-                &mut style.interaction.tabs.show_context_menu,
-                "Show context menu",
-            );
-            ui.checkbox(&mut style.interaction.buttons.show_add, "Show add buttons");
-            ui.checkbox(
-                &mut style.interaction.tabs.include_scroll_area,
-                "Include ScrollArea inside of tabs",
-            );
-
-            ui.checkbox(
-                &mut style.visuals.tabs.hline_below_active_tab_name,
+                &mut style.tabs.hline_below_active_tab_name,
                 "Show a line below the active tab name",
             );
 
             ui.separator();
 
             ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.visuals.tab_bar.height, 20.0..=50.0));
+                ui.add(Slider::new(&mut style.tab_bar.height, 20.0..=50.0));
                 ui.label("Tab bar height");
             });
 
@@ -185,28 +170,21 @@ impl MyContext {
 
             ui.label("Rounding");
             ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.visuals.tabs.rounding.nw, 0.0..=15.0));
+                ui.add(Slider::new(&mut style.tabs.rounding.nw, 0.0..=15.0));
                 ui.label("North-West");
             });
             ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.visuals.tabs.rounding.ne, 0.0..=15.0));
+                ui.add(Slider::new(&mut style.tabs.rounding.ne, 0.0..=15.0));
                 ui.label("North-East");
             });
             ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.visuals.tabs.rounding.sw, 0.0..=15.0));
+                ui.add(Slider::new(&mut style.tabs.rounding.sw, 0.0..=15.0));
                 ui.label("South-West");
             });
             ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.visuals.tabs.rounding.se, 0.0..=15.0));
+                ui.add(Slider::new(&mut style.tabs.rounding.se, 0.0..=15.0));
                 ui.label("South-East");
             });
-
-            ui.separator();
-
-            ui.checkbox(
-                &mut style.interaction.buttons.show_close,
-                "Allow closing tabs",
-            );
 
             ui.separator();
 
@@ -214,7 +192,7 @@ impl MyContext {
                 ui.label("Title text color, inactive and unfocused:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.tabs.text_color_unfocused,
+                    &mut style.tabs.text_color_unfocused,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -222,7 +200,7 @@ impl MyContext {
                 ui.label("Title text color, inactive and focused:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.tabs.text_color_focused,
+                    &mut style.tabs.text_color_focused,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -230,7 +208,7 @@ impl MyContext {
                 ui.label("Title text color, active and unfocused:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.tabs.text_color_active_unfocused,
+                    &mut style.tabs.text_color_active_unfocused,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -238,7 +216,7 @@ impl MyContext {
                 ui.label("Title text color, active and focused:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.tabs.text_color_active_focused,
+                    &mut style.tabs.text_color_active_focused,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -246,7 +224,7 @@ impl MyContext {
                 ui.label("Close button color unfocused:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.buttons.close_tab_color,
+                    &mut style.buttons.close_tab_color,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -254,7 +232,7 @@ impl MyContext {
                 ui.label("Close button color focused:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.buttons.close_tab_active_color,
+                    &mut style.buttons.close_tab_active_color,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -262,7 +240,7 @@ impl MyContext {
                 ui.label("Close button background color:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.buttons.close_tab_bg_fill,
+                    &mut style.buttons.close_tab_bg_fill,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -270,7 +248,7 @@ impl MyContext {
                 ui.label("Bar background color:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.tab_bar.bg_fill,
+                    &mut style.tab_bar.bg_fill,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -279,7 +257,7 @@ impl MyContext {
                     .on_hover_text("The outline around the active tab name.");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.tabs.outline_color,
+                    &mut style.tabs.outline_color,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
@@ -287,13 +265,13 @@ impl MyContext {
                 ui.label("Horizontal line color:").on_hover_text(
                     "The line separating the tab name area from the tab content area",
                 );
-                color_edit_button_srgba(ui, &mut style.visuals.tabs.hline_color, Alpha::OnlyBlend);
+                color_edit_button_srgba(ui, &mut style.tabs.hline_color, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Background color:");
                 color_edit_button_srgba(
                     ui,
-                    &mut style.visuals.tabs.bg_fill,
+                    &mut style.tabs.bg_fill,
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();

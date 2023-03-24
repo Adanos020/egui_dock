@@ -228,6 +228,13 @@ pub struct DockArea<'tree, Tab> {
     id: Id,
     tree: &'tree mut Tree<Tab>,
     style: Option<Style>,
+    show_add_popup: bool,
+    show_add_buttons: bool,
+    show_close_buttons: bool,
+    tab_context_menus: bool,
+    draggable_tabs: bool,
+    show_tab_name_on_hover: bool,
+    scroll_area_in_tabs: bool,
 }
 
 impl<'tree, Tab> DockArea<'tree, Tab> {
@@ -238,6 +245,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             id: Id::new("egui_dock::DockArea"),
             tree,
             style: None,
+            show_add_popup: false,
+            show_add_buttons: false,
+            show_close_buttons: true,
+            tab_context_menus: true,
+            draggable_tabs: true,
+            show_tab_name_on_hover: false,
+            scroll_area_in_tabs: true,
         }
     }
 
@@ -252,6 +266,55 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     #[inline(always)]
     pub fn style(mut self, style: Style) -> Self {
         self.style = Some(style);
+        self
+    }
+
+    /// Shows or hides the add button popup.
+    /// By default it's false.
+    pub fn show_add_popup(mut self, show_add_popup: bool) -> Self {
+        self.show_add_popup = show_add_popup;
+        self
+    }
+    
+    /// Shows or hides the tab add buttons.
+    /// By default it's false.
+    pub fn show_add_buttons(mut self, show_add_buttons: bool) -> Self {
+        self.show_add_buttons = show_add_buttons;
+        self
+    }
+    
+    /// Shows or hides the tab close buttons.
+    /// By default it's true.
+    pub fn show_close_buttons(mut self, show_close_buttons: bool) -> Self {
+        self.show_close_buttons = show_close_buttons;
+        self
+    }
+    
+    /// Whether tabs show a context menu.
+    /// By default it's true.
+    pub fn tab_context_menus(mut self, tab_context_menus: bool) -> Self {
+        self.tab_context_menus = tab_context_menus;
+        self
+    }
+    
+    /// Whether tabs can be dragged between nodes and reordered on the tab bar.
+    /// By default it's true.
+    pub fn draggable_tabs(mut self, draggable_tabs: bool) -> Self {
+        self.draggable_tabs = draggable_tabs;
+        self
+    }
+    
+    /// Whether tabs show their name when hovered over them.
+    /// By default it's false.
+    pub fn show_tab_name_on_hover(mut self, show_tab_name_on_hover: bool) -> Self {
+        self.show_tab_name_on_hover = show_tab_name_on_hover;
+        self
+    }
+    
+    /// Whether tabs have a [`ScrollArea`] out of the box.
+    /// By default it's true.
+    pub fn scroll_area_in_tabs(mut self, scroll_area_in_tabs: bool) -> Self {
+        self.scroll_area_in_tabs = scroll_area_in_tabs;
         self
     }
 
@@ -310,8 +373,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             ui.painter().rect(
                 rect,
                 margin.top,
-                style.visuals.separator.color_idle,
-                Stroke::new(margin.top, style.visuals.border.color),
+                style.separator.color_idle,
+                Stroke::new(margin.top, style.border.color),
             );
         }
 
@@ -349,11 +412,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 };
 
                 let color = if response.dragged() {
-                    style.visuals.separator.color_dragged
+                    style.separator.color_dragged
                 } else if response.hovered() {
-                    style.visuals.separator.color_hovered
+                    style.separator.color_hovered
                 } else {
-                    style.visuals.separator.color_idle
+                    style.separator.color_idle
                 };
 
                 ui.painter().rect_filled(separator, Rounding::none(), color);
@@ -376,7 +439,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let rect = *rect;
                 ui.set_clip_rect(rect);
 
-                let height_topbar = style.visuals.tab_bar.height;
+                let height_topbar = style.tab_bar.height;
 
                 let bottom_y = rect.min.y + height_topbar;
                 let tabbar = rect.intersect(Rect::everything_above(bottom_y));
@@ -389,12 +452,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui.scope(|ui| {
                     ui.painter().rect_filled(
                         tabbar,
-                        style.visuals.tabs.rounding,
-                        style.visuals.tab_bar.bg_fill,
+                        style.tabs.rounding,
+                        style.tab_bar.bg_fill,
                     );
 
                     let mut available_width = tabbar.max.x - tabbar.min.x;
-                    if style.interaction.buttons.show_add {
+                    if self.show_add_buttons {
                         available_width -= Style::TAB_PLUS_SIZE;
                     }
                     let expanded_width = available_width / (tabs.len() as f32);
@@ -402,11 +465,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let mut ui = ui.child_ui(tabbar, Default::default());
                     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
-                    if !style.visuals.tabs.hline_below_active_tab_name {
+                    if !style.tabs.hline_below_active_tab_name {
                         ui.painter().hline(
                             tabbar.x_range(),
                             tabbar.max.y - px,
-                            (px, style.visuals.tabs.hline_color),
+                            (px, style.tabs.hline_color),
                         );
                     }
 
@@ -415,7 +478,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             let id = self.id.with((node_index, tab_index, "tab"));
                             let tab_index = TabIndex(tab_index);
                             let is_being_dragged = ui.memory(|mem| mem.is_being_dragged(id))
-                                && style.interaction.tabs.draggable;
+                                && self.draggable_tabs;
 
                             if is_being_dragged {
                                 ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
@@ -436,6 +499,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                             is_being_dragged,
                                             id,
                                             expanded_width,
+                                            self.show_close_buttons,
                                         )
                                     })
                                     .response;
@@ -465,6 +529,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     is_being_dragged,
                                     id,
                                     expanded_width,
+                                    self.show_close_buttons,
                                 );
 
                                 let (close_hovered, close_clicked) = match close_response {
@@ -478,18 +543,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     Sense::click_and_drag()
                                 };
 
-                                if style.interaction.tabs.show_name_on_hover {
+                                if self.show_tab_name_on_hover {
                                     response = response.on_hover_ui(|ui| {
                                         ui.label(tab_viewer.title(tab));
                                     });
                                 }
 
-                                if style.interaction.tabs.show_context_menu {
+                                if self.tab_context_menus {
                                     response = response.context_menu(|ui| {
                                         tab_viewer.context_menu(ui, tab);
-                                        if style.interaction.buttons.show_close
-                                            && ui.button("Close").clicked()
-                                        {
+                                        if self.show_close_buttons && ui.button("Close").clicked() {
                                             if tab_viewer.on_close(tab) {
                                                 to_remove.push((node_index, tab_index));
                                             } else {
@@ -521,7 +584,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 new_focused = Some(node_index);
                             }
 
-                            if response.middle_clicked() && style.interaction.buttons.show_close {
+                            if response.middle_clicked() && self.show_close_buttons {
                                 if tab_viewer.on_close(tab) {
                                     to_remove.push((node_index, tab_index));
                                 } else {
@@ -542,7 +605,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         }
 
                         // Add button at the end of the tab bar
-                        if style.interaction.buttons.show_add {
+                        if self.show_add_buttons {
                             let id = self.id.with((node_index, "tab_add"));
                             let response = style.tab_plus(ui);
 
@@ -554,7 +617,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             });
 
                             if response.clicked() {
-                                if style.interaction.show_add_popup {
+                                if self.show_add_popup {
                                     ui.memory_mut(|mem| mem.toggle_popup(popup_id));
                                 }
                                 tab_viewer.on_add(node_index);
@@ -563,11 +626,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     });
                 });
 
-                if style.visuals.tabs.hline_below_active_tab_name {
+                if style.tabs.hline_below_active_tab_name {
                     ui.painter().hline(
                         tabbar.x_range(),
                         tabbar.max.y - px,
-                        (px, style.visuals.tabs.hline_color),
+                        (px, style.tabs.hline_color),
                     );
                 }
 
@@ -589,12 +652,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                     if tab_viewer.clear_background(tab) {
                         ui.painter()
-                            .rect_filled(rect, 0.0, style.visuals.tabs.bg_fill);
+                            .rect_filled(rect, 0.0, style.tabs.bg_fill);
                     }
 
                     let mut ui = ui.child_ui(rect, Default::default());
                     ui.push_id(node_index, |ui| {
-                        if style.interaction.tabs.include_scroll_area {
+                        if self.scroll_area_in_tabs {
                             ScrollArea::both()
                                 .id_source(
                                     self.id
@@ -658,7 +721,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let id = Id::new("overlay");
                     let layer_id = LayerId::new(Order::Foreground, id);
                     let painter = ui.ctx().layer_painter(layer_id);
-                    painter.rect_filled(overlay, 0.0, style.visuals.selection_color);
+                    painter.rect_filled(overlay, 0.0, style.selection_color);
                 }
 
                 if ui.input(|i| i.pointer.any_released()) {
