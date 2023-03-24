@@ -190,8 +190,8 @@ impl Style {
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - [`Visuals::border`]
-    /// - [`Visuals::selection_color`]
+    /// - [`Style::border`]
+    /// - [`Style::selection_color`]
     /// - [`Buttons::close_tab_bg_fill`]
     /// - [`Buttons::close_tab_color`]
     /// - [`Buttons::close_tab_active_color`]
