@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
-    CentralPanel, Frame, Slider, TopBottomPanel, Ui, WidgetText,
+    CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
 use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
@@ -27,6 +27,11 @@ struct MyContext {
     pub age: u32,
     pub style: Option<Style>,
     open_tabs: HashSet<String>,
+
+    show_close_buttons: bool,
+    show_add_buttons: bool,
+    draggable_tabs: bool,
+    show_tab_name_on_hover: bool,
 }
 
 struct MyApp {
@@ -92,6 +97,13 @@ impl MyContext {
     fn style_editor(&mut self, ui: &mut Ui) {
         ui.heading("Style Editor");
 
+        ui.collapsing("DockArea Options", |ui| {
+            ui.checkbox(&mut self.show_close_buttons, "Show close buttons");
+            ui.checkbox(&mut self.show_add_buttons, "Show add buttons");
+            ui.checkbox(&mut self.draggable_tabs, "Draggable tabs");
+            ui.checkbox(&mut self.show_tab_name_on_hover, "Show tab name on hover");
+        });
+
         let style = self.style.as_mut().unwrap();
 
         ui.collapsing("Border", |ui| {
@@ -149,10 +161,26 @@ impl MyContext {
 
             ui.separator();
 
+            ui.checkbox(
+                &mut style.tab_bar.show_scroll_bar_on_overflow,
+                "Show scroll bar on tab overflow",
+            );
             ui.horizontal(|ui| {
                 ui.add(Slider::new(&mut style.tab_bar.height, 20.0..=50.0));
                 ui.label("Tab bar height");
             });
+
+            ComboBox::new("add_button_align", "Add button align")
+                .selected_text(format!("{:?}", style.buttons.add_tab_align))
+                .show_ui(ui, |ui| {
+                    for align in [egui_dock::TabAddAlign::Left, egui_dock::TabAddAlign::Right] {
+                        ui.selectable_value(
+                            &mut style.buttons.add_tab_align,
+                            align,
+                            format!("{:?}", align),
+                        );
+                    }
+                });
 
             ui.separator();
 
@@ -265,6 +293,11 @@ impl Default for MyApp {
             age: 24,
             style: None,
             open_tabs,
+
+            show_close_buttons: true,
+            show_add_buttons: false,
+            draggable_tabs: true,
+            show_tab_name_on_hover: false,
         };
 
         Self { context, tree }
@@ -309,6 +342,10 @@ impl eframe::App for MyApp {
 
                 DockArea::new(&mut self.tree)
                     .style(style)
+                    .show_close_buttons(self.context.show_close_buttons)
+                    .show_add_buttons(self.context.show_add_buttons)
+                    .draggable_tabs(self.context.draggable_tabs)
+                    .show_tab_name_on_hover(self.context.show_tab_name_on_hover)
                     .show_inside(ui, &mut self.context);
             });
     }

@@ -13,6 +13,7 @@
   - `tab_context_menus`
   - `scroll_area_in_tabs`
   - `show_tab_name_on_hover`
+- Make tabs scrollable when they overflow ([#116](https://github.com/Adanos020/egui_dock/pull/116))
 
 ### Breaking changes
 - Removed `remove_empty_leaf` which was used for internal usage and should not be needed by users ([#115](https://github.com/Adanos020/egui_dock/pull/107))

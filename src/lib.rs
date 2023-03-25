@@ -63,8 +63,9 @@
 #![forbid(unsafe_code)]
 
 use egui::{
-    style::Margin, vec2, CentralPanel, Color32, Context, CursorIcon, Frame, Id, LayerId, Order,
-    Pos2, Rect, Rounding, ScrollArea, Sense, Stroke, Ui, WidgetText,
+    lerp, pos2, style::Margin, vec2, CentralPanel, Color32, Context, CursorIcon, Frame, Id,
+    LayerId, Layout, NumExt, Order, Pos2, Rect, Rounding, ScrollArea, Sense, Stroke, Ui,
+    WidgetText,
 };
 
 #[allow(deprecated)]
@@ -85,6 +86,7 @@ mod utils;
 
 // ----------------------------------------------------------------------------
 
+#[derive(Debug)]
 struct HoverData {
     rect: Rect,
     tabs: Option<Rect>,
@@ -435,154 +437,148 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs,
                 active,
                 viewport,
+                scroll,
             } = &mut self.tree[node_index]
             {
-                let rect = *rect;
-                ui.set_clip_rect(rect);
+                let ui = &mut ui.child_ui_with_id_source(
+                    *rect,
+                    Layout::top_down_justified(egui::Align::Min),
+                    (node_index, "node"),
+                );
+                let id = self.id.with((node_index, "node"));
+                let spacing = ui.spacing().item_spacing;
+                ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
+                ui.set_clip_rect(*rect);
 
-                let height_topbar = style.tab_bar.height;
+                let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
+                    vec2(ui.available_width(), style.tab_bar.height),
+                    Sense::hover(),
+                );
+                ui.painter().rect_filled(
+                    tabbar_outer_rect,
+                    style.tabs.rounding,
+                    style.tab_bar.bg_fill,
+                );
 
-                let bottom_y = rect.min.y + height_topbar;
-                let tabbar = rect.intersect(Rect::everything_above(bottom_y));
-
-                let full_response = ui.allocate_rect(rect, Sense::hover());
-                let tabs_response = ui.allocate_rect(tabbar, Sense::hover());
                 let mut tab_hover_rect = None;
 
                 // tabs
-                ui.scope(|ui| {
-                    ui.painter()
-                        .rect_filled(tabbar, style.tabs.rounding, style.tab_bar.bg_fill);
+                let actual_width = {
+                    let tabbar_inner_rect = Rect::from_min_size(
+                        (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
+                        vec2(f32::INFINITY, tabbar_outer_rect.height()),
+                    );
 
-                    let mut available_width = tabbar.max.x - tabbar.min.x;
+                    let tabs_ui = &mut ui.child_ui_with_id_source(
+                        tabbar_inner_rect,
+                        Layout::left_to_right(egui::Align::Center),
+                        "tabs",
+                    );
+
+                    let mut available_width = tabbar_outer_rect.width();
+                    let mut clip_rect = tabbar_outer_rect;
+
+                    // Reserve space for the add button at the end of the tab bar
                     if self.show_add_buttons {
-                        available_width -= Style::TAB_PLUS_SIZE;
+                        clip_rect.set_right(tabbar_outer_rect.right() - Style::TAB_ADD_BUTTON_SIZE);
+                        tabs_ui.set_clip_rect(clip_rect);
+                        available_width -= Style::TAB_ADD_BUTTON_SIZE;
                     }
+
+                    tabs_ui.set_clip_rect(clip_rect);
+
+                    // Desired size for tabs in "expanded" mode
                     let expanded_width = available_width / (tabs.len() as f32);
 
-                    let mut ui = ui.child_ui(tabbar, Default::default());
-                    ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
+                    for (tab_index, tab) in tabs.iter_mut().enumerate() {
+                        let id = id.with((tab_index, "tab"));
+                        let tab_index = TabIndex(tab_index);
+                        let is_being_dragged =
+                            tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
 
-                    if !style.tabs.hline_below_active_tab_name {
-                        ui.painter().hline(
-                            tabbar.x_range(),
-                            tabbar.max.y - px,
-                            (px, style.tabs.hline_color),
-                        );
-                    }
+                        if is_being_dragged {
+                            tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
+                        }
 
-                    ui.horizontal(|ui| {
-                        for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                            let id = self.id.with((node_index, tab_index, "tab"));
-                            let tab_index = TabIndex(tab_index);
-                            let is_being_dragged =
-                                ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
+                        let is_active = *active == tab_index || is_being_dragged;
+                        let label = tab_viewer.title(tab);
 
-                            if is_being_dragged {
-                                ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
+                        let response = if is_being_dragged {
+                            let layer_id = LayerId::new(Order::Tooltip, id);
+                            let mut response = tabs_ui
+                                .with_layer_id(layer_id, |ui| {
+                                    style.tab_title(
+                                        ui,
+                                        label,
+                                        is_active,
+                                        is_active && Some(node_index) == focused,
+                                        is_being_dragged,
+                                        id,
+                                        expanded_width,
+                                        self.show_close_buttons,
+                                    )
+                                })
+                                .response;
+
+                            let sense = Sense::click_and_drag();
+                            response = tabs_ui.interact(response.rect, id, sense);
+
+                            if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
+                                let center = response.rect.center();
+                                let start = state.drag_start.unwrap_or(center);
+
+                                let delta = pointer_pos - start;
+                                if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
+                                    tabs_ui.ctx().translate_layer(layer_id, delta);
+
+                                    drag_data = Some((node_index, tab_index));
+                                }
                             }
 
-                            let is_active = *active == tab_index || is_being_dragged;
-                            let label = tab_viewer.title(tab);
+                            response
+                        } else {
+                            let (mut response, close_response) = style.tab_title(
+                                tabs_ui,
+                                label,
+                                is_active && Some(node_index) == focused,
+                                is_active,
+                                is_being_dragged,
+                                id,
+                                expanded_width,
+                                self.show_close_buttons,
+                            );
 
-                            let response = if is_being_dragged {
-                                let layer_id = LayerId::new(Order::Tooltip, id);
-                                let mut response = ui
-                                    .with_layer_id(layer_id, |ui| {
-                                        style.tab_title(
-                                            ui,
-                                            label,
-                                            is_active,
-                                            is_active && Some(node_index) == focused,
-                                            is_being_dragged,
-                                            id,
-                                            expanded_width,
-                                            self.show_close_buttons,
-                                        )
-                                    })
-                                    .response;
+                            let (close_hovered, close_clicked) = close_response
+                                .map(|res| (res.hovered(), res.clicked()))
+                                .unwrap_or_default();
 
-                                let sense = Sense::click_and_drag();
-                                response = ui.interact(response.rect, id, sense);
-
-                                if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
-                                    let center = response.rect.center();
-                                    let start = state.drag_start.unwrap_or(center);
-
-                                    let delta = pointer_pos - start;
-                                    if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
-                                        ui.ctx().translate_layer(layer_id, delta);
-
-                                        drag_data = Some((node_index, tab_index));
-                                    }
-                                }
-
-                                response
+                            let sense = if close_hovered {
+                                Sense::click()
                             } else {
-                                let (mut response, close_response) = style.tab_title(
-                                    ui,
-                                    label,
-                                    is_active && Some(node_index) == focused,
-                                    is_active,
-                                    is_being_dragged,
-                                    id,
-                                    expanded_width,
-                                    self.show_close_buttons,
-                                );
-
-                                let (close_hovered, close_clicked) = match close_response {
-                                    Some(res) => (res.hovered(), res.clicked()),
-                                    None => (false, false),
-                                };
-
-                                let sense = if close_hovered {
-                                    Sense::click()
-                                } else {
-                                    Sense::click_and_drag()
-                                };
-
-                                if self.show_tab_name_on_hover {
-                                    response = response.on_hover_ui(|ui| {
-                                        ui.label(tab_viewer.title(tab));
-                                    });
-                                }
-
-                                if self.tab_context_menus {
-                                    response = response.context_menu(|ui| {
-                                        tab_viewer.context_menu(ui, tab);
-                                        if self.show_close_buttons && ui.button("Close").clicked() {
-                                            if tab_viewer.on_close(tab) {
-                                                to_remove.push((node_index, tab_index));
-                                            } else {
-                                                *active = tab_index;
-                                                new_focused = Some(node_index);
-                                            }
-                                        }
-                                    });
-                                }
-
-                                if close_clicked {
-                                    if tab_viewer.on_close(tab) {
-                                        to_remove.push((node_index, tab_index));
-                                    } else {
-                                        *active = tab_index;
-                                        new_focused = Some(node_index);
-                                    }
-                                }
-                                let response = ui.interact(response.rect, id, sense);
-                                if response.drag_started() {
-                                    state.drag_start = response.hover_pos();
-                                }
-
-                                response
+                                Sense::click_and_drag()
                             };
 
-                            if response.clicked() {
-                                *active = tab_index;
-                                new_focused = Some(node_index);
+                            if self.show_tab_name_on_hover {
+                                response = response.on_hover_ui(|ui| {
+                                    ui.label(tab_viewer.title(tab));
+                                });
                             }
 
-                            if response.middle_clicked() && self.show_close_buttons {
+                            if self.tab_context_menus {
+                                response = response.context_menu(|ui| {
+                                    tab_viewer.context_menu(ui, tab);
+                                    if self.show_close_buttons && ui.button("Close").clicked() {
+                                        if tab_viewer.on_close(tab) {
+                                            to_remove.push((node_index, tab_index));
+                                        } else {
+                                            *active = tab_index;
+                                            new_focused = Some(node_index);
+                                        }
+                                    }
+                                });
+                            }
+
+                            if close_clicked {
                                 if tab_viewer.on_close(tab) {
                                     to_remove.push((node_index, tab_index));
                                 } else {
@@ -590,69 +586,198 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     new_focused = Some(node_index);
                                 }
                             }
+                            let response = tabs_ui.interact(response.rect, id, sense);
+                            if response.drag_started() {
+                                state.drag_start = response.hover_pos();
+                            }
 
-                            if state.drag_start.is_some() {
-                                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
-                                    if response.rect.contains(pos) {
-                                        tab_hover_rect = Some((response.rect, tab_index));
-                                    }
+                            if let Some(pos) = tabs_ui.input(|i| i.pointer.hover_pos()) {
+                                // Use response.rect.contains instead of
+                                // response.hovered as the dragged tab covers
+                                // the underlying tab
+                                if state.drag_start.is_some() && response.rect.contains(pos) {
+                                    tab_hover_rect = Some((response.rect, tab_index));
                                 }
                             }
 
-                            tab_viewer.on_tab_button(tab, &response);
+                            response
+                        };
+
+                        // Paint hline below each tab unless its active (or option says overwise)
+                        if !is_active || style.tabs.hline_below_active_tab_name {
+                            tabs_ui.painter().hline(
+                                response.rect.x_range(),
+                                tabbar_outer_rect.bottom() - px,
+                                (px, style.tabs.hline_color),
+                            );
                         }
 
-                        // Add button at the end of the tab bar
-                        if self.show_add_buttons {
-                            let id = self.id.with((node_index, "tab_add"));
-                            let response = style.tab_plus(ui);
+                        if response.clicked() {
+                            *active = tab_index;
+                            new_focused = Some(node_index);
+                        }
 
-                            let response = ui.interact(response.rect, id, Sense::click());
-                            let popup_id = id.with("tab_add_popup");
-
-                            popup::popup_under_widget(ui, popup_id, &response, |ui| {
-                                tab_viewer.add_popup(ui, node_index);
-                            });
-
-                            if response.clicked() {
-                                if self.show_add_popup {
-                                    ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-                                }
-                                tab_viewer.on_add(node_index);
+                        if self.show_close_buttons && response.middle_clicked() {
+                            if tab_viewer.on_close(tab) {
+                                to_remove.push((node_index, tab_index));
+                            } else {
+                                *active = tab_index;
+                                new_focused = Some(node_index);
                             }
-                        };
-                    });
-                });
+                        }
 
-                if style.tabs.hline_below_active_tab_name {
+                        tab_viewer.on_tab_button(tab, &response);
+                    }
+
+                    // Draw hline from tab end to edge of tabbar
                     ui.painter().hline(
-                        tabbar.x_range(),
-                        tabbar.max.y - px,
+                        tabs_ui.min_rect().right().min(clip_rect.right())
+                            ..=tabbar_outer_rect.right(),
+                        tabbar_outer_rect.bottom() - px,
                         (px, style.tabs.hline_color),
                     );
+
+                    // Add button at the end of the tab bar
+                    if self.show_add_buttons {
+                        let offset = match style.buttons.add_tab_align {
+                            TabAddAlign::Left => {
+                                (clip_rect.width() - tabs_ui.min_rect().width()).at_least(0.0)
+                            }
+                            TabAddAlign::Right => 0.0,
+                        };
+
+                        let rect = Rect::from_min_max(
+                            tabbar_outer_rect.right_top()
+                                - vec2(Style::TAB_ADD_BUTTON_SIZE + offset, 0.0),
+                            tabbar_outer_rect.right_bottom() - vec2(offset, 0.0),
+                        );
+
+                        let ui = &mut ui.child_ui_with_id_source(
+                            rect,
+                            Layout::left_to_right(egui::Align::Center),
+                            (node_index, "tab_add"),
+                        );
+
+                        let response = style.tab_plus(ui);
+
+                        // Draw button left border
+                        ui.painter().vline(
+                            rect.left(),
+                            rect.y_range(),
+                            Stroke::new(px, style.tabs.hline_color),
+                        );
+
+                        let popup_id = ui.id().with("tab_add_popup");
+                        popup::popup_under_widget(ui, popup_id, &response, |ui| {
+                            tab_viewer.add_popup(ui, node_index);
+                        });
+
+                        if response.clicked() {
+                            if self.show_add_popup {
+                                ui.memory_mut(|mem| mem.toggle_popup(popup_id));
+                            }
+                            tab_viewer.on_add(node_index);
+                        }
+                    };
+
+                    tabs_ui.min_rect().width()
+                };
+
+                let overflow = (actual_width - tabbar_outer_rect.width()).at_least(0.0);
+                // Compare to 1.0 and not 0.0 to avoid drawing a scroll bar due
+                // to floating point precision issue during tab drawing
+                if overflow > 1.0 {
+                    if style.tab_bar.show_scroll_bar_on_overflow {
+                        // Draw scroll bar
+                        let bar_height = 7.5;
+                        let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
+                            vec2(ui.available_width(), bar_height),
+                            Sense::click_and_drag(),
+                        );
+
+                        // Compute scroll bar handle position and size
+                        let overflow_ratio = actual_width / scroll_bar_rect.width();
+                        let scroll_ratio = -*scroll / overflow;
+
+                        let scroll_bar_handle_size =
+                            overflow_ratio.recip() * scroll_bar_rect.width();
+                        let scroll_bar_handle_start = lerp(
+                            scroll_bar_rect.left()
+                                ..=scroll_bar_rect.right() - scroll_bar_handle_size,
+                            scroll_ratio,
+                        );
+                        let scroll_bar_handle_rect = Rect::from_min_size(
+                            pos2(scroll_bar_handle_start, scroll_bar_rect.min.y),
+                            vec2(scroll_bar_handle_size, bar_height),
+                        );
+
+                        let scroll_bar_handle_response =
+                            ui.interact(scroll_bar_handle_rect, id, Sense::drag());
+
+                        // Coefficient to apply to input displacements so that we
+                        // move the scroll by the correct amount.
+                        let points_to_scroll_coefficient =
+                            overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
+
+                        *scroll -= scroll_bar_handle_response.drag_delta().x
+                            * points_to_scroll_coefficient;
+
+                        if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+                            if scroll_bar_rect.contains(pos) {
+                                *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
+                                    * points_to_scroll_coefficient;
+                            }
+                        }
+
+                        // Draw the bar
+                        ui.painter().rect_filled(
+                            scroll_bar_rect,
+                            0.0,
+                            ui.visuals().extreme_bg_color,
+                        );
+
+                        ui.painter().rect_filled(
+                            scroll_bar_handle_rect,
+                            bar_height / 2.0,
+                            ui.visuals()
+                                .widgets
+                                .style(&scroll_bar_handle_response)
+                                .bg_fill,
+                        );
+                    }
+
+                    // Handle user input
+                    if tabbar_response.hovered() {
+                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
+                    }
                 }
 
-                // tab body
-                if let Some(tab) = tabs.get_mut(active.0) {
-                    let top_y = rect.min.y + height_topbar;
-                    let rect = rect.intersect(Rect::everything_below(top_y));
-                    let rect = expand_to_pixel(rect, pixels_per_point);
+                *scroll = scroll.clamp(-overflow, 0.0);
 
-                    *viewport = rect;
+                // tab body
+                let (body_rect, _body_response) = ui
+                    .allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
+
+                if let Some(tab) = tabs.get_mut(active.0) {
+                    *viewport = body_rect;
 
                     if ui.input(|i| i.pointer.any_click()) {
                         if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
-                            if rect.contains(pos) {
+                            if body_rect.contains(pos) {
                                 new_focused = Some(node_index);
                             }
                         }
                     }
 
                     if tab_viewer.clear_background(tab) {
-                        ui.painter().rect_filled(rect, 0.0, style.tabs.bg_fill);
+                        ui.painter().rect_filled(body_rect, 0.0, style.tabs.bg_fill);
                     }
 
-                    let mut ui = ui.child_ui(rect, Default::default());
+                    let mut ui = ui.child_ui(body_rect, Default::default());
+
+                    // Use initial spacing for ui
+                    ui.spacing_mut().item_spacing = spacing;
+
                     ui.push_id(node_index, |ui| {
                         if self.scroll_area_in_tabs {
                             ScrollArea::both()
@@ -679,17 +804,19 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     });
                 }
 
-                let is_being_dragged = ui.memory(|mem| mem.is_anything_being_dragged());
-                if is_being_dragged && full_response.hovered() {
-                    hover_data = ui
-                        .input(|i| i.pointer.hover_pos())
-                        .map(|pointer| HoverData {
-                            rect,
+                if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+                    // Use rect.contains instead of
+                    // response.hovered as the dragged tab covers
+                    // the underlying responses
+                    if state.drag_start.is_some() && rect.contains(pointer) {
+                        hover_data = Some(HoverData {
+                            rect: *rect,
                             dst: node_index,
-                            tabs: tabs_response.hovered().then_some(tabs_response.rect),
+                            tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
                             tab: tab_hover_rect,
                             pointer,
                         });
+                    }
                 }
 
                 for (tab_index, tab) in tabs.iter_mut().enumerate() {

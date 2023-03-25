@@ -34,6 +34,9 @@ pub enum Node<Tab> {
 
         /// The opened tab.
         active: TabIndex,
+
+        /// Scroll amount of the tab bar.
+        scroll: f32,
     },
     /// Parent node in the vertical orientation
     Vertical {
@@ -62,6 +65,7 @@ impl<Tab> Node<Tab> {
             viewport: Rect::NOTHING,
             tabs: vec![tab],
             active: TabIndex(0),
+            scroll: 0.0,
         }
     }
 
@@ -73,6 +77,7 @@ impl<Tab> Node<Tab> {
             viewport: Rect::NOTHING,
             tabs,
             active: TabIndex(0),
+            scroll: 0.0,
         }
     }
 
