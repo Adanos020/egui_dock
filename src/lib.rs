@@ -78,7 +78,8 @@ use std::fmt;
 use utils::expand_to_pixel;
 
 mod popup;
-mod style;
+/// egui_dock theme (color, sizes...)
+pub mod style;
 mod tree;
 mod utils;
 
@@ -215,7 +216,7 @@ pub trait TabViewer {
         style.default_inner_margin
     }
 
-    /// Whether the tab will be cleared with the color specified in [`Style::tab_background_color`]
+    /// Whether the tab will be cleared with the color specified in [`style::TabBar::bg_fill`]
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }

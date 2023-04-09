@@ -30,6 +30,7 @@ pub struct Style {
     pub tabs: Tabs,
 }
 
+/// Specifies the look and feel of buttons.
 #[derive(Clone, Debug)]
 pub struct Buttons {
     /// Color of the close tab button.
@@ -54,6 +55,7 @@ pub struct Buttons {
     pub add_tab_bg_fill: Color32,
 }
 
+/// Specifies the look and feel of node separators.
 #[derive(Clone, Debug)]
 pub struct Separator {
     /// Width of the rectangle separator between nodes. By `Default` it's `1.0`.
@@ -73,6 +75,7 @@ pub struct Separator {
     pub color_dragged: Color32,
 }
 
+/// Specifies the look and feel of tab bars.
 #[derive(Clone, Debug)]
 pub struct TabBar {
     /// Background color of tab bar. By `Default` it's [`Color32::WHITE`].
@@ -82,6 +85,7 @@ pub struct TabBar {
     pub height: f32,
 }
 
+/// Specifies the look and feel of individual tabs.
 #[derive(Clone, Debug)]
 pub struct Tabs {
     /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
