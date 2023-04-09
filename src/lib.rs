@@ -275,42 +275,42 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.show_add_popup = show_add_popup;
         self
     }
-    
+
     /// Shows or hides the tab add buttons.
     /// By default it's false.
     pub fn show_add_buttons(mut self, show_add_buttons: bool) -> Self {
         self.show_add_buttons = show_add_buttons;
         self
     }
-    
+
     /// Shows or hides the tab close buttons.
     /// By default it's true.
     pub fn show_close_buttons(mut self, show_close_buttons: bool) -> Self {
         self.show_close_buttons = show_close_buttons;
         self
     }
-    
+
     /// Whether tabs show a context menu.
     /// By default it's true.
     pub fn tab_context_menus(mut self, tab_context_menus: bool) -> Self {
         self.tab_context_menus = tab_context_menus;
         self
     }
-    
+
     /// Whether tabs can be dragged between nodes and reordered on the tab bar.
     /// By default it's true.
     pub fn draggable_tabs(mut self, draggable_tabs: bool) -> Self {
         self.draggable_tabs = draggable_tabs;
         self
     }
-    
+
     /// Whether tabs show their name when hovered over them.
     /// By default it's false.
     pub fn show_tab_name_on_hover(mut self, show_tab_name_on_hover: bool) -> Self {
         self.show_tab_name_on_hover = show_tab_name_on_hover;
         self
     }
-    
+
     /// Whether tabs have a [`ScrollArea`] out of the box.
     /// By default it's true.
     pub fn scroll_area_in_tabs(mut self, scroll_area_in_tabs: bool) -> Self {
@@ -450,11 +450,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 // tabs
                 ui.scope(|ui| {
-                    ui.painter().rect_filled(
-                        tabbar,
-                        style.tabs.rounding,
-                        style.tab_bar.bg_fill,
-                    );
+                    ui.painter()
+                        .rect_filled(tabbar, style.tabs.rounding, style.tab_bar.bg_fill);
 
                     let mut available_width = tabbar.max.x - tabbar.min.x;
                     if self.show_add_buttons {
@@ -477,8 +474,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         for (tab_index, tab) in tabs.iter_mut().enumerate() {
                             let id = self.id.with((node_index, tab_index, "tab"));
                             let tab_index = TabIndex(tab_index);
-                            let is_being_dragged = ui.memory(|mem| mem.is_being_dragged(id))
-                                && self.draggable_tabs;
+                            let is_being_dragged =
+                                ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
 
                             if is_being_dragged {
                                 ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
@@ -651,8 +648,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
 
                     if tab_viewer.clear_background(tab) {
-                        ui.painter()
-                            .rect_filled(rect, 0.0, style.tabs.bg_fill);
+                        ui.painter().rect_filled(rect, 0.0, style.tabs.bg_fill);
                     }
 
                     let mut ui = ui.child_ui(rect, Default::default());
@@ -714,16 +710,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if let (Some((src, tab_index)), Some(hover)) = (drag_data, hover_data) {
             let dst = hover.dst;
 
-            if self.tree[src].is_leaf() && self.tree[dst].is_leaf() {
+            if self.tree[src].is_leaf()
+                && self.tree[dst].is_leaf()
+                && (src != dst || self.tree[dst].tabs_count() > 1)
+            {
                 let (overlay, tab_dst) = hover.resolve();
-
-                if src != dst || self.tree[dst].tabs_count() > 1 {
-                    let id = Id::new("overlay");
-                    let layer_id = LayerId::new(Order::Foreground, id);
-                    let painter = ui.ctx().layer_painter(layer_id);
-                    painter.rect_filled(overlay, 0.0, style.selection_color);
-                }
-
+                let id = Id::new("overlay");
+                let layer_id = LayerId::new(Order::Foreground, id);
+                let painter = ui.ctx().layer_painter(layer_id);
+                painter.rect_filled(overlay, 0.0, style.selection_color);
                 if ui.input(|i| i.pointer.any_released()) {
                     self.tree.move_tab((src, tab_index), (dst, tab_dst));
                 }
