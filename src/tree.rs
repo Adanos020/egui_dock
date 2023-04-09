@@ -567,6 +567,11 @@ impl<Tab> Tree<Tab> {
         (src_node, src_tab): (NodeIndex, TabIndex),
         (dst_node, dst_tab): (NodeIndex, TabDestination),
     ) {
+        // Moving a single tab inside its own node is a no-op
+        if src_node == dst_node && self[src_node].tabs_count() == 1 {
+            return;
+        }
+
         // Call `Node::remove_tab` to avoid auto remove of the node by
         // `Tree::remove_tab` from Tree.
         let tab = self[src_node].remove_tab(src_tab).unwrap();

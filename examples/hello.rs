@@ -125,27 +125,15 @@ impl MyContext {
                 ui.end_row();
 
                 ui.label("Idle color:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.separator.color_idle,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.separator.color_idle, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Hovered color:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.separator.color_hovered,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.separator.color_hovered, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Dragged color:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.separator.color_dragged,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.separator.color_dragged, Alpha::OnlyBlend);
                 ui.end_row();
             });
         });
@@ -190,19 +178,11 @@ impl MyContext {
 
             egui::Grid::new("tabs_colors").show(ui, |ui| {
                 ui.label("Title text color, inactive and unfocused:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.tabs.text_color_unfocused,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.tabs.text_color_unfocused, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Title text color, inactive and focused:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.tabs.text_color_focused,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.tabs.text_color_focused, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Title text color, active and unfocused:");
@@ -222,11 +202,7 @@ impl MyContext {
                 ui.end_row();
 
                 ui.label("Close button color unfocused:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.buttons.close_tab_color,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.buttons.close_tab_color, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Close button color focused:");
@@ -238,28 +214,16 @@ impl MyContext {
                 ui.end_row();
 
                 ui.label("Close button background color:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.buttons.close_tab_bg_fill,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.buttons.close_tab_bg_fill, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Bar background color:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.tab_bar.bg_fill,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.tab_bar.bg_fill, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Outline color:")
                     .on_hover_text("The outline around the active tab name.");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.tabs.outline_color,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.tabs.outline_color, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Horizontal line color:").on_hover_text(
@@ -269,11 +233,7 @@ impl MyContext {
                 ui.end_row();
 
                 ui.label("Background color:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.tabs.bg_fill,
-                    Alpha::OnlyBlend,
-                );
+                color_edit_button_srgba(ui, &mut style.tabs.bg_fill, Alpha::OnlyBlend);
                 ui.end_row();
             });
         });

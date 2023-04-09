@@ -30,6 +30,7 @@ pub struct Style {
     pub tabs: Tabs,
 }
 
+/// Specifies the look and feel of buttons.
 #[derive(Clone, Debug)]
 pub struct Buttons {
     /// Color of the close tab button.
@@ -54,6 +55,7 @@ pub struct Buttons {
     pub add_tab_bg_fill: Color32,
 }
 
+/// Specifies the look and feel of node separators.
 #[derive(Clone, Debug)]
 pub struct Separator {
     /// Width of the rectangle separator between nodes. By `Default` it's `1.0`.
@@ -73,6 +75,7 @@ pub struct Separator {
     pub color_dragged: Color32,
 }
 
+/// Specifies the look and feel of tab bars.
 #[derive(Clone, Debug)]
 pub struct TabBar {
     /// Background color of tab bar. By `Default` it's [`Color32::WHITE`].
@@ -82,6 +85,7 @@ pub struct TabBar {
     pub height: f32,
 }
 
+/// Specifies the look and feel of individual tabs.
 #[derive(Clone, Debug)]
 pub struct Tabs {
     /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
@@ -388,11 +392,8 @@ impl Style {
             self.buttons.add_tab_color
         };
         if response.hovered() {
-            ui.painter().rect_filled(
-                rect,
-                Rounding::same(2.0),
-                self.buttons.add_tab_bg_fill,
-            );
+            ui.painter()
+                .rect_filled(rect, Rounding::same(2.0), self.buttons.add_tab_bg_fill);
         }
 
         let rect = rect.shrink(1.75);
@@ -440,10 +441,7 @@ impl Style {
                 self.tab_bar.height,
             )
         } else {
-            vec2(
-                galley.size().x + offset.x * 2.0,
-                self.tab_bar.height,
-            )
+            vec2(galley.size().x + offset.x * 2.0, self.tab_bar.height)
         };
 
         let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
@@ -451,31 +449,26 @@ impl Style {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 
-        let (close_rect, close_response) =
-            if (active || response.hovered()) && show_close {
-                let mut pos = rect.right_top();
-                pos.x -= offset.x + x_size.x / 2.0;
-                pos.y += rect.size().y / 2.0;
-                let x_rect = Rect::from_center_size(pos, x_size);
-                let response = ui
-                    .interact(x_rect, id, Sense::click())
-                    .on_hover_cursor(CursorIcon::PointingHand);
-                (x_rect, Some(response))
-            } else {
-                (Rect::NOTHING, None)
-            };
+        let (close_rect, close_response) = if (active || response.hovered()) && show_close {
+            let mut pos = rect.right_top();
+            pos.x -= offset.x + x_size.x / 2.0;
+            pos.y += rect.size().y / 2.0;
+            let x_rect = Rect::from_center_size(pos, x_size);
+            let response = ui
+                .interact(x_rect, id, Sense::click())
+                .on_hover_cursor(CursorIcon::PointingHand);
+            (x_rect, Some(response))
+        } else {
+            (Rect::NOTHING, None)
+        };
 
         if active {
             if is_being_dragged {
-                ui.painter().rect_stroke(
-                    rect,
-                    rounding,
-                    Stroke::new(1.0, self.tabs.outline_color),
-                );
+                ui.painter()
+                    .rect_stroke(rect, rounding, Stroke::new(1.0, self.tabs.outline_color));
             } else {
                 let stroke = Stroke::new(1.0, self.tabs.outline_color);
-                ui.painter()
-                    .rect(rect, rounding, self.tabs.bg_fill, stroke);
+                ui.painter().rect(rect, rounding, self.tabs.bg_fill, stroke);
 
                 // Make the tab name area connect with the tab ui area:
                 ui.painter().hline(
@@ -674,7 +667,7 @@ impl StyleBuilder {
 
     /// If `true`, show the hline below the active tabs name.
     /// If `false`, show the active tab as merged with the tab ui area.
-    /// 
+    ///
     /// By `Default` it's `false`.
     #[inline(always)]
     pub fn with_hline_below_active_tab_name(mut self, hline_below_active_tab_name: bool) -> Self {
