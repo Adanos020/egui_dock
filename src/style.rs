@@ -83,6 +83,9 @@ pub struct TabBar {
 
     /// Height of the tab bar. By `Default` it's `24.0`.
     pub height: f32,
+
+    /// Show a scroll bar when tab bar overflows. By `Default` it's `true`.
+    pub show_scroll_bar_on_overflow: bool,
 }
 
 /// Specifies the look and feel of individual tabs.
@@ -169,6 +172,7 @@ impl Default for TabBar {
         Self {
             bg_fill: Color32::WHITE,
             height: 24.0,
+            show_scroll_bar_on_overflow: true,
         }
     }
 }
@@ -361,48 +365,34 @@ impl Style {
         )
     }
 
-    pub(crate) const TAB_PLUS_SIZE: f32 = 24.0;
+    pub(crate) const TAB_ADD_BUTTON_SIZE: f32 = 24.0;
+    pub(crate) const TAB_ADD_PLUS_SIZE: f32 = 12.0;
+    pub(crate) const TAB_CLOSE_BUTTON_SIZE: f32 = 24.0;
+    pub(crate) const TAB_CLOSE_X_SIZE: f32 = 9.0;
 
     pub(crate) fn tab_plus(&self, ui: &mut Ui) -> Response {
-        let desired_size = Vec2::splat(Self::TAB_PLUS_SIZE);
+        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::hover());
 
-        let mut rect = ui.available_rect_before_wrap();
-
-        match self.buttons.add_tab_align {
-            TabAddAlign::Left => rect.max.x = rect.min.x + desired_size.x,
-            TabAddAlign::Right => rect.min.x = rect.max.x - desired_size.x,
-        }
-        rect = rect.shrink(3.0);
-
-        let rect = {
-            let size = Self::TAB_PLUS_SIZE / 2.0;
-            let mut pos = rect.right_top();
-            pos.x -= size / 2.0;
-            pos.y += rect.size().y / 2.0;
-            Rect::from_center_size(pos, Vec2::splat(size))
-        };
-
-        let response = ui
-            .allocate_rect(rect, Sense::hover())
-            .on_hover_cursor(CursorIcon::PointingHand);
+        response = response.on_hover_cursor(CursorIcon::PointingHand);
 
         let color = if response.hovered() {
+            ui.painter()
+                .rect_filled(rect, Rounding::none(), self.buttons.add_tab_bg_fill);
             self.buttons.add_tab_active_color
         } else {
             self.buttons.add_tab_color
         };
-        if response.hovered() {
-            ui.painter()
-                .rect_filled(rect, Rounding::same(2.0), self.buttons.add_tab_bg_fill);
-        }
 
-        let rect = rect.shrink(1.75);
+        let mut plus_rect = rect;
+
+        rect_set_size_centered(&mut plus_rect, Vec2::splat(Self::TAB_ADD_PLUS_SIZE));
+
         ui.painter().line_segment(
-            [rect.center_top(), rect.center_bottom()],
+            [plus_rect.center_top(), plus_rect.center_bottom()],
             Stroke::new(1.0, color),
         );
         ui.painter().line_segment(
-            [rect.right_center(), rect.left_center()],
+            [plus_rect.right_center(), plus_rect.left_center()],
             Stroke::new(1.0, color),
         );
 
@@ -429,38 +419,29 @@ impl Style {
 
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
 
-        let x_size = Vec2::splat(galley.size().y / 1.3);
+        let x_spacing = 8.0;
 
-        let offset = vec2(8.0, 0.0);
-
-        let desired_size = if self.tabs.fill_tab_bar {
-            vec2(expanded_width, self.tab_bar.height)
-        } else if show_close {
-            vec2(
-                galley.size().x + offset.x * 2.0 + x_size.x + 5.0,
-                self.tab_bar.height,
-            )
+        let text_width = galley.size().x + 2.0 * x_spacing;
+        let close_button_size = if show_close {
+            Self::TAB_CLOSE_BUTTON_SIZE.min(self.tab_bar.height)
         } else {
-            vec2(galley.size().x + offset.x * 2.0, self.tab_bar.height)
+            0.0
         };
+        let minimum_width = text_width + close_button_size;
 
-        let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
+        // Compute total width of the tab bar
+        let tab_width = if self.tabs.fill_tab_bar {
+            expanded_width
+        } else {
+            minimum_width
+        }
+        .at_least(minimum_width);
+
+        let (rect, mut response) =
+            ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
         if !ui.memory(|mem| mem.is_anything_being_dragged()) {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
-
-        let (close_rect, close_response) = if (active || response.hovered()) && show_close {
-            let mut pos = rect.right_top();
-            pos.x -= offset.x + x_size.x / 2.0;
-            pos.y += rect.size().y / 2.0;
-            let x_rect = Rect::from_center_size(pos, x_size);
-            let response = ui
-                .interact(x_rect, id, Sense::click())
-                .on_hover_cursor(CursorIcon::PointingHand);
-            (x_rect, Some(response))
-        } else {
-            (Rect::NOTHING, None)
-        };
 
         if active {
             if is_being_dragged {
@@ -479,12 +460,16 @@ impl Style {
             }
         }
 
+        let mut text_rect = rect;
+        text_rect.set_width(tab_width - close_button_size);
+
         let text_pos = if self.tabs.fill_tab_bar {
-            let mut pos = Align2::CENTER_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
+            let mut pos =
+                Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
             pos -= galley.size() / 2.0;
             pos
         } else {
-            let mut pos = Align2::LEFT_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
+            let mut pos = Align2::LEFT_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
             pos.y -= galley.size().y / 2.0;
             pos
         };
@@ -508,27 +493,33 @@ impl Style {
             angle: 0.0,
         });
 
-        if (active || response.hovered()) && show_close {
-            if close_response.as_ref().unwrap().hovered() {
-                ui.painter().rect_filled(
-                    close_rect,
-                    Rounding::same(2.0),
-                    self.buttons.close_tab_bg_fill,
-                );
-            }
-            let x_rect = close_rect.shrink(1.75);
+        let close_response = if show_close {
+            let mut close_button_rect = rect;
+            close_button_rect.set_left(text_rect.right());
+            close_button_rect =
+                Rect::from_center_size(close_button_rect.center(), Vec2::splat(close_button_size));
 
-            let color = if focused
-                || close_response
-                    .as_ref()
-                    .unwrap()
-                    .interact_pointer_pos()
-                    .is_some()
-            {
+            let response = ui
+                .interact(close_button_rect, id, Sense::click())
+                .on_hover_cursor(CursorIcon::PointingHand);
+
+            let color = if response.hovered() {
                 self.buttons.close_tab_active_color
             } else {
                 self.buttons.close_tab_color
             };
+
+            if response.hovered() {
+                let mut rounding = rounding;
+                rounding.nw = 0.0;
+                rounding.sw = 0.0;
+
+                ui.painter()
+                    .rect_filled(close_button_rect, rounding, self.buttons.add_tab_bg_fill);
+            }
+
+            let mut x_rect = close_button_rect;
+            rect_set_size_centered(&mut x_rect, Vec2::splat(Self::TAB_CLOSE_X_SIZE));
             ui.painter().line_segment(
                 [x_rect.left_top(), x_rect.right_bottom()],
                 Stroke::new(1.0, color),
@@ -537,13 +528,13 @@ impl Style {
                 [x_rect.right_top(), x_rect.left_bottom()],
                 Stroke::new(1.0, color),
             );
-        }
+
+            Some(response)
+        } else {
+            None
+        };
 
         (response, close_response)
-        // match close_response {
-        //     Some(some) => (response, some.hovered(), some.clicked()),
-        //     None => (response, false, false),
-        // }
     }
 }
 
