@@ -2,6 +2,9 @@
 
 ## 0.5.0 - TBD
 
+### Fixed
+- Ensure `Tab` have a stable `egui::Id` when moved ([#121](https://github.com/Adanos020/egui_dock/pull/121))
+
 ### Added
 - `Tree::move_tab` method that allows moving a tab from one node to the other ([#115](https://github.com/Adanos020/egui_dock/pull/107))
 - `Tree::remove_leaf` method that deletes a selected leaf node ([#115](https://github.com/Adanos020/egui_dock/pull/107))
@@ -14,6 +17,7 @@
   - `scroll_area_in_tabs`
   - `show_tab_name_on_hover`
 - Make tabs scrollable when they overflow ([#116](https://github.com/Adanos020/egui_dock/pull/116))
+- `TabViewer::id` method that allows specifying a custom id for each tab ([#121](https://github.com/Adanos020/egui_dock/pull/121))
 
 ### Breaking changes
 - Removed `remove_empty_leaf` which was used for internal usage and should not be needed by users ([#115](https://github.com/Adanos020/egui_dock/pull/107))
