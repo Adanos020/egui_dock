@@ -371,7 +371,7 @@ impl Style {
     pub(crate) const TAB_CLOSE_X_SIZE: f32 = 9.0;
 
     pub(crate) fn tab_plus(&self, ui: &mut Ui) -> Response {
-        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::hover());
+        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
         response = response.on_hover_cursor(CursorIcon::PointingHand);
 
