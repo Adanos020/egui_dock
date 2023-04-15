@@ -1,5 +1,8 @@
 use crate::utils::*;
-use egui::{style::Margin, *};
+use egui::{
+    ecolor::*, emath::*, epaint, Align2, CursorIcon, Id, Margin, Response, Rounding, Sense, Stroke,
+    TextStyle, Ui, WidgetText,
+};
 
 /// Left or right alignment for tab add button.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -24,15 +27,15 @@ pub struct Style {
     pub selection_color: Color32,
 
     pub border: Stroke,
-    pub buttons: Buttons,
-    pub separator: Separator,
-    pub tab_bar: TabBar,
-    pub tabs: Tabs,
+    pub buttons: ButtonsStyle,
+    pub separator: SeparatorStyle,
+    pub tab_bar: TabBarStyle,
+    pub tabs: TabsStyle,
 }
 
 /// Specifies the look and feel of buttons.
 #[derive(Clone, Debug)]
-pub struct Buttons {
+pub struct ButtonsStyle {
     /// Color of the close tab button.
     pub close_tab_color: Color32,
 
@@ -57,7 +60,7 @@ pub struct Buttons {
 
 /// Specifies the look and feel of node separators.
 #[derive(Clone, Debug)]
-pub struct Separator {
+pub struct SeparatorStyle {
     /// Width of the rectangle separator between nodes. By `Default` it's `1.0`.
     pub width: f32,
 
@@ -77,7 +80,7 @@ pub struct Separator {
 
 /// Specifies the look and feel of tab bars.
 #[derive(Clone, Debug)]
-pub struct TabBar {
+pub struct TabBarStyle {
     /// Background color of tab bar. By `Default` it's [`Color32::WHITE`].
     pub bg_fill: Color32,
 
@@ -90,7 +93,7 @@ pub struct TabBar {
 
 /// Specifies the look and feel of individual tabs.
 #[derive(Clone, Debug)]
-pub struct Tabs {
+pub struct TabsStyle {
     /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
     pub outline_color: Color32,
 
@@ -132,15 +135,15 @@ impl Default for Style {
             default_inner_margin: Margin::same(4.0),
             border: Stroke::new(f32::default(), Color32::BLACK),
             selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
-            buttons: Buttons::default(),
-            separator: Separator::default(),
-            tab_bar: TabBar::default(),
-            tabs: Tabs::default(),
+            buttons: ButtonsStyle::default(),
+            separator: SeparatorStyle::default(),
+            tab_bar: TabBarStyle::default(),
+            tabs: TabsStyle::default(),
         }
     }
 }
 
-impl Default for Buttons {
+impl Default for ButtonsStyle {
     fn default() -> Self {
         Self {
             close_tab_color: Color32::WHITE,
@@ -155,7 +158,7 @@ impl Default for Buttons {
     }
 }
 
-impl Default for Separator {
+impl Default for SeparatorStyle {
     fn default() -> Self {
         Self {
             width: 1.0,
@@ -167,7 +170,7 @@ impl Default for Separator {
     }
 }
 
-impl Default for TabBar {
+impl Default for TabBarStyle {
     fn default() -> Self {
         Self {
             bg_fill: Color32::WHITE,
@@ -177,7 +180,7 @@ impl Default for TabBar {
     }
 }
 
-impl Default for Tabs {
+impl Default for TabsStyle {
     fn default() -> Self {
         Self {
             bg_fill: Color32::WHITE,
@@ -200,23 +203,23 @@ impl Style {
     /// Fields overwritten by [`egui::Style`] are:
     /// - [`Style::border`]
     /// - [`Style::selection_color`]
-    /// - [`Buttons::close_tab_bg_fill`]
-    /// - [`Buttons::close_tab_color`]
-    /// - [`Buttons::close_tab_active_color`]
-    /// - [`Buttons::add_tab_bg_fill`]
-    /// - [`Buttons::add_tab_color`]
-    /// - [`Buttons::add_tab_active_color`]
-    /// - [`Separator::color_idle`]
-    /// - [`Separator::color_hovered`]
-    /// - [`Separator::color_dragged`]
-    /// - [`TabBar::bg_fill`]
-    /// - [`Tabs::outline_color`]
-    /// - [`Tabs::hline_color`]
-    /// - [`Tabs::bg_fill`]
-    /// - [`Tabs::text_color_unfocused`]
-    /// - [`Tabs::text_color_focused`]
-    /// - [`Tabs::text_color_active_unfocused`]
-    /// - [`Tabs::text_color_active_focused`]
+    /// - [`ButtonsStyle::close_tab_bg_fill`]
+    /// - [`ButtonsStyle::close_tab_color`]
+    /// - [`ButtonsStyle::close_tab_active_color`]
+    /// - [`ButtonsStyle::add_tab_bg_fill`]
+    /// - [`ButtonsStyle::add_tab_color`]
+    /// - [`ButtonsStyle::add_tab_active_color`]
+    /// - [`SeparatorStyle::color_idle`]
+    /// - [`SeparatorStyle::color_hovered`]
+    /// - [`SeparatorStyle::color_dragged`]
+    /// - [`TabBarStyle::bg_fill`]
+    /// - [`TabsStyle::outline_color`]
+    /// - [`TabsStyle::hline_color`]
+    /// - [`TabsStyle::bg_fill`]
+    /// - [`TabsStyle::text_color_unfocused`]
+    /// - [`TabsStyle::text_color_focused`]
+    /// - [`TabsStyle::text_color_active_unfocused`]
+    /// - [`TabsStyle::text_color_active_focused`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             border: Stroke {
@@ -224,27 +227,27 @@ impl Style {
                 ..Stroke::default()
             },
             selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
-            buttons: Buttons {
+            buttons: ButtonsStyle {
                 close_tab_bg_fill: style.visuals.widgets.active.bg_fill,
                 close_tab_color: style.visuals.text_color(),
                 close_tab_active_color: style.visuals.strong_text_color(),
                 add_tab_bg_fill: style.visuals.widgets.active.bg_fill,
                 add_tab_color: style.visuals.text_color(),
                 add_tab_active_color: style.visuals.strong_text_color(),
-                ..Buttons::default()
+                ..ButtonsStyle::default()
             },
-            separator: Separator {
+            separator: SeparatorStyle {
                 // Same as egui panel resize colors:
                 color_idle: style.visuals.widgets.noninteractive.bg_stroke.color, // dim
                 color_hovered: style.visuals.widgets.hovered.fg_stroke.color,     // bright
                 color_dragged: style.visuals.widgets.active.fg_stroke.color,      // bright
-                ..Separator::default()
+                ..SeparatorStyle::default()
             },
-            tab_bar: TabBar {
+            tab_bar: TabBarStyle {
                 bg_fill: (Rgba::from(style.visuals.window_fill()) * Rgba::from_gray(0.7)).into(),
-                ..TabBar::default()
+                ..TabBarStyle::default()
             },
-            tabs: Tabs {
+            tabs: TabsStyle {
                 outline_color: style.visuals.widgets.active.bg_fill,
                 hline_color: style.visuals.widgets.active.bg_fill,
                 bg_fill: style.visuals.window_fill(),
@@ -252,7 +255,7 @@ impl Style {
                 text_color_focused: style.visuals.strong_text_color(),
                 text_color_active_unfocused: style.visuals.text_color(),
                 text_color_active_focused: style.visuals.strong_text_color(),
-                ..Tabs::default()
+                ..TabsStyle::default()
             },
             ..Self::default()
         }

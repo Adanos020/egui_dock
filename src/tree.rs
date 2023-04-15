@@ -1,3 +1,13 @@
+//! Binary tree representing the relationships between [`Node`]s.
+//!
+//! # Implementation details
+//!
+//! The binary tree is stored in a [`Vec`] indexed by [`NodeIndex`].
+//! The root is always at index *0*.
+//! For a given node *n*:
+//!  - left child of *n* will be at index *n * 2 + 1*.
+//!  - right child of *n* will be at index *n * 2 + 2*.
+
 use egui::Rect;
 use std::fmt;
 

@@ -15,7 +15,7 @@
 //! by implementing [`TabViewer`].
 //!
 //! ```rust
-//! use egui_dock::{NodeIndex, Tree};
+//! use egui_dock::{NodeIndex, Style, Tree};
 //!
 //! struct MyTabs {
 //!     tree: Tree<String>
@@ -33,14 +33,13 @@
 //!     }
 //!
 //!     fn ui(&mut self, ui: &mut egui::Ui) {
-//!         let style = egui_dock::Style::from_egui(ui.style().as_ref());
 //!         egui_dock::DockArea::new(&mut self.tree)
-//!             .style(style)
+//!             .style(Style::from_egui(ui.style().as_ref()))
 //!             .show_inside(ui, &mut TabViewer {});
 //!     }
 //! }
 //!
-//! struct TabViewer {}
+//! struct TabViewer;
 //!
 //! impl egui_dock::TabViewer for TabViewer {
 //!     type Tab = String;
@@ -63,17 +62,14 @@
 #![forbid(unsafe_code)]
 
 use egui::{
-    lerp, pos2, style::Margin, vec2, CentralPanel, Color32, Context, CursorIcon, Frame, Id,
-    LayerId, Layout, NumExt, Order, Pos2, Rect, Rounding, ScrollArea, Sense, Stroke, Ui,
-    WidgetText,
+    containers::*, ecolor::*, emath::*, layers::*, style::Margin, Context, CursorIcon, Id, Layout,
+    Rounding, Sense, Stroke, Ui, WidgetText,
 };
 
-#[allow(deprecated)]
-pub use crate::{
-    style::{Style, StyleBuilder, TabAddAlign},
-    tree::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree},
-};
 pub use egui;
+#[allow(deprecated)]
+pub use style::*;
+pub use tree::*;
 
 use std::fmt;
 use utils::expand_to_pixel;
@@ -81,7 +77,7 @@ use utils::expand_to_pixel;
 mod popup;
 /// egui_dock theme (color, sizes...)
 pub mod style;
-mod tree;
+pub mod tree;
 mod utils;
 
 // ----------------------------------------------------------------------------
@@ -181,8 +177,8 @@ pub trait TabViewer {
     /// Unique id for this tab.
     ///
     /// If not implemented, uses tab title text as an id source.
-    fn id(&mut self, tab: &mut Self::Tab) -> egui::Id {
-        egui::Id::new(self.title(tab).text())
+    fn id(&mut self, tab: &mut Self::Tab) -> Id {
+        Id::new(self.title(tab).text())
     }
 
     /// Called after each tab button is shown, so you can add a tooltip, check for clicks, etc.
@@ -225,7 +221,7 @@ pub trait TabViewer {
         style.default_inner_margin
     }
 
-    /// Whether the tab will be cleared with the color specified in [`style::TabBar::bg_fill`]
+    /// Whether the tab will be cleared with the color specified in [`style::TabBarStyle::bg_fill`]
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }
@@ -449,7 +445,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             {
                 let ui = &mut ui.child_ui_with_id_source(
                     *rect,
-                    Layout::top_down_justified(egui::Align::Min),
+                    Layout::top_down_justified(Align::Min),
                     (node_index, "node"),
                 );
                 let id = self.id.with((node_index, "node"));
@@ -478,7 +474,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                     let tabs_ui = &mut ui.child_ui_with_id_source(
                         tabbar_inner_rect,
-                        Layout::left_to_right(egui::Align::Center),
+                        Layout::left_to_right(Align::Center),
                         "tabs",
                     );
 
@@ -661,7 +657,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                         let ui = &mut ui.child_ui_with_id_source(
                             rect,
-                            Layout::left_to_right(egui::Align::Center),
+                            Layout::left_to_right(Align::Center),
                             (node_index, "tab_add"),
                         );
 

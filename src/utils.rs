@@ -1,4 +1,4 @@
-use egui::{Pos2, Rect, Vec2};
+use egui::emath::*;
 
 #[inline(always)]
 pub fn expand_to_pixel(mut rect: Rect, ppi: f32) -> Rect {
