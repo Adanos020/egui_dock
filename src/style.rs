@@ -241,7 +241,7 @@ impl Style {
                 ..Separator::default()
             },
             tab_bar: TabBar {
-                bg_fill: style.visuals.faint_bg_color,
+                bg_fill: (Rgba::from(style.visuals.window_fill()) * Rgba::from_gray(0.7)).into(),
                 ..TabBar::default()
             },
             tabs: Tabs {
