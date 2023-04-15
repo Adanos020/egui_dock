@@ -178,6 +178,13 @@ pub trait TabViewer {
     /// The title to be displayed.
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText;
 
+    /// Unique id for this tab.
+    ///
+    /// If not implemented, uses tab title text as an id source.
+    fn id(&mut self, tab: &mut Self::Tab) -> egui::Id {
+        egui::Id::new(self.title(tab).text())
+    }
+
     /// Called after each tab button is shown, so you can add a tooltip, check for clicks, etc.
     fn on_tab_button(&mut self, _tab: &mut Self::Tab, _response: &egui::Response) {}
 
@@ -773,35 +780,41 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         ui.painter().rect_filled(body_rect, 0.0, style.tabs.bg_fill);
                     }
 
-                    let mut ui = ui.child_ui(body_rect, Default::default());
+                    // Construct a new ui with the correct tab id
+                    //
+                    // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
+                    // the provided id with their own which would cause tabs to change id when moved
+                    // from node to node.
+                    let id = self.id.with(tab_viewer.id(tab));
+                    ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
+                    let ui = &mut Ui::new(
+                        ui.ctx().clone(),
+                        ui.layer_id(),
+                        id,
+                        body_rect,
+                        ui.clip_rect(),
+                    );
 
                     // Use initial spacing for ui
                     ui.spacing_mut().item_spacing = spacing;
 
-                    ui.push_id(node_index, |ui| {
-                        if self.scroll_area_in_tabs {
-                            ScrollArea::both()
-                                .id_source(
-                                    self.id
-                                        .with((tab_viewer.title(tab).text(), "egui_dock::Tab")),
-                                )
-                                .show(ui, |ui| {
-                                    Frame::none()
-                                        .inner_margin(tab_viewer.inner_margin_override(&style))
-                                        .show(ui, |ui| {
-                                            let available_rect = ui.available_rect_before_wrap();
-                                            ui.expand_to_include_rect(available_rect);
-                                            tab_viewer.ui(ui, tab);
-                                        });
-                                });
-                        } else {
+                    if self.scroll_area_in_tabs {
+                        ScrollArea::both().show(ui, |ui| {
                             Frame::none()
                                 .inner_margin(tab_viewer.inner_margin_override(&style))
                                 .show(ui, |ui| {
+                                    let available_rect = ui.available_rect_before_wrap();
+                                    ui.expand_to_include_rect(available_rect);
                                     tab_viewer.ui(ui, tab);
                                 });
-                        }
-                    });
+                        });
+                    } else {
+                        Frame::none()
+                            .inner_margin(tab_viewer.inner_margin_override(&style))
+                            .show(ui, |ui| {
+                                tab_viewer.ui(ui, tab);
+                            });
+                    }
                 }
 
                 if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
