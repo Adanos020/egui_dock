@@ -1,4 +1,5 @@
-﻿use crate::Tree;
+﻿#[allow(unused_imports)]
+use crate::Tree; // For cleaner doc comments
 
 /// Wrapper around indices to the collection of nodes inside a [`Tree`].
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

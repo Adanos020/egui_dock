@@ -1,4 +1,5 @@
-﻿use crate::Node;
+﻿#[allow(unused_imports)]
+use crate::Node; // For cleaner doc comments
 
 /// Identifies a tab within a [`Node`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]

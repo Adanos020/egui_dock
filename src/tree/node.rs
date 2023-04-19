@@ -1,4 +1,6 @@
-﻿use crate::{Split, TabIndex, Tree};
+﻿#[allow(unused_imports)]
+use crate::Tree; // For cleaner doc comments
+use crate::{Split, TabIndex};
 use egui::Rect;
 
 /// Represents an abstract node of a [`Tree`].

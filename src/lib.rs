@@ -64,7 +64,7 @@ pub use egui;
 #[allow(deprecated)]
 pub use style::*;
 pub use tree::*;
-pub use widgets::{dock_area::DockArea, tab_viewer::TabViewer};
+pub use widgets::*;
 
 /// egui_dock theme (color, sizes...).
 pub mod style;
