@@ -1,6 +1,7 @@
-use crate::{NodeIndex, Style};
 #[allow(unused_imports)]
-use crate::{TabsStyle, Tree}; // For cleaner doc comments
+use crate::{TabBarStyle, Tree}; // For cleaner doc comments
+
+use crate::{NodeIndex, Style};
 use egui::{Id, Margin, Ui, WidgetText};
 
 /// Defines how to display a tab inside a [`Tree`].
