@@ -1,11 +1,13 @@
 mod hover_data;
 mod state;
+use crate::utils::{map_to_pixel, rect_set_size_centered};
 use crate::{
     utils::expand_to_pixel, widgets::popup::popup_under_widget, Node, NodeIndex, Style,
     TabAddAlign, TabIndex, TabViewer, Tree,
 };
 use egui::{
-    containers::*, emath::*, epaint::*, layers::*, Context, CursorIcon, Id, Layout, Sense, Ui,
+    containers::*, emath::*, epaint::*, layers::*, Context, CursorIcon, Id, Layout, Response,
+    Sense, TextStyle, Ui, WidgetText,
 };
 use hover_data::HoverData;
 use state::State;
@@ -197,9 +199,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
                 let (response, left, separator, right) = if is_horizontal {
-                    style.hsplit(ui, fraction, rect)
+                    Self::hsplit(ui, &style, fraction, rect)
                 } else {
-                    style.vsplit(ui, fraction, rect)
+                    Self::vsplit(ui, &style, fraction, rect)
                 };
 
                 let color = if response.dragged() {
@@ -295,8 +297,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             let layer_id = LayerId::new(Order::Tooltip, id);
                             let mut response = tabs_ui
                                 .with_layer_id(layer_id, |ui| {
-                                    style.tab_title(
+                                    Self::tab_title(
                                         ui,
+                                        &style,
                                         label,
                                         is_active,
                                         is_active && Some(node_index) == focused,
@@ -325,8 +328,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                             response
                         } else {
-                            let (mut response, close_response) = style.tab_title(
+                            let (mut response, close_response) = Self::tab_title(
                                 tabs_ui,
+                                &style,
                                 label,
                                 is_active && Some(node_index) == focused,
                                 is_active,
@@ -446,7 +450,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             (node_index, "tab_add"),
                         );
 
-                        let response = style.tab_plus(ui);
+                        let response = Self::tab_plus(ui, &style);
 
                         // Draw button left border
                         ui.painter().vline(
@@ -648,6 +652,287 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         state.store(ui.ctx(), self.id);
+    }
+
+    fn hsplit(
+        ui: &mut Ui,
+        style: &Style,
+        fraction: &mut f32,
+        rect: Rect,
+    ) -> (Response, Rect, Rect, Rect) {
+        let pixels_per_point = ui.ctx().pixels_per_point();
+
+        let mut separator = rect;
+
+        let midpoint = rect.min.x + rect.width() * *fraction;
+        separator.min.x = midpoint - style.separator.width * 0.5;
+        separator.max.x = midpoint + style.separator.width * 0.5;
+
+        let response = ui
+            .allocate_rect(separator, Sense::click_and_drag())
+            .on_hover_and_drag_cursor(CursorIcon::ResizeHorizontal);
+
+        if let Some(pos) = response.interact_pointer_pos() {
+            let x = pos.x;
+            let delta = response.drag_delta().x;
+
+            if (delta > 0. && x > midpoint && x < rect.max.x)
+                || (delta < 0. && x < midpoint && x > rect.min.x)
+            {
+                let range = rect.max.x - rect.min.x;
+                let min = (style.separator.extra / range).min(1.0);
+                let max = 1.0 - min;
+                let (min, max) = (min.min(max), max.max(min));
+                *fraction = (*fraction + delta / range).clamp(min, max);
+            }
+        }
+
+        let midpoint = rect.min.x + rect.width() * *fraction;
+        separator.min.x = map_to_pixel(
+            midpoint - style.separator.width * 0.5,
+            pixels_per_point,
+            f32::round,
+        );
+        separator.max.x = map_to_pixel(
+            midpoint + style.separator.width * 0.5,
+            pixels_per_point,
+            f32::round,
+        );
+
+        (
+            response,
+            rect.intersect(Rect::everything_right_of(separator.max.x)),
+            separator,
+            rect.intersect(Rect::everything_left_of(separator.min.x)),
+        )
+    }
+
+    fn vsplit(
+        ui: &mut Ui,
+        style: &Style,
+        fraction: &mut f32,
+        rect: Rect,
+    ) -> (Response, Rect, Rect, Rect) {
+        let pixels_per_point = ui.ctx().pixels_per_point();
+
+        let mut separator = rect;
+
+        let midpoint = rect.min.y + rect.height() * *fraction;
+        separator.min.y = midpoint - style.separator.width * 0.5;
+        separator.max.y = midpoint + style.separator.width * 0.5;
+
+        let response = ui
+            .allocate_rect(separator, Sense::click_and_drag())
+            .on_hover_and_drag_cursor(CursorIcon::ResizeVertical);
+
+        if let Some(pos) = response.interact_pointer_pos() {
+            let y = pos.y;
+            let delta = response.drag_delta().y;
+
+            if (delta > 0. && y > midpoint && y < rect.max.y)
+                || (delta < 0. && y < midpoint && y > rect.min.y)
+            {
+                let delta = response.drag_delta().y;
+                let range = rect.max.y - rect.min.y;
+                let min = (style.separator.extra / range).min(1.0);
+                let max = 1.0 - min;
+                let (min, max) = (min.min(max), max.max(min));
+                *fraction = (*fraction + delta / range).clamp(min, max);
+            }
+        }
+
+        let midpoint = rect.min.y + rect.height() * *fraction;
+        separator.min.y = map_to_pixel(
+            midpoint - style.separator.width * 0.5,
+            pixels_per_point,
+            f32::round,
+        );
+        separator.max.y = map_to_pixel(
+            midpoint + style.separator.width * 0.5,
+            pixels_per_point,
+            f32::round,
+        );
+
+        (
+            response,
+            rect.intersect(Rect::everything_above(separator.min.y)),
+            separator,
+            rect.intersect(Rect::everything_below(separator.max.y)),
+        )
+    }
+
+    fn tab_plus(ui: &mut Ui, style: &Style) -> Response {
+        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
+
+        response = response.on_hover_cursor(CursorIcon::PointingHand);
+
+        let color = if response.hovered() {
+            ui.painter()
+                .rect_filled(rect, Rounding::none(), style.buttons.add_tab_bg_fill);
+            style.buttons.add_tab_active_color
+        } else {
+            style.buttons.add_tab_color
+        };
+
+        let mut plus_rect = rect;
+
+        rect_set_size_centered(&mut plus_rect, Vec2::splat(Style::TAB_ADD_PLUS_SIZE));
+
+        ui.painter().line_segment(
+            [plus_rect.center_top(), plus_rect.center_bottom()],
+            Stroke::new(1.0, color),
+        );
+        ui.painter().line_segment(
+            [plus_rect.right_center(), plus_rect.left_center()],
+            Stroke::new(1.0, color),
+        );
+
+        response
+    }
+
+    /// * `active` means "the tab that is opened in the parent panel".
+    /// * `focused` means "the tab that was last interacted with".
+    ///
+    /// Returns the main button response plus the response of the close button, if any.
+    #[allow(clippy::too_many_arguments)]
+    fn tab_title(
+        ui: &mut Ui,
+        style: &Style,
+        label: WidgetText,
+        focused: bool,
+        active: bool,
+        is_being_dragged: bool,
+        id: Id,
+        expanded_width: f32,
+        show_close: bool,
+    ) -> (Response, Option<Response>) {
+        let rounding = style.tabs.rounding;
+
+        let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
+
+        let x_spacing = 8.0;
+
+        let text_width = galley.size().x + 2.0 * x_spacing;
+        let close_button_size = if show_close {
+            Style::TAB_CLOSE_BUTTON_SIZE.min(style.tab_bar.height)
+        } else {
+            0.0
+        };
+        let minimum_width = text_width + close_button_size;
+
+        // Compute total width of the tab bar
+        let tab_width = if style.tabs.fill_tab_bar {
+            expanded_width
+        } else {
+            minimum_width
+        }
+        .at_least(minimum_width);
+
+        let (rect, mut response) =
+            ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
+        if !ui.memory(|mem| mem.is_anything_being_dragged()) {
+            response = response.on_hover_cursor(CursorIcon::Grab);
+        }
+
+        if active {
+            if is_being_dragged {
+                ui.painter().rect_stroke(
+                    rect,
+                    rounding,
+                    Stroke::new(1.0, style.tabs.outline_color),
+                );
+            } else {
+                let stroke = Stroke::new(1.0, style.tabs.outline_color);
+                ui.painter()
+                    .rect(rect, rounding, style.tabs.bg_fill, stroke);
+
+                // Make the tab name area connect with the tab ui area:
+                ui.painter().hline(
+                    rect.x_range(),
+                    rect.bottom(),
+                    Stroke::new(2.0, style.tabs.bg_fill),
+                );
+            }
+        }
+
+        let mut text_rect = rect;
+        text_rect.set_width(tab_width - close_button_size);
+
+        let text_pos = if style.tabs.fill_tab_bar {
+            let mut pos =
+                Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
+            pos -= galley.size() / 2.0;
+            pos
+        } else {
+            let mut pos = Align2::LEFT_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
+            pos.y -= galley.size().y / 2.0;
+            pos
+        };
+
+        let override_text_color = if galley.galley_has_color {
+            None // respect the color the user has chosen
+        } else {
+            Some(match (active, focused) {
+                (false, false) => style.tabs.text_color_unfocused,
+                (false, true) => style.tabs.text_color_focused,
+                (true, false) => style.tabs.text_color_active_unfocused,
+                (true, true) => style.tabs.text_color_active_focused,
+            })
+        };
+
+        ui.painter().add(TextShape {
+            pos: text_pos,
+            galley: galley.galley,
+            underline: Stroke::NONE,
+            override_text_color,
+            angle: 0.0,
+        });
+
+        let close_response = if show_close {
+            let mut close_button_rect = rect;
+            close_button_rect.set_left(text_rect.right());
+            close_button_rect =
+                Rect::from_center_size(close_button_rect.center(), Vec2::splat(close_button_size));
+
+            let response = ui
+                .interact(close_button_rect, id, Sense::click())
+                .on_hover_cursor(CursorIcon::PointingHand);
+
+            let color = if response.hovered() {
+                style.buttons.close_tab_active_color
+            } else {
+                style.buttons.close_tab_color
+            };
+
+            if response.hovered() {
+                let mut rounding = rounding;
+                rounding.nw = 0.0;
+                rounding.sw = 0.0;
+
+                ui.painter().rect_filled(
+                    close_button_rect,
+                    rounding,
+                    style.buttons.add_tab_bg_fill,
+                );
+            }
+
+            let mut x_rect = close_button_rect;
+            rect_set_size_centered(&mut x_rect, Vec2::splat(Style::TAB_CLOSE_X_SIZE));
+            ui.painter().line_segment(
+                [x_rect.left_top(), x_rect.right_bottom()],
+                Stroke::new(1.0, color),
+            );
+            ui.painter().line_segment(
+                [x_rect.right_top(), x_rect.left_bottom()],
+                Stroke::new(1.0, color),
+            );
+
+            Some(response)
+        } else {
+            None
+        };
+
+        (response, close_response)
     }
 }
 
