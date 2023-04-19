@@ -1,4 +1,6 @@
-﻿/// Wrapper around indices to the collection of nodes inside a [`Tree`].
+﻿use crate::Tree;
+
+/// Wrapper around indices to the collection of nodes inside a [`Tree`].
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NodeIndex(pub usize);

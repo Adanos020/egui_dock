@@ -1,4 +1,4 @@
-use crate::{NodeIndex, Style};
+use crate::{NodeIndex, Style, TabsStyle, Tree};
 use egui::{Id, Margin, Ui, WidgetText};
 
 /// Defines how to display a tab inside a [`Tree`].
@@ -62,7 +62,7 @@ pub trait TabViewer {
         style.default_inner_margin
     }
 
-    /// Whether the tab will be cleared with the color specified in [`style::TabBarStyle::bg_fill`]
+    /// Whether the tab will be cleared with the color specified in [`TabBarStyle::bg_fill`]
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }

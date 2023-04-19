@@ -1,4 +1,6 @@
-﻿/// Identifies a tab within a [`Node`].
+﻿use crate::Node;
+
+/// Identifies a tab within a [`Node`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TabIndex(pub usize);

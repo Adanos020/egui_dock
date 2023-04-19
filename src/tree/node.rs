@@ -1,4 +1,4 @@
-﻿use crate::{Split, TabIndex};
+﻿use crate::{Split, TabIndex, Tree};
 use egui::Rect;
 
 /// Represents an abstract node of a [`Tree`].
