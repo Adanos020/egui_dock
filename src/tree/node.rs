@@ -1,10 +1,7 @@
-﻿#[allow(unused_imports)]
-use crate::Tree; // For cleaner doc comments
-
-use crate::{Split, TabIndex};
+﻿use crate::{Split, TabIndex};
 use egui::Rect;
 
-/// Represents an abstract node of a [`Tree`].
+/// Represents an abstract node of a [`Tree`](crate::Tree).
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Node<Tab> {

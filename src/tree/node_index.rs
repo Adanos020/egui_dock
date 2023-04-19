@@ -1,7 +1,4 @@
-﻿#[allow(unused_imports)]
-use crate::Tree; // For cleaner doc comments
-
-/// Wrapper around indices to the collection of nodes inside a [`Tree`].
+﻿/// Wrapper around indices to the collection of nodes inside a [`Tree`](crate::Tree).
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NodeIndex(pub usize);

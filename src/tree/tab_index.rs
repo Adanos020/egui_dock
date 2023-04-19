@@ -1,7 +1,4 @@
-﻿#[allow(unused_imports)]
-use crate::Node; // For cleaner doc comments
-
-/// Identifies a tab within a [`Node`].
+﻿/// Identifies a tab within a [`Node`](crate::Node).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TabIndex(pub usize);
