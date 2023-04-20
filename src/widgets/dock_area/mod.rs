@@ -1,15 +1,19 @@
 mod hover_data;
 mod state;
-use crate::utils::{map_to_pixel, rect_set_size_centered};
+
 use crate::{
-    utils::expand_to_pixel, widgets::popup::popup_under_widget, Node, NodeIndex, Style,
-    TabAddAlign, TabIndex, TabViewer, Tree,
+    utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered},
+    widgets::popup::popup_under_widget,
+    Node, NodeIndex, Style, TabAddAlign, TabIndex, TabViewer, Tree,
 };
+
+use duplicate::duplicate;
 use egui::{
     containers::*, emath::*, epaint::*, layers::*, Context, CursorIcon, Id, Layout, Response,
     Sense, TextStyle, Ui, WidgetText,
 };
 use hover_data::HoverData;
+use paste::paste;
 use state::State;
 
 /// Displays a [`Tree`] in `egui`.
@@ -24,6 +28,11 @@ pub struct DockArea<'tree, Tab> {
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
     scroll_area_in_tabs: bool,
+
+    drag_data: Option<(NodeIndex, TabIndex)>,
+    hover_data: Option<HoverData>,
+    to_remove: Vec<(NodeIndex, TabIndex)>,
+    new_focused: Option<NodeIndex>,
 }
 
 // Builder
@@ -42,6 +51,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             draggable_tabs: true,
             show_tab_name_on_hover: false,
             scroll_area_in_tabs: true,
+            drag_data: None,
+            hover_data: None,
+            to_remove: Vec::new(),
+            new_focused: None,
         }
     }
 
@@ -152,488 +165,37 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// Shows the docking hierarchy inside a [`Ui`].
     ///
     /// See also [`show`](Self::show).
-    pub fn show_inside(self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
+    pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         let style = self
             .style
+            .take()
             .unwrap_or_else(|| Style::from_egui(ui.style().as_ref()));
 
         let mut state = State::load(ui.ctx(), self.id);
-        let mut rect = ui.available_rect_before_wrap();
 
-        if let Some(margin) = style.dock_area_padding {
-            rect.min += margin.left_top();
-            rect.max -= margin.right_bottom();
-            ui.painter().rect(
-                rect,
-                margin.top,
-                style.separator.color_idle,
-                Stroke::new(margin.top, style.border.color),
-            );
-        }
+        self.allocate_area_for_root(ui, &style);
 
-        if self.tree.is_empty() {
-            ui.allocate_rect(rect, Sense::hover());
-            return;
-        }
-
-        self.tree[NodeIndex::root()].set_rect(rect);
-
-        let mut drag_data = None;
-        let mut hover_data = None;
-
-        let pixels_per_point = ui.ctx().pixels_per_point();
-        let px = pixels_per_point.recip();
-
-        let focused = self.tree.focused_leaf();
-
-        let mut to_remove = Vec::new();
-        let mut new_focused = None;
-
-        // Deal with Horizontal and Vertical nodes first
-        for node_index in 0..self.tree.len() {
-            let node_index = NodeIndex(node_index);
-            let is_horizontal = self.tree[node_index].is_horizontal();
-            if let Node::Horizontal { fraction, rect } | Node::Vertical { fraction, rect } =
-                &mut self.tree[node_index]
-            {
-                let rect = expand_to_pixel(*rect, pixels_per_point);
-
-                let (response, left, separator, right) = if is_horizontal {
-                    Self::hsplit(ui, &style, fraction, rect)
-                } else {
-                    Self::vsplit(ui, &style, fraction, rect)
-                };
-
-                let color = if response.dragged() {
-                    style.separator.color_dragged
-                } else if response.hovered() {
-                    style.separator.color_hovered
-                } else {
-                    style.separator.color_idle
-                };
-
-                ui.painter().rect_filled(separator, Rounding::none(), color);
-
-                self.tree[node_index.left()].set_rect(left);
-                self.tree[node_index.right()].set_rect(right);
+        for node_index in (0..self.tree.len()).map(NodeIndex) {
+            if self.tree[node_index].is_parent() {
+                self.split(ui, &style, node_index);
             }
         }
 
-        // Then process Leaf nodes
-        for node_index in 0..self.tree.len() {
-            let node_index = NodeIndex(node_index);
-            if let Node::Leaf {
-                rect,
-                tabs,
-                active,
-                viewport,
-                scroll,
-            } = &mut self.tree[node_index]
-            {
-                let ui = &mut ui.child_ui_with_id_source(
-                    *rect,
-                    Layout::top_down_justified(Align::Min),
-                    (node_index, "node"),
-                );
-                let id = self.id.with((node_index, "node"));
-                let spacing = ui.spacing().item_spacing;
-                ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-                ui.set_clip_rect(*rect);
-
-                let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
-                    vec2(ui.available_width(), style.tab_bar.height),
-                    Sense::hover(),
-                );
-                ui.painter().rect_filled(
-                    tabbar_outer_rect,
-                    style.tabs.rounding,
-                    style.tab_bar.bg_fill,
-                );
-
-                let mut tab_hover_rect = None;
-
-                // tabs
-                let actual_width = {
-                    let tabbar_inner_rect = Rect::from_min_size(
-                        (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
-                        vec2(f32::INFINITY, tabbar_outer_rect.height()),
-                    );
-
-                    let tabs_ui = &mut ui.child_ui_with_id_source(
-                        tabbar_inner_rect,
-                        Layout::left_to_right(Align::Center),
-                        "tabs",
-                    );
-
-                    let mut available_width = tabbar_outer_rect.width();
-                    let mut clip_rect = tabbar_outer_rect;
-
-                    // Reserve space for the add button at the end of the tab bar
-                    if self.show_add_buttons {
-                        clip_rect.set_right(tabbar_outer_rect.right() - Style::TAB_ADD_BUTTON_SIZE);
-                        tabs_ui.set_clip_rect(clip_rect);
-                        available_width -= Style::TAB_ADD_BUTTON_SIZE;
-                    }
-
-                    tabs_ui.set_clip_rect(clip_rect);
-
-                    // Desired size for tabs in "expanded" mode
-                    let expanded_width = available_width / (tabs.len() as f32);
-
-                    for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                        let id = id.with((tab_index, "tab"));
-                        let tab_index = TabIndex(tab_index);
-                        let is_being_dragged =
-                            tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
-
-                        if is_being_dragged {
-                            tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
-                        }
-
-                        let is_active = *active == tab_index || is_being_dragged;
-                        let label = tab_viewer.title(tab);
-
-                        let response = if is_being_dragged {
-                            let layer_id = LayerId::new(Order::Tooltip, id);
-                            let mut response = tabs_ui
-                                .with_layer_id(layer_id, |ui| {
-                                    Self::tab_title(
-                                        ui,
-                                        &style,
-                                        label,
-                                        is_active,
-                                        is_active && Some(node_index) == focused,
-                                        is_being_dragged,
-                                        id,
-                                        expanded_width,
-                                        self.show_close_buttons,
-                                    )
-                                })
-                                .response;
-
-                            let sense = Sense::click_and_drag();
-                            response = tabs_ui.interact(response.rect, id, sense);
-
-                            if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
-                                let center = response.rect.center();
-                                let start = state.drag_start.unwrap_or(center);
-
-                                let delta = pointer_pos - start;
-                                if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
-                                    tabs_ui.ctx().translate_layer(layer_id, delta);
-
-                                    drag_data = Some((node_index, tab_index));
-                                }
-                            }
-
-                            response
-                        } else {
-                            let (mut response, close_response) = Self::tab_title(
-                                tabs_ui,
-                                &style,
-                                label,
-                                is_active && Some(node_index) == focused,
-                                is_active,
-                                is_being_dragged,
-                                id,
-                                expanded_width,
-                                self.show_close_buttons,
-                            );
-
-                            let (close_hovered, close_clicked) = close_response
-                                .map(|res| (res.hovered(), res.clicked()))
-                                .unwrap_or_default();
-
-                            let sense = if close_hovered {
-                                Sense::click()
-                            } else {
-                                Sense::click_and_drag()
-                            };
-
-                            if self.show_tab_name_on_hover {
-                                response = response.on_hover_ui(|ui| {
-                                    ui.label(tab_viewer.title(tab));
-                                });
-                            }
-
-                            if self.tab_context_menus {
-                                response = response.context_menu(|ui| {
-                                    tab_viewer.context_menu(ui, tab);
-                                    if self.show_close_buttons && ui.button("Close").clicked() {
-                                        if tab_viewer.on_close(tab) {
-                                            to_remove.push((node_index, tab_index));
-                                        } else {
-                                            *active = tab_index;
-                                            new_focused = Some(node_index);
-                                        }
-                                    }
-                                });
-                            }
-
-                            if close_clicked {
-                                if tab_viewer.on_close(tab) {
-                                    to_remove.push((node_index, tab_index));
-                                } else {
-                                    *active = tab_index;
-                                    new_focused = Some(node_index);
-                                }
-                            }
-                            let response = tabs_ui.interact(response.rect, id, sense);
-                            if response.drag_started() {
-                                state.drag_start = response.hover_pos();
-                            }
-
-                            if let Some(pos) = tabs_ui.input(|i| i.pointer.hover_pos()) {
-                                // Use response.rect.contains instead of
-                                // response.hovered as the dragged tab covers
-                                // the underlying tab
-                                if state.drag_start.is_some() && response.rect.contains(pos) {
-                                    tab_hover_rect = Some((response.rect, tab_index));
-                                }
-                            }
-
-                            response
-                        };
-
-                        // Paint hline below each tab unless its active (or option says overwise)
-                        if !is_active || style.tabs.hline_below_active_tab_name {
-                            tabs_ui.painter().hline(
-                                response.rect.x_range(),
-                                tabbar_outer_rect.bottom() - px,
-                                (px, style.tabs.hline_color),
-                            );
-                        }
-
-                        if response.clicked() {
-                            *active = tab_index;
-                            new_focused = Some(node_index);
-                        }
-
-                        if self.show_close_buttons && response.middle_clicked() {
-                            if tab_viewer.on_close(tab) {
-                                to_remove.push((node_index, tab_index));
-                            } else {
-                                *active = tab_index;
-                                new_focused = Some(node_index);
-                            }
-                        }
-
-                        tab_viewer.on_tab_button(tab, &response);
-                    }
-
-                    // Draw hline from tab end to edge of tabbar
-                    ui.painter().hline(
-                        tabs_ui.min_rect().right().min(clip_rect.right())
-                            ..=tabbar_outer_rect.right(),
-                        tabbar_outer_rect.bottom() - px,
-                        (px, style.tabs.hline_color),
-                    );
-
-                    // Add button at the end of the tab bar
-                    if self.show_add_buttons {
-                        let offset = match style.buttons.add_tab_align {
-                            TabAddAlign::Left => {
-                                (clip_rect.width() - tabs_ui.min_rect().width()).at_least(0.0)
-                            }
-                            TabAddAlign::Right => 0.0,
-                        };
-
-                        let rect = Rect::from_min_max(
-                            tabbar_outer_rect.right_top()
-                                - vec2(Style::TAB_ADD_BUTTON_SIZE + offset, 0.0),
-                            tabbar_outer_rect.right_bottom() - vec2(offset, 0.0),
-                        );
-
-                        let ui = &mut ui.child_ui_with_id_source(
-                            rect,
-                            Layout::left_to_right(Align::Center),
-                            (node_index, "tab_add"),
-                        );
-
-                        let response = Self::tab_plus(ui, &style);
-
-                        // Draw button left border
-                        ui.painter().vline(
-                            rect.left(),
-                            rect.y_range(),
-                            Stroke::new(px, style.tabs.hline_color),
-                        );
-
-                        let popup_id = ui.id().with("tab_add_popup");
-                        popup_under_widget(ui, popup_id, &response, |ui| {
-                            tab_viewer.add_popup(ui, node_index);
-                        });
-
-                        if response.clicked() {
-                            if self.show_add_popup {
-                                ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-                            }
-                            tab_viewer.on_add(node_index);
-                        }
-                    };
-
-                    tabs_ui.min_rect().width()
-                };
-
-                let overflow = (actual_width - tabbar_outer_rect.width()).at_least(0.0);
-                // Compare to 1.0 and not 0.0 to avoid drawing a scroll bar due
-                // to floating point precision issue during tab drawing
-                if overflow > 1.0 {
-                    if style.tab_bar.show_scroll_bar_on_overflow {
-                        // Draw scroll bar
-                        let bar_height = 7.5;
-                        let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
-                            vec2(ui.available_width(), bar_height),
-                            Sense::click_and_drag(),
-                        );
-
-                        // Compute scroll bar handle position and size
-                        let overflow_ratio = actual_width / scroll_bar_rect.width();
-                        let scroll_ratio = -*scroll / overflow;
-
-                        let scroll_bar_handle_size =
-                            overflow_ratio.recip() * scroll_bar_rect.width();
-                        let scroll_bar_handle_start = lerp(
-                            scroll_bar_rect.left()
-                                ..=scroll_bar_rect.right() - scroll_bar_handle_size,
-                            scroll_ratio,
-                        );
-                        let scroll_bar_handle_rect = Rect::from_min_size(
-                            pos2(scroll_bar_handle_start, scroll_bar_rect.min.y),
-                            vec2(scroll_bar_handle_size, bar_height),
-                        );
-
-                        let scroll_bar_handle_response =
-                            ui.interact(scroll_bar_handle_rect, id, Sense::drag());
-
-                        // Coefficient to apply to input displacements so that we
-                        // move the scroll by the correct amount.
-                        let points_to_scroll_coefficient =
-                            overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
-
-                        *scroll -= scroll_bar_handle_response.drag_delta().x
-                            * points_to_scroll_coefficient;
-
-                        if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
-                            if scroll_bar_rect.contains(pos) {
-                                *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
-                                    * points_to_scroll_coefficient;
-                            }
-                        }
-
-                        // Draw the bar
-                        ui.painter().rect_filled(
-                            scroll_bar_rect,
-                            0.0,
-                            ui.visuals().extreme_bg_color,
-                        );
-
-                        ui.painter().rect_filled(
-                            scroll_bar_handle_rect,
-                            bar_height / 2.0,
-                            ui.visuals()
-                                .widgets
-                                .style(&scroll_bar_handle_response)
-                                .bg_fill,
-                        );
-                    }
-
-                    // Handle user input
-                    if tabbar_response.hovered() {
-                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
-                    }
-                }
-
-                *scroll = scroll.clamp(-overflow, 0.0);
-
-                // tab body
-                let (body_rect, _body_response) = ui
-                    .allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
-
-                if let Some(tab) = tabs.get_mut(active.0) {
-                    *viewport = body_rect;
-
-                    if ui.input(|i| i.pointer.any_click()) {
-                        if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
-                            if body_rect.contains(pos) {
-                                new_focused = Some(node_index);
-                            }
-                        }
-                    }
-
-                    if tab_viewer.clear_background(tab) {
-                        ui.painter().rect_filled(body_rect, 0.0, style.tabs.bg_fill);
-                    }
-
-                    // Construct a new ui with the correct tab id
-                    //
-                    // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
-                    // the provided id with their own which would cause tabs to change id when moved
-                    // from node to node.
-                    let id = self.id.with(tab_viewer.id(tab));
-                    ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
-                    let ui = &mut Ui::new(
-                        ui.ctx().clone(),
-                        ui.layer_id(),
-                        id,
-                        body_rect,
-                        ui.clip_rect(),
-                    );
-
-                    // Use initial spacing for ui
-                    ui.spacing_mut().item_spacing = spacing;
-
-                    if self.scroll_area_in_tabs {
-                        ScrollArea::both().show(ui, |ui| {
-                            Frame::none()
-                                .inner_margin(tab_viewer.inner_margin_override(&style))
-                                .show(ui, |ui| {
-                                    let available_rect = ui.available_rect_before_wrap();
-                                    ui.expand_to_include_rect(available_rect);
-                                    tab_viewer.ui(ui, tab);
-                                });
-                        });
-                    } else {
-                        Frame::none()
-                            .inner_margin(tab_viewer.inner_margin_override(&style))
-                            .show(ui, |ui| {
-                                tab_viewer.ui(ui, tab);
-                            });
-                    }
-                }
-
-                if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
-                    // Use rect.contains instead of
-                    // response.hovered as the dragged tab covers
-                    // the underlying responses
-                    if state.drag_start.is_some() && rect.contains(pointer) {
-                        hover_data = Some(HoverData {
-                            rect: *rect,
-                            dst: node_index,
-                            tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
-                            tab: tab_hover_rect,
-                            pointer,
-                        });
-                    }
-                }
-
-                for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                    if tab_viewer.force_close(tab) {
-                        to_remove.push((node_index, TabIndex(tab_index)));
-                    }
-                }
+        for node_index in (0..self.tree.len()).map(NodeIndex) {
+            if self.tree[node_index].is_leaf() {
+                self.process_leaf(ui, &style, &mut state, node_index, tab_viewer);
             }
         }
 
-        for index in to_remove.iter().copied().rev() {
+        for index in self.to_remove.iter().copied().rev() {
             self.tree.remove_tab(index);
         }
 
-        if let Some(focused) = new_focused {
+        if let Some(focused) = self.new_focused {
             self.tree.set_focused_node(focused);
         }
 
-        if let (Some((src, tab_index)), Some(hover)) = (drag_data, hover_data) {
+        if let (Some((src, tab_index)), Some(hover)) = (self.drag_data, self.hover_data) {
             let dst = hover.dst;
 
             if self.tree[src].is_leaf()
@@ -654,111 +216,504 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         state.store(ui.ctx(), self.id);
     }
 
-    fn hsplit(
-        ui: &mut Ui,
-        style: &Style,
-        fraction: &mut f32,
-        rect: Rect,
-    ) -> (Response, Rect, Rect, Rect) {
-        let pixels_per_point = ui.ctx().pixels_per_point();
+    fn allocate_area_for_root(&mut self, ui: &mut Ui, style: &Style) {
+        let mut rect = ui.available_rect_before_wrap();
 
-        let mut separator = rect;
-
-        let midpoint = rect.min.x + rect.width() * *fraction;
-        separator.min.x = midpoint - style.separator.width * 0.5;
-        separator.max.x = midpoint + style.separator.width * 0.5;
-
-        let response = ui
-            .allocate_rect(separator, Sense::click_and_drag())
-            .on_hover_and_drag_cursor(CursorIcon::ResizeHorizontal);
-
-        if let Some(pos) = response.interact_pointer_pos() {
-            let x = pos.x;
-            let delta = response.drag_delta().x;
-
-            if (delta > 0. && x > midpoint && x < rect.max.x)
-                || (delta < 0. && x < midpoint && x > rect.min.x)
-            {
-                let range = rect.max.x - rect.min.x;
-                let min = (style.separator.extra / range).min(1.0);
-                let max = 1.0 - min;
-                let (min, max) = (min.min(max), max.max(min));
-                *fraction = (*fraction + delta / range).clamp(min, max);
-            }
+        if let Some(margin) = style.dock_area_padding {
+            rect.min += margin.left_top();
+            rect.max -= margin.right_bottom();
+            ui.painter().rect(
+                rect,
+                margin.top,
+                style.separator.color_idle,
+                Stroke::new(margin.top, style.border.color),
+            );
         }
 
-        let midpoint = rect.min.x + rect.width() * *fraction;
-        separator.min.x = map_to_pixel(
-            midpoint - style.separator.width * 0.5,
-            pixels_per_point,
-            f32::round,
-        );
-        separator.max.x = map_to_pixel(
-            midpoint + style.separator.width * 0.5,
-            pixels_per_point,
-            f32::round,
-        );
+        if self.tree.is_empty() {
+            ui.allocate_rect(rect, Sense::hover());
+            return;
+        }
 
-        (
-            response,
-            rect.intersect(Rect::everything_right_of(separator.max.x)),
-            separator,
-            rect.intersect(Rect::everything_left_of(separator.min.x)),
-        )
+        self.tree[NodeIndex::root()].set_rect(rect);
     }
 
-    fn vsplit(
-        ui: &mut Ui,
-        style: &Style,
-        fraction: &mut f32,
-        rect: Rect,
-    ) -> (Response, Rect, Rect, Rect) {
+    #[allow(clippy::needless_return)]
+    fn split(&mut self, ui: &mut Ui, style: &Style, node_index: NodeIndex) {
+        assert!(self.tree[node_index].is_parent());
+
         let pixels_per_point = ui.ctx().pixels_per_point();
 
-        let mut separator = rect;
+        duplicate! {
+            [
+                orientation     dimension_point dimension_size  left_rect              right_rect           left_point  right_point;
+                [Horizontal]    [x]             [width]         [everything_right_of]  [everything_left_of] [max]       [min];
+                [Vertical]      [y]             [height]        [everything_above]     [everything_below]   [min]       [max];
+            ]
+            if let Node::orientation { fraction, rect } = &mut self.tree[node_index] {
+                let rect = expand_to_pixel(*rect, ui.ctx().pixels_per_point());
 
-        let midpoint = rect.min.y + rect.height() * *fraction;
-        separator.min.y = midpoint - style.separator.width * 0.5;
-        separator.max.y = midpoint + style.separator.width * 0.5;
+                let mut separator = rect;
 
-        let response = ui
-            .allocate_rect(separator, Sense::click_and_drag())
-            .on_hover_and_drag_cursor(CursorIcon::ResizeVertical);
+                let midpoint = rect.min.dimension_point + rect.dimension_size() * *fraction;
+                separator.min.dimension_point = midpoint - style.separator.width * 0.5;
+                separator.max.dimension_point = midpoint + style.separator.width * 0.5;
 
-        if let Some(pos) = response.interact_pointer_pos() {
-            let y = pos.y;
-            let delta = response.drag_delta().y;
+                let response = ui
+                    .allocate_rect(separator, Sense::click_and_drag())
+                    .on_hover_and_drag_cursor(paste!{ CursorIcon::[<Resize orientation>]});
 
-            if (delta > 0. && y > midpoint && y < rect.max.y)
-                || (delta < 0. && y < midpoint && y > rect.min.y)
-            {
-                let delta = response.drag_delta().y;
-                let range = rect.max.y - rect.min.y;
-                let min = (style.separator.extra / range).min(1.0);
-                let max = 1.0 - min;
-                let (min, max) = (min.min(max), max.max(min));
-                *fraction = (*fraction + delta / range).clamp(min, max);
+                if let Some(pos) = response.interact_pointer_pos() {
+                    let dimension_point = pos.dimension_point;
+                    let delta = response.drag_delta().dimension_point;
+
+                    if (delta > 0. && dimension_point > midpoint && dimension_point < rect.max.dimension_point)
+                        || (delta < 0. && dimension_point < midpoint && dimension_point > rect.min.dimension_point)
+                    {
+                        let range = rect.max.dimension_point - rect.min.dimension_point;
+                        let min = (style.separator.extra / range).min(1.0);
+                        let max = 1.0 - min;
+                        let (min, max) = (min.min(max), max.max(min));
+                        *fraction = (*fraction + delta / range).clamp(min, max);
+                    }
+                }
+
+                let midpoint = rect.min.dimension_point + rect.dimension_size() * *fraction;
+                separator.min.dimension_point = map_to_pixel(
+                    midpoint - style.separator.width * 0.5,
+                    pixels_per_point,
+                    f32::round,
+                );
+                separator.max.dimension_point = map_to_pixel(
+                    midpoint + style.separator.width * 0.5,
+                    pixels_per_point,
+                    f32::round,
+                );
+
+                let left = rect.intersect(Rect::left_rect(separator.left_point.dimension_point));
+                let right = rect.intersect(Rect::right_rect(separator.right_point.dimension_point));
+
+                let color = if response.dragged() {
+                    style.separator.color_dragged
+                } else if response.hovered() {
+                    style.separator.color_hovered
+                } else {
+                    style.separator.color_idle
+                };
+
+                ui.painter().rect_filled(separator, Rounding::none(), color);
+
+                self.tree[node_index.left()].set_rect(left);
+                self.tree[node_index.right()].set_rect(right);
+            }
+        }
+    }
+
+    fn process_leaf(
+        &mut self,
+        ui: &mut Ui,
+        style: &Style,
+        state: &mut State,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+    ) {
+        let focused = self.tree.focused_leaf();
+        let px = ui.ctx().pixels_per_point().recip();
+
+        let Node::Leaf {
+            rect,
+            tabs,
+            active,
+            viewport,
+            scroll,
+        } = &mut self.tree[node_index] else {
+            unreachable!();
+        };
+
+        let ui = &mut ui.child_ui_with_id_source(
+            *rect,
+            Layout::top_down_justified(Align::Min),
+            (node_index, "node"),
+        );
+        let id = self.id.with((node_index, "node"));
+        let spacing = ui.spacing().item_spacing;
+        ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
+        ui.set_clip_rect(*rect);
+
+        let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
+            vec2(ui.available_width(), style.tab_bar.height),
+            Sense::hover(),
+        );
+        ui.painter().rect_filled(
+            tabbar_outer_rect,
+            style.tabs.rounding,
+            style.tab_bar.bg_fill,
+        );
+
+        let mut tab_hover_rect = None;
+
+        // tabs
+        let actual_width = {
+            let tabbar_inner_rect = Rect::from_min_size(
+                (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
+                vec2(f32::INFINITY, tabbar_outer_rect.height()),
+            );
+
+            let tabs_ui = &mut ui.child_ui_with_id_source(
+                tabbar_inner_rect,
+                Layout::left_to_right(Align::Center),
+                "tabs",
+            );
+
+            let mut available_width = tabbar_outer_rect.width();
+            let mut clip_rect = tabbar_outer_rect;
+
+            // Reserve space for the add button at the end of the tab bar
+            if self.show_add_buttons {
+                clip_rect.set_right(tabbar_outer_rect.right() - Style::TAB_ADD_BUTTON_SIZE);
+                tabs_ui.set_clip_rect(clip_rect);
+                available_width -= Style::TAB_ADD_BUTTON_SIZE;
+            }
+
+            tabs_ui.set_clip_rect(clip_rect);
+
+            // Desired size for tabs in "expanded" mode
+            let expanded_width = available_width / (tabs.len() as f32);
+
+            for (tab_index, tab) in tabs.iter_mut().enumerate() {
+                let id = id.with((tab_index, "tab"));
+                let tab_index = TabIndex(tab_index);
+                let is_being_dragged =
+                    tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
+
+                if is_being_dragged {
+                    tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
+                }
+
+                let is_active = *active == tab_index || is_being_dragged;
+                let label = tab_viewer.title(tab);
+
+                let response = if is_being_dragged {
+                    let layer_id = LayerId::new(Order::Tooltip, id);
+                    let mut response = tabs_ui
+                        .with_layer_id(layer_id, |ui| {
+                            Self::tab_title(
+                                ui,
+                                style,
+                                label,
+                                is_active,
+                                is_active && Some(node_index) == focused,
+                                is_being_dragged,
+                                id,
+                                expanded_width,
+                                self.show_close_buttons,
+                            )
+                        })
+                        .response;
+
+                    let sense = Sense::click_and_drag();
+                    response = tabs_ui.interact(response.rect, id, sense);
+
+                    if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
+                        let center = response.rect.center();
+                        let start = state.drag_start.unwrap_or(center);
+
+                        let delta = pointer_pos - start;
+                        if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
+                            tabs_ui.ctx().translate_layer(layer_id, delta);
+
+                            self.drag_data = Some((node_index, tab_index));
+                        }
+                    }
+
+                    response
+                } else {
+                    let (mut response, close_response) = Self::tab_title(
+                        tabs_ui,
+                        style,
+                        label,
+                        is_active && Some(node_index) == focused,
+                        is_active,
+                        is_being_dragged,
+                        id,
+                        expanded_width,
+                        self.show_close_buttons,
+                    );
+
+                    let (close_hovered, close_clicked) = close_response
+                        .map(|res| (res.hovered(), res.clicked()))
+                        .unwrap_or_default();
+
+                    let sense = if close_hovered {
+                        Sense::click()
+                    } else {
+                        Sense::click_and_drag()
+                    };
+
+                    if self.show_tab_name_on_hover {
+                        response = response.on_hover_ui(|ui| {
+                            ui.label(tab_viewer.title(tab));
+                        });
+                    }
+
+                    if self.tab_context_menus {
+                        response = response.context_menu(|ui| {
+                            tab_viewer.context_menu(ui, tab);
+                            if self.show_close_buttons && ui.button("Close").clicked() {
+                                if tab_viewer.on_close(tab) {
+                                    self.to_remove.push((node_index, tab_index));
+                                } else {
+                                    *active = tab_index;
+                                    self.new_focused = Some(node_index);
+                                }
+                            }
+                        });
+                    }
+
+                    if close_clicked {
+                        if tab_viewer.on_close(tab) {
+                            self.to_remove.push((node_index, tab_index));
+                        } else {
+                            *active = tab_index;
+                            self.new_focused = Some(node_index);
+                        }
+                    }
+                    let response = tabs_ui.interact(response.rect, id, sense);
+                    if response.drag_started() {
+                        state.drag_start = response.hover_pos();
+                    }
+
+                    if let Some(pos) = tabs_ui.input(|i| i.pointer.hover_pos()) {
+                        // Use response.rect.contains instead of
+                        // response.hovered as the dragged tab covers
+                        // the underlying tab
+                        if state.drag_start.is_some() && response.rect.contains(pos) {
+                            tab_hover_rect = Some((response.rect, tab_index));
+                        }
+                    }
+
+                    response
+                };
+
+                // Paint hline below each tab unless its active (or option says overwise)
+                if !is_active || style.tabs.hline_below_active_tab_name {
+                    tabs_ui.painter().hline(
+                        response.rect.x_range(),
+                        tabbar_outer_rect.bottom() - px,
+                        (px, style.tabs.hline_color),
+                    );
+                }
+
+                if response.clicked() {
+                    *active = tab_index;
+                    self.new_focused = Some(node_index);
+                }
+
+                if self.show_close_buttons && response.middle_clicked() {
+                    if tab_viewer.on_close(tab) {
+                        self.to_remove.push((node_index, tab_index));
+                    } else {
+                        *active = tab_index;
+                        self.new_focused = Some(node_index);
+                    }
+                }
+
+                tab_viewer.on_tab_button(tab, &response);
+            }
+
+            // Draw hline from tab end to edge of tabbar
+            ui.painter().hline(
+                tabs_ui.min_rect().right().min(clip_rect.right())..=tabbar_outer_rect.right(),
+                tabbar_outer_rect.bottom() - px,
+                (px, style.tabs.hline_color),
+            );
+
+            // Add button at the end of the tab bar
+            if self.show_add_buttons {
+                let offset = match style.buttons.add_tab_align {
+                    TabAddAlign::Left => {
+                        (clip_rect.width() - tabs_ui.min_rect().width()).at_least(0.0)
+                    }
+                    TabAddAlign::Right => 0.0,
+                };
+
+                let rect = Rect::from_min_max(
+                    tabbar_outer_rect.right_top() - vec2(Style::TAB_ADD_BUTTON_SIZE + offset, 0.0),
+                    tabbar_outer_rect.right_bottom() - vec2(offset, 0.0),
+                );
+
+                let ui = &mut ui.child_ui_with_id_source(
+                    rect,
+                    Layout::left_to_right(Align::Center),
+                    (node_index, "tab_add"),
+                );
+
+                let response = Self::tab_plus(ui, style);
+
+                // Draw button left border
+                ui.painter().vline(
+                    rect.left(),
+                    rect.y_range(),
+                    Stroke::new(px, style.tabs.hline_color),
+                );
+
+                let popup_id = ui.id().with("tab_add_popup");
+                popup_under_widget(ui, popup_id, &response, |ui| {
+                    tab_viewer.add_popup(ui, node_index);
+                });
+
+                if response.clicked() {
+                    if self.show_add_popup {
+                        ui.memory_mut(|mem| mem.toggle_popup(popup_id));
+                    }
+                    tab_viewer.on_add(node_index);
+                }
+            };
+
+            tabs_ui.min_rect().width()
+        };
+
+        let overflow = (actual_width - tabbar_outer_rect.width()).at_least(0.0);
+        // Compare to 1.0 and not 0.0 to avoid drawing a scroll bar due
+        // to floating point precision issue during tab drawing
+        if overflow > 1.0 {
+            if style.tab_bar.show_scroll_bar_on_overflow {
+                // Draw scroll bar
+                let bar_height = 7.5;
+                let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
+                    vec2(ui.available_width(), bar_height),
+                    Sense::click_and_drag(),
+                );
+
+                // Compute scroll bar handle position and size
+                let overflow_ratio = actual_width / scroll_bar_rect.width();
+                let scroll_ratio = -*scroll / overflow;
+
+                let scroll_bar_handle_size = overflow_ratio.recip() * scroll_bar_rect.width();
+                let scroll_bar_handle_start = lerp(
+                    scroll_bar_rect.left()..=scroll_bar_rect.right() - scroll_bar_handle_size,
+                    scroll_ratio,
+                );
+                let scroll_bar_handle_rect = Rect::from_min_size(
+                    pos2(scroll_bar_handle_start, scroll_bar_rect.min.y),
+                    vec2(scroll_bar_handle_size, bar_height),
+                );
+
+                let scroll_bar_handle_response =
+                    ui.interact(scroll_bar_handle_rect, id, Sense::drag());
+
+                // Coefficient to apply to input displacements so that we
+                // move the scroll by the correct amount.
+                let points_to_scroll_coefficient =
+                    overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
+
+                *scroll -= scroll_bar_handle_response.drag_delta().x * points_to_scroll_coefficient;
+
+                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+                    if scroll_bar_rect.contains(pos) {
+                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
+                            * points_to_scroll_coefficient;
+                    }
+                }
+
+                // Draw the bar
+                ui.painter()
+                    .rect_filled(scroll_bar_rect, 0.0, ui.visuals().extreme_bg_color);
+
+                ui.painter().rect_filled(
+                    scroll_bar_handle_rect,
+                    bar_height / 2.0,
+                    ui.visuals()
+                        .widgets
+                        .style(&scroll_bar_handle_response)
+                        .bg_fill,
+                );
+            }
+
+            // Handle user input
+            if tabbar_response.hovered() {
+                *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
             }
         }
 
-        let midpoint = rect.min.y + rect.height() * *fraction;
-        separator.min.y = map_to_pixel(
-            midpoint - style.separator.width * 0.5,
-            pixels_per_point,
-            f32::round,
-        );
-        separator.max.y = map_to_pixel(
-            midpoint + style.separator.width * 0.5,
-            pixels_per_point,
-            f32::round,
-        );
+        *scroll = scroll.clamp(-overflow, 0.0);
 
-        (
-            response,
-            rect.intersect(Rect::everything_above(separator.min.y)),
-            separator,
-            rect.intersect(Rect::everything_below(separator.max.y)),
-        )
+        // tab body
+        let (body_rect, _body_response) =
+            ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
+
+        if let Some(tab) = tabs.get_mut(active.0) {
+            *viewport = body_rect;
+
+            if ui.input(|i| i.pointer.any_click()) {
+                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+                    if body_rect.contains(pos) {
+                        self.new_focused = Some(node_index);
+                    }
+                }
+            }
+
+            if tab_viewer.clear_background(tab) {
+                ui.painter().rect_filled(body_rect, 0.0, style.tabs.bg_fill);
+            }
+
+            // Construct a new ui with the correct tab id
+            //
+            // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
+            // the provided id with their own which would cause tabs to change id when moved
+            // from node to node.
+            let id = self.id.with(tab_viewer.id(tab));
+            ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
+            let ui = &mut Ui::new(
+                ui.ctx().clone(),
+                ui.layer_id(),
+                id,
+                body_rect,
+                ui.clip_rect(),
+            );
+
+            // Use initial spacing for ui
+            ui.spacing_mut().item_spacing = spacing;
+
+            if self.scroll_area_in_tabs {
+                ScrollArea::both().show(ui, |ui| {
+                    Frame::none()
+                        .inner_margin(tab_viewer.inner_margin_override(style))
+                        .show(ui, |ui| {
+                            let available_rect = ui.available_rect_before_wrap();
+                            ui.expand_to_include_rect(available_rect);
+                            tab_viewer.ui(ui, tab);
+                        });
+                });
+            } else {
+                Frame::none()
+                    .inner_margin(tab_viewer.inner_margin_override(style))
+                    .show(ui, |ui| {
+                        tab_viewer.ui(ui, tab);
+                    });
+            }
+        }
+
+        if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+            // Use rect.contains instead of
+            // response.hovered as the dragged tab covers
+            // the underlying responses
+            if state.drag_start.is_some() && rect.contains(pointer) {
+                self.hover_data = Some(HoverData {
+                    rect: *rect,
+                    dst: node_index,
+                    tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
+                    tab: tab_hover_rect,
+                    pointer,
+                });
+            }
+        }
+
+        for (tab_index, tab) in tabs.iter_mut().enumerate() {
+            if tab_viewer.force_close(tab) {
+                self.to_remove.push((node_index, TabIndex(tab_index)));
+            }
+        }
     }
 
     fn tab_plus(ui: &mut Ui, style: &Style) -> Response {
