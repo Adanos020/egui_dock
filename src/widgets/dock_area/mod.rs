@@ -33,6 +33,7 @@ pub struct DockArea<'tree, Tab> {
     hover_data: Option<HoverData>,
     to_remove: Vec<(NodeIndex, TabIndex)>,
     new_focused: Option<NodeIndex>,
+    tab_hover_rect: Option<(Rect, TabIndex)>,
 }
 
 // Builder
@@ -55,6 +56,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             hover_data: None,
             to_remove: Vec::new(),
             new_focused: None,
+            tab_hover_rect: None,
         }
     }
 
@@ -166,24 +168,22 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ///
     /// See also [`show`](Self::show).
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
-        let style = self
-            .style
-            .take()
-            .unwrap_or_else(|| Style::from_egui(ui.style().as_ref()));
+        self.style
+            .get_or_insert_with(|| Style::from_egui(ui.style().as_ref()));
 
         let mut state = State::load(ui.ctx(), self.id);
 
-        self.allocate_area_for_root(ui, &style);
+        self.allocate_area_for_root(ui);
 
         for node_index in (0..self.tree.len()).map(NodeIndex) {
             if self.tree[node_index].is_parent() {
-                self.split(ui, &style, node_index);
+                self.split(ui, node_index);
             }
         }
 
         for node_index in (0..self.tree.len()).map(NodeIndex) {
             if self.tree[node_index].is_leaf() {
-                self.process_leaf(ui, &style, &mut state, node_index, tab_viewer);
+                self.process_leaf(ui, &mut state, node_index, tab_viewer);
             }
         }
 
@@ -197,6 +197,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         if let (Some((src, tab_index)), Some(hover)) = (self.drag_data, self.hover_data) {
             let dst = hover.dst;
+            let style = self.style.as_ref().unwrap();
 
             if self.tree[src].is_leaf()
                 && self.tree[dst].is_leaf()
@@ -216,7 +217,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         state.store(ui.ctx(), self.id);
     }
 
-    fn allocate_area_for_root(&mut self, ui: &mut Ui, style: &Style) {
+    fn allocate_area_for_root(&mut self, ui: &mut Ui) {
+        let style = self.style.as_ref().unwrap();
         let mut rect = ui.available_rect_before_wrap();
 
         if let Some(margin) = style.dock_area_padding {
@@ -238,10 +240,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.tree[NodeIndex::root()].set_rect(rect);
     }
 
-    #[allow(clippy::needless_return)]
-    fn split(&mut self, ui: &mut Ui, style: &Style, node_index: NodeIndex) {
+    fn split(&mut self, ui: &mut Ui, node_index: NodeIndex) {
         assert!(self.tree[node_index].is_parent());
 
+        let style = self.style.as_ref().unwrap();
         let pixels_per_point = ui.ctx().pixels_per_point();
 
         duplicate! {
@@ -251,7 +253,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 [Vertical]      [y]             [height]        [everything_above]     [everything_below]   [min]       [max];
             ]
             if let Node::orientation { fraction, rect } = &mut self.tree[node_index] {
-                let rect = expand_to_pixel(*rect, ui.ctx().pixels_per_point());
+                let rect = expand_to_pixel(*rect, pixels_per_point);
 
                 let mut separator = rect;
 
@@ -312,11 +314,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     fn process_leaf(
         &mut self,
         ui: &mut Ui,
-        style: &Style,
         state: &mut State,
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
     ) {
+        assert!(self.tree[node_index].is_leaf());
+
+        let style = self.style.as_ref().unwrap();
         let rect = {
             let Node::Leaf { rect,.. } = &mut self.tree[node_index] else { unreachable!() };
             rect
@@ -340,29 +344,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             style.tab_bar.bg_fill,
         );
 
-        let mut tab_hover_rect = None;
-
-        self.tabs(
+        self.tab_bar(
             ui,
-            style,
             state,
             node_index,
             tab_viewer,
             tabbar_outer_rect,
             &tabbar_response,
-            &mut tab_hover_rect,
         );
 
-        self.tab_body(
-            ui,
-            style,
-            state,
-            node_index,
-            tab_viewer,
-            spacing,
-            &tabbar_response,
-            tab_hover_rect,
-        );
+        self.tab_body(ui, state, node_index, tab_viewer, spacing, &tabbar_response);
 
         let Node::Leaf { tabs,.. } = &mut self.tree[node_index] else { unreachable!() };
         for (tab_index, tab) in tabs.iter_mut().enumerate() {
@@ -372,31 +363,24 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
-    fn tabs(
+    fn tab_bar(
         &mut self,
         ui: &mut Ui,
-        style: &Style,
         state: &mut State,
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         tabbar_outer_rect: Rect,
         tabbar_response: &Response,
-        tab_hover_rect: &mut Option<(Rect, TabIndex)>,
     ) {
-        let focused = self.tree.focused_leaf();
-        let px = ui.ctx().pixels_per_point().recip();
-        let id = self.id.with((node_index, "node"));
-
-        let Node::Leaf {
-            tabs,
-            active,
-            scroll,
-            ..
-        } = &mut self.tree[node_index] else {
-            unreachable!();
-        };
-
         let actual_width = {
+            let Node::Leaf {
+                tabs,
+                scroll,
+                ..
+            } = &mut self.tree[node_index] else {
+                unreachable!();
+            };
+
             let tabbar_inner_rect = Rect::from_min_size(
                 (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
                 vec2(f32::INFINITY, tabbar_outer_rect.height()),
@@ -423,148 +407,19 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // Desired size for tabs in "expanded" mode
             let expanded_width = available_width / (tabs.len() as f32);
 
-            for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                let id = id.with((tab_index, "tab"));
-                let tab_index = TabIndex(tab_index);
-                let is_being_dragged =
-                    tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
-
-                if is_being_dragged {
-                    tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
-                }
-
-                let is_active = *active == tab_index || is_being_dragged;
-                let label = tab_viewer.title(tab);
-
-                let response = if is_being_dragged {
-                    let layer_id = LayerId::new(Order::Tooltip, id);
-                    let mut response = tabs_ui
-                        .with_layer_id(layer_id, |ui| {
-                            Self::tab_title(
-                                ui,
-                                style,
-                                label,
-                                is_active,
-                                is_active && Some(node_index) == focused,
-                                is_being_dragged,
-                                id,
-                                expanded_width,
-                                self.show_close_buttons,
-                            )
-                        })
-                        .response;
-
-                    let sense = Sense::click_and_drag();
-                    response = tabs_ui.interact(response.rect, id, sense);
-
-                    if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
-                        let center = response.rect.center();
-                        let start = state.drag_start.unwrap_or(center);
-
-                        let delta = pointer_pos - start;
-                        if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
-                            tabs_ui.ctx().translate_layer(layer_id, delta);
-
-                            self.drag_data = Some((node_index, tab_index));
-                        }
-                    }
-
-                    response
-                } else {
-                    let (mut response, close_response) = Self::tab_title(
-                        tabs_ui,
-                        style,
-                        label,
-                        is_active && Some(node_index) == focused,
-                        is_active,
-                        is_being_dragged,
-                        id,
-                        expanded_width,
-                        self.show_close_buttons,
-                    );
-
-                    let (close_hovered, close_clicked) = close_response
-                        .map(|res| (res.hovered(), res.clicked()))
-                        .unwrap_or_default();
-
-                    let sense = if close_hovered {
-                        Sense::click()
-                    } else {
-                        Sense::click_and_drag()
-                    };
-
-                    if self.show_tab_name_on_hover {
-                        response = response.on_hover_ui(|ui| {
-                            ui.label(tab_viewer.title(tab));
-                        });
-                    }
-
-                    if self.tab_context_menus {
-                        response = response.context_menu(|ui| {
-                            tab_viewer.context_menu(ui, tab);
-                            if self.show_close_buttons && ui.button("Close").clicked() {
-                                if tab_viewer.on_close(tab) {
-                                    self.to_remove.push((node_index, tab_index));
-                                } else {
-                                    *active = tab_index;
-                                    self.new_focused = Some(node_index);
-                                }
-                            }
-                        });
-                    }
-
-                    if close_clicked {
-                        if tab_viewer.on_close(tab) {
-                            self.to_remove.push((node_index, tab_index));
-                        } else {
-                            *active = tab_index;
-                            self.new_focused = Some(node_index);
-                        }
-                    }
-                    let response = tabs_ui.interact(response.rect, id, sense);
-                    if response.drag_started() {
-                        state.drag_start = response.hover_pos();
-                    }
-
-                    if let Some(pos) = tabs_ui.input(|i| i.pointer.hover_pos()) {
-                        // Use response.rect.contains instead of
-                        // response.hovered as the dragged tab covers
-                        // the underlying tab
-                        if state.drag_start.is_some() && response.rect.contains(pos) {
-                            *tab_hover_rect = Some((response.rect, tab_index));
-                        }
-                    }
-
-                    response
-                };
-
-                // Paint hline below each tab unless its active (or option says overwise)
-                if !is_active || style.tabs.hline_below_active_tab_name {
-                    tabs_ui.painter().hline(
-                        response.rect.x_range(),
-                        tabbar_outer_rect.bottom() - px,
-                        (px, style.tabs.hline_color),
-                    );
-                }
-
-                if response.clicked() {
-                    *active = tab_index;
-                    self.new_focused = Some(node_index);
-                }
-
-                if self.show_close_buttons && response.middle_clicked() {
-                    if tab_viewer.on_close(tab) {
-                        self.to_remove.push((node_index, tab_index));
-                    } else {
-                        *active = tab_index;
-                        self.new_focused = Some(node_index);
-                    }
-                }
-
-                tab_viewer.on_tab_button(tab, &response);
-            }
+            self.tabs(
+                tabs_ui,
+                state,
+                node_index,
+                tab_viewer,
+                tabbar_outer_rect,
+                expanded_width,
+            );
 
             // Draw hline from tab end to edge of tabbar
+            let px = ui.ctx().pixels_per_point().recip();
+            let style = self.style.as_ref().unwrap();
+
             ui.painter().hline(
                 tabs_ui.min_rect().right().min(clip_rect.right())..=tabbar_outer_rect.right(),
                 tabbar_outer_rect.bottom() - px,
@@ -579,111 +434,204 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                     TabAddAlign::Right => 0.0,
                 };
-
-                let rect = Rect::from_min_max(
-                    tabbar_outer_rect.right_top() - vec2(Style::TAB_ADD_BUTTON_SIZE + offset, 0.0),
-                    tabbar_outer_rect.right_bottom() - vec2(offset, 0.0),
-                );
-
-                let ui = &mut ui.child_ui_with_id_source(
-                    rect,
-                    Layout::left_to_right(Align::Center),
-                    (node_index, "tab_add"),
-                );
-
-                let response = Self::tab_plus(ui, style);
-
-                // Draw button left border
-                ui.painter().vline(
-                    rect.left(),
-                    rect.y_range(),
-                    Stroke::new(px, style.tabs.hline_color),
-                );
-
-                let popup_id = ui.id().with("tab_add_popup");
-                popup_under_widget(ui, popup_id, &response, |ui| {
-                    tab_viewer.add_popup(ui, node_index);
-                });
-
-                if response.clicked() {
-                    if self.show_add_popup {
-                        ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-                    }
-                    tab_viewer.on_add(node_index);
-                }
-            };
+                self.tab_plus(ui, node_index, tab_viewer, tabbar_outer_rect, offset);
+            }
 
             tabs_ui.min_rect().width()
         };
 
-        let overflow = (actual_width - tabbar_outer_rect.width()).at_least(0.0);
-        // Compare to 1.0 and not 0.0 to avoid drawing a scroll bar due
-        // to floating point precision issue during tab drawing
-        if overflow > 1.0 {
-            if style.tab_bar.show_scroll_bar_on_overflow {
-                // Draw scroll bar
-                let bar_height = 7.5;
-                let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
-                    vec2(ui.available_width(), bar_height),
-                    Sense::click_and_drag(),
-                );
+        self.tab_bar_scroll(
+            ui,
+            node_index,
+            actual_width,
+            tabbar_outer_rect,
+            tabbar_response,
+        );
+    }
 
-                // Compute scroll bar handle position and size
-                let overflow_ratio = actual_width / scroll_bar_rect.width();
-                let scroll_ratio = -*scroll / overflow;
+    fn tabs(
+        &mut self,
+        tabs_ui: &mut Ui,
+        state: &mut State,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        tabbar_outer_rect: Rect,
+        expanded_width: f32,
+    ) {
+        let focused = self.tree.focused_leaf();
 
-                let scroll_bar_handle_size = overflow_ratio.recip() * scroll_bar_rect.width();
-                let scroll_bar_handle_start = lerp(
-                    scroll_bar_rect.left()..=scroll_bar_rect.right() - scroll_bar_handle_size,
-                    scroll_ratio,
-                );
-                let scroll_bar_handle_rect = Rect::from_min_size(
-                    pos2(scroll_bar_handle_start, scroll_bar_rect.min.y),
-                    vec2(scroll_bar_handle_size, bar_height),
-                );
+        let Node::Leaf {
+            tabs,
+            active,
+            ..
+        } = &mut self.tree[node_index] else {
+            unreachable!();
+        };
+        for (tab_index, tab) in tabs.iter_mut().enumerate() {
+            let id = self.id.with((node_index, "node")).with((tab_index, "tab"));
+            let tab_index = TabIndex(tab_index);
+            let is_being_dragged =
+                tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
 
-                let scroll_bar_handle_response =
-                    ui.interact(scroll_bar_handle_rect, id, Sense::drag());
+            if is_being_dragged {
+                tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
+            }
 
-                // Coefficient to apply to input displacements so that we
-                // move the scroll by the correct amount.
-                let points_to_scroll_coefficient =
-                    overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
+            let is_active = *active == tab_index || is_being_dragged;
+            let label = tab_viewer.title(tab);
 
-                *scroll -= scroll_bar_handle_response.drag_delta().x * points_to_scroll_coefficient;
+            let style = self.style.as_ref().unwrap();
+            let response = if is_being_dragged {
+                let layer_id = LayerId::new(Order::Tooltip, id);
+                let mut response = tabs_ui
+                    .with_layer_id(layer_id, |ui| {
+                        Self::tab_title(
+                            ui,
+                            style,
+                            label,
+                            is_active,
+                            is_active && Some(node_index) == focused,
+                            is_being_dragged,
+                            id,
+                            expanded_width,
+                            self.show_close_buttons,
+                        )
+                    })
+                    .response;
 
-                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
-                    if scroll_bar_rect.contains(pos) {
-                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
-                            * points_to_scroll_coefficient;
+                let sense = Sense::click_and_drag();
+                response = tabs_ui.interact(response.rect, id, sense);
+
+                if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
+                    let center = response.rect.center();
+                    let start = state.drag_start.unwrap_or(center);
+
+                    let delta = pointer_pos - start;
+                    if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
+                        tabs_ui.ctx().translate_layer(layer_id, delta);
+
+                        self.drag_data = Some((node_index, tab_index));
                     }
                 }
 
-                // Draw the bar
-                ui.painter()
-                    .rect_filled(scroll_bar_rect, 0.0, ui.visuals().extreme_bg_color);
+                response
+            } else {
+                let (mut response, close_response) = Self::tab_title(
+                    tabs_ui,
+                    style,
+                    label,
+                    is_active && Some(node_index) == focused,
+                    is_active,
+                    is_being_dragged,
+                    id,
+                    expanded_width,
+                    self.show_close_buttons,
+                );
 
-                ui.painter().rect_filled(
-                    scroll_bar_handle_rect,
-                    bar_height / 2.0,
-                    ui.visuals()
-                        .widgets
-                        .style(&scroll_bar_handle_response)
-                        .bg_fill,
+                let (close_hovered, close_clicked) = close_response
+                    .map(|res| (res.hovered(), res.clicked()))
+                    .unwrap_or_default();
+
+                let sense = if close_hovered {
+                    Sense::click()
+                } else {
+                    Sense::click_and_drag()
+                };
+
+                if self.show_tab_name_on_hover {
+                    response = response.on_hover_ui(|ui| {
+                        ui.label(tab_viewer.title(tab));
+                    });
+                }
+
+                if self.tab_context_menus {
+                    response = response.context_menu(|ui| {
+                        tab_viewer.context_menu(ui, tab);
+                        if self.show_close_buttons && ui.button("Close").clicked() {
+                            if tab_viewer.on_close(tab) {
+                                self.to_remove.push((node_index, tab_index));
+                            } else {
+                                *active = tab_index;
+                                self.new_focused = Some(node_index);
+                            }
+                        }
+                    });
+                }
+
+                if close_clicked {
+                    if tab_viewer.on_close(tab) {
+                        self.to_remove.push((node_index, tab_index));
+                    } else {
+                        *active = tab_index;
+                        self.new_focused = Some(node_index);
+                    }
+                }
+                let response = tabs_ui.interact(response.rect, id, sense);
+                if response.drag_started() {
+                    state.drag_start = response.hover_pos();
+                }
+
+                if let Some(pos) = tabs_ui.input(|i| i.pointer.hover_pos()) {
+                    // Use response.rect.contains instead of
+                    // response.hovered as the dragged tab covers
+                    // the underlying tab
+                    if state.drag_start.is_some() && response.rect.contains(pos) {
+                        self.tab_hover_rect = Some((response.rect, tab_index));
+                    }
+                }
+
+                response
+            };
+
+            // Paint hline below each tab unless its active (or option says otherwise)
+            if !is_active || style.tabs.hline_below_active_tab_name {
+                let px = tabs_ui.ctx().pixels_per_point().recip();
+                tabs_ui.painter().hline(
+                    response.rect.x_range(),
+                    tabbar_outer_rect.bottom() - px,
+                    (px, style.tabs.hline_color),
                 );
             }
 
-            // Handle user input
-            if tabbar_response.hovered() {
-                *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
+            if response.clicked() {
+                *active = tab_index;
+                self.new_focused = Some(node_index);
             }
-        }
 
-        *scroll = scroll.clamp(-overflow, 0.0);
+            if self.show_close_buttons && response.middle_clicked() {
+                if tab_viewer.on_close(tab) {
+                    self.to_remove.push((node_index, tab_index));
+                } else {
+                    *active = tab_index;
+                    self.new_focused = Some(node_index);
+                }
+            }
+
+            tab_viewer.on_tab_button(tab, &response);
+        }
     }
 
-    fn tab_plus(ui: &mut Ui, style: &Style) -> Response {
+    fn tab_plus(
+        &mut self,
+        ui: &mut Ui,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        tabbar_outer_rect: Rect,
+        offset: f32,
+    ) {
+        let rect = Rect::from_min_max(
+            tabbar_outer_rect.right_top() - vec2(Style::TAB_ADD_BUTTON_SIZE + offset, 0.0),
+            tabbar_outer_rect.right_bottom() - vec2(offset, 0.0),
+        );
+
+        let ui = &mut ui.child_ui_with_id_source(
+            rect,
+            Layout::left_to_right(Align::Center),
+            (node_index, "tab_add"),
+        );
+
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
+        let style = self.style.as_ref().unwrap();
 
         response = response.on_hover_cursor(CursorIcon::PointingHand);
 
@@ -708,7 +656,24 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             Stroke::new(1.0, color),
         );
 
-        response
+        // Draw button left border
+        ui.painter().vline(
+            rect.left(),
+            rect.y_range(),
+            Stroke::new(ui.ctx().pixels_per_point().recip(), style.tabs.hline_color),
+        );
+
+        let popup_id = ui.id().with("tab_add_popup");
+        popup_under_widget(ui, popup_id, &response, |ui| {
+            tab_viewer.add_popup(ui, node_index);
+        });
+
+        if response.clicked() {
+            if self.show_add_popup {
+                ui.memory_mut(|mem| mem.toggle_popup(popup_id));
+            }
+            tab_viewer.on_add(node_index);
+        }
     }
 
     /// * `active` means "the tab that is opened in the parent panel".
@@ -728,11 +693,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         show_close: bool,
     ) -> (Response, Option<Response>) {
         let rounding = style.tabs.rounding;
-
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
-
         let x_spacing = 8.0;
-
         let text_width = galley.size().x + 2.0 * x_spacing;
         let close_button_size = if show_close {
             Style::TAB_CLOSE_BUTTON_SIZE.min(style.tab_bar.height)
@@ -856,16 +818,94 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (response, close_response)
     }
 
+    fn tab_bar_scroll(
+        &mut self,
+        ui: &mut Ui,
+        node_index: NodeIndex,
+        actual_width: f32,
+        tabbar_outer_rect: Rect,
+        tabbar_response: &Response,
+    ) {
+        let Node::Leaf { scroll, .. } = &mut self.tree[node_index] else { unreachable!() };
+        let overflow = (actual_width - tabbar_outer_rect.width()).at_least(0.0);
+        let style = self.style.as_ref().unwrap();
+
+        // Compare to 1.0 and not 0.0 to avoid drawing a scroll bar due
+        // to floating point precision issue during tab drawing
+        if overflow > 1.0 {
+            if style.tab_bar.show_scroll_bar_on_overflow {
+                // Draw scroll bar
+                let bar_height = 7.5;
+                let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
+                    vec2(ui.available_width(), bar_height),
+                    Sense::click_and_drag(),
+                );
+
+                // Compute scroll bar handle position and size
+                let overflow_ratio = actual_width / scroll_bar_rect.width();
+                let scroll_ratio = -*scroll / overflow;
+
+                let scroll_bar_handle_size = overflow_ratio.recip() * scroll_bar_rect.width();
+                let scroll_bar_handle_start = lerp(
+                    scroll_bar_rect.left()..=scroll_bar_rect.right() - scroll_bar_handle_size,
+                    scroll_ratio,
+                );
+                let scroll_bar_handle_rect = Rect::from_min_size(
+                    pos2(scroll_bar_handle_start, scroll_bar_rect.min.y),
+                    vec2(scroll_bar_handle_size, bar_height),
+                );
+
+                let scroll_bar_handle_response = ui.interact(
+                    scroll_bar_handle_rect,
+                    self.id.with((node_index, "node")),
+                    Sense::drag(),
+                );
+
+                // Coefficient to apply to input displacements so that we
+                // move the scroll by the correct amount.
+                let points_to_scroll_coefficient =
+                    overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
+
+                *scroll -= scroll_bar_handle_response.drag_delta().x * points_to_scroll_coefficient;
+
+                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+                    if scroll_bar_rect.contains(pos) {
+                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
+                            * points_to_scroll_coefficient;
+                    }
+                }
+
+                // Draw the bar
+                ui.painter()
+                    .rect_filled(scroll_bar_rect, 0.0, ui.visuals().extreme_bg_color);
+
+                ui.painter().rect_filled(
+                    scroll_bar_handle_rect,
+                    bar_height / 2.0,
+                    ui.visuals()
+                        .widgets
+                        .style(&scroll_bar_handle_response)
+                        .bg_fill,
+                );
+            }
+
+            // Handle user input
+            if tabbar_response.hovered() {
+                *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
+            }
+        }
+
+        *scroll = scroll.clamp(-overflow, 0.0);
+    }
+
     fn tab_body(
         &mut self,
         ui: &mut Ui,
-        style: &Style,
         state: &mut State,
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         spacing: Vec2,
         tabbar_response: &Response,
-        tab_hover_rect: Option<(Rect, TabIndex)>,
     ) {
         let (body_rect, _body_response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
@@ -891,6 +931,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
             }
 
+            let style = self.style.as_ref().unwrap();
             if tab_viewer.clear_background(tab) {
                 ui.painter().rect_filled(body_rect, 0.0, style.tabs.bg_fill);
             }
@@ -941,7 +982,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     rect: *rect,
                     dst: node_index,
                     tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
-                    tab: tab_hover_rect,
+                    tab: self.tab_hover_rect,
                     pointer,
                 });
             }
