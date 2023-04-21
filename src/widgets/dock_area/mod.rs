@@ -317,25 +317,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
     ) {
-        let focused = self.tree.focused_leaf();
-        let px = ui.ctx().pixels_per_point().recip();
-
-        let Node::Leaf {
-            rect,
-            tabs,
-            active,
-            viewport,
-            scroll,
-        } = &mut self.tree[node_index] else {
-            unreachable!();
+        let rect = {
+            let Node::Leaf { rect,.. } = &mut self.tree[node_index] else { unreachable!() };
+            rect
         };
-
         let ui = &mut ui.child_ui_with_id_source(
             *rect,
             Layout::top_down_justified(Align::Min),
             (node_index, "node"),
         );
-        let id = self.id.with((node_index, "node"));
         let spacing = ui.spacing().item_spacing;
         ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
         ui.set_clip_rect(*rect);
@@ -352,7 +342,129 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let mut tab_hover_rect = None;
 
-        // tabs
+        self.tabs(
+            ui,
+            style,
+            state,
+            node_index,
+            tab_viewer,
+            tabbar_outer_rect,
+            &tabbar_response,
+            &mut tab_hover_rect,
+        );
+
+        // tab body
+        let (body_rect, _body_response) =
+            ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
+
+        let Node::Leaf {
+            rect,
+            tabs,
+            active,
+            viewport,
+            ..
+        } = &mut self.tree[node_index] else {
+            unreachable!();
+        };
+
+        if let Some(tab) = tabs.get_mut(active.0) {
+            *viewport = body_rect;
+
+            if ui.input(|i| i.pointer.any_click()) {
+                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+                    if body_rect.contains(pos) {
+                        self.new_focused = Some(node_index);
+                    }
+                }
+            }
+
+            if tab_viewer.clear_background(tab) {
+                ui.painter().rect_filled(body_rect, 0.0, style.tabs.bg_fill);
+            }
+
+            // Construct a new ui with the correct tab id
+            //
+            // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
+            // the provided id with their own which would cause tabs to change id when moved
+            // from node to node.
+            let id = self.id.with(tab_viewer.id(tab));
+            ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
+            let ui = &mut Ui::new(
+                ui.ctx().clone(),
+                ui.layer_id(),
+                id,
+                body_rect,
+                ui.clip_rect(),
+            );
+
+            // Use initial spacing for ui
+            ui.spacing_mut().item_spacing = spacing;
+
+            if self.scroll_area_in_tabs {
+                ScrollArea::both().show(ui, |ui| {
+                    Frame::none()
+                        .inner_margin(tab_viewer.inner_margin_override(style))
+                        .show(ui, |ui| {
+                            let available_rect = ui.available_rect_before_wrap();
+                            ui.expand_to_include_rect(available_rect);
+                            tab_viewer.ui(ui, tab);
+                        });
+                });
+            } else {
+                Frame::none()
+                    .inner_margin(tab_viewer.inner_margin_override(style))
+                    .show(ui, |ui| {
+                        tab_viewer.ui(ui, tab);
+                    });
+            }
+        }
+
+        if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+            // Use rect.contains instead of
+            // response.hovered as the dragged tab covers
+            // the underlying responses
+            if state.drag_start.is_some() && rect.contains(pointer) {
+                self.hover_data = Some(HoverData {
+                    rect: *rect,
+                    dst: node_index,
+                    tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
+                    tab: tab_hover_rect,
+                    pointer,
+                });
+            }
+        }
+
+        for (tab_index, tab) in tabs.iter_mut().enumerate() {
+            if tab_viewer.force_close(tab) {
+                self.to_remove.push((node_index, TabIndex(tab_index)));
+            }
+        }
+    }
+
+    fn tabs(
+        &mut self,
+        ui: &mut Ui,
+        style: &Style,
+        state: &mut State,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        tabbar_outer_rect: Rect,
+        tabbar_response: &Response,
+        tab_hover_rect: &mut Option<(Rect, TabIndex)>,
+    ) {
+        let focused = self.tree.focused_leaf();
+        let px = ui.ctx().pixels_per_point().recip();
+        let id = self.id.with((node_index, "node"));
+
+        let Node::Leaf {
+            tabs,
+            active,
+            scroll,
+            ..
+        } = &mut self.tree[node_index] else {
+            unreachable!();
+        };
+
         let actual_width = {
             let tabbar_inner_rect = Rect::from_min_size(
                 (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
@@ -488,7 +600,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         // response.hovered as the dragged tab covers
                         // the underlying tab
                         if state.drag_start.is_some() && response.rect.contains(pos) {
-                            tab_hover_rect = Some((response.rect, tab_index));
+                            *tab_hover_rect = Some((response.rect, tab_index));
                         }
                     }
 
@@ -637,83 +749,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         *scroll = scroll.clamp(-overflow, 0.0);
-
-        // tab body
-        let (body_rect, _body_response) =
-            ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
-
-        if let Some(tab) = tabs.get_mut(active.0) {
-            *viewport = body_rect;
-
-            if ui.input(|i| i.pointer.any_click()) {
-                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
-                    if body_rect.contains(pos) {
-                        self.new_focused = Some(node_index);
-                    }
-                }
-            }
-
-            if tab_viewer.clear_background(tab) {
-                ui.painter().rect_filled(body_rect, 0.0, style.tabs.bg_fill);
-            }
-
-            // Construct a new ui with the correct tab id
-            //
-            // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
-            // the provided id with their own which would cause tabs to change id when moved
-            // from node to node.
-            let id = self.id.with(tab_viewer.id(tab));
-            ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
-            let ui = &mut Ui::new(
-                ui.ctx().clone(),
-                ui.layer_id(),
-                id,
-                body_rect,
-                ui.clip_rect(),
-            );
-
-            // Use initial spacing for ui
-            ui.spacing_mut().item_spacing = spacing;
-
-            if self.scroll_area_in_tabs {
-                ScrollArea::both().show(ui, |ui| {
-                    Frame::none()
-                        .inner_margin(tab_viewer.inner_margin_override(style))
-                        .show(ui, |ui| {
-                            let available_rect = ui.available_rect_before_wrap();
-                            ui.expand_to_include_rect(available_rect);
-                            tab_viewer.ui(ui, tab);
-                        });
-                });
-            } else {
-                Frame::none()
-                    .inner_margin(tab_viewer.inner_margin_override(style))
-                    .show(ui, |ui| {
-                        tab_viewer.ui(ui, tab);
-                    });
-            }
-        }
-
-        if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
-            // Use rect.contains instead of
-            // response.hovered as the dragged tab covers
-            // the underlying responses
-            if state.drag_start.is_some() && rect.contains(pointer) {
-                self.hover_data = Some(HoverData {
-                    rect: *rect,
-                    dst: node_index,
-                    tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
-                    tab: tab_hover_rect,
-                    pointer,
-                });
-            }
-        }
-
-        for (tab_index, tab) in tabs.iter_mut().enumerate() {
-            if tab_viewer.force_close(tab) {
-                self.to_remove.push((node_index, TabIndex(tab_index)));
-            }
-        }
     }
 
     fn tab_plus(ui: &mut Ui, style: &Style) -> Response {
