@@ -1,4 +1,4 @@
-use egui::{Align, Area, Frame, Id, Key, Layout, NumExt, Order, Rect, Response, Ui, Vec2};
+use egui::{containers::*, emath::*, Align, Id, Key, Layout, Order, Response, Ui};
 
 #[derive(Clone, Default, Debug)]
 struct State {

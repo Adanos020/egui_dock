@@ -2,14 +2,14 @@
 name = "egui_dock"
 description = "Docking support for `egui` - an immediate-mode GUI library for Rust"
 authors = ["lain-dono", "Adam Gąsior (Adanos020)"]
-version = "0.4.2"
+version = "0.5.0"
 edition = "2021"
 rust-version = "1.65"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/Adanos020/egui_dock"
 categories = ["gui", "game-development"]
-include = ["src/*.rs", "Cargo.toml", "LICENSE"]
+include = ["src/**/*.rs", "Cargo.toml", "LICENSE"]
 
 [features]
 default = []
@@ -20,6 +20,9 @@ serde = ["dep:serde", "egui/serde"]
 [dependencies]
 egui = { version = "0.21", default-features = false }
 serde = { version = "1", optional = true, features = ["derive"] }
+
+duplicate = "1.0"
+paste = "1.0"
 
 [dev-dependencies]
 eframe = { version = "0.21", default-features = false, features = [

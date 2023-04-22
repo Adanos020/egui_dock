@@ -1,274 +1,32 @@
-use egui::Rect;
-use std::fmt;
+//! Binary tree representing the relationships between [`Node`]s.
+//!
+//! # Implementation details
+//!
+//! The binary tree is stored in a [`Vec`] indexed by [`NodeIndex`].
+//! The root is always at index *0*.
+//! For a given node *n*:
+//!  - left child of *n* will be at index *n * 2 + 1*.
+//!  - right child of *n* will be at index *n * 2 + 2*.
+
+/// Iterates over all tabs in a [`Tree`].
+pub mod tab_iter;
 
 /// Identifies a tab within a [`Node`].
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct TabIndex(pub usize);
-
-impl From<usize> for TabIndex {
-    #[inline]
-    fn from(index: usize) -> Self {
-        TabIndex(index)
-    }
-}
-
-// ----------------------------------------------------------------------------
+pub mod tab_index;
 
 /// Represents an abstract node of a [`Tree`].
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub enum Node<Tab> {
-    /// Empty node
-    Empty,
-    /// Contains the actual tabs
-    Leaf {
-        /// The full rectangle - tab bar plus tab body
-        rect: Rect,
-
-        /// The tab body rectangle
-        viewport: Rect,
-
-        /// All the tabs in this node.
-        tabs: Vec<Tab>,
-
-        /// The opened tab.
-        active: TabIndex,
-    },
-    /// Parent node in the vertical orientation
-    Vertical {
-        /// The rectangle in which all children of this node are drawn.
-        rect: Rect,
-
-        /// The fraction taken by the top child of this node.
-        fraction: f32,
-    },
-    /// Parent node in the horizontal orientation
-    Horizontal {
-        /// The rectangle in which all children of this node are drawn.
-        rect: Rect,
-
-        /// The fraction taken by the left child of this node.
-        fraction: f32,
-    },
-}
-
-impl<Tab> Node<Tab> {
-    /// Constructs a leaf node with a given `tab`.
-    #[inline(always)]
-    pub fn leaf(tab: Tab) -> Self {
-        Self::Leaf {
-            rect: Rect::NOTHING,
-            viewport: Rect::NOTHING,
-            tabs: vec![tab],
-            active: TabIndex(0),
-        }
-    }
-
-    /// Constructs a leaf node with a given list of `tabs`.
-    #[inline(always)]
-    pub const fn leaf_with(tabs: Vec<Tab>) -> Self {
-        Self::Leaf {
-            rect: Rect::NOTHING,
-            viewport: Rect::NOTHING,
-            tabs,
-            active: TabIndex(0),
-        }
-    }
-
-    /// Sets the area occupied by the node.
-    #[inline]
-    pub fn set_rect(&mut self, new_rect: Rect) {
-        match self {
-            Self::Empty => (),
-            Self::Leaf { rect, .. }
-            | Self::Vertical { rect, .. }
-            | Self::Horizontal { rect, .. } => *rect = new_rect,
-        }
-    }
-
-    /// Returns `true` if the node is a `Empty`, `false` otherwise.
-    #[inline(always)]
-    pub const fn is_empty(&self) -> bool {
-        matches!(self, Self::Empty)
-    }
-
-    /// Returns `true` if the node is a `Leaf`, `false` otherwise.
-    #[inline(always)]
-    pub const fn is_leaf(&self) -> bool {
-        matches!(self, Self::Leaf { .. })
-    }
-
-    /// Returns `true` if the node is a `Horizontal`, `false` otherwise.
-    #[inline(always)]
-    pub const fn is_horizontal(&self) -> bool {
-        matches!(self, Self::Horizontal { .. })
-    }
-
-    /// Returns `true` if the node is a `Vertical`, `false` otherwise.
-    #[inline(always)]
-    pub const fn is_vertical(&self) -> bool {
-        matches!(self, Self::Vertical { .. })
-    }
-
-    /// Returns `true` if the node is either `Horizontal` or `Vertical`, `false` otherwise.
-    #[inline(always)]
-    pub const fn is_parent(&self) -> bool {
-        self.is_horizontal() || self.is_vertical()
-    }
-
-    /// Replaces the node with a `Horizontal` or `Vertical` one (depending on `split`) and assigns it an empty rect.
-    #[inline]
-    pub fn split(&mut self, split: Split, fraction: f32) -> Self {
-        let rect = Rect::NOTHING;
-        let src = match split {
-            Split::Left | Split::Right => Node::Horizontal { fraction, rect },
-            Split::Above | Split::Below => Node::Vertical { fraction, rect },
-        };
-        std::mem::replace(self, src)
-    }
-
-    /// Adds a `tab` to the node.
-    ///
-    /// # Panics
-    /// Panics if the new capacity of `tabs` exceeds isize::MAX bytes.
-    #[track_caller]
-    #[inline]
-    pub fn append_tab(&mut self, tab: Tab) {
-        match self {
-            Node::Leaf { tabs, active, .. } => {
-                *active = TabIndex(tabs.len());
-                tabs.push(tab);
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    /// Adds a `tab` to the node.
-    ///
-    /// # Panics
-    /// Panics if the new capacity of `tabs` exceeds isize::MAX bytes.
-    /// index > tabs_count()
-    #[track_caller]
-    #[inline]
-    pub fn insert_tab(&mut self, index: TabIndex, tab: Tab) {
-        match self {
-            Node::Leaf { tabs, active, .. } => {
-                tabs.insert(index.0, tab);
-                *active = index;
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    /// Removes a tab at given `index` from the node.
-    /// Returns the removed tab if the node is a `Leaf`, or `None` otherwise.
-    ///
-    /// # Panics
-    /// Panics if `index` is out of bounds.
-    #[inline]
-    pub fn remove_tab(&mut self, tab_index: TabIndex) -> Option<Tab> {
-        match self {
-            Node::Leaf { tabs, .. } => Some(tabs.remove(tab_index.0)),
-            _ => None,
-        }
-    }
-
-    /// Gets the number of tabs in the node.
-    #[inline]
-    pub fn tabs_count(&self) -> usize {
-        match self {
-            Node::Leaf { tabs, .. } => tabs.len(),
-            _ => Default::default(),
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
+pub mod node;
 
 /// Wrapper around indices to the collection of nodes inside a [`Tree`].
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct NodeIndex(pub usize);
+pub mod node_index;
 
-impl From<usize> for NodeIndex {
-    #[inline(always)]
-    fn from(index: usize) -> Self {
-        NodeIndex(index)
-    }
-}
+pub use node::Node;
+pub use node_index::NodeIndex;
+pub use tab_index::TabIndex;
+pub use tab_iter::TabIter;
 
-impl NodeIndex {
-    /// Returns the index of the root node.
-    #[inline(always)]
-    pub const fn root() -> Self {
-        Self(0)
-    }
-
-    /// Returns the index of the node to the left of the current one.
-    #[inline(always)]
-    pub const fn left(self) -> Self {
-        Self(self.0 * 2 + 1)
-    }
-
-    /// Returns the index of the node to the right of the current one.
-    #[inline(always)]
-    pub const fn right(self) -> Self {
-        Self(self.0 * 2 + 2)
-    }
-
-    /// Returns the index of the parent node or `None` if current node is the root.
-    #[inline]
-    pub const fn parent(self) -> Option<Self> {
-        if self.0 > 0 {
-            Some(Self((self.0 - 1) / 2))
-        } else {
-            None
-        }
-    }
-
-    /// Returns the number of nodes leading from the root to the current node, including `self`.
-    #[inline(always)]
-    pub const fn level(self) -> usize {
-        (usize::BITS - (self.0 + 1).leading_zeros()) as usize
-    }
-
-    /// Returns true if current node is the left node of its parent, false otherwise.
-    #[inline(always)]
-    pub const fn is_left(self) -> bool {
-        self.0 % 2 != 0
-    }
-
-    /// Returns true if current node is the right node of its parent, false otherwise.
-    #[inline(always)]
-    pub const fn is_right(self) -> bool {
-        self.0 % 2 == 0
-    }
-
-    #[inline]
-    const fn children_at(self, level: usize) -> std::ops::Range<usize> {
-        let base = 1 << level;
-        let s = (self.0 + 1) * base - 1;
-        let e = (self.0 + 2) * base - 1;
-        s..e
-    }
-
-    #[inline]
-    const fn children_left(self, level: usize) -> std::ops::Range<usize> {
-        let base = 1 << level;
-        let s = (self.0 + 1) * base - 1;
-        let e = (self.0 + 1) * base + base / 2 - 1;
-        s..e
-    }
-
-    #[inline]
-    const fn children_right(self, level: usize) -> std::ops::Range<usize> {
-        let base = 1 << level;
-        let s = (self.0 + 1) * base + base / 2 - 1;
-        let e = (self.0 + 2) * base - 1;
-        s..e
-    }
-}
+use egui::Rect;
+use std::fmt;
 
 // ----------------------------------------------------------------------------
 
@@ -280,6 +38,16 @@ pub enum Split {
     Right,
     Above,
     Below,
+}
+
+/// Specify how a tab should be added to a Node.
+pub enum TabDestination {
+    /// Split the node in the given direction.
+    Split(Split),
+    /// Insert the tab at the given index.
+    Insert(TabIndex),
+    /// Append the tab to the node.
+    Append,
 }
 
 // ----------------------------------------------------------------------------
@@ -301,8 +69,8 @@ pub struct Tree<Tab> {
 }
 
 impl<Tab> fmt::Debug for Tree<Tab> {
-    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmtr.debug_struct("Tree")
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Tree")
             .field("focused_node", &self.focused_node)
             .finish_non_exhaustive()
     }
@@ -554,6 +322,35 @@ impl<Tab> Tree<Tab> {
         index
     }
 
+    /// Moves a tab from a node to another node, you specify how the tab should
+    /// be moved with [`TabDestination`].
+    pub fn move_tab(
+        &mut self,
+        (src_node, src_tab): (NodeIndex, TabIndex),
+        (dst_node, dst_tab): (NodeIndex, TabDestination),
+    ) {
+        // Moving a single tab inside its own node is a no-op
+        if src_node == dst_node && self[src_node].tabs_count() == 1 {
+            return;
+        }
+
+        // Call `Node::remove_tab` to avoid auto remove of the node by
+        // `Tree::remove_tab` from Tree.
+        let tab = self[src_node].remove_tab(src_tab).unwrap();
+
+        match dst_tab {
+            TabDestination::Split(split) => {
+                self.split(dst_node, split, 0.5, Node::leaf(tab));
+            }
+            TabDestination::Insert(index) => self[dst_node].insert_tab(index, tab),
+            TabDestination::Append => self[dst_node].append_tab(tab),
+        };
+
+        if self[src_node].is_leaf() && self[src_node].tabs_count() == 0 {
+            self.remove_leaf(src_node);
+        }
+    }
+
     fn first_leaf(&self, top: NodeIndex) -> Option<NodeIndex> {
         let left = top.left();
         let right = top.right();
@@ -578,18 +375,9 @@ impl<Tab> Tree<Tab> {
         }
     }
 
-    /// Removes the first node containing 0 tabs.
-    pub fn remove_empty_leaf(&mut self) {
-        let mut nodes = self.tree.iter().enumerate();
-        let node = nodes.find_map(|(index, node)| match node {
-            Node::Leaf { tabs, .. } if tabs.is_empty() => Some(index),
-            _ => None,
-        });
-
-        let node = match node {
-            Some(node) => NodeIndex(node),
-            None => return,
-        };
+    /// Removes the given node from the [`Tree`].
+    pub fn remove_leaf(&mut self, node: NodeIndex) {
+        assert!(self[node].is_leaf());
 
         let parent = match node.parent() {
             Some(val) => val,
@@ -749,22 +537,13 @@ impl<Tab> Tree<Tab> {
     /// If the node is emptied after the tab is removed, the node will also be removed.
     ///
     /// Returns the removed tab if it exists, or `None` otherwise.
-    pub fn remove_tab(&mut self, remove: (NodeIndex, TabIndex)) -> Option<Tab> {
-        match &mut self[remove.0] {
-            Node::Leaf { tabs, active, .. } => {
-                let tab = tabs.remove(remove.1 .0);
-
-                if remove.1 <= *active {
-                    active.0 = active.0.saturating_sub(1);
-                }
-                if tabs.is_empty() {
-                    self.remove_empty_leaf();
-                }
-
-                Some(tab)
-            }
-            _ => None,
+    pub fn remove_tab(&mut self, (node_index, tab_index): (NodeIndex, TabIndex)) -> Option<Tab> {
+        let node = &mut self[node_index];
+        let tab = node.remove_tab(tab_index);
+        if node.tabs_count() == 0 {
+            self.remove_leaf(node_index);
         }
+        tab
     }
 }
 
@@ -791,76 +570,4 @@ where
         }
         None
     }
-}
-
-// ----------------------------------------------------------------------------
-
-/// Iterates over all tabs in a [`Tree`].
-pub struct TabIter<'a, Tab> {
-    tree: &'a Tree<Tab>,
-    node_idx: usize,
-    tab_idx: usize,
-}
-
-impl<'a, Tab> TabIter<'a, Tab> {
-    fn new(tree: &'a Tree<Tab>) -> Self {
-        Self {
-            tree,
-            node_idx: 0,
-            tab_idx: 0,
-        }
-    }
-}
-
-impl<'a, Tab> Iterator for TabIter<'a, Tab> {
-    type Item = &'a Tab;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let node = self.tree.tree.get(self.node_idx)?;
-            match node {
-                Node::Leaf { tabs, .. } => match tabs.get(self.tab_idx) {
-                    Some(tab) => {
-                        self.tab_idx += 1;
-                        return Some(tab);
-                    }
-                    None => {
-                        self.node_idx += 1;
-                        self.tab_idx = 0;
-                    }
-                },
-                _ => {
-                    self.node_idx += 1;
-                    self.tab_idx = 0;
-                }
-            }
-        }
-    }
-}
-
-impl<'a, Tab> fmt::Debug for TabIter<'a, Tab> {
-    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmtr.debug_struct("TabIter").finish_non_exhaustive()
-    }
-}
-
-#[test]
-fn test_tabs_iter() {
-    fn tabs(tree: &Tree<i32>) -> Vec<i32> {
-        tree.tabs().copied().collect()
-    }
-
-    let mut tree = Tree::new(vec![1, 2, 3]);
-    assert_eq!(tabs(&tree), vec![1, 2, 3]);
-
-    tree.push_to_first_leaf(4);
-    assert_eq!(tabs(&tree), vec![1, 2, 3, 4]);
-
-    tree.push_to_first_leaf(5);
-    assert_eq!(tabs(&tree), vec![1, 2, 3, 4, 5]);
-
-    tree.push_to_focused_leaf(6);
-    assert_eq!(tabs(&tree), vec![1, 2, 3, 4, 5, 6]);
-
-    assert_eq!(tree.num_tabs(), tree.tabs().count());
 }

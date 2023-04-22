@@ -1,4 +1,4 @@
-use egui::{Pos2, Rect};
+use egui::emath::*;
 
 #[inline(always)]
 pub fn expand_to_pixel(mut rect: Rect, ppi: f32) -> Rect {
@@ -17,4 +17,11 @@ pub fn map_to_pixel_pos(mut pos: Pos2, ppi: f32, map: fn(f32) -> f32) -> Pos2 {
 #[inline(always)]
 pub fn map_to_pixel(point: f32, ppi: f32, map: fn(f32) -> f32) -> f32 {
     map(point * ppi) / ppi
+}
+
+pub fn rect_set_size_centered(rect: &mut Rect, size: Vec2) {
+    let center = rect.center();
+    rect.set_width(size.x);
+    rect.set_height(size.y);
+    rect.set_center(center);
 }

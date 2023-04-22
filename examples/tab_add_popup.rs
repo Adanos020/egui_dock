@@ -3,7 +3,7 @@
 use eframe::{egui, NativeOptions};
 
 use egui::{Color32, RichText};
-use egui_dock::{DockArea, NodeIndex, StyleBuilder, Tree};
+use egui_dock::{DockArea, NodeIndex, Style, Tree};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
@@ -112,12 +112,9 @@ impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let mut added_nodes = Vec::new();
         DockArea::new(&mut self.tree)
-            .style(
-                StyleBuilder::from_egui(ctx.style().as_ref())
-                    .show_add_buttons(true)
-                    .show_add_popup(true)
-                    .build(),
-            )
+            .show_add_buttons(true)
+            .show_add_popup(true)
+            .style(Style::from_egui(ctx.style().as_ref()))
             .show(
                 ctx,
                 &mut TabViewer {

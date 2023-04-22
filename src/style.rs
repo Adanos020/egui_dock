@@ -1,5 +1,4 @@
-use super::utils::*;
-use egui::{style::Margin, *};
+use egui::{ecolor::*, Margin, Rounding, Stroke};
 
 /// Left or right alignment for tab add button.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -11,67 +10,118 @@ pub enum TabAddAlign {
 }
 
 /// Specifies the look and feel of egui_dock.
-///
-/// See [`StyleBuilder`] for fields details.
 #[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub struct Style {
-    pub dock_area_padding: Option<Margin>,
     pub default_inner_margin: Margin,
 
-    // TODO: this should be `egui::Stroke`.
-    pub border_color: Color32,
-    pub border_width: f32,
+    /// Sets padding to indent from the edges of the window. By `Default` it's `None`.
+    pub dock_area_padding: Option<Margin>,
 
+    /// Sets selection color for the placing area of the tab where this tab targeted on it.
+    /// By `Default` it's `(0, 191, 255)` (light blue) with `0.5` capacity.
     pub selection_color: Color32,
 
-    // The resizable separator:
-    pub separator_width: f32,
-    pub separator_extra: f32,
-    pub separator_color_idle: Color32,
-    pub separator_color_hovered: Color32,
-    pub separator_color_dragged: Color32,
+    pub border: Stroke,
+    pub buttons: ButtonsStyle,
+    pub separator: SeparatorStyle,
+    pub tab_bar: TabBarStyle,
+    pub tabs: TabsStyle,
+}
 
-    pub tab_bar_background_color: Color32,
-    pub tab_bar_height: f32,
+/// Specifies the look and feel of buttons.
+#[derive(Clone, Debug)]
+pub struct ButtonsStyle {
+    /// Color of the close tab button.
+    pub close_tab_color: Color32,
 
-    /// The outline around the active tab name.
-    pub tab_outline_color: Color32,
+    /// Color of the active close tab button.
+    pub close_tab_active_color: Color32,
 
-    /// The line separating the tab name area from the tab content area
+    /// Color of the background close tab button.
+    pub close_tab_bg_fill: Color32,
+
+    /// Left or right aligning of the add tab button.
+    pub add_tab_align: TabAddAlign,
+
+    /// Color of the add tab button.
+    pub add_tab_color: Color32,
+
+    /// Color of the active add tab button.
+    pub add_tab_active_color: Color32,
+
+    /// Color of the background add tab button.
+    pub add_tab_bg_fill: Color32,
+}
+
+/// Specifies the look and feel of node separators.
+#[derive(Clone, Debug)]
+pub struct SeparatorStyle {
+    /// Width of the rectangle separator between nodes. By `Default` it's `1.0`.
+    pub width: f32,
+
+    /// Limit for the allowed area for the separator offset. By `Default` it's `175.0`.
+    /// `bigger value > less allowed offset` for the current window size.
+    pub extra: f32,
+
+    /// Idle color of the rectangle separator. By `Default` it's [`Color32::BLACK`].
+    pub color_idle: Color32,
+
+    /// Hovered color of the rectangle separator. By `Default` it's [`Color32::GRAY`].
+    pub color_hovered: Color32,
+
+    /// Dragged color of the rectangle separator. By `Default` it's [`Color32::WHITE`].
+    pub color_dragged: Color32,
+}
+
+/// Specifies the look and feel of tab bars.
+#[derive(Clone, Debug)]
+pub struct TabBarStyle {
+    /// Background color of tab bar. By `Default` it's [`Color32::WHITE`].
+    pub bg_fill: Color32,
+
+    /// Height of the tab bar. By `Default` it's `24.0`.
+    pub height: f32,
+
+    /// Show a scroll bar when tab bar overflows. By `Default` it's `true`.
+    pub show_scroll_bar_on_overflow: bool,
+}
+
+/// Specifies the look and feel of individual tabs.
+#[derive(Clone, Debug)]
+pub struct TabsStyle {
+    /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
+    pub outline_color: Color32,
+
+    /// Tab rounding. By `Default` it's [`Rounding::default`]
+    pub rounding: Rounding,
+
+    /// Colour of the tab's background. By `Default` it's [`Color32::WHITE`]
+    pub bg_fill: Color32,
+
+    /// Color of tab title when an inactive tab is unfocused.
+    pub text_color_unfocused: Color32,
+
+    /// Color of tab title when an inactive tab is focused.
+    pub text_color_focused: Color32,
+
+    /// Color of tab title when an active tab is unfocused.
+    pub text_color_active_unfocused: Color32,
+
+    /// Color of tab title when an active tab is focused.
+    pub text_color_active_focused: Color32,
+
+    /// Color of th line separating the tab name area from the tab content area.
+    /// By `Default` it's [`Color32::BLACK`].
     pub hline_color: Color32,
 
     /// If `true`, show the hline below the active tabs name.
     /// If `false`, show the active tab as merged with the tab ui area.
-    /// Default: `false`.
+    /// By `Default` it's `false`.
     pub hline_below_active_tab_name: bool,
 
-    pub tab_rounding: Rounding,
-    pub tab_background_color: Color32,
-
-    pub tab_text_color_unfocused: Color32,
-    pub tab_text_color_focused: Color32,
-    pub tab_text_color_active_unfocused: Color32,
-    pub tab_text_color_active_focused: Color32,
-
-    pub tabs_are_draggable: bool,
-    pub expand_tabs: bool,
-
-    pub close_tab_color: Color32,
-    pub close_tab_active_color: Color32,
-    pub close_tab_background_color: Color32,
-    pub show_close_buttons: bool,
-
-    pub add_tab_align: TabAddAlign,
-    pub add_tab_color: Color32,
-    pub add_tab_active_color: Color32,
-    pub add_tab_background_color: Color32,
-    pub show_add_buttons: bool,
-    pub show_add_popup: bool,
-
-    pub show_context_menu: bool,
-    pub tab_include_scrollarea: bool,
-    pub tab_hover_name: bool,
+    /// Whether tab titles expand to fill the width of their tab bars.
+    pub fill_tab_bar: bool,
 }
 
 impl Default for Style {
@@ -79,418 +129,158 @@ impl Default for Style {
         Self {
             dock_area_padding: None,
             default_inner_margin: Margin::same(4.0),
-
-            border_color: Color32::BLACK,
-            border_width: Default::default(),
-
+            border: Stroke::new(f32::default(), Color32::BLACK),
             selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
-            separator_width: 1.0,
-            separator_extra: 175.0,
-            separator_color_idle: Color32::BLACK,
-            separator_color_hovered: Color32::GRAY,
-            separator_color_dragged: Color32::WHITE,
+            buttons: ButtonsStyle::default(),
+            separator: SeparatorStyle::default(),
+            tab_bar: TabBarStyle::default(),
+            tabs: TabsStyle::default(),
+        }
+    }
+}
 
-            tab_bar_background_color: Color32::WHITE,
-            tab_bar_height: 24.0,
-
-            tab_outline_color: Color32::BLACK,
-            hline_color: Color32::BLACK,
-            hline_below_active_tab_name: false,
-            tab_rounding: Default::default(),
-            tab_background_color: Color32::WHITE,
-
-            tab_text_color_unfocused: Color32::DARK_GRAY,
-            tab_text_color_focused: Color32::BLACK,
-            tab_text_color_active_unfocused: Color32::DARK_GRAY,
-            tab_text_color_active_focused: Color32::BLACK,
-
+impl Default for ButtonsStyle {
+    fn default() -> Self {
+        Self {
             close_tab_color: Color32::WHITE,
             close_tab_active_color: Color32::WHITE,
-            close_tab_background_color: Color32::GRAY,
-            show_close_buttons: true,
+            close_tab_bg_fill: Color32::GRAY,
 
             add_tab_align: TabAddAlign::Right,
             add_tab_color: Color32::WHITE,
             add_tab_active_color: Color32::WHITE,
-            add_tab_background_color: Color32::GRAY,
-            show_add_buttons: false,
-            show_add_popup: false,
-
-            tabs_are_draggable: true,
-            expand_tabs: false,
-            show_context_menu: true,
-            tab_include_scrollarea: true,
-            tab_hover_name: false,
+            add_tab_bg_fill: Color32::GRAY,
         }
     }
+}
+
+impl Default for SeparatorStyle {
+    fn default() -> Self {
+        Self {
+            width: 1.0,
+            extra: 175.0,
+            color_idle: Color32::BLACK,
+            color_hovered: Color32::GRAY,
+            color_dragged: Color32::WHITE,
+        }
+    }
+}
+
+impl Default for TabBarStyle {
+    fn default() -> Self {
+        Self {
+            bg_fill: Color32::WHITE,
+            height: 24.0,
+            show_scroll_bar_on_overflow: true,
+        }
+    }
+}
+
+impl Default for TabsStyle {
+    fn default() -> Self {
+        Self {
+            bg_fill: Color32::WHITE,
+            fill_tab_bar: false,
+            hline_color: Color32::BLACK,
+            hline_below_active_tab_name: false,
+            outline_color: Color32::BLACK,
+            rounding: Rounding::default(),
+            text_color_unfocused: Color32::DARK_GRAY,
+            text_color_focused: Color32::BLACK,
+            text_color_active_unfocused: Color32::DARK_GRAY,
+            text_color_active_focused: Color32::BLACK,
+        }
+    }
+}
+
+impl Style {
+    pub(crate) const TAB_ADD_BUTTON_SIZE: f32 = 24.0;
+    pub(crate) const TAB_ADD_PLUS_SIZE: f32 = 12.0;
+    pub(crate) const TAB_CLOSE_BUTTON_SIZE: f32 = 24.0;
+    pub(crate) const TAB_CLOSE_X_SIZE: f32 = 9.0;
 }
 
 impl Style {
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - [`Self::selection_color`]
-    /// - [`Self::tab_bar_background_color`]
-    /// - [`Self::tab_outline_color`]
-    /// - [`Self::hline_color`]
-    /// - [`Self::tab_background_color`]
-    /// - [`Self::tab_text_color_unfocused`]
-    /// - [`Self::tab_text_color_focused`]
-    /// - [`Self::tab_text_color_active_unfocused`]
-    /// - [`Self::tab_text_color_active_focused`]
-    /// - [`Self::separator_color_idle`]
-    /// - [`Self::separator_color_hovered`]
-    /// - [`Self::separator_color_dragged`]
-    /// - [`Self::border_color`]
-    /// - [`Self::close_tab_background_color`]
-    /// - [`Self::close_tab_color`]
-    /// - [`Self::close_tab_active_color`]
-    /// - [`Self::add_tab_background_color`]
-    /// - [`Self::add_tab_color`]
-    /// - [`Self::add_tab_active_color`]
+    /// - [`Style::border`]
+    /// - [`Style::selection_color`]
+    /// - [`ButtonsStyle::close_tab_bg_fill`]
+    /// - [`ButtonsStyle::close_tab_color`]
+    /// - [`ButtonsStyle::close_tab_active_color`]
+    /// - [`ButtonsStyle::add_tab_bg_fill`]
+    /// - [`ButtonsStyle::add_tab_color`]
+    /// - [`ButtonsStyle::add_tab_active_color`]
+    /// - [`SeparatorStyle::color_idle`]
+    /// - [`SeparatorStyle::color_hovered`]
+    /// - [`SeparatorStyle::color_dragged`]
+    /// - [`TabBarStyle::bg_fill`]
+    /// - [`TabsStyle::outline_color`]
+    /// - [`TabsStyle::hline_color`]
+    /// - [`TabsStyle::bg_fill`]
+    /// - [`TabsStyle::text_color_unfocused`]
+    /// - [`TabsStyle::text_color_focused`]
+    /// - [`TabsStyle::text_color_active_unfocused`]
+    /// - [`TabsStyle::text_color_active_focused`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
+            border: Stroke {
+                color: style.visuals.widgets.active.bg_fill,
+                ..Stroke::default()
+            },
             selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
-
-            tab_bar_background_color: style.visuals.faint_bg_color,
-            tab_outline_color: style.visuals.widgets.active.bg_fill,
-            hline_color: style.visuals.widgets.active.bg_fill,
-            tab_background_color: style.visuals.window_fill(),
-
-            tab_text_color_unfocused: style.visuals.text_color(),
-            tab_text_color_focused: style.visuals.strong_text_color(),
-            tab_text_color_active_unfocused: style.visuals.text_color(),
-            tab_text_color_active_focused: style.visuals.strong_text_color(),
-
-            // Same as egui panel resize colors:
-            separator_color_idle: style.visuals.widgets.noninteractive.bg_stroke.color, // dim
-            separator_color_hovered: style.visuals.widgets.hovered.fg_stroke.color,     // bright
-            separator_color_dragged: style.visuals.widgets.active.fg_stroke.color,      // bright
-
-            border_color: style.visuals.widgets.active.bg_fill,
-
-            close_tab_background_color: style.visuals.widgets.active.bg_fill,
-            close_tab_color: style.visuals.text_color(),
-            close_tab_active_color: style.visuals.strong_text_color(),
-
-            add_tab_background_color: style.visuals.widgets.active.bg_fill,
-            add_tab_color: style.visuals.text_color(),
-            add_tab_active_color: style.visuals.strong_text_color(),
+            buttons: ButtonsStyle {
+                close_tab_bg_fill: style.visuals.widgets.active.bg_fill,
+                close_tab_color: style.visuals.text_color(),
+                close_tab_active_color: style.visuals.strong_text_color(),
+                add_tab_bg_fill: style.visuals.widgets.active.bg_fill,
+                add_tab_color: style.visuals.text_color(),
+                add_tab_active_color: style.visuals.strong_text_color(),
+                ..ButtonsStyle::default()
+            },
+            separator: SeparatorStyle {
+                // Same as egui panel resize colors:
+                color_idle: style.visuals.widgets.noninteractive.bg_stroke.color, // dim
+                color_hovered: style.visuals.widgets.hovered.fg_stroke.color,     // bright
+                color_dragged: style.visuals.widgets.active.fg_stroke.color,      // bright
+                ..SeparatorStyle::default()
+            },
+            tab_bar: TabBarStyle {
+                bg_fill: (Rgba::from(style.visuals.window_fill()) * Rgba::from_gray(0.7)).into(),
+                ..TabBarStyle::default()
+            },
+            tabs: TabsStyle {
+                outline_color: style.visuals.widgets.active.bg_fill,
+                hline_color: style.visuals.widgets.active.bg_fill,
+                bg_fill: style.visuals.window_fill(),
+                text_color_unfocused: style.visuals.text_color(),
+                text_color_focused: style.visuals.strong_text_color(),
+                text_color_active_unfocused: style.visuals.text_color(),
+                text_color_active_focused: style.visuals.strong_text_color(),
+                ..TabsStyle::default()
+            },
             ..Self::default()
         }
-    }
-
-    pub(crate) fn hsplit(
-        &self,
-        ui: &mut Ui,
-        fraction: &mut f32,
-        rect: Rect,
-    ) -> (Response, Rect, Rect, Rect) {
-        let pixels_per_point = ui.ctx().pixels_per_point();
-
-        let mut separator = rect;
-
-        let midpoint = rect.min.x + rect.width() * *fraction;
-        separator.min.x = midpoint - self.separator_width * 0.5;
-        separator.max.x = midpoint + self.separator_width * 0.5;
-
-        let response = ui
-            .allocate_rect(separator, Sense::click_and_drag())
-            .on_hover_and_drag_cursor(CursorIcon::ResizeHorizontal);
-
-        if let Some(pos) = response.interact_pointer_pos() {
-            let x = pos.x;
-            let delta = response.drag_delta().x;
-
-            if (delta > 0. && x > midpoint && x < rect.max.x)
-                || (delta < 0. && x < midpoint && x > rect.min.x)
-            {
-                let range = rect.max.x - rect.min.x;
-                let min = (self.separator_extra / range).min(1.0);
-                let max = 1.0 - min;
-                let (min, max) = (min.min(max), max.max(min));
-                *fraction = (*fraction + delta / range).clamp(min, max);
-            }
-        }
-
-        let midpoint = rect.min.x + rect.width() * *fraction;
-        separator.min.x = map_to_pixel(
-            midpoint - self.separator_width * 0.5,
-            pixels_per_point,
-            f32::round,
-        );
-        separator.max.x = map_to_pixel(
-            midpoint + self.separator_width * 0.5,
-            pixels_per_point,
-            f32::round,
-        );
-
-        (
-            response,
-            rect.intersect(Rect::everything_right_of(separator.max.x)),
-            separator,
-            rect.intersect(Rect::everything_left_of(separator.min.x)),
-        )
-    }
-
-    pub(crate) fn vsplit(
-        &self,
-        ui: &mut Ui,
-        fraction: &mut f32,
-        rect: Rect,
-    ) -> (Response, Rect, Rect, Rect) {
-        let pixels_per_point = ui.ctx().pixels_per_point();
-
-        let mut separator = rect;
-
-        let midpoint = rect.min.y + rect.height() * *fraction;
-        separator.min.y = midpoint - self.separator_width * 0.5;
-        separator.max.y = midpoint + self.separator_width * 0.5;
-
-        let response = ui
-            .allocate_rect(separator, Sense::click_and_drag())
-            .on_hover_and_drag_cursor(CursorIcon::ResizeVertical);
-
-        if let Some(pos) = response.interact_pointer_pos() {
-            let y = pos.y;
-            let delta = response.drag_delta().y;
-
-            if (delta > 0. && y > midpoint && y < rect.max.y)
-                || (delta < 0. && y < midpoint && y > rect.min.y)
-            {
-                let delta = response.drag_delta().y;
-                let range = rect.max.y - rect.min.y;
-                let min = (self.separator_extra / range).min(1.0);
-                let max = 1.0 - min;
-                let (min, max) = (min.min(max), max.max(min));
-                *fraction = (*fraction + delta / range).clamp(min, max);
-            }
-        }
-
-        let midpoint = rect.min.y + rect.height() * *fraction;
-        separator.min.y = map_to_pixel(
-            midpoint - self.separator_width * 0.5,
-            pixels_per_point,
-            f32::round,
-        );
-        separator.max.y = map_to_pixel(
-            midpoint + self.separator_width * 0.5,
-            pixels_per_point,
-            f32::round,
-        );
-
-        (
-            response,
-            rect.intersect(Rect::everything_above(separator.min.y)),
-            separator,
-            rect.intersect(Rect::everything_below(separator.max.y)),
-        )
-    }
-
-    pub(crate) const TAB_PLUS_SIZE: f32 = 24.0;
-
-    pub(crate) fn tab_plus(&self, ui: &mut Ui) -> Response {
-        let desired_size = Vec2::splat(Self::TAB_PLUS_SIZE);
-
-        let mut rect = ui.available_rect_before_wrap();
-
-        match self.add_tab_align {
-            TabAddAlign::Left => rect.max.x = rect.min.x + desired_size.x,
-            TabAddAlign::Right => rect.min.x = rect.max.x - desired_size.x,
-        }
-        rect = rect.shrink(3.0);
-
-        let rect = {
-            let size = Self::TAB_PLUS_SIZE / 2.0;
-            let mut pos = rect.right_top();
-            pos.x -= size / 2.0;
-            pos.y += rect.size().y / 2.0;
-            Rect::from_center_size(pos, Vec2::splat(size))
-        };
-
-        let response = ui
-            .allocate_rect(rect, Sense::hover())
-            .on_hover_cursor(CursorIcon::PointingHand);
-
-        let color = if response.hovered() {
-            self.add_tab_active_color
-        } else {
-            self.add_tab_color
-        };
-        if response.hovered() {
-            ui.painter()
-                .rect_filled(rect, Rounding::same(2.0), self.add_tab_background_color);
-        }
-
-        let rect = rect.shrink(1.75);
-        ui.painter().line_segment(
-            [rect.center_top(), rect.center_bottom()],
-            Stroke::new(1.0, color),
-        );
-        ui.painter().line_segment(
-            [rect.right_center(), rect.left_center()],
-            Stroke::new(1.0, color),
-        );
-
-        response
-    }
-
-    /// * `active` means "the tab that is opened in the parent panel".
-    /// * `focused` means "the tab that was last interacted with".
-    ///
-    /// Returns the main button response plus the response of the close button, if any.
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn tab_title(
-        &self,
-        ui: &mut Ui,
-        label: WidgetText,
-        focused: bool,
-        active: bool,
-        is_being_dragged: bool,
-        id: Id,
-        expanded_width: f32,
-    ) -> (Response, Option<Response>) {
-        let rounding = self.tab_rounding;
-
-        let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
-
-        let x_size = Vec2::splat(galley.size().y / 1.3);
-
-        let offset = vec2(8.0, 0.0);
-
-        let desired_size = if self.expand_tabs {
-            vec2(expanded_width, self.tab_bar_height)
-        } else if self.show_close_buttons {
-            vec2(
-                galley.size().x + offset.x * 2.0 + x_size.x + 5.0,
-                self.tab_bar_height,
-            )
-        } else {
-            vec2(galley.size().x + offset.x * 2.0, self.tab_bar_height)
-        };
-
-        let (rect, mut response) = ui.allocate_at_least(desired_size, Sense::hover());
-        if !ui.memory(|mem| mem.is_anything_being_dragged()) {
-            response = response.on_hover_cursor(CursorIcon::Grab);
-        }
-
-        let (close_rect, close_response) =
-            if (active || response.hovered()) && self.show_close_buttons {
-                let mut pos = rect.right_top();
-                pos.x -= offset.x + x_size.x / 2.0;
-                pos.y += rect.size().y / 2.0;
-                let x_rect = Rect::from_center_size(pos, x_size);
-                let response = ui
-                    .interact(x_rect, id, Sense::click())
-                    .on_hover_cursor(CursorIcon::PointingHand);
-                (x_rect, Some(response))
-            } else {
-                (Rect::NOTHING, None)
-            };
-
-        if active {
-            if is_being_dragged {
-                ui.painter().rect_stroke(
-                    rect,
-                    self.tab_rounding,
-                    Stroke::new(1.0, self.tab_outline_color),
-                );
-            } else {
-                let stroke = Stroke::new(1.0, self.tab_outline_color);
-                ui.painter()
-                    .rect(rect, rounding, self.tab_background_color, stroke);
-
-                // Make the tab name area connect with the tab ui area:
-                ui.painter().hline(
-                    rect.x_range(),
-                    rect.bottom(),
-                    Stroke::new(2.0, self.tab_background_color),
-                );
-            }
-        }
-
-        let text_pos = if self.expand_tabs {
-            let mut pos = Align2::CENTER_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
-            pos -= galley.size() / 2.0;
-            pos
-        } else {
-            let mut pos = Align2::LEFT_CENTER.pos_in_rect(&rect.shrink2(vec2(8.0, 5.0)));
-            pos.y -= galley.size().y / 2.0;
-            pos
-        };
-
-        let override_text_color = if galley.galley_has_color {
-            None // respect the color the user has chosen
-        } else {
-            Some(match (active, focused) {
-                (false, false) => self.tab_text_color_unfocused,
-                (false, true) => self.tab_text_color_focused,
-                (true, false) => self.tab_text_color_active_unfocused,
-                (true, true) => self.tab_text_color_active_focused,
-            })
-        };
-
-        ui.painter().add(epaint::TextShape {
-            pos: text_pos,
-            galley: galley.galley,
-            underline: Stroke::NONE,
-            override_text_color,
-            angle: 0.0,
-        });
-
-        if (active || response.hovered()) && self.show_close_buttons {
-            if close_response.as_ref().unwrap().hovered() {
-                ui.painter().rect_filled(
-                    close_rect,
-                    Rounding::same(2.0),
-                    self.close_tab_background_color,
-                );
-            }
-            let x_rect = close_rect.shrink(1.75);
-
-            let color = if focused
-                || close_response
-                    .as_ref()
-                    .unwrap()
-                    .interact_pointer_pos()
-                    .is_some()
-            {
-                self.close_tab_active_color
-            } else {
-                self.close_tab_color
-            };
-            ui.painter().line_segment(
-                [x_rect.left_top(), x_rect.right_bottom()],
-                Stroke::new(1.0, color),
-            );
-            ui.painter().line_segment(
-                [x_rect.right_top(), x_rect.left_bottom()],
-                Stroke::new(1.0, color),
-            );
-        }
-
-        (response, close_response)
-        // match close_response {
-        //     Some(some) => (response, some.hovered(), some.clicked()),
-        //     None => (response, false, false),
-        // }
     }
 }
 
 /// Builds a [`Style`] with custom configuration values.
 #[derive(Default)]
+#[deprecated]
 pub struct StyleBuilder {
     style: Style,
 }
 
+#[allow(deprecated)]
 impl StyleBuilder {
     #[inline(always)]
-    /// Creates a new [StyleBuilder].
+    /// Creates a new [`StyleBuilder`].
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    /// Derives relevant fields from [`egui::Style`] and sets the remaining fields to their default values.
     ///
     /// See also: [`Style::from_egui`].
     pub fn from_egui(style: &egui::Style) -> Self {
@@ -499,271 +289,221 @@ impl StyleBuilder {
         }
     }
 
-    /// Sets `padding` to indent from the edges of the window. By `Default` it's `None`.
+    /// Sets padding to indent from the edges of the window. By `Default` it's `None`.
     #[inline(always)]
     pub fn with_padding(mut self, padding: Margin) -> Self {
         self.style.dock_area_padding = Some(padding);
         self
     }
 
-    /// Sets `border_color` for the window of "working area". By `Default` it's [`egui::Color32::BLACK`].
+    /// Sets border color of the window of "working area". By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
     pub fn with_border_color(mut self, border_color: Color32) -> Self {
-        self.style.border_color = border_color;
+        self.style.border.color = border_color;
         self
     }
 
-    /// Sets `border_width` for the border. By `Default` it's `0.0`.
+    /// Sets border width. By `Default` it's `0.0`.
     #[inline(always)]
     pub fn with_border_width(mut self, border_width: f32) -> Self {
-        self.style.border_width = border_width;
+        self.style.border.width = border_width;
         self
     }
 
-    /// Sets `selection color` for the placing area of the tab where this tab targeted on it. By `Default` it's `(0, 191, 255)` (light blue) with `0.5` capacity.
+    /// Sets color of the placing area of the tab where this tab targeted on it. By `Default` it's `(0, 191, 255)` (light blue) with `0.5` capacity.
     #[inline(always)]
     pub fn with_selection_color(mut self, selection_color: Color32) -> Self {
         self.style.selection_color = selection_color;
         self
     }
 
-    /// Sets `separator_size` for the rectangle separator between nodes. By `Default` it's `1.0`.
+    /// Sets width of the rectangle separator between nodes. By `Default` it's `1.0`.
     #[inline(always)]
     pub fn with_separator_width(mut self, separator_width: f32) -> Self {
-        self.style.separator_width = separator_width;
+        self.style.separator.width = separator_width;
         self
     }
 
-    /// Sets `separator_extra` it sets limit for the allowed area for the separator offset. By `Default` it's `175.0`.
-    /// `bigger value > less allowed offset` for the current window size.
+    /// Sets limit for the allowed area for the separator offset.
+    /// By `Default` it's `175.0`. `bigger value > less allowed offset` for the current window size.
     #[inline(always)]
     pub fn with_separator_extra(mut self, separator_extra: f32) -> Self {
-        self.style.separator_extra = separator_extra;
+        self.style.separator.extra = separator_extra;
         self
     }
 
     /// Sets the idle color for the rectangle separator. By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
     pub fn with_separator_color_idle(mut self, separator_color_idle: Color32) -> Self {
-        self.style.separator_color_idle = separator_color_idle;
+        self.style.separator.color_idle = separator_color_idle;
         self
     }
 
     /// Sets the hovered color for the rectangle separator. By `Default` it's [`Color32::GRAY`].
     #[inline(always)]
     pub fn with_separator_color_hovered(mut self, separator_color_hovered: Color32) -> Self {
-        self.style.separator_color_hovered = separator_color_hovered;
+        self.style.separator.color_hovered = separator_color_hovered;
         self
     }
 
     /// Sets the dragged color for the rectangle separator. By `Default` it's [`Color32::WHITE`].
     #[inline(always)]
     pub fn with_separator_color_dragged(mut self, separator_color_dragged: Color32) -> Self {
-        self.style.separator_color_dragged = separator_color_dragged;
+        self.style.separator.color_dragged = separator_color_dragged;
         self
     }
 
-    /// Sets `tab_bar_background_color` for the color of tab bar. By `Default` it's [`Color32::WHITE`].
+    /// Sets color of tab bar. By `Default` it's [`Color32::WHITE`].
     #[inline(always)]
     pub fn with_tab_bar_background(mut self, tab_bar_background_color: Color32) -> Self {
-        self.style.tab_bar_background_color = tab_bar_background_color;
+        self.style.tab_bar.bg_fill = tab_bar_background_color;
         self
     }
 
-    /// Sets `tab_bar_height` for the color of tab bar. By `Default` it's `24.0`.
+    /// Sets color of tab bar. By `Default` it's `24.0`.
     #[inline(always)]
     pub fn with_tab_bar_height(mut self, tab_bar_height: f32) -> Self {
-        self.style.tab_bar_height = tab_bar_height;
+        self.style.tab_bar.height = tab_bar_height;
         self
     }
 
-    /// Sets `tab_outline_color` for the outline color of tabs. By `Default` it's [`Color32::BLACK`].
+    /// Sets color of tab outlines. By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
     pub fn with_tab_outline_color(mut self, tab_outline_color: Color32) -> Self {
-        self.style.tab_outline_color = tab_outline_color;
+        self.style.tabs.outline_color = tab_outline_color;
         self
     }
 
-    /// Sets [`Style::hline_color`], the line separating the tab name area from the tab content area.
+    /// Sets color of the line separating the tab name area from the tab content area.
     ///
     /// By `Default` it's [`Color32::BLACK`].
     #[inline(always)]
     pub fn with_hline_color(mut self, hline_color: Color32) -> Self {
-        self.style.hline_color = hline_color;
+        self.style.tabs.hline_color = hline_color;
         self
     }
 
-    /// Sets [`Style::hline_below_active_tab_name`].
-    ///
     /// If `true`, show the hline below the active tabs name.
     /// If `false`, show the active tab as merged with the tab ui area.
-    /// Default: `false`.
+    ///
+    /// By `Default` it's `false`.
     #[inline(always)]
     pub fn with_hline_below_active_tab_name(mut self, hline_below_active_tab_name: bool) -> Self {
-        self.style.hline_below_active_tab_name = hline_below_active_tab_name;
+        self.style.tabs.hline_below_active_tab_name = hline_below_active_tab_name;
         self
     }
 
-    /// Sets `tab_rounding` for the tab rounding.
+    /// Sets tab rounding.
     #[inline(always)]
     pub fn with_tab_rounding(mut self, tab_rounding: Rounding) -> Self {
-        self.style.tab_rounding = tab_rounding;
+        self.style.tabs.rounding = tab_rounding;
         self
     }
 
-    /// Sets `tab_background_color` for the current tab background color.
+    /// Sets current tab background color.
     #[inline(always)]
     pub fn with_tab_background_color(mut self, tab_background: Color32) -> Self {
-        self.style.tab_background_color = tab_background;
+        self.style.tabs.bg_fill = tab_background;
         self
     }
 
-    /// Sets `close_tab_color` for the close tab button color.
+    /// Sets close tab button color.
     #[inline(always)]
     pub fn with_close_tab_color(mut self, close_tab_color: Color32) -> Self {
-        self.style.close_tab_color = close_tab_color;
+        self.style.buttons.close_tab_color = close_tab_color;
         self
     }
 
-    /// Sets `close_tab_active_color` for the active close tab button color.
+    /// Sets active close tab button color.
     #[inline(always)]
     pub fn with_close_tab_active_color_color(mut self, close_tab_active_color: Color32) -> Self {
-        self.style.close_tab_active_color = close_tab_active_color;
+        self.style.buttons.close_tab_active_color = close_tab_active_color;
         self
     }
 
-    /// Sets `close_tab_background_color` for the background close tab button color.
+    /// Sets background close tab button color.
     #[inline(always)]
     pub fn with_close_tab_background_color_color(
         mut self,
         close_tab_background_color: Color32,
     ) -> Self {
-        self.style.close_tab_background_color = close_tab_background_color;
+        self.style.buttons.close_tab_bg_fill = close_tab_background_color;
         self
     }
 
-    /// Shows / Hides the tab close buttons.
-    #[inline(always)]
-    pub fn show_close_buttons(mut self, show_close_buttons: bool) -> Self {
-        self.style.show_close_buttons = show_close_buttons;
-        self
-    }
-
-    /// Sets `add_tab_align` for the add tab button color.
+    /// Sets add tab button.
     #[inline(always)]
     pub fn with_add_tab_align(mut self, add_tab_align: TabAddAlign) -> Self {
-        self.style.add_tab_align = add_tab_align;
+        self.style.buttons.add_tab_align = add_tab_align;
         self
     }
 
-    /// Sets `add_tab_color` for the add tab button color.
+    /// Sets add tab button color.
     #[inline(always)]
     pub fn with_add_tab_color(mut self, add_tab_color: Color32) -> Self {
-        self.style.add_tab_color = add_tab_color;
+        self.style.buttons.add_tab_color = add_tab_color;
         self
     }
 
-    /// Sets `add_tab_active_color` for the active add tab button color.
+    /// Sets active add tab button color.
     #[inline(always)]
     pub fn with_add_tab_active_color_color(mut self, add_tab_active_color: Color32) -> Self {
-        self.style.add_tab_active_color = add_tab_active_color;
+        self.style.buttons.add_tab_active_color = add_tab_active_color;
         self
     }
 
-    /// Sets `add_tab_background_color` for the background add tab button color.
+    /// Sets background add tab button color.
     #[inline(always)]
     pub fn with_add_tab_background_color_color(
         mut self,
         add_tab_background_color: Color32,
     ) -> Self {
-        self.style.add_tab_background_color = add_tab_background_color;
+        self.style.buttons.add_tab_bg_fill = add_tab_background_color;
         self
     }
 
-    /// Shows / Hides the tab add buttons.
-    #[inline(always)]
-    pub fn show_add_buttons(mut self, show_add_buttons: bool) -> Self {
-        self.style.show_add_buttons = show_add_buttons;
-        self
-    }
-
-    /// Shows / Hides the add button popup.
-    #[inline(always)]
-    pub fn show_add_popup(mut self, show_add_popup: bool) -> Self {
-        self.style.show_add_popup = show_add_popup;
-        self
-    }
-
-    /// Color of tab title when an inactive tab is unfocused.
+    /// Sets color of tab title when an inactive tab is unfocused.
     #[inline(always)]
     pub fn with_tab_text_color_unfocused(mut self, tab_text_color_unfocused: Color32) -> Self {
-        self.style.tab_text_color_unfocused = tab_text_color_unfocused;
+        self.style.tabs.text_color_unfocused = tab_text_color_unfocused;
         self
     }
 
-    /// Color of tab title when an inactive tab is focused.
+    /// Sets color of tab title when an inactive tab is focused.
     #[inline(always)]
     pub fn with_tab_text_color_focused(mut self, tab_text_color_focused: Color32) -> Self {
-        self.style.tab_text_color_focused = tab_text_color_focused;
+        self.style.tabs.text_color_focused = tab_text_color_focused;
         self
     }
 
-    /// Color of tab title when an active tab is unfocused.
+    /// Sets color of tab title when an active tab is unfocused.
     #[inline(always)]
     pub fn with_tab_text_color_active_unfocused(
         mut self,
         tab_text_color_active_unfocused: Color32,
     ) -> Self {
-        self.style.tab_text_color_active_unfocused = tab_text_color_active_unfocused;
+        self.style.tabs.text_color_active_unfocused = tab_text_color_active_unfocused;
         self
     }
 
-    /// Color of tab title when an active tab is focused.
+    /// Sets color of tab title when an active tab is focused.
     #[inline(always)]
     pub fn with_tab_text_color_active_focused(
         mut self,
         tab_text_color_active_focused: Color32,
     ) -> Self {
-        self.style.tab_text_color_active_focused = tab_text_color_active_focused;
+        self.style.tabs.text_color_active_focused = tab_text_color_active_focused;
         self
     }
 
-    /// Whether tabs can be dragged between nodes and reordered on the tab bar.
-    #[inline(always)]
-    pub fn tabs_are_draggable(mut self, tabs_are_draggable: bool) -> Self {
-        self.style.tabs_are_draggable = tabs_are_draggable;
-        self
-    }
-
-    /// Whether tab titles expand to fill the width of their tab bars.
+    /// Sets whether tab titles expand to fill the width of their tab bars.
     #[inline(always)]
     pub fn expand_tabs(mut self, expand_tabs: bool) -> Self {
-        self.style.expand_tabs = expand_tabs;
+        self.style.tabs.fill_tab_bar = expand_tabs;
         self
     }
 
-    /// Whether tabs show a context menu.
-    #[inline(always)]
-    pub fn show_context_menu(mut self, show_context_menu: bool) -> Self {
-        self.style.show_context_menu = show_context_menu;
-        self
-    }
-
-    /// Whether tabs have a [`ScrollArea`](egui::containers::ScrollArea) out of the box.
-    #[inline(always)]
-    pub fn with_tab_scroll_area(mut self, tab_include_scrollarea: bool) -> Self {
-        self.style.tab_include_scrollarea = tab_include_scrollarea;
-        self
-    }
-
-    /// Whether tabs show their name when hovered over them.
-    #[inline(always)]
-    pub fn show_name_when_hovered(mut self, tab_hover_name: bool) -> Self {
-        self.style.tab_hover_name = tab_hover_name;
-        self
-    }
-
-    /// Returns `Style` with set values.
+    /// Returns [`Style`] with set values.
     #[inline(always)]
     pub fn build(self) -> Style {
         self.style

@@ -36,8 +36,6 @@ To minimize the review time, make sure all the following requirements are met:
     - Deprecated API must be included in the 'Deprecated' section.
 - All public API has up-to-date documentation comments.
     - If you override a field of `Style` in `from_egui`, include it in the documentation of this function.
-- All fields of `Style` must have a corresponding field and setter method in `StyleBuilder`, and also be included
-  in `style_editor` in the `hello` example.
 - All major features are included in an example app found in `examples/`.
 - The following files and directories are **not** included:
   - .idea/
