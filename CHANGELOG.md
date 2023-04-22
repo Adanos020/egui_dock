@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.5.0 - TBD
+## 0.5.0 - 2023-04-22
 
 ### Fixed
 - Ensure `Tab` have a stable `egui::Id` when moved ([#121](https://github.com/Adanos020/egui_dock/pull/121))
