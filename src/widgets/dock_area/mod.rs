@@ -482,8 +482,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             ui,
                             id,
                             label,
-                            is_active,
                             is_active && Some(node_index) == focused,
+                            is_active,
                             is_being_dragged,
                             expanded_width,
                         )
