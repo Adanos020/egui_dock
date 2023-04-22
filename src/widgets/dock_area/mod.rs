@@ -746,7 +746,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             pos
         };
 
-        let override_text_color = galley.galley_has_color.then_some(match (active, focused) {
+        let override_text_color = (!galley.galley_has_color).then_some(match (active, focused) {
             (false, false) => style.tabs.text_color_unfocused,
             (false, true) => style.tabs.text_color_focused,
             (true, false) => style.tabs.text_color_active_unfocused,
