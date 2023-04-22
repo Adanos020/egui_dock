@@ -177,7 +177,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         for node_index in (0..self.tree.len()).map(NodeIndex) {
             if self.tree[node_index].is_parent() {
-                self.split(ui, node_index);
+                self.split_subtree(ui, node_index);
             }
         }
 
@@ -240,7 +240,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.tree[NodeIndex::root()].set_rect(rect);
     }
 
-    fn split(&mut self, ui: &mut Ui, node_index: NodeIndex) {
+    fn split_subtree(&mut self, ui: &mut Ui, node_index: NodeIndex) {
         assert!(self.tree[node_index].is_parent());
 
         let style = self.style.as_ref().unwrap();
@@ -248,31 +248,31 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         duplicate! {
             [
-                orientation     dimension_point dimension_size  left_rect              right_rect           left_point  right_point;
-                [Horizontal]    [x]             [width]         [everything_right_of]  [everything_left_of] [max]       [min];
-                [Vertical]      [y]             [height]        [everything_above]     [everything_below]   [min]       [max];
+                orientation   dim_point  dim_size  left_rect   right_rect left_point  right_point;
+                [Horizontal]  [x]        [width]   [right_of]  [left_of]  [max]       [min];
+                [Vertical]    [y]        [height]  [above]     [below]    [min]       [max];
             ]
             if let Node::orientation { fraction, rect } = &mut self.tree[node_index] {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
                 let mut separator = rect;
 
-                let midpoint = rect.min.dimension_point + rect.dimension_size() * *fraction;
-                separator.min.dimension_point = midpoint - style.separator.width * 0.5;
-                separator.max.dimension_point = midpoint + style.separator.width * 0.5;
+                let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
+                separator.min.dim_point = midpoint - style.separator.width * 0.5;
+                separator.max.dim_point = midpoint + style.separator.width * 0.5;
 
                 let response = ui
                     .allocate_rect(separator, Sense::click_and_drag())
                     .on_hover_and_drag_cursor(paste!{ CursorIcon::[<Resize orientation>]});
 
                 if let Some(pos) = response.interact_pointer_pos() {
-                    let dimension_point = pos.dimension_point;
-                    let delta = response.drag_delta().dimension_point;
+                    let dim_point = pos.dim_point;
+                    let delta = response.drag_delta().dim_point;
 
-                    if (delta > 0. && dimension_point > midpoint && dimension_point < rect.max.dimension_point)
-                        || (delta < 0. && dimension_point < midpoint && dimension_point > rect.min.dimension_point)
+                    if (delta > 0. && dim_point > midpoint && dim_point < rect.max.dim_point)
+                        || (delta < 0. && dim_point < midpoint && dim_point > rect.min.dim_point)
                     {
-                        let range = rect.max.dimension_point - rect.min.dimension_point;
+                        let range = rect.max.dim_point - rect.min.dim_point;
                         let min = (style.separator.extra / range).min(1.0);
                         let max = 1.0 - min;
                         let (min, max) = (min.min(max), max.max(min));
@@ -280,20 +280,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
 
-                let midpoint = rect.min.dimension_point + rect.dimension_size() * *fraction;
-                separator.min.dimension_point = map_to_pixel(
+                let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
+                separator.min.dim_point = map_to_pixel(
                     midpoint - style.separator.width * 0.5,
                     pixels_per_point,
                     f32::round,
                 );
-                separator.max.dimension_point = map_to_pixel(
+                separator.max.dim_point = map_to_pixel(
                     midpoint + style.separator.width * 0.5,
                     pixels_per_point,
                     f32::round,
                 );
-
-                let left = rect.intersect(Rect::left_rect(separator.left_point.dimension_point));
-                let right = rect.intersect(Rect::right_rect(separator.right_point.dimension_point));
 
                 let color = if response.dragged() {
                     style.separator.color_dragged
@@ -304,6 +301,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 };
 
                 ui.painter().rect_filled(separator, Rounding::none(), color);
+
+                paste! {
+                    let left = rect.intersect(Rect::[<everything_ left_rect>](separator.left_point.dim_point));
+                    let right = rect.intersect(Rect::[<everything_ right_rect>](separator.right_point.dim_point));
+                }
 
                 self.tree[node_index.left()].set_rect(left);
                 self.tree[node_index.right()].set_rect(right);
@@ -320,42 +322,23 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) {
         assert!(self.tree[node_index].is_leaf());
 
-        let style = self.style.as_ref().unwrap();
         let rect = {
-            let Node::Leaf { rect,.. } = &mut self.tree[node_index] else { unreachable!() };
-            rect
+            let Node::Leaf { rect, .. } = &mut self.tree[node_index] else { unreachable!() };
+            *rect
         };
         let ui = &mut ui.child_ui_with_id_source(
-            *rect,
+            rect,
             Layout::top_down_justified(Align::Min),
             (node_index, "node"),
         );
         let spacing = ui.spacing().item_spacing;
         ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-        ui.set_clip_rect(*rect);
+        ui.set_clip_rect(rect);
 
-        let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
-            vec2(ui.available_width(), style.tab_bar.height),
-            Sense::hover(),
-        );
-        ui.painter().rect_filled(
-            tabbar_outer_rect,
-            style.tabs.rounding,
-            style.tab_bar.bg_fill,
-        );
+        let tabbar_response = self.tab_bar(ui, state, node_index, tab_viewer);
+        self.tab_body(ui, state, node_index, tab_viewer, spacing, tabbar_response);
 
-        self.tab_bar(
-            ui,
-            state,
-            node_index,
-            tab_viewer,
-            tabbar_outer_rect,
-            &tabbar_response,
-        );
-
-        self.tab_body(ui, state, node_index, tab_viewer, spacing, &tabbar_response);
-
-        let Node::Leaf { tabs,.. } = &mut self.tree[node_index] else { unreachable!() };
+        let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else { unreachable!() };
         for (tab_index, tab) in tabs.iter_mut().enumerate() {
             if tab_viewer.force_close(tab) {
                 self.to_remove.push((node_index, TabIndex(tab_index)));
@@ -369,17 +352,22 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         state: &mut State,
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
-        tabbar_outer_rect: Rect,
-        tabbar_response: &Response,
-    ) {
+    ) -> Response {
+        assert!(self.tree[node_index].is_leaf());
+
+        let style = self.style.as_ref().unwrap();
+        let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
+            vec2(ui.available_width(), style.tab_bar.height),
+            Sense::hover(),
+        );
+        ui.painter().rect_filled(
+            tabbar_outer_rect,
+            style.tabs.rounding,
+            style.tab_bar.bg_fill,
+        );
+
         let actual_width = {
-            let Node::Leaf {
-                tabs,
-                scroll,
-                ..
-            } = &mut self.tree[node_index] else {
-                unreachable!();
-            };
+            let Node::Leaf { tabs, scroll, .. } = &mut self.tree[node_index] else { unreachable!() };
 
             let tabbar_inner_rect = Rect::from_min_size(
                 (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
@@ -445,8 +433,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             node_index,
             actual_width,
             tabbar_outer_rect,
-            tabbar_response,
+            &tabbar_response,
         );
+
+        tabbar_response
     }
 
     fn tabs(
@@ -458,16 +448,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tabbar_outer_rect: Rect,
         expanded_width: f32,
     ) {
-        let focused = self.tree.focused_leaf();
+        assert!(self.tree[node_index].is_leaf());
 
-        let Node::Leaf {
-            tabs,
-            active,
-            ..
-        } = &mut self.tree[node_index] else {
-            unreachable!();
+        let focused = self.tree.focused_leaf();
+        let tabs_len = {
+            let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else { unreachable!() };
+            tabs.len()
         };
-        for (tab_index, tab) in tabs.iter_mut().enumerate() {
+
+        for tab_index in 0..tabs_len {
             let id = self.id.with((node_index, "node")).with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
             let is_being_dragged =
@@ -477,30 +466,32 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
             }
 
-            let is_active = *active == tab_index || is_being_dragged;
-            let label = tab_viewer.title(tab);
+            let (is_active, label) = {
+                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+                (
+                    *active == tab_index || is_being_dragged,
+                    tab_viewer.title(&mut tabs[tab_index.0]),
+                )
+            };
 
-            let style = self.style.as_ref().unwrap();
             let response = if is_being_dragged {
                 let layer_id = LayerId::new(Order::Tooltip, id);
-                let mut response = tabs_ui
+                let response = tabs_ui
                     .with_layer_id(layer_id, |ui| {
-                        Self::tab_title(
+                        self.tab_title(
                             ui,
-                            style,
+                            id,
                             label,
                             is_active,
                             is_active && Some(node_index) == focused,
                             is_being_dragged,
-                            id,
                             expanded_width,
-                            self.show_close_buttons,
                         )
                     })
                     .response;
 
                 let sense = Sense::click_and_drag();
-                response = tabs_ui.interact(response.rect, id, sense);
+                let response = tabs_ui.interact(response.rect, id, sense);
 
                 if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
                     let center = response.rect.center();
@@ -516,16 +507,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 response
             } else {
-                let (mut response, close_response) = Self::tab_title(
+                let (mut response, close_response) = self.tab_title(
                     tabs_ui,
-                    style,
+                    id,
                     label,
                     is_active && Some(node_index) == focused,
                     is_active,
                     is_being_dragged,
-                    id,
                     expanded_width,
-                    self.show_close_buttons,
                 );
 
                 let (close_hovered, close_clicked) = close_response
@@ -538,6 +527,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     Sense::click_and_drag()
                 };
 
+                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+                let tab = &mut tabs[tab_index.0];
                 if self.show_tab_name_on_hover {
                     response = response.on_hover_ui(|ui| {
                         ui.label(tab_viewer.title(tab));
@@ -584,6 +575,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             };
 
             // Paint hline below each tab unless its active (or option says otherwise)
+            let style = self.style.as_ref().unwrap();
             if !is_active || style.tabs.hline_below_active_tab_name {
                 let px = tabs_ui.ctx().pixels_per_point().recip();
                 tabs_ui.painter().hline(
@@ -593,6 +585,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 );
             }
 
+            let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let tab = &mut tabs[tab_index.0];
             if response.clicked() {
                 *active = tab_index;
                 self.new_focused = Some(node_index);
@@ -631,10 +625,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
-        let style = self.style.as_ref().unwrap();
 
         response = response.on_hover_cursor(CursorIcon::PointingHand);
 
+        let style = self.style.as_ref().unwrap();
         let color = if response.hovered() {
             ui.painter()
                 .rect_filled(rect, Rounding::none(), style.buttons.add_tab_bg_fill);
@@ -682,21 +676,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// Returns the main button response plus the response of the close button, if any.
     #[allow(clippy::too_many_arguments)]
     fn tab_title(
+        &mut self,
         ui: &mut Ui,
-        style: &Style,
+        id: Id,
         label: WidgetText,
         focused: bool,
         active: bool,
         is_being_dragged: bool,
-        id: Id,
         expanded_width: f32,
-        show_close: bool,
     ) -> (Response, Option<Response>) {
+        let style = self.style.as_ref().unwrap();
         let rounding = style.tabs.rounding;
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
         let text_width = galley.size().x + 2.0 * x_spacing;
-        let close_button_size = if show_close {
+        let close_button_size = if self.show_close_buttons {
             Style::TAB_CLOSE_BUTTON_SIZE.min(style.tab_bar.height)
         } else {
             0.0
@@ -713,7 +707,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let (rect, mut response) =
             ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
-        if !ui.memory(|mem| mem.is_anything_being_dragged()) {
+        if !ui.memory(|mem| mem.is_anything_being_dragged()) && self.draggable_tabs {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 
@@ -752,16 +746,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             pos
         };
 
-        let override_text_color = if galley.galley_has_color {
-            None // respect the color the user has chosen
-        } else {
-            Some(match (active, focused) {
-                (false, false) => style.tabs.text_color_unfocused,
-                (false, true) => style.tabs.text_color_focused,
-                (true, false) => style.tabs.text_color_active_unfocused,
-                (true, true) => style.tabs.text_color_active_focused,
-            })
-        };
+        let override_text_color = galley.galley_has_color.then_some(match (active, focused) {
+            (false, false) => style.tabs.text_color_unfocused,
+            (false, true) => style.tabs.text_color_focused,
+            (true, false) => style.tabs.text_color_active_unfocused,
+            (true, true) => style.tabs.text_color_active_focused,
+        });
 
         ui.painter().add(TextShape {
             pos: text_pos,
@@ -771,7 +761,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             angle: 0.0,
         });
 
-        let close_response = if show_close {
+        let close_response = self.show_close_buttons.then(|| {
             let mut close_button_rect = rect;
             close_button_rect.set_left(text_rect.right());
             close_button_rect =
@@ -810,10 +800,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 Stroke::new(1.0, color),
             );
 
-            Some(response)
-        } else {
-            None
-        };
+            response
+        });
 
         (response, close_response)
     }
@@ -905,7 +893,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         spacing: Vec2,
-        tabbar_response: &Response,
+        tabbar_response: Response,
     ) {
         let (body_rect, _body_response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());

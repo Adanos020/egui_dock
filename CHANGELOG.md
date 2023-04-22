@@ -4,6 +4,7 @@
 
 ### Fixed
 - Ensure `Tab` have a stable `egui::Id` when moved ([#121](https://github.com/Adanos020/egui_dock/pull/121))
+- Don't display the "grab" cursor icon on tabs when hovered and the `draggable_tabs` flag is unset ([#123](https://github.com/Adanos020/egui_dock/pull/123))
 
 ### Added
 - `Tree::move_tab` method that allows moving a tab from one node to the other ([#115](https://github.com/Adanos020/egui_dock/pull/107))
