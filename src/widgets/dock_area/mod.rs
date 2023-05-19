@@ -366,6 +366,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             style.tab_bar.bg_fill,
         );
 
+        let mut available_width = tabbar_outer_rect.width();
+
+        // Reserve space for the add button at the end of the tab bar
+        if self.show_add_buttons {
+            available_width -= Style::TAB_ADD_BUTTON_SIZE;
+        }
+
         let actual_width = {
             let Node::Leaf { tabs, scroll, .. } = &mut self.tree[node_index] else { unreachable!() };
 
@@ -380,16 +387,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 "tabs",
             );
 
-            let mut available_width = tabbar_outer_rect.width();
             let mut clip_rect = tabbar_outer_rect;
-
-            // Reserve space for the add button at the end of the tab bar
-            if self.show_add_buttons {
-                clip_rect.set_right(tabbar_outer_rect.right() - Style::TAB_ADD_BUTTON_SIZE);
-                tabs_ui.set_clip_rect(clip_rect);
-                available_width -= Style::TAB_ADD_BUTTON_SIZE;
-            }
-
+            clip_rect.set_width(available_width);
             tabs_ui.set_clip_rect(clip_rect);
 
             // Desired size for tabs in "expanded" mode
@@ -432,7 +431,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             ui,
             node_index,
             actual_width,
-            tabbar_outer_rect,
+            available_width,
             &tabbar_response,
         );
 
@@ -811,11 +810,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui: &mut Ui,
         node_index: NodeIndex,
         actual_width: f32,
-        tabbar_outer_rect: Rect,
+        available_width: f32,
         tabbar_response: &Response,
     ) {
         let Node::Leaf { scroll, .. } = &mut self.tree[node_index] else { unreachable!() };
-        let overflow = (actual_width - tabbar_outer_rect.width()).at_least(0.0);
+        let overflow = (actual_width - available_width).at_least(0.0);
         let style = self.style.as_ref().unwrap();
 
         // Compare to 1.0 and not 0.0 to avoid drawing a scroll bar due
@@ -830,7 +829,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 );
 
                 // Compute scroll bar handle position and size
-                let overflow_ratio = actual_width / scroll_bar_rect.width();
+                let overflow_ratio = actual_width / available_width;
                 let scroll_ratio = -*scroll / overflow;
 
                 let scroll_bar_handle_size = overflow_ratio.recip() * scroll_bar_rect.width();
