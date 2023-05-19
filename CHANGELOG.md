@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## Unreleased
+
+### Added
+- `SeparatorStyle::extra_interact_width` option that adds "logical" width to separators so that they are easier to grab ([#128](https://github.com/Adanos020/egui_dock/pull/128))
+
 ## 0.5.0 - 2023-04-22
 
 ### Fixed
@@ -174,7 +179,6 @@
 - Renamed `Node::None` to `Node::Empty`.
 
 ### Fixed
-
 - Now selection color of the placing area for the tab isn't showing if the tab is targeted on its own node when the tab is the only member of  this node.
 - Dock vertical and horizontal separators are now displayed properly.
 - Prevent Id clashes from multiple tabs being displayed at once.
