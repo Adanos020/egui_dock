@@ -60,6 +60,10 @@ pub struct SeparatorStyle {
     /// Width of the rectangle separator between nodes. By `Default` it's `1.0`.
     pub width: f32,
 
+    /// Extra width added to the "logical thickness" of the rectangle so it's
+    /// easier to grab. By `Default` it's `4.0`.
+    pub extra_interact_width: f32,
+
     /// Limit for the allowed area for the separator offset. By `Default` it's `175.0`.
     /// `bigger value > less allowed offset` for the current window size.
     pub extra: f32,
@@ -158,6 +162,7 @@ impl Default for SeparatorStyle {
     fn default() -> Self {
         Self {
             width: 1.0,
+            extra_interact_width: 2.0,
             extra: 175.0,
             color_idle: Color32::BLACK,
             color_hovered: Color32::GRAY,
