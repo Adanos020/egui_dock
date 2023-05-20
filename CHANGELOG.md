@@ -1,6 +1,9 @@
 # egui_dock changelog
 
-## Unreleased
+# Unreleased
+
+## Fixed
+- Ensure close button can be scrolled to when tab bar is small ([#129](https://github.com/Adanos020/egui_dock/pull/129))
 
 ### Added
 - `SeparatorStyle::extra_interact_width` option that adds "logical" width to separators so that they are easier to grab ([#128](https://github.com/Adanos020/egui_dock/pull/128))
