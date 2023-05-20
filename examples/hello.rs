@@ -132,6 +132,13 @@ impl MyContext {
                 ui.add(Slider::new(&mut style.separator.width, 1.0..=50.0));
                 ui.end_row();
 
+                ui.label("Extra Interact Width:");
+                ui.add(Slider::new(
+                    &mut style.separator.extra_interact_width,
+                    0.0..=50.0,
+                ));
+                ui.end_row();
+
                 ui.label("Offset limit:");
                 ui.add(Slider::new(&mut style.separator.extra, 1.0..=300.0));
                 ui.end_row();

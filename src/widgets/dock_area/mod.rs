@@ -176,14 +176,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.allocate_area_for_root(ui);
 
         for node_index in (0..self.tree.len()).map(NodeIndex) {
-            if self.tree[node_index].is_parent() {
-                self.split_subtree(ui, node_index);
+            if self.tree[node_index].is_leaf() {
+                self.show_leaf(ui, &mut state, node_index, tab_viewer);
             }
         }
 
+        // Draw separator after node UI so that we can overlay the separator
+        // interaction zone according to `SeparatorStyle::extra_interact_width`.
         for node_index in (0..self.tree.len()).map(NodeIndex) {
-            if self.tree[node_index].is_leaf() {
-                self.process_leaf(ui, &mut state, node_index, tab_viewer);
+            if self.tree[node_index].is_parent() {
+                self.show_separator(ui, node_index);
             }
         }
 
@@ -240,7 +242,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.tree[NodeIndex::root()].set_rect(rect);
     }
 
-    fn split_subtree(&mut self, ui: &mut Ui, node_index: NodeIndex) {
+    fn show_separator(&mut self, ui: &mut Ui, node_index: NodeIndex) {
         assert!(self.tree[node_index].is_parent());
 
         let style = self.style.as_ref().unwrap();
@@ -261,8 +263,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 separator.min.dim_point = midpoint - style.separator.width * 0.5;
                 separator.max.dim_point = midpoint + style.separator.width * 0.5;
 
-                let response = ui
-                    .allocate_rect(separator, Sense::click_and_drag())
+                let mut expand = Vec2::ZERO;
+                expand.dim_point += style.separator.extra_interact_width / 2.0;
+                let interact_rect = separator.expand2(expand);
+
+                let response = ui.allocate_rect(interact_rect, Sense::click_and_drag())
                     .on_hover_and_drag_cursor(paste!{ CursorIcon::[<Resize orientation>]});
 
                 if let Some(pos) = response.interact_pointer_pos() {
@@ -313,7 +318,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
-    fn process_leaf(
+    fn show_leaf(
         &mut self,
         ui: &mut Ui,
         state: &mut State,
