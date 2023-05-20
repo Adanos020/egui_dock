@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-# Unreleased
+## 0.5.1 - 2023-04-20
 
 ## Fixed
 - Ensure close button can be scrolled to when tab bar is small ([#129](https://github.com/Adanos020/egui_dock/pull/129))
