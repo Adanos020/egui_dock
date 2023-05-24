@@ -933,7 +933,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             let style = self.style.as_ref().unwrap();
             let tabs_style = tab_viewer.tab_style_override(tab, &style.tabs);
-            let tabs_style = tabs_style.as_ref().unwrap_or_else(|| &style.tabs);
+            let tabs_style = tabs_style.as_ref().unwrap_or(&style.tabs);
             if tab_viewer.clear_background(tab) {
                 ui.painter().rect_filled(body_rect, 0.0, tabs_style.bg_fill);
             }
