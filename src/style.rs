@@ -24,7 +24,7 @@ pub struct Style {
     pub buttons: ButtonsStyle,
     pub separator: SeparatorStyle,
     pub tab_bar: TabBarStyle,
-    pub tabs: TabsStyle,
+    pub tabs: TabStyle,
 }
 
 /// Specifies the look and feel of buttons.
@@ -101,7 +101,7 @@ pub struct TabBarStyle {
 
 /// Specifies the look and feel of individual tabs.
 #[derive(Clone, Debug)]
-pub struct TabsStyle {
+pub struct TabStyle {
     /// Inner margin of tab body. By `Default` it's `Margin::same(4.0)`
     pub inner_margin: Margin,
 
@@ -144,7 +144,7 @@ impl Default for Style {
             buttons: ButtonsStyle::default(),
             separator: SeparatorStyle::default(),
             tab_bar: TabBarStyle::default(),
-            tabs: TabsStyle::default(),
+            tabs: TabStyle::default(),
         }
     }
 }
@@ -190,7 +190,7 @@ impl Default for TabBarStyle {
     }
 }
 
-impl Default for TabsStyle {
+impl Default for TabStyle {
     fn default() -> Self {
         Self {
             inner_margin: Margin::same(4.0),
@@ -222,7 +222,7 @@ impl Style {
     /// - [`Style::selection_color`]
     ///
     /// See also: [`ButtonsStyle::from_egui`], [`SeparatorStyle::from_egui`], [`TabBarStyle::from_egui`],
-    /// [`TabsStyle::from_egui`]
+    /// [`TabStyle::from_egui`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             border: Stroke {
@@ -233,7 +233,7 @@ impl Style {
             buttons: ButtonsStyle::from_egui(style),
             separator: SeparatorStyle::from_egui(style),
             tab_bar: TabBarStyle::from_egui(style),
-            tabs: TabsStyle::from_egui(style),
+            tabs: TabStyle::from_egui(style),
             ..Self::default()
         }
     }
@@ -296,16 +296,16 @@ impl TabBarStyle {
     }
 }
 
-impl TabsStyle {
+impl TabStyle {
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - [`TabsStyle::outline_color`]
-    /// - [`TabsStyle::bg_fill`]
-    /// - [`TabsStyle::text_color_unfocused`]
-    /// - [`TabsStyle::text_color_focused`]
-    /// - [`TabsStyle::text_color_active_unfocused`]
-    /// - [`TabsStyle::text_color_active_focused`]
+    /// - [`TabStyle::outline_color`]
+    /// - [`TabStyle::bg_fill`]
+    /// - [`TabStyle::text_color_unfocused`]
+    /// - [`TabStyle::text_color_focused`]
+    /// - [`TabStyle::text_color_active_unfocused`]
+    /// - [`TabStyle::text_color_active_focused`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             outline_color: style.visuals.widgets.active.bg_fill,
@@ -314,7 +314,7 @@ impl TabsStyle {
             text_color_focused: style.visuals.strong_text_color(),
             text_color_active_unfocused: style.visuals.text_color(),
             text_color_active_focused: style.visuals.strong_text_color(),
-            ..TabsStyle::default()
+            ..TabStyle::default()
         }
     }
 }
