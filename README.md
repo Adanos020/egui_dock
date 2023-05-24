@@ -19,8 +19,8 @@ Add `egui` and `egui_dock` to your project's dependencies.
 
 ```toml
 [dependencies]
-egui = "0.21"
-egui_dock = "0.5"
+egui = "0.22"
+egui_dock = "0.6"
 ```
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
