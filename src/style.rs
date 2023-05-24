@@ -13,8 +13,6 @@ pub enum TabAddAlign {
 #[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub struct Style {
-    pub default_inner_margin: Margin,
-
     /// Sets padding to indent from the edges of the window. By `Default` it's `None`.
     pub dock_area_padding: Option<Margin>,
 
@@ -94,6 +92,9 @@ pub struct TabBarStyle {
 /// Specifies the look and feel of individual tabs.
 #[derive(Clone, Debug)]
 pub struct TabsStyle {
+    /// Inner margin of tab body. By `Default` it's `Margin::same(4.0)`
+    pub inner_margin: Margin,
+
     /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
     pub outline_color: Color32,
 
@@ -132,7 +133,6 @@ impl Default for Style {
     fn default() -> Self {
         Self {
             dock_area_padding: None,
-            default_inner_margin: Margin::same(4.0),
             border: Stroke::new(f32::default(), Color32::BLACK),
             selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
             buttons: ButtonsStyle::default(),
@@ -184,6 +184,7 @@ impl Default for TabBarStyle {
 impl Default for TabsStyle {
     fn default() -> Self {
         Self {
+            inner_margin: Margin::same(4.0),
             bg_fill: Color32::WHITE,
             fill_tab_bar: false,
             hline_color: Color32::BLACK,

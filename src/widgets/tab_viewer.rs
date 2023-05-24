@@ -59,7 +59,7 @@ pub trait TabViewer {
 
     /// Sets the margins between tab's borders and its contents.
     fn inner_margin_override(&self, style: &Style) -> Margin {
-        style.default_inner_margin
+        style.tabs.inner_margin
     }
 
     /// Whether the tab will be cleared with the color specified in [`TabBarStyle::bg_fill`](crate::TabBarStyle::bg_fill)
