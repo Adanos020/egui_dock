@@ -18,7 +18,7 @@
 - Moved `Style::default_inner_margin` to `TabsStyle::inner_margin` ([78ecf3a](https://github.com/Adanos020/egui_dock/commit/78ecf3a175ffb960724f328274682dfded800e0f))
 - Moved `TabStyle::hline_color` to `TabBarStyle::hline_color` ([99333b0](https://github.com/Adanos020/egui_dock/commit/99333b093d307181c288b3e134379cfe47647a7c))
 
-## 0.5.1 - 2023-04-20
+## 0.5.1 - 2023-05-20
 
 ## Fixed
 - Ensure close button can be scrolled to when tab bar is small ([#129](https://github.com/Adanos020/egui_dock/pull/129))
