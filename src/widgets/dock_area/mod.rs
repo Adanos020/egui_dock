@@ -473,7 +473,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let (is_active, label, tab_style) = {
                 let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
                 let style = self.style.as_ref().unwrap();
-                let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0]);
+                let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tabs);
                 (
                     *active == tab_index || is_being_dragged,
                     tab_viewer.title(&mut tabs[tab_index.0]),
@@ -587,7 +587,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
             let tab = &mut tabs[tab_index.0];
             let style = self.style.as_ref().unwrap();
-            let tab_style = tab_viewer.tab_style_override(tab);
+            let tab_style = tab_viewer.tab_style_override(tab, &style.tabs);
             let tab_style = tab_style.as_ref().unwrap_or(&style.tabs);
 
             if !is_active || tab_style.hline_below_active_tab_name {
@@ -931,10 +931,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
             }
 
-            let tabs_style = tab_viewer.tab_style_override(tab);
-            let tabs_style = tabs_style
-                .as_ref()
-                .unwrap_or_else(|| &self.style.as_ref().unwrap().tabs);
+            let style = self.style.as_ref().unwrap();
+            let tabs_style = tab_viewer.tab_style_override(tab, &style.tabs);
+            let tabs_style = tabs_style.as_ref().unwrap_or_else(|| &style.tabs);
             if tab_viewer.clear_background(tab) {
                 ui.painter().rect_filled(body_rect, 0.0, tabs_style.bg_fill);
             }

@@ -220,17 +220,86 @@ impl Style {
     /// Fields overwritten by [`egui::Style`] are:
     /// - [`Style::border`]
     /// - [`Style::selection_color`]
+    ///
+    /// See also: [`ButtonsStyle::from_egui`], [`SeparatorStyle::from_egui`], [`TabBarStyle::from_egui`],
+    /// [`TabsStyle::from_egui`]
+    pub fn from_egui(style: &egui::Style) -> Self {
+        Self {
+            border: Stroke {
+                color: style.visuals.widgets.active.bg_fill,
+                ..Stroke::default()
+            },
+            selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
+            buttons: ButtonsStyle::from_egui(style),
+            separator: SeparatorStyle::from_egui(style),
+            tab_bar: TabBarStyle::from_egui(style),
+            tabs: TabsStyle::from_egui(style),
+            ..Self::default()
+        }
+    }
+}
+
+impl ButtonsStyle {
+    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
     /// - [`ButtonsStyle::close_tab_bg_fill`]
     /// - [`ButtonsStyle::close_tab_color`]
     /// - [`ButtonsStyle::close_tab_active_color`]
     /// - [`ButtonsStyle::add_tab_bg_fill`]
     /// - [`ButtonsStyle::add_tab_color`]
     /// - [`ButtonsStyle::add_tab_active_color`]
+    pub fn from_egui(style: &egui::Style) -> Self {
+        Self {
+            close_tab_bg_fill: style.visuals.widgets.active.bg_fill,
+            close_tab_color: style.visuals.text_color(),
+            close_tab_active_color: style.visuals.strong_text_color(),
+            add_tab_bg_fill: style.visuals.widgets.active.bg_fill,
+            add_tab_color: style.visuals.text_color(),
+            add_tab_active_color: style.visuals.strong_text_color(),
+            add_tab_border_color: style.visuals.widgets.active.bg_fill,
+            ..ButtonsStyle::default()
+        }
+    }
+}
+
+impl SeparatorStyle {
+    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
     /// - [`SeparatorStyle::color_idle`]
     /// - [`SeparatorStyle::color_hovered`]
     /// - [`SeparatorStyle::color_dragged`]
+    pub fn from_egui(style: &egui::Style) -> Self {
+        Self {
+            // Same as egui panel resize colors:
+            color_idle: style.visuals.widgets.noninteractive.bg_stroke.color, // dim
+            color_hovered: style.visuals.widgets.hovered.fg_stroke.color,     // bright
+            color_dragged: style.visuals.widgets.active.fg_stroke.color,      // bright
+            ..SeparatorStyle::default()
+        }
+    }
+}
+
+impl TabBarStyle {
+    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
     /// - [`TabBarStyle::bg_fill`]
     /// - [`TabBarStyle::hline_color`]
+    pub fn from_egui(style: &egui::Style) -> Self {
+        Self {
+            bg_fill: (Rgba::from(style.visuals.window_fill()) * Rgba::from_gray(0.7)).into(),
+            hline_color: style.visuals.widgets.active.bg_fill,
+            ..TabBarStyle::default()
+        }
+    }
+}
+
+impl TabsStyle {
+    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
     /// - [`TabsStyle::outline_color`]
     /// - [`TabsStyle::bg_fill`]
     /// - [`TabsStyle::text_color_unfocused`]
@@ -239,43 +308,13 @@ impl Style {
     /// - [`TabsStyle::text_color_active_focused`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
-            border: Stroke {
-                color: style.visuals.widgets.active.bg_fill,
-                ..Stroke::default()
-            },
-            selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
-            buttons: ButtonsStyle {
-                close_tab_bg_fill: style.visuals.widgets.active.bg_fill,
-                close_tab_color: style.visuals.text_color(),
-                close_tab_active_color: style.visuals.strong_text_color(),
-                add_tab_bg_fill: style.visuals.widgets.active.bg_fill,
-                add_tab_color: style.visuals.text_color(),
-                add_tab_active_color: style.visuals.strong_text_color(),
-                add_tab_border_color: style.visuals.widgets.active.bg_fill,
-                ..ButtonsStyle::default()
-            },
-            separator: SeparatorStyle {
-                // Same as egui panel resize colors:
-                color_idle: style.visuals.widgets.noninteractive.bg_stroke.color, // dim
-                color_hovered: style.visuals.widgets.hovered.fg_stroke.color,     // bright
-                color_dragged: style.visuals.widgets.active.fg_stroke.color,      // bright
-                ..SeparatorStyle::default()
-            },
-            tab_bar: TabBarStyle {
-                bg_fill: (Rgba::from(style.visuals.window_fill()) * Rgba::from_gray(0.7)).into(),
-                hline_color: style.visuals.widgets.active.bg_fill,
-                ..TabBarStyle::default()
-            },
-            tabs: TabsStyle {
-                outline_color: style.visuals.widgets.active.bg_fill,
-                bg_fill: style.visuals.window_fill(),
-                text_color_unfocused: style.visuals.text_color(),
-                text_color_focused: style.visuals.strong_text_color(),
-                text_color_active_unfocused: style.visuals.text_color(),
-                text_color_active_focused: style.visuals.strong_text_color(),
-                ..TabsStyle::default()
-            },
-            ..Self::default()
+            outline_color: style.visuals.widgets.active.bg_fill,
+            bg_fill: style.visuals.window_fill(),
+            text_color_unfocused: style.visuals.text_color(),
+            text_color_focused: style.visuals.strong_text_color(),
+            text_color_active_unfocused: style.visuals.text_color(),
+            text_color_active_focused: style.visuals.strong_text_color(),
+            ..TabsStyle::default()
         }
     }
 }
