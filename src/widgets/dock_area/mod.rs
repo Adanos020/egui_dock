@@ -4,7 +4,7 @@ mod state;
 use crate::{
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered},
     widgets::popup::popup_under_widget,
-    Node, NodeIndex, Style, TabAddAlign, TabIndex, TabViewer, Tree,
+    Node, NodeIndex, Style, TabAddAlign, TabIndex, TabViewer, TabsStyle, Tree,
 };
 
 use duplicate::duplicate;
@@ -367,7 +367,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
         ui.painter().rect_filled(
             tabbar_outer_rect,
-            style.tabs.rounding,
+            style.tab_bar.rounding,
             style.tab_bar.bg_fill,
         );
 
@@ -415,7 +415,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             ui.painter().hline(
                 tabs_ui.min_rect().right().min(clip_rect.right())..=tabbar_outer_rect.right(),
                 tabbar_outer_rect.bottom() - px,
-                (px, style.tabs.hline_color),
+                (px, style.tab_bar.hline_color),
             );
 
             // Add button at the end of the tab bar
@@ -470,11 +470,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
             }
 
-            let (is_active, label) = {
+            let (is_active, label, tab_style) = {
                 let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+                let style = self.style.as_ref().unwrap();
+                let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0]);
                 (
                     *active == tab_index || is_being_dragged,
                     tab_viewer.title(&mut tabs[tab_index.0]),
+                    tab_style.unwrap_or(style.tabs.clone()),
                 )
             };
 
@@ -484,6 +487,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .with_layer_id(layer_id, |ui| {
                         self.tab_title(
                             ui,
+                            &tab_style,
                             id,
                             label,
                             is_active && Some(node_index) == focused,
@@ -513,6 +517,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             } else {
                 let (mut response, close_response) = self.tab_title(
                     tabs_ui,
+                    &tab_style,
                     id,
                     label,
                     is_active && Some(node_index) == focused,
@@ -579,18 +584,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             };
 
             // Paint hline below each tab unless its active (or option says otherwise)
+            let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let tab = &mut tabs[tab_index.0];
             let style = self.style.as_ref().unwrap();
-            if !is_active || style.tabs.hline_below_active_tab_name {
+            let tab_style = tab_viewer.tab_style_override(tab);
+            let tab_style = tab_style.as_ref().unwrap_or(&style.tabs);
+
+            if !is_active || tab_style.hline_below_active_tab_name {
                 let px = tabs_ui.ctx().pixels_per_point().recip();
                 tabs_ui.painter().hline(
                     response.rect.x_range(),
                     tabbar_outer_rect.bottom() - px,
-                    (px, style.tabs.hline_color),
+                    (px, style.tab_bar.hline_color),
                 );
             }
 
-            let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
-            let tab = &mut tabs[tab_index.0];
             if response.clicked() {
                 *active = tab_index;
                 self.new_focused = Some(node_index);
@@ -658,7 +666,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.painter().vline(
             rect.left(),
             rect.y_range(),
-            Stroke::new(ui.ctx().pixels_per_point().recip(), style.tabs.hline_color),
+            Stroke::new(
+                ui.ctx().pixels_per_point().recip(),
+                style.buttons.add_tab_border_color,
+            ),
         );
 
         let popup_id = ui.id().with("tab_add_popup");
@@ -682,6 +693,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     fn tab_title(
         &mut self,
         ui: &mut Ui,
+        tab_style: &TabsStyle,
         id: Id,
         label: WidgetText,
         focused: bool,
@@ -690,7 +702,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         expanded_width: f32,
     ) -> (Response, Option<Response>) {
         let style = self.style.as_ref().unwrap();
-        let rounding = style.tabs.rounding;
+        let rounding = tab_style.rounding;
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
         let text_width = galley.size().x + 2.0 * x_spacing;
@@ -702,7 +714,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let minimum_width = text_width + close_button_size;
 
         // Compute total width of the tab bar
-        let tab_width = if style.tabs.fill_tab_bar {
+        let tab_width = if tab_style.fill_tab_bar {
             expanded_width
         } else {
             minimum_width
@@ -717,21 +729,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         if active {
             if is_being_dragged {
-                ui.painter().rect_stroke(
-                    rect,
-                    rounding,
-                    Stroke::new(1.0, style.tabs.outline_color),
-                );
-            } else {
-                let stroke = Stroke::new(1.0, style.tabs.outline_color);
                 ui.painter()
-                    .rect(rect, rounding, style.tabs.bg_fill, stroke);
+                    .rect_stroke(rect, rounding, Stroke::new(1.0, tab_style.outline_color));
+            } else {
+                let stroke = Stroke::new(1.0, tab_style.outline_color);
+                ui.painter().rect(rect, rounding, tab_style.bg_fill, stroke);
 
                 // Make the tab name area connect with the tab ui area:
                 ui.painter().hline(
                     rect.x_range(),
                     rect.bottom(),
-                    Stroke::new(2.0, style.tabs.bg_fill),
+                    Stroke::new(2.0, tab_style.bg_fill),
                 );
             }
         }
@@ -739,7 +747,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let mut text_rect = rect;
         text_rect.set_width(tab_width - close_button_size);
 
-        let text_pos = if style.tabs.fill_tab_bar {
+        let text_pos = if tab_style.fill_tab_bar {
             let mut pos =
                 Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
             pos -= galley.size() / 2.0;
@@ -751,10 +759,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         };
 
         let override_text_color = (!galley.galley_has_color).then_some(match (active, focused) {
-            (false, false) => style.tabs.text_color_unfocused,
-            (false, true) => style.tabs.text_color_focused,
-            (true, false) => style.tabs.text_color_active_unfocused,
-            (true, true) => style.tabs.text_color_active_focused,
+            (false, false) => tab_style.text_color_unfocused,
+            (false, true) => tab_style.text_color_focused,
+            (true, false) => tab_style.text_color_active_unfocused,
+            (true, true) => tab_style.text_color_active_focused,
         });
 
         ui.painter().add(TextShape {
@@ -923,9 +931,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
             }
 
-            let style = self.style.as_ref().unwrap();
+            let tabs_style = tab_viewer.tab_style_override(tab);
+            let tabs_style = tabs_style
+                .as_ref()
+                .unwrap_or_else(|| &self.style.as_ref().unwrap().tabs);
             if tab_viewer.clear_background(tab) {
-                ui.painter().rect_filled(body_rect, 0.0, style.tabs.bg_fill);
+                ui.painter().rect_filled(body_rect, 0.0, tabs_style.bg_fill);
             }
 
             // Construct a new ui with the correct tab id
@@ -949,7 +960,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             if self.scroll_area_in_tabs {
                 ScrollArea::both().show(ui, |ui| {
                     Frame::none()
-                        .inner_margin(tab_viewer.inner_margin_override(style))
+                        .inner_margin(tabs_style.inner_margin)
                         .show(ui, |ui| {
                             let available_rect = ui.available_rect_before_wrap();
                             ui.expand_to_include_rect(available_rect);
@@ -958,7 +969,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 });
             } else {
                 Frame::none()
-                    .inner_margin(tab_viewer.inner_margin_override(style))
+                    .inner_margin(tabs_style.inner_margin)
                     .show(ui, |ui| {
                         tab_viewer.ui(ui, tab);
                     });

@@ -48,8 +48,11 @@ pub struct ButtonsStyle {
     /// Color of the active add tab button.
     pub add_tab_active_color: Color32,
 
-    /// Color of the background add tab button.
+    /// Color of the add tab button's background.
     pub add_tab_bg_fill: Color32,
+
+    /// Color of the add tab button's left border.
+    pub add_tab_border_color: Color32,
 }
 
 /// Specifies the look and feel of node separators.
@@ -87,6 +90,13 @@ pub struct TabBarStyle {
 
     /// Show a scroll bar when tab bar overflows. By `Default` it's `true`.
     pub show_scroll_bar_on_overflow: bool,
+
+    /// Tab rounding. By `Default` it's [`Rounding::default`]
+    pub rounding: Rounding,
+
+    /// Color of th line separating the tab name area from the tab content area.
+    /// By `Default` it's [`Color32::BLACK`].
+    pub hline_color: Color32,
 }
 
 /// Specifies the look and feel of individual tabs.
@@ -115,10 +125,6 @@ pub struct TabsStyle {
 
     /// Color of tab title when an active tab is focused.
     pub text_color_active_focused: Color32,
-
-    /// Color of th line separating the tab name area from the tab content area.
-    /// By `Default` it's [`Color32::BLACK`].
-    pub hline_color: Color32,
 
     /// If `true`, show the hline below the active tabs name.
     /// If `false`, show the active tab as merged with the tab ui area.
@@ -154,6 +160,7 @@ impl Default for ButtonsStyle {
             add_tab_color: Color32::WHITE,
             add_tab_active_color: Color32::WHITE,
             add_tab_bg_fill: Color32::GRAY,
+            add_tab_border_color: Color32::BLACK,
         }
     }
 }
@@ -177,6 +184,8 @@ impl Default for TabBarStyle {
             bg_fill: Color32::WHITE,
             height: 24.0,
             show_scroll_bar_on_overflow: true,
+            rounding: Rounding::default(),
+            hline_color: Color32::BLACK,
         }
     }
 }
@@ -187,7 +196,6 @@ impl Default for TabsStyle {
             inner_margin: Margin::same(4.0),
             bg_fill: Color32::WHITE,
             fill_tab_bar: false,
-            hline_color: Color32::BLACK,
             hline_below_active_tab_name: false,
             outline_color: Color32::BLACK,
             rounding: Rounding::default(),
@@ -222,8 +230,8 @@ impl Style {
     /// - [`SeparatorStyle::color_hovered`]
     /// - [`SeparatorStyle::color_dragged`]
     /// - [`TabBarStyle::bg_fill`]
+    /// - [`TabBarStyle::hline_color`]
     /// - [`TabsStyle::outline_color`]
-    /// - [`TabsStyle::hline_color`]
     /// - [`TabsStyle::bg_fill`]
     /// - [`TabsStyle::text_color_unfocused`]
     /// - [`TabsStyle::text_color_focused`]
@@ -243,6 +251,7 @@ impl Style {
                 add_tab_bg_fill: style.visuals.widgets.active.bg_fill,
                 add_tab_color: style.visuals.text_color(),
                 add_tab_active_color: style.visuals.strong_text_color(),
+                add_tab_border_color: style.visuals.widgets.active.bg_fill,
                 ..ButtonsStyle::default()
             },
             separator: SeparatorStyle {
@@ -254,11 +263,11 @@ impl Style {
             },
             tab_bar: TabBarStyle {
                 bg_fill: (Rgba::from(style.visuals.window_fill()) * Rgba::from_gray(0.7)).into(),
+                hline_color: style.visuals.widgets.active.bg_fill,
                 ..TabBarStyle::default()
             },
             tabs: TabsStyle {
                 outline_color: style.visuals.widgets.active.bg_fill,
-                hline_color: style.visuals.widgets.active.bg_fill,
                 bg_fill: style.visuals.window_fill(),
                 text_color_unfocused: style.visuals.text_color(),
                 text_color_focused: style.visuals.strong_text_color(),
