@@ -264,7 +264,7 @@ impl MyContext {
                 ui.label("Horizontal line color:").on_hover_text(
                     "The line separating the tab name area from the tab content area",
                 );
-                color_edit_button_srgba(ui, &mut style.tabs.hline_color, Alpha::OnlyBlend);
+                color_edit_button_srgba(ui, &mut style.tab_bar.hline_color, Alpha::OnlyBlend);
                 ui.end_row();
 
                 ui.label("Background color:");

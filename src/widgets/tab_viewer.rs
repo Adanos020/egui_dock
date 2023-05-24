@@ -1,5 +1,5 @@
-use crate::{NodeIndex, Style};
-use egui::{Id, Margin, Ui, WidgetText};
+use crate::{NodeIndex, TabStyle};
+use egui::{Id, Ui, WidgetText};
 
 /// Defines how to display a tab inside a [`Tree`](crate::Tree).
 pub trait TabViewer {
@@ -57,9 +57,9 @@ pub trait TabViewer {
         false
     }
 
-    /// Sets the margins between tab's borders and its contents.
-    fn inner_margin_override(&self, style: &Style) -> Margin {
-        style.default_inner_margin
+    /// Sets custom style for given tab.
+    fn tab_style_override(&self, _tab: &Self::Tab, _global_style: &TabStyle) -> Option<TabStyle> {
+        None
     }
 
     /// Whether the tab will be cleared with the color specified in [`TabBarStyle::bg_fill`](crate::TabBarStyle::bg_fill)
