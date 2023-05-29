@@ -61,6 +61,14 @@ pub enum TabDestination {
 /// For a given node *n*:
 ///  - left child of *n* will be at index *n * 2 + 1*.
 ///  - right child of *n* will be at index *n * 2 + 2*.
+///
+/// For "Horizontal" nodes:
+///  - left child contains Left node.
+///  - right child contains Right node.
+///
+/// For "Vertical" nodes:
+///  - left child contains Top node.
+///  - right child contains Bottom node.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree<Tab> {
@@ -168,6 +176,12 @@ impl<Tab> Tree<Tab> {
     #[inline(always)]
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Node<Tab>> {
         self.tree.iter_mut()
+    }
+
+    /// Returns an `Iterator` of [`NodeIndex`] ordered in a breadth first manner.
+    #[inline(always)]
+    pub(crate) fn breadth_first_index_iter(&self) -> impl Iterator<Item = NodeIndex> {
+        (0..self.tree.len()).map(NodeIndex)
     }
 
     /// Returns an iterator over all tabs in arbitrary order
@@ -310,8 +324,8 @@ impl<Tab> Tree<Tab> {
         }
 
         let index = match split {
-            Split::Right | Split::Above => [parent.right(), parent.left()],
-            Split::Left | Split::Below => [parent.left(), parent.right()],
+            Split::Left | Split::Above => [parent.right(), parent.left()],
+            Split::Right | Split::Below => [parent.left(), parent.right()],
         };
 
         self[index[0]] = old;
