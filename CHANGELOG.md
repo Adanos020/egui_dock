@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## Unreleased
+## 0.6.1 - 2023-05-29
 
 ### Fixed
 - Ensure rect size are calculated before drawing node bodies ([#134](https://github.com/Adanos020/egui_dock/pull/134))
