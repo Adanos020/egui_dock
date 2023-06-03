@@ -1,6 +1,11 @@
 # egui_dock changelog
 
-## 0.5.1 - 2023-04-20
+## 0.5.2 - 2023-05-31
+
+### Fixed
+- Ensure rect size are calculated before drawing node bodies ([#134](https://github.com/Adanos020/egui_dock/pull/134))
+
+## 0.5.1 - 2023-05-20
 
 ## Fixed
 - Ensure close button can be scrolled to when tab bar is small ([#129](https://github.com/Adanos020/egui_dock/pull/129))
