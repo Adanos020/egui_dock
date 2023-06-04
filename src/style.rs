@@ -21,6 +21,8 @@ pub struct Style {
     pub selection_color: Color32,
 
     pub border: Stroke,
+    pub rounding: Rounding,
+
     pub buttons: ButtonsStyle,
     pub separator: SeparatorStyle,
     pub tab_bar: TabBarStyle,
@@ -140,6 +142,7 @@ impl Default for Style {
         Self {
             dock_area_padding: None,
             border: Stroke::new(f32::default(), Color32::BLACK),
+            rounding: Rounding::default(),
             selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
             buttons: ButtonsStyle::default(),
             separator: SeparatorStyle::default(),
@@ -229,6 +232,7 @@ impl Style {
                 color: style.visuals.widgets.active.bg_fill,
                 ..Stroke::default()
             },
+            rounding: style.visuals.widgets.active.rounding,
             selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
             buttons: ButtonsStyle::from_egui(style),
             separator: SeparatorStyle::from_egui(style),

@@ -233,13 +233,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if let Some(margin) = style.dock_area_padding {
             rect.min += margin.left_top();
             rect.max -= margin.right_bottom();
-            ui.painter().rect(
-                rect,
-                margin.top,
-                style.separator.color_idle,
-                Stroke::new(margin.top, style.border.color),
-            );
         }
+
+        ui.painter().rect_stroke(rect, style.rounding, style.border);
+        rect = rect.expand(-style.border.width / 2.0);
+        
 
         if self.tree.is_empty() {
             ui.allocate_rect(rect, Sense::hover());

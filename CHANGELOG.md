@@ -1,5 +1,15 @@
 # egui_dock changelog
 
+## Unreleased
+
+### Fixed
+
+- Correctly draw a border around a dock area using the `Style::border` property.
+
+### Added
+
+- `Style::rounding` for the rounding of the dock area border.
+
 ## 0.6.1 - 2023-05-29
 
 ### Fixed
