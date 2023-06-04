@@ -964,7 +964,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let tabs_style = tab_viewer.tab_style_override(tab, &style.tabs);
             let tabs_style = tabs_style.as_ref().unwrap_or(&style.tabs);
             if tab_viewer.clear_background(tab) {
-                ui.painter().rect_filled(body_rect, 0.0, tabs_style.bg_fill);
+                ui.painter()
+                    .rect_filled(body_rect, 0.0, tabs_style.tab_body.bg_fill);
             }
 
             // Construct a new ui with the correct tab id
@@ -988,7 +989,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             if self.scroll_area_in_tabs {
                 ScrollArea::both().show(ui, |ui| {
                     Frame::none()
-                        .inner_margin(tabs_style.inner_margin)
+                        .outer_margin(egui::Margin::same(tabs_style.tab_body.stroke.width / 2.0))
+                        .inner_margin(tabs_style.tab_body.inner_margin)
+                        .stroke(tabs_style.tab_body.stroke)
+                        .rounding(tabs_style.tab_body.rounding)
                         .show(ui, |ui| {
                             let available_rect = ui.available_rect_before_wrap();
                             ui.expand_to_include_rect(available_rect);
@@ -997,7 +1001,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 });
             } else {
                 Frame::none()
-                    .inner_margin(tabs_style.inner_margin)
+                    .inner_margin(tabs_style.tab_body.inner_margin)
+                    .stroke(tabs_style.tab_body.stroke)
+                    .rounding(tabs_style.tab_body.rounding)
                     .show(ui, |ui| {
                         tab_viewer.ui(ui, tab);
                     });

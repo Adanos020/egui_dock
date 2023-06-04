@@ -104,9 +104,6 @@ pub struct TabBarStyle {
 /// Specifies the look and feel of individual tabs.
 #[derive(Clone, Debug)]
 pub struct TabStyle {
-    /// Inner margin of tab body. By `Default` it's `Margin::same(4.0)`
-    pub inner_margin: Margin,
-
     /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
     pub outline_color: Color32,
 
@@ -135,6 +132,25 @@ pub struct TabStyle {
 
     /// Whether tab titles expand to fill the width of their tab bars.
     pub fill_tab_bar: bool,
+
+    /// Style for the tab body.
+    pub tab_body: TabBodyStyle,
+}
+
+/// Specifies the look and feel of the tab body.
+#[derive(Clone, Debug)]
+pub struct TabBodyStyle {
+    /// Inner margin of tab body. By `Default` it's `Margin::same(4.0)`
+    pub inner_margin: Margin,
+
+    /// Color of the tabs border. By `Default` it's ['Stroke::default']
+    pub stroke: Stroke,
+
+    /// Tab rounding. By `Default` it's [`Rounding::default`]
+    pub rounding: Rounding,
+
+    /// Colour of the tab's background. By `Default` it's [`Color32::WHITE`]
+    pub bg_fill: Color32,
 }
 
 impl Default for Style {
@@ -196,7 +212,6 @@ impl Default for TabBarStyle {
 impl Default for TabStyle {
     fn default() -> Self {
         Self {
-            inner_margin: Margin::same(4.0),
             bg_fill: Color32::WHITE,
             fill_tab_bar: false,
             hline_below_active_tab_name: false,
@@ -206,6 +221,18 @@ impl Default for TabStyle {
             text_color_focused: Color32::BLACK,
             text_color_active_unfocused: Color32::DARK_GRAY,
             text_color_active_focused: Color32::BLACK,
+            tab_body: TabBodyStyle::default(),
+        }
+    }
+}
+
+impl Default for TabBodyStyle {
+    fn default() -> Self {
+        Self {
+            inner_margin: Margin::same(4.0),
+            stroke: Stroke::default(),
+            rounding: Rounding::default(),
+            bg_fill: Color32::WHITE,
         }
     }
 }
@@ -310,6 +337,7 @@ impl TabStyle {
     /// - [`TabStyle::text_color_focused`]
     /// - [`TabStyle::text_color_active_unfocused`]
     /// - [`TabStyle::text_color_active_focused`]
+    /// - [`TabStyle::tab_body`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             outline_color: style.visuals.widgets.active.bg_fill,
@@ -318,7 +346,27 @@ impl TabStyle {
             text_color_focused: style.visuals.strong_text_color(),
             text_color_active_unfocused: style.visuals.text_color(),
             text_color_active_focused: style.visuals.strong_text_color(),
+            tab_body: TabBodyStyle::from_egui(style),
             ..TabStyle::default()
+        }
+    }
+}
+
+impl TabBodyStyle {
+    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
+    /// - [`TabBodyStyle::inner_margin`]
+    /// - [`TabBodyStyle::stroke]
+    /// - [`TabBodyStyle::rounding`]
+    /// - [`TabBodyStyle::bg_fill`]
+    pub fn from_egui(style: &egui::Style) -> Self {
+        Self {
+            inner_margin: style.spacing.window_margin,
+            stroke: Stroke::new(0.0, style.visuals.widgets.active.bg_fill),
+            rounding: style.visuals.widgets.active.rounding,
+            bg_fill: style.visuals.window_fill(),
+            ..Default::default()
         }
     }
 }

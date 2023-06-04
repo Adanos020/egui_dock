@@ -9,6 +9,11 @@
 ### Added
 
 - `Style::rounding` for the rounding of the dock area border.
+- `TabStyle::tab_body` for styling the body of the tab including background color, stroke color, rounding and inner margin.
+
+### Breaking changes
+
+- Moved `TabStyle::inner_margin` to `TabBodyStyle::inner_margin`.
 
 ## 0.6.1 - 2023-05-29
 
