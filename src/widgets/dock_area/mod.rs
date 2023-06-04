@@ -237,7 +237,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         ui.painter().rect_stroke(rect, style.rounding, style.border);
         rect = rect.expand(-style.border.width / 2.0);
-        
 
         if self.tree.is_empty() {
             ui.allocate_rect(rect, Sense::hover());
@@ -264,8 +263,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
                 let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
-                let left_separator_border = midpoint - style.separator.width * 0.5;
-                let right_separator_border = midpoint + style.separator.width * 0.5;
+                let left_separator_border = map_to_pixel(
+                    midpoint - style.separator.width * 0.5,
+                    pixels_per_point,
+                    f32::round
+                );
+                let right_separator_border = map_to_pixel(
+                    midpoint + style.separator.width * 0.5,
+                    pixels_per_point,
+                    f32::round
+                );
 
                 paste! {
                     let left = rect.intersect(Rect::[<everything_ left_of>](left_separator_border));
