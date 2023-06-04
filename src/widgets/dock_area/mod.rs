@@ -435,7 +435,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tabs_ui.set_clip_rect(clip_rect);
 
             // Desired size for tabs in "expanded" mode
-            let expanded_width = available_width / (tabs.len() as f32);
+            let prefered_width =
+                (style.tab_bar.fill_tab_bar).then_some(available_width / (tabs.len() as f32));
 
             self.tabs(
                 tabs_ui,
@@ -443,7 +444,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 node_index,
                 tab_viewer,
                 tabbar_outer_rect,
-                expanded_width,
+                prefered_width,
             );
 
             // Draw hline from tab end to edge of tabbar
@@ -488,7 +489,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         tabbar_outer_rect: Rect,
-        expanded_width: f32,
+        prefered_width: Option<f32>,
     ) {
         assert!(self.tree[node_index].is_leaf());
 
@@ -531,7 +532,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             is_active && Some(node_index) == focused,
                             is_active,
                             is_being_dragged,
-                            expanded_width,
+                            prefered_width,
                         )
                     })
                     .response;
@@ -561,7 +562,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     is_active && Some(node_index) == focused,
                     is_active,
                     is_being_dragged,
-                    expanded_width,
+                    prefered_width,
                 );
 
                 let (close_hovered, close_clicked) = close_response
@@ -738,7 +739,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         focused: bool,
         active: bool,
         is_being_dragged: bool,
-        expanded_width: f32,
+        prefered_width: Option<f32>,
     ) -> (Response, Option<Response>) {
         let style = self.style.as_ref().unwrap();
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
@@ -752,12 +753,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let minimum_width = text_width + close_button_size;
 
         // Compute total width of the tab bar
-        let tab_width = if style.tab_bar.fill_tab_bar {
-            expanded_width
-        } else {
-            minimum_width
-        }
-        .at_least(minimum_width);
+        let tab_width = prefered_width
+            .or(tab_styles.prefered_width)
+            .unwrap_or(minimum_width)
+            .at_least(minimum_width);
 
         let (rect, mut response) =
             ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
@@ -795,14 +794,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let mut text_rect = rect;
         text_rect.set_width(tab_width - close_button_size);
 
-        let text_pos = if style.tab_bar.fill_tab_bar {
+        let text_pos = {
             let mut pos =
                 Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
             pos -= galley.size() / 2.0;
-            pos
-        } else {
-            let mut pos = Align2::LEFT_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
-            pos.y -= galley.size().y / 2.0;
             pos
         };
 

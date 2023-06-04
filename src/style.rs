@@ -126,6 +126,12 @@ pub struct TabStyle {
     /// If `false`, show the active tab as merged with the tab ui area.
     /// By `Default` it's `false`.
     pub hline_below_active_tab_name: bool,
+
+    /// The prefered width of the tab. The tab will allways bet atleast
+    /// wide enough to fully show the title.
+    ///
+    /// Overriden by [`TabBarStyle::fill_tab_bar`]
+    pub prefered_width: Option<f32>,
 }
 
 /// Specifies the look and feel of individual tabs.
@@ -235,6 +241,7 @@ impl Default for TabStyle {
             },
             tab_body: TabBodyStyle::default(),
             hline_below_active_tab_name: false,
+            prefered_width: None,
         }
     }
 }
