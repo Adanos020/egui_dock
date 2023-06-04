@@ -1002,10 +1002,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // Use initial spacing for ui
             ui.spacing_mut().item_spacing = spacing;
 
-            let tab_body_rect = Rect::from_min_max(
-                ui.clip_rect().min + vec2(0.0, style.tab_bar.height),
-                ui.clip_rect().max,
-            );
+            let tab_body_rect = Rect::from_min_max(ui.cursor().min, ui.clip_rect().max);
             ui.painter().rect(
                 rect_stroke_box(tab_body_rect, tabs_styles.tab_body.stroke.width),
                 tabs_styles.tab_body.rounding,
