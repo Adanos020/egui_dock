@@ -1,8 +1,10 @@
 mod hover_data;
 mod state;
 
+use std::ops::RangeInclusive;
+
 use crate::{
-    utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered},
+    utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered, rect_stroke_box},
     widgets::popup::popup_under_widget,
     Node, NodeIndex, Style, TabAddAlign, TabIndex, TabStyle, TabViewer, Tree,
 };
@@ -764,6 +766,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if active {
+            let rect = rect_stroke_box(rect, 1.0);
             if is_being_dragged {
                 ui.painter()
                     .rect_stroke(rect, rounding, Stroke::new(1.0, tab_style.outline_color));
@@ -773,7 +776,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 // Make the tab name area connect with the tab ui area:
                 ui.painter().hline(
-                    rect.x_range(),
+                    RangeInclusive::new(
+                        rect.min.x + f32::max(tab_style.rounding.sw, 1.5),
+                        rect.max.x - f32::max(tab_style.rounding.se, 1.5),
+                    ),
                     rect.bottom(),
                     Stroke::new(2.0, tab_style.bg_fill),
                 );
@@ -993,13 +999,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // Use initial spacing for ui
             ui.spacing_mut().item_spacing = spacing;
 
+            let tab_body_rect = Rect::from_min_max(
+                ui.clip_rect().min + vec2(0.0, style.tab_bar.height),
+                ui.clip_rect().max,
+            );
+            ui.painter().rect(
+                rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
+                tabs_style.tab_body.rounding,
+                tabs_style.tab_body.bg_fill,
+                tabs_style.tab_body.stroke,
+            );
+
             if self.scroll_area_in_tabs {
                 ScrollArea::both().show(ui, |ui| {
                     Frame::none()
-                        .outer_margin(egui::Margin::same(tabs_style.tab_body.stroke.width / 2.0))
                         .inner_margin(tabs_style.tab_body.inner_margin)
-                        .stroke(tabs_style.tab_body.stroke)
-                        .rounding(tabs_style.tab_body.rounding)
                         .show(ui, |ui| {
                             let available_rect = ui.available_rect_before_wrap();
                             ui.expand_to_include_rect(available_rect);
@@ -1009,8 +1023,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             } else {
                 Frame::none()
                     .inner_margin(tabs_style.tab_body.inner_margin)
-                    .stroke(tabs_style.tab_body.stroke)
-                    .rounding(tabs_style.tab_body.rounding)
                     .show(ui, |ui| {
                         tab_viewer.ui(ui, tab);
                     });
