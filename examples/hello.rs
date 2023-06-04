@@ -8,7 +8,7 @@ use egui::{
     CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
-use egui_dock::{DockArea, Node, NodeIndex, Style, TabStyle, TabViewer, Tree};
+use egui_dock::{DockArea, Node, NodeIndex, Style, TabInteractionStyle, TabViewer, Tree};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions {
@@ -184,7 +184,7 @@ impl MyContext {
 
             ui.separator();
 
-            fn tab_style_editor_ui(ui: &mut egui::Ui, tab_style: &mut TabStyle) {
+            fn tab_style_editor_ui(ui: &mut egui::Ui, tab_style: &mut TabInteractionStyle) {
                 ui.separator();
 
                 ui.checkbox(

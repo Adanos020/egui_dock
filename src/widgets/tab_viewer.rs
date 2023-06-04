@@ -1,4 +1,4 @@
-use crate::{NodeIndex, TabStyles};
+use crate::{NodeIndex, TabStyle};
 use egui::{Id, Ui, WidgetText};
 
 /// Defines how to display a tab inside a [`Tree`](crate::Tree).
@@ -58,7 +58,7 @@ pub trait TabViewer {
     }
 
     /// Sets custom style for given tab.
-    fn tab_style_override(&self, _tab: &Self::Tab, _global_style: &TabStyles) -> Option<TabStyles> {
+    fn tab_style_override(&self, _tab: &Self::Tab, _global_style: &TabStyle) -> Option<TabStyle> {
         None
     }
 

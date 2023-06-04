@@ -26,7 +26,7 @@ pub struct Style {
     pub buttons: ButtonsStyle,
     pub separator: SeparatorStyle,
     pub tab_bar: TabBarStyle,
-    pub tab: TabStyles,
+    pub tab: TabStyle,
 }
 
 /// Specifies the look and feel of buttons.
@@ -106,18 +106,18 @@ pub struct TabBarStyle {
 
 /// Styles for a tab in its different variations.
 #[derive(Clone, Debug)]
-pub struct TabStyles {
+pub struct TabStyle {
     /// Style of the tab when it is active.
-    pub active: TabStyle,
+    pub active: TabInteractionStyle,
 
     /// Style of the tab when it is inactive.
-    pub inactive: TabStyle,
+    pub inactive: TabInteractionStyle,
 
     /// Style of the tab when it is focused.
-    pub focused: TabStyle,
+    pub focused: TabInteractionStyle,
 
     /// Style of the tab when it is hovered.
-    pub hovered: TabStyle,
+    pub hovered: TabInteractionStyle,
 
     /// Style for the tab body.
     pub tab_body: TabBodyStyle,
@@ -125,7 +125,7 @@ pub struct TabStyles {
 
 /// Specifies the look and feel of individual tabs.
 #[derive(Clone, Debug)]
-pub struct TabStyle {
+pub struct TabInteractionStyle {
     /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
     pub outline_color: Color32,
 
@@ -170,7 +170,7 @@ impl Default for Style {
             buttons: ButtonsStyle::default(),
             separator: SeparatorStyle::default(),
             tab_bar: TabBarStyle::default(),
-            tab: TabStyles::default(),
+            tab: TabStyle::default(),
         }
     }
 }
@@ -217,19 +217,19 @@ impl Default for TabBarStyle {
     }
 }
 
-impl Default for TabStyles {
+impl Default for TabStyle {
     fn default() -> Self {
         Self {
-            active: TabStyle::default(),
-            inactive: TabStyle {
+            active: TabInteractionStyle::default(),
+            inactive: TabInteractionStyle {
                 text_color: Color32::DARK_GRAY,
                 ..Default::default()
             },
-            focused: TabStyle {
+            focused: TabInteractionStyle {
                 text_color: Color32::BLACK,
                 ..Default::default()
             },
-            hovered: TabStyle {
+            hovered: TabInteractionStyle {
                 text_color: Color32::BLACK,
                 ..Default::default()
             },
@@ -238,7 +238,7 @@ impl Default for TabStyles {
     }
 }
 
-impl Default for TabStyle {
+impl Default for TabInteractionStyle {
     fn default() -> Self {
         Self {
             bg_fill: Color32::WHITE,
@@ -288,7 +288,7 @@ impl Style {
             buttons: ButtonsStyle::from_egui(style),
             separator: SeparatorStyle::from_egui(style),
             tab_bar: TabBarStyle::from_egui(style),
-            tab: TabStyles::from_egui(style),
+            tab: TabStyle::from_egui(style),
             ..Self::default()
         }
     }
@@ -351,23 +351,23 @@ impl TabBarStyle {
     }
 }
 
-impl TabStyles {
+impl TabStyle {
     ///Derives tab styles from `egui::Style`.
     ///
     /// See also: [`TabStyle::from_egui_active`], [`TabStyle::from_egui_inactive`],
     /// [`TabStyle::from_egui_focused`], [`TabStyle::from_egui_hovered`], [`TabBodyStyle::from_egui`],
-    pub fn from_egui(style: &egui::Style) -> TabStyles {
+    pub fn from_egui(style: &egui::Style) -> TabStyle {
         Self {
-            active: TabStyle::from_egui_active(style),
-            inactive: TabStyle::from_egui_inactive(style),
-            focused: TabStyle::from_egui_focused(style),
-            hovered: TabStyle::from_egui_hovered(style),
+            active: TabInteractionStyle::from_egui_active(style),
+            inactive: TabInteractionStyle::from_egui_inactive(style),
+            focused: TabInteractionStyle::from_egui_focused(style),
+            hovered: TabInteractionStyle::from_egui_hovered(style),
             tab_body: TabBodyStyle::from_egui(style),
         }
     }
 }
 
-impl TabStyle {
+impl TabInteractionStyle {
     /// Derives relevant fields from `egui::Style` for an active tab and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
@@ -382,7 +382,7 @@ impl TabStyle {
             outline_color: style.visuals.widgets.active.bg_fill,
             bg_fill: style.visuals.window_fill(),
             text_color: style.visuals.text_color(),
-            ..TabStyle::default()
+            ..TabInteractionStyle::default()
         }
     }
     /// Derives relevant fields from `egui::Style` for an inactive tab and sets the remaining fields to their default values.
@@ -397,7 +397,9 @@ impl TabStyle {
     pub fn from_egui_inactive(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.text_color(),
-            ..TabStyle::from_egui_active(style)
+            bg_fill: Color32::TRANSPARENT,
+            outline_color: Color32::TRANSPARENT,
+            ..TabInteractionStyle::from_egui_active(style)
         }
     }
     /// Derives relevant fields from `egui::Style` for a focused tab and sets the remaining fields to their default values.
@@ -412,7 +414,7 @@ impl TabStyle {
     pub fn from_egui_focused(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
-            ..TabStyle::from_egui_active(style)
+            ..TabInteractionStyle::from_egui_active(style)
         }
     }
     /// Derives relevant fields from `egui::Style` for a hovered tab and sets the remaining fields to their default values.
@@ -427,7 +429,9 @@ impl TabStyle {
     pub fn from_egui_hovered(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
-            ..TabStyle::from_egui_active(style)
+            bg_fill: Color32::TRANSPARENT,
+            outline_color: Color32::TRANSPARENT,
+            ..TabInteractionStyle::from_egui_active(style)
         }
     }
 }

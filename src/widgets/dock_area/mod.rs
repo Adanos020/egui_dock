@@ -6,7 +6,7 @@ use std::ops::RangeInclusive;
 use crate::{
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered, rect_stroke_box},
     widgets::popup::popup_under_widget,
-    Node, NodeIndex, Style, TabAddAlign, TabIndex, TabStyles, TabViewer, Tree,
+    Node, NodeIndex, Style, TabAddAlign, TabIndex, TabStyle, TabViewer, Tree,
 };
 
 use duplicate::duplicate;
@@ -732,7 +732,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     fn tab_title(
         &mut self,
         ui: &mut Ui,
-        tab_styles: &TabStyles,
+        tab_styles: &TabStyle,
         id: Id,
         label: WidgetText,
         focused: bool,
