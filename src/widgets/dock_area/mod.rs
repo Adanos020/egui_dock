@@ -741,14 +741,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         expanded_width: f32,
     ) -> (Response, Option<Response>) {
         let style = self.style.as_ref().unwrap();
-        let tab_style = if focused {
-            &tab_styles.focused
-        } else if active {
-            &tab_styles.active
-        } else {
-            &tab_styles.inactive
-        };
-        let rounding = tab_style.rounding;
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
         let text_width = galley.size().x + 2.0 * x_spacing;
@@ -773,25 +765,31 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 
-        if active {
-            let rect = rect_stroke_box(rect, 1.0);
-            if is_being_dragged {
-                ui.painter()
-                    .rect_stroke(rect, rounding, Stroke::new(1.0, tab_style.outline_color));
-            } else {
-                let stroke = Stroke::new(1.0, tab_style.outline_color);
-                ui.painter().rect(rect, rounding, tab_style.bg_fill, stroke);
+        let tab_style = if focused || is_being_dragged {
+            &tab_styles.focused
+        } else if active {
+            &tab_styles.active
+        } else if response.hovered() {
+            &tab_styles.hovered
+        } else {
+            &tab_styles.inactive
+        };
 
-                // Make the tab name area connect with the tab ui area:
-                ui.painter().hline(
-                    RangeInclusive::new(
-                        rect.min.x + f32::max(tab_style.rounding.sw, 1.5),
-                        rect.max.x - f32::max(tab_style.rounding.se, 1.5),
-                    ),
-                    rect.bottom(),
-                    Stroke::new(2.0, tab_style.bg_fill),
-                );
-            }
+        let stroke_rect = rect_stroke_box(rect, 1.0);
+        let stroke = Stroke::new(1.0, tab_style.outline_color);
+        ui.painter()
+            .rect(stroke_rect, tab_style.rounding, tab_style.bg_fill, stroke);
+
+        if !is_being_dragged {
+            // Make the tab name area connect with the tab ui area:
+            ui.painter().hline(
+                RangeInclusive::new(
+                    stroke_rect.min.x + f32::max(tab_style.rounding.sw, 1.5),
+                    stroke_rect.max.x - f32::max(tab_style.rounding.se, 1.5),
+                ),
+                stroke_rect.bottom(),
+                Stroke::new(2.0, tab_style.bg_fill),
+            );
         }
 
         let mut text_rect = rect;
@@ -835,7 +833,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             };
 
             if response.hovered() {
-                let mut rounding = rounding;
+                let mut rounding = tab_style.rounding;
                 rounding.nw = 0.0;
                 rounding.sw = 0.0;
 
