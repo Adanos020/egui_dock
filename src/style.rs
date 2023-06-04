@@ -121,6 +121,11 @@ pub struct TabStyle {
 
     /// Style for the tab body.
     pub tab_body: TabBodyStyle,
+
+    /// If `true`, show the hline below the active tabs name.
+    /// If `false`, show the active tab as merged with the tab ui area.
+    /// By `Default` it's `false`.
+    pub hline_below_active_tab_name: bool,
 }
 
 /// Specifies the look and feel of individual tabs.
@@ -137,11 +142,6 @@ pub struct TabInteractionStyle {
 
     /// Color of the title text.
     pub text_color: Color32,
-
-    /// If `true`, show the hline below the active tabs name.
-    /// If `false`, show the active tab as merged with the tab ui area.
-    /// By `Default` it's `false`.
-    pub hline_below_active_tab_name: bool,
 }
 
 /// Specifies the look and feel of the tab body.
@@ -234,6 +234,7 @@ impl Default for TabStyle {
                 ..Default::default()
             },
             tab_body: TabBodyStyle::default(),
+            hline_below_active_tab_name: false,
         }
     }
 }
@@ -242,7 +243,6 @@ impl Default for TabInteractionStyle {
     fn default() -> Self {
         Self {
             bg_fill: Color32::WHITE,
-            hline_below_active_tab_name: false,
             outline_color: Color32::BLACK,
             rounding: Rounding::default(),
             text_color: Color32::DARK_GRAY,
@@ -363,6 +363,7 @@ impl TabStyle {
             focused: TabInteractionStyle::from_egui_focused(style),
             hovered: TabInteractionStyle::from_egui_hovered(style),
             tab_body: TabBodyStyle::from_egui(style),
+            ..Default::default()
         }
     }
 }

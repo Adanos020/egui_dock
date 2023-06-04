@@ -165,6 +165,10 @@ impl MyContext {
                 &mut style.tab_bar.show_scroll_bar_on_overflow,
                 "Show scroll bar on tab overflow",
             );
+            ui.checkbox(
+                &mut style.tab.hline_below_active_tab_name,
+                "Show a line below the active tab name",
+            );
             ui.horizontal(|ui| {
                 ui.add(Slider::new(&mut style.tab_bar.height, 20.0..=50.0));
                 ui.label("Tab bar height");
@@ -185,13 +189,6 @@ impl MyContext {
             ui.separator();
 
             fn tab_style_editor_ui(ui: &mut egui::Ui, tab_style: &mut TabInteractionStyle) {
-                ui.separator();
-
-                ui.checkbox(
-                    &mut tab_style.hline_below_active_tab_name,
-                    "Show a line below the active tab name",
-                );
-
                 ui.separator();
 
                 ui.label("Rounding");
