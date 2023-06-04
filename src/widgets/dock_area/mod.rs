@@ -6,7 +6,7 @@ use std::ops::RangeInclusive;
 use crate::{
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered, rect_stroke_box},
     widgets::popup::popup_under_widget,
-    Node, NodeIndex, Style, TabAddAlign, TabIndex, TabStyle, TabViewer, Tree,
+    Node, NodeIndex, Style, TabAddAlign, TabIndex, TabStyles, TabViewer, Tree,
 };
 
 use duplicate::duplicate;
@@ -508,14 +508,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
             }
 
-            let (is_active, label, tab_style) = {
+            let (is_active, label, tab_styles) = {
                 let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
                 let style = self.style.as_ref().unwrap();
-                let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tabs);
+                let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tab);
                 (
                     *active == tab_index || is_being_dragged,
                     tab_viewer.title(&mut tabs[tab_index.0]),
-                    tab_style.unwrap_or(style.tabs.clone()),
+                    tab_style.unwrap_or(style.tab.clone()),
                 )
             };
 
@@ -525,7 +525,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .with_layer_id(layer_id, |ui| {
                         self.tab_title(
                             ui,
-                            &tab_style,
+                            &tab_styles,
                             id,
                             label,
                             is_active && Some(node_index) == focused,
@@ -555,7 +555,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             } else {
                 let (mut response, close_response) = self.tab_title(
                     tabs_ui,
-                    &tab_style,
+                    &tab_styles,
                     id,
                     label,
                     is_active && Some(node_index) == focused,
@@ -625,10 +625,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
             let tab = &mut tabs[tab_index.0];
             let style = self.style.as_ref().unwrap();
-            let tab_style = tab_viewer.tab_style_override(tab, &style.tabs);
-            let tab_style = tab_style.as_ref().unwrap_or(&style.tabs);
+            let tab_style = tab_viewer.tab_style_override(tab, &style.tab);
+            let tab_style = tab_style.as_ref().unwrap_or(&style.tab);
 
-            if !is_active || tab_style.hline_below_active_tab_name {
+            // TODO: Aask for the correct style here.
+            if !is_active || tab_style.active.hline_below_active_tab_name {
                 let px = tabs_ui.ctx().pixels_per_point().recip();
                 tabs_ui.painter().hline(
                     response.rect.x_range(),
@@ -731,7 +732,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     fn tab_title(
         &mut self,
         ui: &mut Ui,
-        tab_style: &TabStyle,
+        tab_styles: &TabStyles,
         id: Id,
         label: WidgetText,
         focused: bool,
@@ -740,6 +741,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         expanded_width: f32,
     ) -> (Response, Option<Response>) {
         let style = self.style.as_ref().unwrap();
+        let tab_style = if focused {
+            &tab_styles.focused
+        } else if active {
+            &tab_styles.active
+        } else {
+            &tab_styles.inactive
+        };
         let rounding = tab_style.rounding;
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
@@ -800,12 +808,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             pos
         };
 
-        let override_text_color = (!galley.galley_has_color).then_some(match (active, focused) {
-            (false, false) => tab_style.text_color_unfocused,
-            (false, true) => tab_style.text_color_focused,
-            (true, false) => tab_style.text_color_active_unfocused,
-            (true, true) => tab_style.text_color_active_focused,
-        });
+        let override_text_color = (!galley.galley_has_color).then_some(tab_style.text_color);
 
         ui.painter().add(TextShape {
             pos: text_pos,
@@ -974,11 +977,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
 
             let style = self.style.as_ref().unwrap();
-            let tabs_style = tab_viewer.tab_style_override(tab, &style.tabs);
-            let tabs_style = tabs_style.as_ref().unwrap_or(&style.tabs);
+            let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
+            let tabs_styles = tabs_styles.as_ref().unwrap_or(&style.tab);
             if tab_viewer.clear_background(tab) {
                 ui.painter()
-                    .rect_filled(body_rect, 0.0, tabs_style.tab_body.bg_fill);
+                    .rect_filled(body_rect, 0.0, tabs_styles.tab_body.bg_fill);
             }
 
             // Construct a new ui with the correct tab id
@@ -1004,16 +1007,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui.clip_rect().max,
             );
             ui.painter().rect(
-                rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
-                tabs_style.tab_body.rounding,
-                tabs_style.tab_body.bg_fill,
-                tabs_style.tab_body.stroke,
+                rect_stroke_box(tab_body_rect, tabs_styles.tab_body.stroke.width),
+                tabs_styles.tab_body.rounding,
+                tabs_styles.tab_body.bg_fill,
+                tabs_styles.tab_body.stroke,
             );
 
             if self.scroll_area_in_tabs {
                 ScrollArea::both().show(ui, |ui| {
                     Frame::none()
-                        .inner_margin(tabs_style.tab_body.inner_margin)
+                        .inner_margin(tabs_styles.tab_body.inner_margin)
                         .show(ui, |ui| {
                             let available_rect = ui.available_rect_before_wrap();
                             ui.expand_to_include_rect(available_rect);
@@ -1022,7 +1025,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 });
             } else {
                 Frame::none()
-                    .inner_margin(tabs_style.tab_body.inner_margin)
+                    .inner_margin(tabs_styles.tab_body.inner_margin)
                     .show(ui, |ui| {
                         tab_viewer.ui(ui, tab);
                     });
