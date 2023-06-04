@@ -8,7 +8,7 @@ use egui::{
     CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
-use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
+use egui_dock::{DockArea, Node, NodeIndex, Style, TabStyle, TabViewer, Tree};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions {
@@ -160,14 +160,7 @@ impl MyContext {
         ui.collapsing("Tabs", |ui| {
             ui.separator();
 
-            ui.checkbox(&mut style.tabs.fill_tab_bar, "Expand tabs");
-            ui.checkbox(
-                &mut style.tabs.hline_below_active_tab_name,
-                "Show a line below the active tab name",
-            );
-
-            ui.separator();
-
+            ui.checkbox(&mut style.tab_bar.fill_tab_bar, "Expand tabs");
             ui.checkbox(
                 &mut style.tab_bar.show_scroll_bar_on_overflow,
                 "Show scroll bar on tab overflow",
@@ -191,51 +184,71 @@ impl MyContext {
 
             ui.separator();
 
-            ui.label("Rounding");
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tabs.rounding.nw, 0.0..=15.0));
-                ui.label("North-West");
+            fn tab_style_editor_ui(ui: &mut egui::Ui, tab_style: &mut TabStyle) {
+                ui.separator();
+
+                ui.checkbox(
+                    &mut tab_style.hline_below_active_tab_name,
+                    "Show a line below the active tab name",
+                );
+
+                ui.separator();
+
+                ui.label("Rounding");
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut tab_style.rounding.nw, 0.0..=15.0));
+                    ui.label("North-West");
+                });
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut tab_style.rounding.ne, 0.0..=15.0));
+                    ui.label("North-East");
+                });
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut tab_style.rounding.sw, 0.0..=15.0));
+                    ui.label("South-West");
+                });
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut tab_style.rounding.se, 0.0..=15.0));
+                    ui.label("South-East");
+                });
+
+                ui.separator();
+
+                egui::Grid::new("tabs_colors").show(ui, |ui| {
+                    ui.label("Title text color:");
+                    color_edit_button_srgba(ui, &mut tab_style.text_color, Alpha::OnlyBlend);
+                    ui.end_row();
+
+                    ui.label("Outline color:")
+                        .on_hover_text("The outline around the active tab name.");
+                    color_edit_button_srgba(ui, &mut tab_style.outline_color, Alpha::OnlyBlend);
+                    ui.end_row();
+
+                    ui.label("Background color:");
+                    color_edit_button_srgba(ui, &mut tab_style.bg_fill, Alpha::OnlyBlend);
+                    ui.end_row();
+                });
+            }
+
+            ui.collapsing("Active", |ui| {
+                tab_style_editor_ui(ui, &mut style.tab.active);
             });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tabs.rounding.ne, 0.0..=15.0));
-                ui.label("North-East");
+
+            ui.collapsing("Inactive", |ui| {
+                tab_style_editor_ui(ui, &mut style.tab.inactive);
             });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tabs.rounding.sw, 0.0..=15.0));
-                ui.label("South-West");
+
+            ui.collapsing("Focused", |ui| {
+                tab_style_editor_ui(ui, &mut style.tab.focused);
             });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tabs.rounding.se, 0.0..=15.0));
-                ui.label("South-East");
+
+            ui.collapsing("Hovered", |ui| {
+                tab_style_editor_ui(ui, &mut style.tab.hovered);
             });
 
             ui.separator();
 
             egui::Grid::new("tabs_colors").show(ui, |ui| {
-                ui.label("Title text color, inactive and unfocused:");
-                color_edit_button_srgba(ui, &mut style.tabs.text_color_unfocused, Alpha::OnlyBlend);
-                ui.end_row();
-
-                ui.label("Title text color, inactive and focused:");
-                color_edit_button_srgba(ui, &mut style.tabs.text_color_focused, Alpha::OnlyBlend);
-                ui.end_row();
-
-                ui.label("Title text color, active and unfocused:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.tabs.text_color_active_unfocused,
-                    Alpha::OnlyBlend,
-                );
-                ui.end_row();
-
-                ui.label("Title text color, active and focused:");
-                color_edit_button_srgba(
-                    ui,
-                    &mut style.tabs.text_color_active_focused,
-                    Alpha::OnlyBlend,
-                );
-                ui.end_row();
-
                 ui.label("Close button color unfocused:");
                 color_edit_button_srgba(ui, &mut style.buttons.close_tab_color, Alpha::OnlyBlend);
                 ui.end_row();
@@ -256,19 +269,49 @@ impl MyContext {
                 color_edit_button_srgba(ui, &mut style.tab_bar.bg_fill, Alpha::OnlyBlend);
                 ui.end_row();
 
-                ui.label("Outline color:")
-                    .on_hover_text("The outline around the active tab name.");
-                color_edit_button_srgba(ui, &mut style.tabs.outline_color, Alpha::OnlyBlend);
-                ui.end_row();
-
                 ui.label("Horizontal line color:").on_hover_text(
                     "The line separating the tab name area from the tab content area",
                 );
                 color_edit_button_srgba(ui, &mut style.tab_bar.hline_color, Alpha::OnlyBlend);
                 ui.end_row();
+            });
+        });
+
+        ui.collapsing("Tab body", |ui| {
+            ui.separator();
+
+            ui.label("Rounding");
+            ui.horizontal(|ui| {
+                ui.add(Slider::new(&mut style.tab.tab_body.rounding.nw, 0.0..=15.0));
+                ui.label("North-West");
+            });
+            ui.horizontal(|ui| {
+                ui.add(Slider::new(&mut style.tab.tab_body.rounding.ne, 0.0..=15.0));
+                ui.label("North-East");
+            });
+            ui.horizontal(|ui| {
+                ui.add(Slider::new(&mut style.tab.tab_body.rounding.sw, 0.0..=15.0));
+                ui.label("South-West");
+            });
+            ui.horizontal(|ui| {
+                ui.add(Slider::new(&mut style.tab.tab_body.rounding.se, 0.0..=15.0));
+                ui.label("South-East");
+            });
+
+            ui.label("Stroke width:");
+            ui.add(Slider::new(
+                &mut style.tab.tab_body.stroke.width,
+                0.0..=10.0,
+            ));
+            ui.end_row();
+
+            egui::Grid::new("tab_body_colors").show(ui, |ui| {
+                ui.label("Stroke color:");
+                color_edit_button_srgba(ui, &mut style.tab.tab_body.stroke.color, Alpha::OnlyBlend);
+                ui.end_row();
 
                 ui.label("Background color:");
-                color_edit_button_srgba(ui, &mut style.tabs.bg_fill, Alpha::OnlyBlend);
+                color_edit_button_srgba(ui, &mut style.tab.tab_body.bg_fill, Alpha::OnlyBlend);
                 ui.end_row();
             });
         });
