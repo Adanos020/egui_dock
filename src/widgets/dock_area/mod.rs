@@ -760,7 +760,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let minimum_width = text_width + close_button_size;
 
         // Compute total width of the tab bar
-        let tab_width = if tab_style.fill_tab_bar {
+        let tab_width = if style.tab_bar.fill_tab_bar {
             expanded_width
         } else {
             minimum_width
@@ -797,7 +797,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let mut text_rect = rect;
         text_rect.set_width(tab_width - close_button_size);
 
-        let text_pos = if tab_style.fill_tab_bar {
+        let text_pos = if style.tab_bar.fill_tab_bar {
             let mut pos =
                 Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
             pos -= galley.size() / 2.0;

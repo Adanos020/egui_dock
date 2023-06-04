@@ -99,6 +99,9 @@ pub struct TabBarStyle {
     /// Color of th line separating the tab name area from the tab content area.
     /// By `Default` it's [`Color32::BLACK`].
     pub hline_color: Color32,
+
+    /// Whether tab titles expand to fill the width of their tab bars.
+    pub fill_tab_bar: bool,
 }
 
 /// Styles for a tab in its different variations.
@@ -139,9 +142,6 @@ pub struct TabStyle {
     /// If `false`, show the active tab as merged with the tab ui area.
     /// By `Default` it's `false`.
     pub hline_below_active_tab_name: bool,
-
-    /// Whether tab titles expand to fill the width of their tab bars.
-    pub fill_tab_bar: bool,
 }
 
 /// Specifies the look and feel of the tab body.
@@ -212,6 +212,7 @@ impl Default for TabBarStyle {
             show_scroll_bar_on_overflow: true,
             rounding: Rounding::default(),
             hline_color: Color32::BLACK,
+            fill_tab_bar: false,
         }
     }
 }
@@ -241,7 +242,6 @@ impl Default for TabStyle {
     fn default() -> Self {
         Self {
             bg_fill: Color32::WHITE,
-            fill_tab_bar: false,
             hline_below_active_tab_name: false,
             outline_color: Color32::BLACK,
             rounding: Rounding::default(),
