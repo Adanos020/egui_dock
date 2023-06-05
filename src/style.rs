@@ -134,7 +134,7 @@ pub struct TabStyle {
     pub prefered_width: Option<f32>,
 }
 
-/// Specifies the look and feel of individual tabs.
+/// Specifies the look and feel of individual tabs while they are being interacted with.
 #[derive(Clone, Debug)]
 pub struct TabInteractionStyle {
     /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
@@ -156,7 +156,7 @@ pub struct TabBodyStyle {
     /// Inner margin of tab body. By `Default` it's `Margin::same(4.0)`
     pub inner_margin: Margin,
 
-    /// Color of the tabs border. By `Default` it's ['Stroke::default']
+    /// The stroke of the tabs border. By `Default` it's ['Stroke::default']
     pub stroke: Stroke,
 
     /// Tab rounding. By `Default` it's [`Rounding::default`]
@@ -359,7 +359,7 @@ impl TabBarStyle {
 }
 
 impl TabStyle {
-    ///Derives tab styles from `egui::Style`.
+    /// Derives tab styles from `egui::Style`.
     ///
     /// See also: [`TabStyle::from_egui_active`], [`TabStyle::from_egui_inactive`],
     /// [`TabStyle::from_egui_focused`], [`TabStyle::from_egui_hovered`], [`TabBodyStyle::from_egui`],
@@ -379,12 +379,9 @@ impl TabInteractionStyle {
     /// Derives relevant fields from `egui::Style` for an active tab and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - [`TabStyle::outline_color`]
-    /// - [`TabStyle::bg_fill`]
-    /// - [`TabStyle::text_color_unfocused`]
-    /// - [`TabStyle::text_color_focused`]
-    /// - [`TabStyle::text_color_active_unfocused`]
-    /// - [`TabStyle::text_color_active_focused`]
+    /// - [`TabInteractionStyle::outline_color`]
+    /// - [`TabInteractionStyle::bg_fill`]
+    /// - [`TabInteractionStyle::text_color`]
     pub fn from_egui_active(style: &egui::Style) -> Self {
         Self {
             outline_color: style.visuals.widgets.active.bg_fill,
@@ -396,12 +393,9 @@ impl TabInteractionStyle {
     /// Derives relevant fields from `egui::Style` for an inactive tab and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - [`TabStyle::outline_color`]
-    /// - [`TabStyle::bg_fill`]
-    /// - [`TabStyle::text_color_unfocused`]
-    /// - [`TabStyle::text_color_focused`]
-    /// - [`TabStyle::text_color_active_unfocused`]
-    /// - [`TabStyle::text_color_active_focused`]
+    /// - [`TabInteractionStyle::outline_color`]
+    /// - [`TabInteractionStyle::bg_fill`]
+    /// - [`TabInteractionStyle::text_color`]
     pub fn from_egui_inactive(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.text_color(),
@@ -413,12 +407,9 @@ impl TabInteractionStyle {
     /// Derives relevant fields from `egui::Style` for a focused tab and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - [`TabStyle::outline_color`]
-    /// - [`TabStyle::bg_fill`]
-    /// - [`TabStyle::text_color_unfocused`]
-    /// - [`TabStyle::text_color_focused`]
-    /// - [`TabStyle::text_color_active_unfocused`]
-    /// - [`TabStyle::text_color_active_focused`]
+    /// - [`TabInteractionStyle::outline_color`]
+    /// - [`TabInteractionStyle::bg_fill`]
+    /// - [`TabInteractionStyle::text_color`]
     pub fn from_egui_focused(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
@@ -428,12 +419,9 @@ impl TabInteractionStyle {
     /// Derives relevant fields from `egui::Style` for a hovered tab and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - [`TabStyle::outline_color`]
-    /// - [`TabStyle::bg_fill`]
-    /// - [`TabStyle::text_color_unfocused`]
-    /// - [`TabStyle::text_color_focused`]
-    /// - [`TabStyle::text_color_active_unfocused`]
-    /// - [`TabStyle::text_color_active_focused`]
+    /// - [`TabInteractionStyle::outline_color`]
+    /// - [`TabInteractionStyle::bg_fill`]
+    /// - [`TabInteractionStyle::text_color`]
     pub fn from_egui_hovered(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
@@ -458,7 +446,6 @@ impl TabBodyStyle {
             stroke: Stroke::new(0.0, style.visuals.widgets.active.bg_fill),
             rounding: style.visuals.widgets.active.rounding,
             bg_fill: style.visuals.window_fill(),
-            ..Default::default()
         }
     }
 }

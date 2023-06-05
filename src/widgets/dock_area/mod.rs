@@ -435,8 +435,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tabs_ui.set_clip_rect(clip_rect);
 
             // Desired size for tabs in "expanded" mode
-            let prefered_width =
-                (style.tab_bar.fill_tab_bar).then_some(available_width / (tabs.len() as f32));
+            let prefered_width = style
+                .tab_bar
+                .fill_tab_bar
+                .then_some(available_width / (tabs.len() as f32));
 
             self.tabs(
                 tabs_ui,
@@ -509,7 +511,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
             }
 
-            let (is_active, label, tab_styles) = {
+            let (is_active, label, tab_style) = {
                 let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
                 let style = self.style.as_ref().unwrap();
                 let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tab);
@@ -526,7 +528,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .with_layer_id(layer_id, |ui| {
                         self.tab_title(
                             ui,
-                            &tab_styles,
+                            &tab_style,
                             id,
                             label,
                             is_active && Some(node_index) == focused,
@@ -556,7 +558,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             } else {
                 let (mut response, close_response) = self.tab_title(
                     tabs_ui,
-                    &tab_styles,
+                    &tab_style,
                     id,
                     label,
                     is_active && Some(node_index) == focused,
