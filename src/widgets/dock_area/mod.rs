@@ -751,13 +751,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         } else {
             0.0
         };
-        let minimum_width = text_width + close_button_size;
 
         // Compute total width of the tab bar
-        let tab_width = prefered_width
-            .or(tab_style.prefered_width)
-            .unwrap_or(minimum_width)
-            .at_least(minimum_width);
+        let minimum_width = tab_style
+            .minimum_width
+            .unwrap_or(0.0)
+            .at_least(text_width + close_button_size);
+        let tab_width = prefered_width.unwrap_or(0.0).at_least(minimum_width);
 
         let (rect, mut response) =
             ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());

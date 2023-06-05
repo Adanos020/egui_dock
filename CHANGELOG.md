@@ -14,7 +14,7 @@
 - `TabStyle::focused` for the focused style of a tab.
 - `TabStyle::hovered` for the hovered style of a tab.
 - `TabStyle::tab_body` for styling the body of the tab including background color, stroke color, rounding and inner margin.
-- `TabStyle::prefered_width` to set the preferred width of the tab.
+- `TabStyle::minimum_width` to set the minimum width of the tab.
 - `TabInteractionStyle` to style the active/inactive/focused/hovered states of a tab.
 
 

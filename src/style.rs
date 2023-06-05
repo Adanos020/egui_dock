@@ -127,11 +127,11 @@ pub struct TabStyle {
     /// By `Default` it's `false`.
     pub hline_below_active_tab_name: bool,
 
-    /// The prefered width of the tab. The tab will allways bet atleast
-    /// wide enough to fully show the title.
+    /// The minimum width of the tab.
     ///
-    /// Overriden by [`TabBarStyle::fill_tab_bar`]
-    pub prefered_width: Option<f32>,
+    /// The tab title or [`TabBarStyle::fill_tab_bar`] may make the tab
+    /// wider than this but never shorter.
+    pub minimum_width: Option<f32>,
 }
 
 /// Specifies the look and feel of individual tabs while they are being interacted with.
@@ -241,7 +241,7 @@ impl Default for TabStyle {
             },
             tab_body: TabBodyStyle::default(),
             hline_below_active_tab_name: false,
-            prefered_width: None,
+            minimum_width: None,
         }
     }
 }
