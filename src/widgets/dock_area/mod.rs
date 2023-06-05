@@ -629,7 +629,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let tab_style = tab_viewer.tab_style_override(tab, &style.tab);
             let tab_style = tab_style.as_ref().unwrap_or(&style.tab);
 
-            // TODO: Aask for the correct style here.
             if !is_active || tab_style.hline_below_active_tab_name {
                 let px = tabs_ui.ctx().pixels_per_point().recip();
                 tabs_ui.painter().hline(
