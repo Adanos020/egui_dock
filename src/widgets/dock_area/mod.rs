@@ -668,7 +668,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) {
         let rect = Rect::from_min_max(
             tabbar_outer_rect.right_top() - vec2(Style::TAB_ADD_BUTTON_SIZE + offset, 0.0),
-            tabbar_outer_rect.right_bottom() - vec2(offset, 0.0),
+            tabbar_outer_rect.right_bottom() - vec2(offset, 2.0),
         );
 
         let ui = &mut ui.child_ui_with_id_source(

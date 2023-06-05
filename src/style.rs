@@ -349,7 +349,7 @@ impl TabBarStyle {
     /// - [`TabBarStyle::hline_color`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
-            bg_fill: style.visuals.extreme_bg_color.gamma_multiply(1.5),
+            bg_fill: style.visuals.extreme_bg_color,
             rounding: Rounding {
                 nw: style.visuals.widgets.inactive.rounding.nw + 2.0,
                 ne: style.visuals.widgets.inactive.rounding.ne + 2.0,
