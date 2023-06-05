@@ -104,7 +104,7 @@ pub struct TabBarStyle {
     pub fill_tab_bar: bool,
 }
 
-/// Styles for a tab in its different variations.
+/// Specifies the look and feel of an individual tab.
 #[derive(Clone, Debug)]
 pub struct TabStyle {
     /// Style of the tab when it is active.
