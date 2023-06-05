@@ -734,7 +734,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     fn tab_title(
         &mut self,
         ui: &mut Ui,
-        tab_styles: &TabStyle,
+        tab_style: &TabStyle,
         id: Id,
         label: WidgetText,
         focused: bool,
@@ -755,7 +755,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         // Compute total width of the tab bar
         let tab_width = prefered_width
-            .or(tab_styles.prefered_width)
+            .or(tab_style.prefered_width)
             .unwrap_or(minimum_width)
             .at_least(minimum_width);
 
@@ -766,13 +766,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         let tab_style = if focused || is_being_dragged {
-            &tab_styles.focused
+            &tab_style.focused
         } else if active {
-            &tab_styles.active
+            &tab_style.active
         } else if response.hovered() {
-            &tab_styles.hovered
+            &tab_style.hovered
         } else {
-            &tab_styles.inactive
+            &tab_style.inactive
         };
 
         let stroke_rect = rect_stroke_box(rect, 1.0);
