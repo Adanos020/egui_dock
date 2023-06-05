@@ -761,7 +761,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let (rect, mut response) =
             ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
         if !ui.memory(|mem| mem.is_anything_being_dragged()) && self.draggable_tabs {
-            response = response.on_hover_cursor(CursorIcon::Grab);
+            response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
 
         let tab_style = if focused || is_being_dragged {
