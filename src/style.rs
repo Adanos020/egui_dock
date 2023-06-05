@@ -349,7 +349,7 @@ impl TabBarStyle {
     /// - [`TabBarStyle::hline_color`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
-            bg_fill: style.visuals.extreme_bg_color,
+            bg_fill: style.visuals.extreme_bg_color.gamma_multiply(1.5),
             rounding: Rounding {
                 nw: style.visuals.widgets.inactive.rounding.nw + 2.0,
                 ne: style.visuals.widgets.inactive.rounding.ne + 2.0,
@@ -365,8 +365,8 @@ impl TabBarStyle {
 impl TabStyle {
     /// Derives tab styles from `egui::Style`.
     ///
-    /// See also: [`TabStyle::from_egui_active`], [`TabStyle::from_egui_inactive`],
-    /// [`TabStyle::from_egui_focused`], [`TabStyle::from_egui_hovered`], [`TabBodyStyle::from_egui`],
+    /// See also: [`TabInteractionStyle::from_egui_active`], [`TabInteractionStyle::from_egui_inactive`],
+    /// [`TabInteractionStyle::from_egui_focused`], [`TabInteractionStyle::from_egui_hovered`], [`TabBodyStyle::from_egui`],
     pub fn from_egui(style: &egui::Style) -> TabStyle {
         Self {
             active: TabInteractionStyle::from_egui_active(style),
@@ -397,7 +397,6 @@ impl TabInteractionStyle {
                 se: 0.0,
                 ..style.visuals.widgets.active.rounding
             },
-            ..TabInteractionStyle::default()
         }
     }
     /// Derives relevant fields from `egui::Style` for an inactive tab and sets the remaining fields to their default values.
@@ -444,6 +443,7 @@ impl TabInteractionStyle {
     pub fn from_egui_hovered(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
+            outline_color: style.visuals.widgets.hovered.bg_stroke.color,
             ..TabInteractionStyle::from_egui_inactive(style)
         }
     }

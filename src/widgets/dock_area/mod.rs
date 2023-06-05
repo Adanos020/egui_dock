@@ -775,11 +775,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             &tab_style.inactive
         };
 
-        let stroke_rect = rect_stroke_box(rect, 1.0);
-        let stroke = Stroke::new(1.0, tab_style.outline_color);
+        // Draw the full tab first and then the stroke ontop to avoid the stroke
+        // mixing with the background color.
         ui.painter()
-            .rect(stroke_rect, tab_style.rounding, tab_style.bg_fill, stroke);
-
+            .rect_filled(rect, tab_style.rounding, tab_style.bg_fill);
+        let stroke_rect = rect_stroke_box(rect, 1.0);
+        ui.painter().rect_stroke(
+            stroke_rect,
+            tab_style.rounding,
+            Stroke::new(1.0, tab_style.outline_color),
+        );
         if !is_being_dragged {
             // Make the tab name area connect with the tab ui area:
             ui.painter().hline(
