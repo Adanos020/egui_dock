@@ -971,10 +971,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             let style = self.style.as_ref().unwrap();
             let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
-            let tabs_styles = tabs_styles.as_ref().unwrap_or(&style.tab);
+            let tabs_style = tabs_styles.as_ref().unwrap_or(&style.tab);
             if tab_viewer.clear_background(tab) {
                 ui.painter()
-                    .rect_filled(body_rect, 0.0, tabs_styles.tab_body.bg_fill);
+                    .rect_filled(body_rect, 0.0, tabs_style.tab_body.bg_fill);
             }
 
             // Construct a new ui with the correct tab id
@@ -991,22 +991,30 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 body_rect,
                 ui.clip_rect(),
             );
+            ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 
             // Use initial spacing for ui
             ui.spacing_mut().item_spacing = spacing;
 
-            let tab_body_rect = Rect::from_min_max(ui.cursor().min, ui.clip_rect().max);
+            // Offset the background rectangle up to hide the top border behind the clip rect.
+            // To avoid anti-aliasing lines when the stroke width is not divisible by two, we
+            // need to calulate the effective anti aliased stroke width.
+            let effective_stroke_width = (tabs_style.tab_body.stroke.width / 2.0).ceil() * 2.0;
+            let tab_body_rect = Rect::from_min_max(
+                ui.clip_rect().min - vec2(0.0, effective_stroke_width),
+                ui.clip_rect().max,
+            );
             ui.painter().rect(
-                rect_stroke_box(tab_body_rect, tabs_styles.tab_body.stroke.width),
-                tabs_styles.tab_body.rounding,
-                tabs_styles.tab_body.bg_fill,
-                tabs_styles.tab_body.stroke,
+                rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
+                tabs_style.tab_body.rounding,
+                tabs_style.tab_body.bg_fill,
+                tabs_style.tab_body.stroke,
             );
 
             if self.scroll_area_in_tabs {
                 ScrollArea::both().show(ui, |ui| {
                     Frame::none()
-                        .inner_margin(tabs_styles.tab_body.inner_margin)
+                        .inner_margin(tabs_style.tab_body.inner_margin)
                         .show(ui, |ui| {
                             let available_rect = ui.available_rect_before_wrap();
                             ui.expand_to_include_rect(available_rect);
@@ -1015,7 +1023,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 });
             } else {
                 Frame::none()
-                    .inner_margin(tabs_styles.tab_body.inner_margin)
+                    .inner_margin(tabs_style.tab_body.inner_margin)
                     .show(ui, |ui| {
                         tab_viewer.ui(ui, tab);
                     });
