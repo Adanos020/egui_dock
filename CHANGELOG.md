@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Adjusted the styling of tabs to closer follow the egui default styling.
+
 ### Fixed
 
 - Correctly draw a border around a dock area using the `Style::border` property.
