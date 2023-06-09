@@ -1,10 +1,14 @@
 # egui_dock changelog
 
+## 0.6.2 - 2023-06-09
+
+### Fixed
+- Make the `max_size` of `tabbar_inner_rect` finite ([#141](https://github.com/Adanos020/egui_dock/pull/141))
+
 ## 0.6.1 - 2023-05-29
 
 ### Fixed
 - Ensure rect size are calculated before drawing node bodies ([#134](https://github.com/Adanos020/egui_dock/pull/134))
-- Make tabbar_inner_rect max_size finite ([#141](https://github.com/Adanos020/egui_dock/pull/141))
 
 ## 0.6.0 - 2023-05-24
 
