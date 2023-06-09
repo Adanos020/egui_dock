@@ -4,6 +4,7 @@
 
 ### Fixed
 - Ensure rect size are calculated before drawing node bodies ([#134](https://github.com/Adanos020/egui_dock/pull/134))
+- Make tabbar_inner_rect max_size finite ([#141](https://github.com/Adanos020/egui_dock/pull/141))
 
 ## 0.6.0 - 2023-05-24
 

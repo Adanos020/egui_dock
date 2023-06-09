@@ -414,7 +414,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             let tabbar_inner_rect = Rect::from_min_size(
                 (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
-                vec2(f32::INFINITY, tabbar_outer_rect.height()),
+                vec2(tabbar_outer_rect.width(), tabbar_outer_rect.height()),
             );
 
             let tabs_ui = &mut ui.child_ui_with_id_source(
