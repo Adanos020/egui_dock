@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.6.3 - 2023-06-16
+
+### Fixed
+- Made the `DockArea` always allocate an area ([#143](https://github.com/Adanos020/egui_dock/pull/143))
+
 ## 0.6.2 - 2023-06-09
 
 ### Fixed
@@ -17,7 +22,7 @@
 - `TabViewer::tab_style_override` that lets you define a custom `TabsStyle` for an individual tab ([99333b0](https://github.com/Adanos020/egui_dock/commit/99333b093d307181c288b3e134379cfe47647a7c))
 - `ButtonsStyle::add_tab_border_color` for the `+` button's left border ([99333b0](https://github.com/Adanos020/egui_dock/commit/99333b093d307181c288b3e134379cfe47647a7c))
 - `TabBarStyle::rounding` for rounding of the tab bar, independent from tab rounding ([99333b0](https://github.com/Adanos020/egui_dock/commit/99333b093d307181c288b3e134379cfe47647a7c))
-- Separate `from_egui` methods for `ButtonsStyle`, `SeparatorStyle`, `TabBarStyle`, and `TabStyle`. ([a660497](https://github.com/Adanos020/egui_dock/commit/a660497b21651dd9920665bf50d8fc9e75d0e1e0))
+- Separate `from_egui` methods for `ButtonsStyle`, `SeparatorStyle`, `TabBarStyle`, and `TabStyle` ([a660497](https://github.com/Adanos020/egui_dock/commit/a660497b21651dd9920665bf50d8fc9e75d0e1e0))
 
 ### Breaking changes
 
