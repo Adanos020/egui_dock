@@ -241,8 +241,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             );
         }
 
+        ui.allocate_rect(rect, Sense::hover());
+
         if self.tree.is_empty() {
-            ui.allocate_rect(rect, Sense::hover());
             return;
         }
 
