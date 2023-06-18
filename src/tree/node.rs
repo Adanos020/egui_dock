@@ -2,7 +2,7 @@
 use egui::Rect;
 
 /// Represents an abstract node of a [`Tree`](crate::Tree).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Node<Tab> {
     /// Empty node

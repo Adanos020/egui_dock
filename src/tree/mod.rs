@@ -69,7 +69,7 @@ pub enum TabDestination {
 /// For "Vertical" nodes:
 ///  - left child contains Top node.
 ///  - right child contains Bottom node.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree<Tab> {
     tree: Vec<Node<Tab>>,
