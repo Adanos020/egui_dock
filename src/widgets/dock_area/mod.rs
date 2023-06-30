@@ -212,7 +212,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 && self.tree[dst].is_leaf()
                 && (src != dst || self.tree[dst].tabs_count() > 1)
             {
-                let (overlay, tab_dst) = hover.resolve();
+                let (overlay, tab_dst) = hover.resolve(&style.allowed_splits);
                 let id = Id::new("overlay");
                 let layer_id = LayerId::new(Order::Foreground, id);
                 let painter = ui.ctx().layer_painter(layer_id);

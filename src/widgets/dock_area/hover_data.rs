@@ -1,4 +1,4 @@
-use crate::{NodeIndex, Split, TabDestination, TabIndex};
+use crate::{NodeIndex, Split, SplitTypes, TabDestination, TabIndex};
 use egui::{Pos2, Rect};
 
 #[derive(Debug)]
@@ -11,7 +11,7 @@ pub(super) struct HoverData {
 }
 
 impl HoverData {
-    pub(super) fn resolve(&self) -> (Rect, TabDestination) {
+    pub(super) fn resolve(&self, allowed_splits: &SplitTypes) -> (Rect, TabDestination) {
         if let Some(tab) = self.tab {
             return (tab.0, TabDestination::Insert(tab.1));
         }
@@ -22,33 +22,66 @@ impl HoverData {
         let (rect, pointer) = (self.rect, self.pointer);
 
         let center = rect.center();
-        let pts = [
-            (
-                center.distance(pointer),
-                TabDestination::Append,
-                Rect::EVERYTHING,
-            ),
-            (
-                rect.left_center().distance(pointer),
-                TabDestination::Split(Split::Left),
-                Rect::everything_left_of(center.x),
-            ),
-            (
-                rect.right_center().distance(pointer),
-                TabDestination::Split(Split::Right),
-                Rect::everything_right_of(center.x),
-            ),
-            (
-                rect.center_top().distance(pointer),
-                TabDestination::Split(Split::Above),
-                Rect::everything_above(center.y),
-            ),
-            (
-                rect.center_bottom().distance(pointer),
-                TabDestination::Split(Split::Below),
-                Rect::everything_below(center.y),
-            ),
-        ];
+
+        let pts = match allowed_splits {
+            SplitTypes::All => vec![
+                (
+                    center.distance(pointer),
+                    TabDestination::Append,
+                    Rect::EVERYTHING,
+                ),
+                (
+                    rect.left_center().distance(pointer),
+                    TabDestination::Split(Split::Left),
+                    Rect::everything_left_of(center.x),
+                ),
+                (
+                    rect.right_center().distance(pointer),
+                    TabDestination::Split(Split::Right),
+                    Rect::everything_right_of(center.x),
+                ),
+                (
+                    rect.center_top().distance(pointer),
+                    TabDestination::Split(Split::Above),
+                    Rect::everything_above(center.y),
+                ),
+                (
+                    rect.center_bottom().distance(pointer),
+                    TabDestination::Split(Split::Below),
+                    Rect::everything_below(center.y),
+                ),
+            ],
+            SplitTypes::HorizontalOnly => vec![
+                (
+                    center.distance(pointer),
+                    TabDestination::Append,
+                    Rect::EVERYTHING,
+                ),
+                (
+                    rect.left_center().distance(pointer),
+                    TabDestination::Split(Split::Left),
+                    Rect::everything_left_of(center.x),
+                ),
+                (
+                    rect.right_center().distance(pointer),
+                    TabDestination::Split(Split::Right),
+                    Rect::everything_right_of(center.x),
+                ),
+            ],
+            SplitTypes::VertialOnly => vec![
+                (
+                    rect.center_top().distance(pointer),
+                    TabDestination::Split(Split::Above),
+                    Rect::everything_above(center.y),
+                ),
+                (
+                    rect.center_bottom().distance(pointer),
+                    TabDestination::Split(Split::Below),
+                    Rect::everything_below(center.y),
+                ),
+            ],
+            SplitTypes::None => vec![],
+        };
 
         let (_, tab_dst, overlay) = pts
             .into_iter()

@@ -25,6 +25,22 @@ pub struct Style {
     pub separator: SeparatorStyle,
     pub tab_bar: TabBarStyle,
     pub tabs: TabStyle,
+
+    pub allowed_splits: SplitTypes,
+}
+
+/// What directions can this dock split in?
+#[derive(Clone, Debug, Default)]
+pub enum SplitTypes {
+    #[default]
+    /// Allow splits in any direction (horizontal and vertical).
+    All,
+    /// Only allow split in a horizontal direction.
+    HorizontalOnly,
+    /// Only allow splits in a vertical direction.
+    VertialOnly,
+    /// Don't allow splits at all.
+    None,
 }
 
 /// Specifies the look and feel of buttons.
@@ -145,6 +161,7 @@ impl Default for Style {
             separator: SeparatorStyle::default(),
             tab_bar: TabBarStyle::default(),
             tabs: TabStyle::default(),
+            allowed_splits: SplitTypes::default(),
         }
     }
 }
