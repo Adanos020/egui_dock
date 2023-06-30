@@ -346,6 +346,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         *fraction = (*fraction + delta / range).clamp(min, max);
                     }
                 }
+
+                if response.double_clicked() {
+                    *fraction = 0.5;
+                }
             }
         }
     }
