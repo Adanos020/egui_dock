@@ -51,7 +51,7 @@ impl HoverData {
                     Rect::everything_below(center.y),
                 ),
             ],
-            SplitTypes::HorizontalOnly => vec![
+            SplitTypes::LeftRightOnly => vec![
                 (
                     center.distance(pointer),
                     TabDestination::Append,
@@ -68,7 +68,7 @@ impl HoverData {
                     Rect::everything_right_of(center.x),
                 ),
             ],
-            SplitTypes::VertialOnly => vec![
+            SplitTypes::TopBottomOnly => vec![
                 (
                     rect.center_top().distance(pointer),
                     TabDestination::Split(Split::Above),

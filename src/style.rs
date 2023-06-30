@@ -36,9 +36,9 @@ pub enum SplitTypes {
     /// Allow splits in any direction (horizontal and vertical).
     All,
     /// Only allow split in a horizontal direction.
-    HorizontalOnly,
+    LeftRightOnly,
     /// Only allow splits in a vertical direction.
-    VertialOnly,
+    TopBottomOnly,
     /// Don't allow splits at all.
     None,
 }
