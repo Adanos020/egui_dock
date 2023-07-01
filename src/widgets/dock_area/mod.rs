@@ -190,7 +190,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
         }
 
-        // Finaly draw separators so that their "interaction zone" is above
+        // Finally draw separators so that their "interaction zone" is above
         // bodies (see `SeparatorStyle::extra_interact_width`).
         for node_index in self.tree.breadth_first_index_iter() {
             if self.tree[node_index].is_parent() {
@@ -349,6 +349,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         let (min, max) = (min.min(max), max.max(min));
                         *fraction = (*fraction + delta / range).clamp(min, max);
                     }
+                }
+
+                if response.double_clicked() {
+                    *fraction = 0.5;
                 }
             }
         }
