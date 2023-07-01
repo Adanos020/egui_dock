@@ -1,25 +1,27 @@
 # egui_dock changelog
 
-## 0.7 - (to be determined)
+## 0.7.0 - (to be determined)
 
 ### Changed
 
-- Adjusted the styling of tabs to closer follow the egui default styling.
+- Adjusted the styling of tabs to closer follow the egui default styling. ([#139](https://github.com/Adanos020/egui_dock/pull/139))
+- Double-clicking on a separator resets the size of both adjacent nodes. ([#146](https://github.com/Adanos020/egui_dock/pull/146))
 
 ### Fixed
 
-- Correctly draw a border around a dock area using the `Style::border` property.
+- Correctly draw a border around a dock area using the `Style::border` property. ([#139](https://github.com/Adanos020/egui_dock/pull/139))
 
 ### Added
 
-- `Style::rounding` for the rounding of the dock area border.
-- `TabStyle::active` for the active style of a tab.
-- `TabStyle::inactive` for the inactive style of a tab.
-- `TabStyle::focused` for the focused style of a tab.
-- `TabStyle::hovered` for the hovered style of a tab.
-- `TabStyle::tab_body` for styling the body of the tab including background color, stroke color, rounding and inner margin.
-- `TabStyle::minimum_width` to set the minimum width of the tab.
-- `TabInteractionStyle` to style the active/inactive/focused/hovered states of a tab.
+- From [#139](https://github.com/Adanos020/egui_dock/pull/139):
+  - `Style::rounding` for the rounding of the dock area border.
+  - `TabStyle::active` for the active style of a tab.
+  - `TabStyle::inactive` for the inactive style of a tab.
+  - `TabStyle::focused` for the focused style of a tab.
+  - `TabStyle::hovered` for the hovered style of a tab.
+  - `TabStyle::tab_body` for styling the body of the tab including background color, stroke color, rounding and inner margin.
+  - `TabStyle::minimum_width` to set the minimum width of the tab.
+  - `TabInteractionStyle` to style the active/inactive/focused/hovered states of a tab.
 
 
 ### Breaking changes
