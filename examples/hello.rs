@@ -207,7 +207,7 @@ impl MyContext {
 
             ui.separator();
 
-            fn tab_style_editor_ui(ui: &mut egui::Ui, tab_style: &mut TabInteractionStyle) {
+            fn tab_style_editor_ui(ui: &mut Ui, tab_style: &mut TabInteractionStyle) {
                 ui.separator();
 
                 ui.label("Rounding");
