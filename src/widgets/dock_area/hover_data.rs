@@ -1,4 +1,4 @@
-use crate::{NodeIndex, Split, SplitTypes, TabDestination, TabIndex};
+use crate::{AllowedSplits, NodeIndex, Split, TabDestination, TabIndex};
 use egui::{Pos2, Rect};
 
 #[derive(Debug)]
@@ -11,7 +11,7 @@ pub(super) struct HoverData {
 }
 
 impl HoverData {
-    pub(super) fn resolve(&self, allowed_splits: &SplitTypes) -> (Rect, TabDestination) {
+    pub(super) fn resolve(&self, allowed_splits: &AllowedSplits) -> (Rect, TabDestination) {
         if let Some(tab) = self.tab {
             return (tab.0, TabDestination::Insert(tab.1));
         }
@@ -24,7 +24,7 @@ impl HoverData {
         let center = rect.center();
 
         let pts = match allowed_splits {
-            SplitTypes::All => vec![
+            AllowedSplits::All => vec![
                 (
                     center.distance(pointer),
                     TabDestination::Append,
@@ -51,7 +51,7 @@ impl HoverData {
                     Rect::everything_below(center.y),
                 ),
             ],
-            SplitTypes::LeftRightOnly => vec![
+            AllowedSplits::LeftRightOnly => vec![
                 (
                     center.distance(pointer),
                     TabDestination::Append,
@@ -68,7 +68,7 @@ impl HoverData {
                     Rect::everything_right_of(center.x),
                 ),
             ],
-            SplitTypes::TopBottomOnly => vec![
+            AllowedSplits::TopBottomOnly => vec![
                 (
                     rect.center_top().distance(pointer),
                     TabDestination::Split(Split::Above),
@@ -80,7 +80,7 @@ impl HoverData {
                     Rect::everything_below(center.y),
                 ),
             ],
-            SplitTypes::None => vec![(
+            AllowedSplits::None => vec![(
                 center.distance(pointer),
                 TabDestination::Append,
                 Rect::EVERYTHING,

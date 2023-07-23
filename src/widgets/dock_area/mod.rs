@@ -20,7 +20,7 @@ use state::State;
 
 /// What directions can this dock split in?
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
-pub enum SplitTypes {
+pub enum AllowedSplits {
     #[default]
     /// Allow splits in any direction (horizontal and vertical).
     All,
@@ -44,7 +44,7 @@ pub struct DockArea<'tree, Tab> {
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
     scroll_area_in_tabs: bool,
-    allowed_splits: SplitTypes,
+    allowed_splits: AllowedSplits,
 
     drag_data: Option<(NodeIndex, TabIndex)>,
     hover_data: Option<HoverData>,
@@ -69,7 +69,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             draggable_tabs: true,
             show_tab_name_on_hover: false,
             scroll_area_in_tabs: true,
-            allowed_splits: SplitTypes::default(),
+            allowed_splits: AllowedSplits::default(),
             drag_data: None,
             hover_data: None,
             to_remove: Vec::new(),
@@ -143,7 +143,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
     /// What directions can a node be split in: left-right, top-bottom, all, or none.
     /// By default it's all.
-    pub fn allowed_splits(mut self, allowed_splits: SplitTypes) -> Self {
+    pub fn allowed_splits(mut self, allowed_splits: AllowedSplits) -> Self {
         self.allowed_splits = allowed_splits;
         self
     }
