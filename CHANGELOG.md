@@ -22,20 +22,22 @@
   - `TabStyle::tab_body` for styling the body of the tab including background color, stroke color, rounding and inner margin.
   - `TabStyle::minimum_width` to set the minimum width of the tab.
   - `TabInteractionStyle` to style the active/inactive/focused/hovered states of a tab.
+- `AllowedSplits` enum which lets you choose in which directions a `DockArea` can be split. ([#145](https://github.com/Adanos020/egui_dock/pull/145))
 
 
 ### Breaking changes
 
-- Moved `TabStyle::inner_margin` to `TabBodyStyle::inner_margin`.
-- Moved `TabStyle::fill_tab_bar` to `TabBarStyle::fill_tab_bar`.
-- Moved `TabStyle::outline_color` to `TabInteractionStyle::outline_color`.
-- Moved `TabStyle::rounding` to `TabInteractionStyle::rounding`.
-- Moved `TabStyle::bg_fill` to `TabInteractionStyle::bg_fill`.
-- Moved `TabStyle::text_color_unfocused` to `TabStyle::inactive.text_color`.
-- Moved `TabStyle::text_color_active_focused` to `TabStyle::focused.text_color`.
-- Moved `TabStyle::text_color_active_unfocused` to `TabStyle::active.text_color`.
-- Renamed `Style::tabs` to `Style::tab`.
-- Removed `TabStyle::text_color_focused`. This style was practically never reachable.
+- From [#139](https://github.com/Adanos020/egui_dock/pull/139):
+  - Moved `TabStyle::inner_margin` to `TabBodyStyle::inner_margin`.
+  - Moved `TabStyle::fill_tab_bar` to `TabBarStyle::fill_tab_bar`.
+  - Moved `TabStyle::outline_color` to `TabInteractionStyle::outline_color`.
+  - Moved `TabStyle::rounding` to `TabInteractionStyle::rounding`.
+  - Moved `TabStyle::bg_fill` to `TabInteractionStyle::bg_fill`.
+  - Moved `TabStyle::text_color_unfocused` to `TabStyle::inactive.text_color`.
+  - Moved `TabStyle::text_color_active_focused` to `TabStyle::focused.text_color`.
+  - Moved `TabStyle::text_color_active_unfocused` to `TabStyle::active.text_color`.
+  - Renamed `Style::tabs` to `Style::tab`.
+  - Removed `TabStyle::text_color_focused`. This style was practically never reachable.
 
 ## 0.6.3 - 2023-06-16
 

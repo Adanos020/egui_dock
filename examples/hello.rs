@@ -9,7 +9,7 @@ use egui::{
 };
 
 use egui_dock::{
-    DockArea, Node, NodeIndex, SplitTypes, Style, TabInteractionStyle, TabViewer, Tree,
+    AllowedSplits, DockArea, Node, NodeIndex, Style, TabInteractionStyle, TabViewer, Tree,
 };
 
 fn main() -> eframe::Result<()> {
@@ -34,7 +34,7 @@ struct MyContext {
     show_add_buttons: bool,
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
-    allowed_splits: SplitTypes,
+    allowed_splits: AllowedSplits,
 }
 
 struct MyApp {
@@ -108,18 +108,18 @@ impl MyContext {
             ComboBox::new("cbox:allowed_splits", "Split direction(s)")
                 .selected_text(format!("{:?}", self.allowed_splits))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.allowed_splits, SplitTypes::All, "All");
+                    ui.selectable_value(&mut self.allowed_splits, AllowedSplits::All, "All");
                     ui.selectable_value(
                         &mut self.allowed_splits,
-                        SplitTypes::LeftRightOnly,
+                        AllowedSplits::LeftRightOnly,
                         "LeftRightOnly",
                     );
                     ui.selectable_value(
                         &mut self.allowed_splits,
-                        SplitTypes::TopBottomOnly,
+                        AllowedSplits::TopBottomOnly,
                         "TopBottomOnly",
                     );
-                    ui.selectable_value(&mut self.allowed_splits, SplitTypes::None, "None");
+                    ui.selectable_value(&mut self.allowed_splits, AllowedSplits::None, "None");
                 });
         });
 
@@ -364,7 +364,7 @@ impl Default for MyApp {
             show_add_buttons: false,
             draggable_tabs: true,
             show_tab_name_on_hover: false,
-            allowed_splits: SplitTypes::default(),
+            allowed_splits: AllowedSplits::default(),
         };
 
         Self { context, tree }
