@@ -80,7 +80,11 @@ impl HoverData {
                     Rect::everything_below(center.y),
                 ),
             ],
-            SplitTypes::None => vec![],
+            SplitTypes::None => vec![(
+                center.distance(pointer),
+                TabDestination::Append,
+                Rect::EVERYTHING,
+            )],
         };
 
         let (_, tab_dst, overlay) = pts

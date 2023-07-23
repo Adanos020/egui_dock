@@ -8,7 +8,9 @@ use egui::{
     CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
-use egui_dock::{DockArea, Node, NodeIndex, Style, TabInteractionStyle, TabViewer, Tree};
+use egui_dock::{
+    DockArea, Node, NodeIndex, SplitTypes, Style, TabInteractionStyle, TabViewer, Tree,
+};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions {
@@ -32,6 +34,7 @@ struct MyContext {
     show_add_buttons: bool,
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
+    allowed_splits: SplitTypes,
 }
 
 struct MyApp {
@@ -102,6 +105,22 @@ impl MyContext {
             ui.checkbox(&mut self.show_add_buttons, "Show add buttons");
             ui.checkbox(&mut self.draggable_tabs, "Draggable tabs");
             ui.checkbox(&mut self.show_tab_name_on_hover, "Show tab name on hover");
+            ComboBox::new("cbox:allowed_splits", "Split direction(s)")
+                .selected_text(format!("{:?}", self.allowed_splits))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.allowed_splits, SplitTypes::All, "All");
+                    ui.selectable_value(
+                        &mut self.allowed_splits,
+                        SplitTypes::LeftRightOnly,
+                        "LeftRightOnly",
+                    );
+                    ui.selectable_value(
+                        &mut self.allowed_splits,
+                        SplitTypes::TopBottomOnly,
+                        "TopBottomOnly",
+                    );
+                    ui.selectable_value(&mut self.allowed_splits, SplitTypes::None, "None");
+                });
         });
 
         let style = self.style.as_mut().unwrap();
@@ -345,6 +364,7 @@ impl Default for MyApp {
             show_add_buttons: false,
             draggable_tabs: true,
             show_tab_name_on_hover: false,
+            allowed_splits: SplitTypes::default(),
         };
 
         Self { context, tree }
@@ -393,6 +413,7 @@ impl eframe::App for MyApp {
                     .show_add_buttons(self.context.show_add_buttons)
                     .draggable_tabs(self.context.draggable_tabs)
                     .show_tab_name_on_hover(self.context.show_tab_name_on_hover)
+                    .allowed_splits(self.context.allowed_splits)
                     .show_inside(ui, &mut self.context);
             });
     }

@@ -19,7 +19,7 @@ use paste::paste;
 use state::State;
 
 /// What directions can this dock split in?
-#[derive(Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub enum SplitTypes {
     #[default]
     /// Allow splits in any direction (horizontal and vertical).
