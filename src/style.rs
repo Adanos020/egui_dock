@@ -27,22 +27,6 @@ pub struct Style {
     pub separator: SeparatorStyle,
     pub tab_bar: TabBarStyle,
     pub tab: TabStyle,
-
-    pub allowed_splits: SplitTypes,
-}
-
-/// What directions can this dock split in?
-#[derive(Clone, Debug, Default)]
-pub enum SplitTypes {
-    #[default]
-    /// Allow splits in any direction (horizontal and vertical).
-    All,
-    /// Only allow split in a horizontal direction.
-    LeftRightOnly,
-    /// Only allow splits in a vertical direction.
-    TopBottomOnly,
-    /// Don't allow splits at all.
-    None,
 }
 
 /// Specifies the look and feel of buttons.
@@ -193,7 +177,6 @@ impl Default for Style {
             separator: SeparatorStyle::default(),
             tab_bar: TabBarStyle::default(),
             tab: TabStyle::default(),
-            allowed_splits: SplitTypes::default(),
         }
     }
 }
@@ -437,6 +420,7 @@ impl TabInteractionStyle {
             ..TabInteractionStyle::from_egui_active(style)
         }
     }
+
     /// Derives relevant fields from `egui::Style` for a focused tab and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
@@ -450,6 +434,7 @@ impl TabInteractionStyle {
             ..TabInteractionStyle::from_egui_active(style)
         }
     }
+
     /// Derives relevant fields from `egui::Style` for a hovered tab and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:

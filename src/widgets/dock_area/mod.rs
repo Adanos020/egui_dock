@@ -18,6 +18,20 @@ use hover_data::HoverData;
 use paste::paste;
 use state::State;
 
+/// What directions can this dock split in?
+#[derive(Clone, Debug, Default)]
+pub enum SplitTypes {
+    #[default]
+    /// Allow splits in any direction (horizontal and vertical).
+    All,
+    /// Only allow split in a horizontal direction.
+    LeftRightOnly,
+    /// Only allow splits in a vertical direction.
+    TopBottomOnly,
+    /// Don't allow splits at all.
+    None,
+}
+
 /// Displays a [`Tree`] in `egui`.
 pub struct DockArea<'tree, Tab> {
     id: Id,
@@ -30,6 +44,7 @@ pub struct DockArea<'tree, Tab> {
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
     scroll_area_in_tabs: bool,
+    allowed_splits: SplitTypes,
 
     drag_data: Option<(NodeIndex, TabIndex)>,
     hover_data: Option<HoverData>,
@@ -54,6 +69,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             draggable_tabs: true,
             show_tab_name_on_hover: false,
             scroll_area_in_tabs: true,
+            allowed_splits: SplitTypes::default(),
             drag_data: None,
             hover_data: None,
             to_remove: Vec::new(),
@@ -122,6 +138,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// By default it's true.
     pub fn scroll_area_in_tabs(mut self, scroll_area_in_tabs: bool) -> Self {
         self.scroll_area_in_tabs = scroll_area_in_tabs;
+        self
+    }
+
+    /// What directions can a node be split in: left-right, top-bottom, all, or none.
+    /// By default it's all.
+    pub fn allowed_splits(mut self, allowed_splits: SplitTypes) -> Self {
+        self.allowed_splits = allowed_splits;
         self
     }
 }
@@ -214,7 +237,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 && self.tree[dst].is_leaf()
                 && (src != dst || self.tree[dst].tabs_count() > 1)
             {
-                let (overlay, tab_dst) = hover.resolve(&style.allowed_splits);
+                let (overlay, tab_dst) = hover.resolve(&self.allowed_splits);
                 let id = Id::new("overlay");
                 let layer_id = LayerId::new(Order::Foreground, id);
                 let painter = ui.ctx().layer_painter(layer_id);
@@ -368,7 +391,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         assert!(self.tree[node_index].is_leaf());
 
         let rect = {
-            let Node::Leaf { rect, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let Node::Leaf { rect, .. } = &mut self.tree[node_index] else {
+                unreachable!()
+            };
             *rect
         };
         let ui = &mut ui.child_ui_with_id_source(
@@ -383,7 +408,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let tabbar_response = self.tab_bar(ui, state, node_index, tab_viewer);
         self.tab_body(ui, state, node_index, tab_viewer, spacing, tabbar_response);
 
-        let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else { unreachable!() };
+        let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else {
+            unreachable!()
+        };
         for (tab_index, tab) in tabs.iter_mut().enumerate() {
             if tab_viewer.force_close(tab) {
                 self.to_remove.push((node_index, TabIndex(tab_index)));
@@ -419,7 +446,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         let actual_width = {
-            let Node::Leaf { tabs, scroll, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let Node::Leaf { tabs, scroll, .. } = &mut self.tree[node_index] else {
+                unreachable!()
+            };
 
             let tabbar_inner_rect = Rect::from_min_size(
                 (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
@@ -499,7 +528,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let focused = self.tree.focused_leaf();
         let tabs_len = {
-            let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else {
+                unreachable!()
+            };
             tabs.len()
         };
 
@@ -514,7 +545,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
 
             let (is_active, label, tab_style) = {
-                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else {
+                    unreachable!()
+                };
                 let style = self.style.as_ref().unwrap();
                 let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tab);
                 (
@@ -579,7 +612,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     Sense::click_and_drag()
                 };
 
-                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else {
+                    unreachable!()
+                };
                 let tab = &mut tabs[tab_index.0];
                 if self.show_tab_name_on_hover {
                     response = response.on_hover_ui(|ui| {
@@ -627,7 +662,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             };
 
             // Paint hline below each tab unless its active (or option says otherwise)
-            let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else {
+                unreachable!()
+            };
             let tab = &mut tabs[tab_index.0];
             let style = self.style.as_ref().unwrap();
             let tab_style = tab_viewer.tab_style_override(tab, &style.tab);
@@ -872,7 +909,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         available_width: f32,
         tabbar_response: &Response,
     ) {
-        let Node::Leaf { scroll, .. } = &mut self.tree[node_index] else { unreachable!() };
+        let Node::Leaf { scroll, .. } = &mut self.tree[node_index] else {
+            unreachable!()
+        };
         let overflow = (actual_width - available_width).at_least(0.0);
         let style = self.style.as_ref().unwrap();
 
@@ -962,7 +1001,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             active,
             viewport,
             ..
-        } = &mut self.tree[node_index] else {
+        } = &mut self.tree[node_index]
+        else {
             unreachable!();
         };
 
