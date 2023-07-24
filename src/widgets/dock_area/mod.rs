@@ -4,7 +4,8 @@ mod state;
 use crate::{
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered},
     widgets::popup::popup_under_widget,
-    Node, NodeIndex, Style, TabAddAlign, TabIndex, TabStyle, TabViewer, Tree,
+    Node, NodeIndex, Style, TabAddAlign, TabDestination, TabIndex, TabSource, TabStyle, TabViewer,
+    Tree, WindowIndex,
 };
 
 use duplicate::duplicate;
@@ -29,11 +30,28 @@ pub struct DockArea<'tree, Tab> {
     show_tab_name_on_hover: bool,
     scroll_area_in_tabs: bool,
 
-    drag_data: Option<(NodeIndex, TabIndex)>,
+    drag_data: Option<TabSource>,
     hover_data: Option<HoverData>,
-    to_remove: Vec<(NodeIndex, TabIndex)>,
+    to_remove: Vec<TabRemoval>,
     new_focused: Option<NodeIndex>,
     tab_hover_rect: Option<(Rect, TabIndex)>,
+}
+
+/// An enum expressing an entry in the `to_remove` field in [`DockArea`]
+#[derive(Debug, Clone, Copy)]
+enum TabRemoval {
+    Node((NodeIndex, TabIndex)),
+    Window(WindowIndex),
+}
+impl Into<TabRemoval> for WindowIndex {
+    fn into(self) -> TabRemoval {
+        TabRemoval::Window(self)
+    }
+}
+impl Into<TabRemoval> for (NodeIndex, TabIndex) {
+    fn into(self) -> TabRemoval {
+        TabRemoval::Node(self)
+    }
 }
 
 // Builder
@@ -163,7 +181,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 self.show_inside(ui, tab_viewer);
             });
     }
-
     /// Shows the docking hierarchy inside a [`Ui`].
     ///
     /// See also [`show`](Self::show).
@@ -172,6 +189,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .get_or_insert_with(|| Style::from_egui(ui.style().as_ref()));
 
         let mut state = State::load(ui.ctx(), self.id);
+
+        dbg!(&self.tree);
+        for window_index in self.tree.window_index_iter() {
+            self.show_window(ui, &mut state, window_index, tab_viewer);
+        }
 
         // First compute all rect sizes in the node graph.
         self.allocate_area_for_root(ui);
@@ -197,33 +219,83 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         for index in self.to_remove.iter().copied().rev() {
-            self.tree.remove_tab(index);
+            match index {
+                TabRemoval::Node(index) => {
+                    self.tree.remove_tab(index);
+                }
+                TabRemoval::Window(index) => {
+                    self.tree.remove_window(index);
+                }
+            }
         }
 
         if let Some(focused) = self.new_focused {
             self.tree.set_focused_node(focused);
         }
 
-        if let (Some((src, tab_index)), Some(hover)) = (self.drag_data, self.hover_data) {
+        if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
             let dst = hover.dst;
             let style = self.style.as_ref().unwrap();
-
-            if self.tree[src].is_leaf()
-                && self.tree[dst].is_leaf()
-                && (src != dst || self.tree[dst].tabs_count() > 1)
-            {
-                let (overlay, tab_dst) = hover.resolve();
-                let id = Id::new("overlay");
-                let layer_id = LayerId::new(Order::Foreground, id);
-                let painter = ui.ctx().layer_painter(layer_id);
-                painter.rect_filled(overlay, 0.0, style.selection_color);
-                if ui.input(|i| i.pointer.any_released()) {
-                    self.tree.move_tab((src, tab_index), (dst, tab_dst));
+            match source {
+                TabSource::Node(src, tab_index) => {
+                    if self.tree[src].is_leaf()
+                        && self.tree[dst].is_leaf()
+                        && (src != dst || self.tree[dst].tabs_count() > 1)
+                    {
+                        let tab_dst = hover.resolve(ui, style);
+                        if ui.input(|i| i.pointer.any_released()) {
+                            self.tree.move_tab((src, tab_index), (dst, tab_dst));
+                        }
+                    }
+                }
+                TabSource::Window(window_index) => {
+                    if self.tree[dst].is_leaf() {
+                        let tab_dst = hover.resolve(ui, style);
+                        if let TabDestination::Window(_) = tab_dst {
+                        } else {
+                            if ui.input(|i| i.pointer.any_released()) {
+                                self.tree.move_window(window_index, (dst, tab_dst));
+                            }
+                        }
+                    }
                 }
             }
         }
 
         state.store(ui.ctx(), self.id);
+    }
+
+    //Show the given window index,
+    //This function also handles calling Tab::force_close!
+    fn show_window(
+        &mut self,
+        ui: &mut Ui,
+
+        state: &mut State,
+        window_index: WindowIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+    ) {
+        let mut open = if self.show_close_buttons {
+            Some(true)
+        } else {
+            None
+        };
+        let window = &mut self.tree[window_index];
+        let (drag_start, response) = window.show(ui, tab_viewer, window_index, open.as_mut());
+        if let Some(succesful_drag_start) = drag_start {
+            state.drag_start = Some(succesful_drag_start);
+        }
+        if response.is_some() {
+            self.drag_data = response;
+        }
+        if Some(false) == open {
+            if tab_viewer.on_close(&mut window.tab) {
+                self.to_remove.push(window_index.into())
+            }
+        }
+        if tab_viewer.force_close(&mut window.tab) {
+            self.to_remove.push(window_index.into())
+        }
     }
 
     fn allocate_area_for_root(&mut self, ui: &mut Ui) {
@@ -378,7 +450,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else { unreachable!() };
         for (tab_index, tab) in tabs.iter_mut().enumerate() {
             if tab_viewer.force_close(tab) {
-                self.to_remove.push((node_index, TabIndex(tab_index)));
+                self.to_remove
+                    .push((node_index, TabIndex(tab_index)).into());
             }
         }
     }
@@ -541,7 +614,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
                         tabs_ui.ctx().translate_layer(layer_id, delta);
 
-                        self.drag_data = Some((node_index, tab_index));
+                        self.drag_data = Some(TabSource::Node(node_index, tab_index));
                     }
                 }
 
@@ -581,7 +654,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         tab_viewer.context_menu(ui, tab);
                         if self.show_close_buttons && ui.button("Close").clicked() {
                             if tab_viewer.on_close(tab) {
-                                self.to_remove.push((node_index, tab_index));
+                                self.to_remove.push((node_index, tab_index).into());
                             } else {
                                 *active = tab_index;
                                 self.new_focused = Some(node_index);
@@ -592,7 +665,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if close_clicked {
                     if tab_viewer.on_close(tab) {
-                        self.to_remove.push((node_index, tab_index));
+                        self.to_remove.push((node_index, tab_index).into());
                     } else {
                         *active = tab_index;
                         self.new_focused = Some(node_index);
@@ -638,7 +711,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             if self.show_close_buttons && response.middle_clicked() {
                 if tab_viewer.on_close(tab) {
-                    self.to_remove.push((node_index, tab_index));
+                    self.to_remove.push((node_index, tab_index).into());
                 } else {
                     *active = tab_index;
                     self.new_focused = Some(node_index);
@@ -1012,10 +1085,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // response.hovered as the dragged tab covers
             // the underlying responses
             if state.drag_start.is_some() && rect.contains(pointer) {
+                let on_title_bar = tabbar_response.rect.contains(pointer);
                 self.hover_data = Some(HoverData {
                     rect: *rect,
                     dst: node_index,
-                    tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
+                    tabs: on_title_bar.then_some(tabbar_response.rect),
                     tab: self.tab_hover_rect,
                     pointer,
                 });

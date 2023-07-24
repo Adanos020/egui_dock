@@ -20,12 +20,20 @@ pub mod node;
 /// Wrapper around indices to the collection of nodes inside a [`Tree`].
 pub mod node_index;
 
+/// Wrapper around indices to the collection of windows inside a [`Tree`].
+pub mod window_index;
+
+/// A detached `Tab` which is displayed as a window,
+pub mod window;
+
 pub use node::Node;
 pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
+pub use window::TabWindow;
+pub use window_index::WindowIndex;
 
-use egui::Rect;
+use egui::{Pos2, Rect};
 use std::fmt;
 
 // ----------------------------------------------------------------------------
@@ -46,6 +54,8 @@ pub enum TabDestination {
     Split(Split),
     /// Insert the tab at the given index.
     Insert(TabIndex),
+    /// Create a window from the tab
+    Window(Pos2),
     /// Append the tab to the node.
     Append,
 }
@@ -72,7 +82,14 @@ pub enum TabDestination {
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree<Tab> {
+    //if you think of the normal dockerarea as a tree,
+    //detached nodes displayed as windows become detached branches
+    detached_branches: Vec<TabWindow<Tab>>,
+
+    //binary tree vector
     tree: Vec<Node<Tab>>,
+
+    //part of the tree which is in focus
     focused_node: Option<NodeIndex>,
 }
 
@@ -88,6 +105,7 @@ impl<Tab> Default for Tree<Tab> {
     fn default() -> Self {
         Self {
             tree: Vec::new(),
+            detached_branches: Vec::new(),
             focused_node: None,
         }
     }
@@ -109,12 +127,29 @@ impl<Tab> std::ops::IndexMut<NodeIndex> for Tree<Tab> {
     }
 }
 
+impl<Tab> std::ops::Index<WindowIndex> for Tree<Tab> {
+    type Output = TabWindow<Tab>;
+
+    #[inline(always)]
+    fn index(&self, index: WindowIndex) -> &Self::Output {
+        &self.detached_branches[index.0]
+    }
+}
+
+impl<Tab> std::ops::IndexMut<WindowIndex> for Tree<Tab> {
+    #[inline(always)]
+    fn index_mut(&mut self, index: WindowIndex) -> &mut Self::Output {
+        &mut self.detached_branches[index.0]
+    }
+}
+
 impl<Tab> Tree<Tab> {
     /// Creates a new `Tree` with given `Vec` of `Tab`s in its root node.
     #[inline(always)]
     pub fn new(tabs: Vec<Tab>) -> Self {
         let root = Node::leaf_with(tabs);
         Self {
+            detached_branches: Vec::new(),
             tree: vec![root],
             focused_node: None,
         }
@@ -182,6 +217,12 @@ impl<Tab> Tree<Tab> {
     #[inline(always)]
     pub(crate) fn breadth_first_index_iter(&self) -> impl Iterator<Item = NodeIndex> {
         (0..self.tree.len()).map(NodeIndex)
+    }
+
+    /// Returns an `Iterator` of all valid [`WindowIndex`]es.
+    #[inline(always)]
+    pub(crate) fn window_index_iter(&self) -> impl Iterator<Item = WindowIndex> {
+        (0..self.detached_branches.len()).map(WindowIndex)
     }
 
     /// Returns an iterator over all tabs in arbitrary order
@@ -336,6 +377,32 @@ impl<Tab> Tree<Tab> {
         index
     }
 
+    /// Add a window to the tree, which is disconnected from the rest of the nodes
+    pub fn add_window(&mut self, new: Tab) -> &mut TabWindow<Tab> {
+        self.detached_branches.push(TabWindow::new(new));
+        let index = self.detached_branches.len() - 1;
+        &mut self.detached_branches[index]
+    }
+
+    /// Moves a tab in a window to a node on the tree
+    pub fn move_window(
+        &mut self,
+        src_window: WindowIndex,
+        (dst_node, dst_tab): (NodeIndex, TabDestination),
+    ) {
+        let tab = self.remove_window(src_window).unwrap();
+
+        match dst_tab {
+            TabDestination::Split(split) => {
+                self.split(dst_node, split, 0.5, Node::leaf(tab));
+            }
+            TabDestination::Window(position) => {
+                self.add_window(tab).set_position(position);
+            }
+            TabDestination::Insert(index) => self[dst_node].insert_tab(index, tab),
+            TabDestination::Append => self[dst_node].append_tab(tab),
+        };
+    }
     /// Moves a tab from a node to another node, you specify how the tab should
     /// be moved with [`TabDestination`].
     pub fn move_tab(
@@ -355,6 +422,9 @@ impl<Tab> Tree<Tab> {
         match dst_tab {
             TabDestination::Split(split) => {
                 self.split(dst_node, split, 0.5, Node::leaf(tab));
+            }
+            TabDestination::Window(position) => {
+                self.add_window(tab).set_position(position);
             }
             TabDestination::Insert(index) => self[dst_node].insert_tab(index, tab),
             TabDestination::Append => self[dst_node].append_tab(tab),
@@ -559,6 +629,15 @@ impl<Tab> Tree<Tab> {
         }
         tab
     }
+
+    /// Remove a window based on it's [`WindowIndex`], returning it if it existed, otherwise returning `None`.
+    pub fn remove_window(&mut self, window_index: WindowIndex) -> Option<Tab> {
+        if window_index.0 < self.detached_branches.len() {
+            Some(self.detached_branches.remove(window_index.0).into_tab())
+        } else {
+            None
+        }
+    }
 }
 
 impl<Tab> Tree<Tab>
@@ -584,4 +663,10 @@ where
         }
         None
     }
+}
+
+/// enum which specifies the location of a tab on the tree, used when moving tabs.
+pub(crate) enum TabSource {
+    Node(NodeIndex, TabIndex),
+    Window(WindowIndex),
 }

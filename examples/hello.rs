@@ -335,7 +335,6 @@ impl eframe::App for MyApp {
                 });
             })
         });
-
         CentralPanel::default()
             // When displaying a DockArea in another UI, it looks better
             // to set inner margins to 0.
