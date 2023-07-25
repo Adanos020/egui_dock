@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
-use egui_dock::{DockArea, NodeIndex, Style, Tree};
+use egui_dock::{DockArea, NodeIndex, NodeTree, Style};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
@@ -34,13 +34,13 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 }
 
 struct MyApp {
-    tree: Tree<usize>,
+    tree: NodeTree<usize>,
     counter: usize,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = Tree::new(vec![1, 2]);
+        let mut tree = NodeTree::new(vec![1, 2]);
 
         // You can modify the tree before constructing the dock
         let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![3]);

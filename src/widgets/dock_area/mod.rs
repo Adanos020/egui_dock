@@ -2,10 +2,11 @@ mod hover_data;
 mod state;
 
 use crate::{
+    abstract_tree::Tree,
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered},
     widgets::popup::popup_under_widget,
-    Node, NodeIndex, Style, TabAddAlign, TabDestination, TabIndex, TabSource, TabStyle, TabViewer,
-    Tree, WindowIndex,
+     Node, NodeIndex,  Style,  SurfaceIndex, TabAddAlign,
+     TabIndex, TabSource, TabStyle, TabViewer,
 };
 
 use duplicate::duplicate;
@@ -33,22 +34,22 @@ pub struct DockArea<'tree, Tab> {
     drag_data: Option<TabSource>,
     hover_data: Option<HoverData>,
     to_remove: Vec<TabRemoval>,
-    new_focused: Option<NodeIndex>,
+    new_focused: Option<(SurfaceIndex, NodeIndex)>,
     tab_hover_rect: Option<(Rect, TabIndex)>,
 }
 
 /// An enum expressing an entry in the `to_remove` field in [`DockArea`]
 #[derive(Debug, Clone, Copy)]
 enum TabRemoval {
-    Node((NodeIndex, TabIndex)),
-    Window(WindowIndex),
+    Node((SurfaceIndex, NodeIndex, TabIndex)),
+    Window(SurfaceIndex),
 }
-impl Into<TabRemoval> for WindowIndex {
+impl Into<TabRemoval> for SurfaceIndex {
     fn into(self) -> TabRemoval {
         TabRemoval::Window(self)
     }
 }
-impl Into<TabRemoval> for (NodeIndex, TabIndex) {
+impl Into<TabRemoval> for (SurfaceIndex, NodeIndex, TabIndex) {
     fn into(self) -> TabRemoval {
         TabRemoval::Node(self)
     }
@@ -181,50 +182,135 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 self.show_inside(ui, tab_viewer);
             });
     }
+
+    fn show_surface_inside(
+        &mut self,
+        surface: SurfaceIndex,
+        ui: &mut Ui,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        state: &mut State,
+    ) {
+        self.style
+            .get_or_insert_with(|| Style::from_egui(ui.style().as_ref()));
+
+        if surface == SurfaceIndex::root() {
+            // First compute all rect sizes in the node graph.
+            self.allocate_area_for_root(ui, surface);
+            for node_index in self.tree[surface].breadth_first_index_iter() {
+                if self.tree[surface][node_index].is_parent() {
+                    self.compute_rect_sizes(ui, (surface, node_index));
+                }
+            }
+
+            // Then draw the bodies of each leafs.
+            for node_index in self.tree[surface].breadth_first_index_iter() {
+                if self.tree[surface][node_index].is_leaf() {
+                    self.show_leaf(ui, state, (surface, node_index), tab_viewer);
+                }
+            }
+
+            // Finaly draw separators so that their "interaction zone" is above
+            // bodies (see `SeparatorStyle::extra_interact_width`).
+            for node_index in self.tree[surface].breadth_first_index_iter() {
+                if self.tree[surface][node_index].is_parent() {
+                    self.show_separator(ui, (surface, node_index));
+                }
+            }
+        } else {
+            if self.tree.get_surface_mut(surface).unwrap().is_empty() {
+                return;
+            }
+            let title: WidgetText = format!("window {surface:?}").into();
+
+            // TODO: let the user dock entire windows,
+            // part 0 here goes into state.drag_start, 1 goes into self.drag_data
+            // from there implement move_window properly.
+            let (_, _) = {
+                let id = Id::new(title.text()).with("TabWindow");
+                let mut window = egui::Window::new(title).title_bar(false).id(id);
+                if let Some(position) = self
+                    .tree
+                    .get_window_state_mut(surface)
+                    .unwrap()
+                    .next_position()
+                {
+                    window = window.current_pos(position);
+                }
+                if let Some(open) = None {
+                    window = window.open(open);
+                }
+
+                let response = window.show(ui.ctx(), |ui| {
+                    
+                    self.allocate_area_for_root(ui, surface);
+                    for node_index in self.tree[surface].breadth_first_index_iter() {
+                        if self.tree[surface][node_index].is_parent() {
+                            self.compute_rect_sizes(ui, (surface, node_index));
+                        }
+                    }
+
+                    // Then draw the bodies of each leafs.
+                    for node_index in self.tree[surface].breadth_first_index_iter() {
+                        if self.tree[surface][node_index].is_leaf() {
+                            self.show_leaf(ui, state, (surface, node_index), tab_viewer);
+                        }
+                    }
+
+                    // Finaly draw separators so that their "interaction zone" is above
+                    // bodies (see `SeparatorStyle::extra_interact_width`).
+                    for node_index in self.tree[surface].breadth_first_index_iter() {
+                        if self.tree[surface][node_index].is_parent() {
+                            self.show_separator(ui, (surface, node_index));
+                        }
+                    }
+                });
+
+                let screen_rect = {
+                    if let Some(response) = response {
+                        response.response.rect
+                    } else {
+                        Rect::NOTHING
+                    }
+                };
+
+                //this is our janky way of detecting drags on the window
+                //Some indicates that we were dragged, with just started specifiying if this is the first frame of drag.
+                match self
+                    .tree
+                    .get_window_state_mut(surface)
+                    .unwrap()
+                    .dragged(ui.ctx(), screen_rect)
+                {
+                    Some(just_started) => (
+                        just_started.then_some(screen_rect.min),
+                        Some(TabSource::Window(surface)),
+                    ),
+                    None => (None, None),
+                }
+            };
+        };
+    }
+
     /// Shows the docking hierarchy inside a [`Ui`].
     ///
     /// See also [`show`](Self::show).
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
-        self.style
-            .get_or_insert_with(|| Style::from_egui(ui.style().as_ref()));
-
         let mut state = State::load(ui.ctx(), self.id);
 
-        dbg!(&self.tree);
-        for window_index in self.tree.window_index_iter() {
-            self.show_window(ui, &mut state, window_index, tab_viewer);
+        for window_index in self.tree.surface_index_iter() {
+            self.show_surface_inside(window_index, ui, tab_viewer, &mut state);
         }
 
-        // First compute all rect sizes in the node graph.
-        self.allocate_area_for_root(ui);
-        for node_index in self.tree.breadth_first_index_iter() {
-            if self.tree[node_index].is_parent() {
-                self.compute_rect_sizes(ui, node_index);
-            }
-        }
-
-        // Then draw the bodies of each leafs.
-        for node_index in self.tree.breadth_first_index_iter() {
-            if self.tree[node_index].is_leaf() {
-                self.show_leaf(ui, &mut state, node_index, tab_viewer);
-            }
-        }
-
-        // Finaly draw separators so that their "interaction zone" is above
-        // bodies (see `SeparatorStyle::extra_interact_width`).
-        for node_index in self.tree.breadth_first_index_iter() {
-            if self.tree[node_index].is_parent() {
-                self.show_separator(ui, node_index);
-            }
-        }
-
-        for index in self.to_remove.iter().copied().rev() {
+        for index in self.to_remove.into_iter().rev() {
             match index {
-                TabRemoval::Node(index) => {
-                    self.tree.remove_tab(index);
+                TabRemoval::Node((surface, node, tab)) => {
+                    self.tree[surface].remove_tab((node, tab));
+                    if self.tree[surface].is_empty() {
+                        self.tree.remove_surface(surface);
+                    }
                 }
                 TabRemoval::Window(index) => {
-                    self.tree.remove_window(index);
+                    self.tree.remove_surface(index);
                 }
             }
         }
@@ -234,71 +320,44 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
-            let dst = hover.dst;
+            let (dst_surf, dst_node) = hover.dst;
             let style = self.style.as_ref().unwrap();
             match source {
-                TabSource::Node(src, tab_index) => {
-                    if self.tree[src].is_leaf()
-                        && self.tree[dst].is_leaf()
-                        && (src != dst || self.tree[dst].tabs_count() > 1)
+                TabSource::Node(src_surf, src_node, src_tab) => {
+                    if self.tree[src_surf][src_node].is_leaf()
+                        && self.tree[dst_surf][dst_node].is_leaf()
+                        && ((src_surf, src_node) != (dst_surf, dst_node) || self.tree[dst_surf][dst_node].tabs_count() > 1)
                     {
-                        let tab_dst = hover.resolve(ui, style);
+                        let tab_dst = if dst_surf == SurfaceIndex::root() {
+                            hover.resolve(ui, style, false)
+                        } else {
+                            ui.with_layer_id(
+                                LayerId::new(Order::Foreground, Id::new("__Overlay_Ui")),
+                                |ui| hover.resolve(ui, style, false),
+                            )
+                            .inner
+                        };
+
                         if ui.input(|i| i.pointer.any_released()) {
-                            self.tree.move_tab((src, tab_index), (dst, tab_dst));
+                            self.tree.move_tab(
+                                (src_surf, src_node, src_tab),
+                                (dst_surf, dst_node, tab_dst),
+                            );
+
+                            self.drag_data = None;
+                            self.hover_data = None;
                         }
                     }
                 }
-                TabSource::Window(window_index) => {
-                    if self.tree[dst].is_leaf() {
-                        let tab_dst = hover.resolve(ui, style);
-                        if let TabDestination::Window(_) = tab_dst {
-                        } else {
-                            if ui.input(|i| i.pointer.any_released()) {
-                                self.tree.move_window(window_index, (dst, tab_dst));
-                            }
-                        }
-                    }
+                TabSource::Window(_) => {
+                    todo!("Inserting entire Windows into dock is not yet supported");
                 }
             }
         }
-
         state.store(ui.ctx(), self.id);
     }
 
-    //Show the given window index,
-    //This function also handles calling Tab::force_close!
-    fn show_window(
-        &mut self,
-        ui: &mut Ui,
-
-        state: &mut State,
-        window_index: WindowIndex,
-        tab_viewer: &mut impl TabViewer<Tab = Tab>,
-    ) {
-        let mut open = if self.show_close_buttons {
-            Some(true)
-        } else {
-            None
-        };
-        let window = &mut self.tree[window_index];
-        let (drag_start, response) = window.show(ui, tab_viewer, window_index, open.as_mut());
-        if let Some(succesful_drag_start) = drag_start {
-            state.drag_start = Some(succesful_drag_start);
-        }
-        if response.is_some() {
-            self.drag_data = response;
-        }
-        if Some(false) == open {
-            if tab_viewer.on_close(&mut window.tab) {
-                self.to_remove.push(window_index.into())
-            }
-        }
-        if tab_viewer.force_close(&mut window.tab) {
-            self.to_remove.push(window_index.into())
-        }
-    }
-
-    fn allocate_area_for_root(&mut self, ui: &mut Ui) {
+    fn allocate_area_for_root(&mut self, ui: &mut Ui, surface: SurfaceIndex) {
         let style = self.style.as_ref().unwrap();
         let mut rect = ui.available_rect_before_wrap();
 
@@ -315,15 +374,19 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         ui.allocate_rect(rect, Sense::hover());
 
-        if self.tree.is_empty() {
+        if self.tree[surface].is_empty() {
             return;
         }
 
-        self.tree[NodeIndex::root()].set_rect(rect);
+        self.tree[surface][NodeIndex::root()].set_rect(rect);
     }
 
-    fn compute_rect_sizes(&mut self, ui: &mut Ui, node_index: NodeIndex) {
-        assert!(self.tree[node_index].is_parent());
+    fn compute_rect_sizes(
+        &mut self,
+        ui: &mut Ui,
+        (surface_index, node_index): (SurfaceIndex, NodeIndex),
+    ) {
+        assert!(self.tree[surface_index][node_index].is_parent());
 
         let style = self.style.as_ref().unwrap();
         let pixels_per_point = ui.ctx().pixels_per_point();
@@ -334,7 +397,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 [Horizontal]  [x]        [width]   [left_of]  [right_of];
                 [Vertical]    [y]        [height]  [above]    [below]   ;
             ]
-            if let Node::orientation { fraction, rect } = &mut self.tree[node_index] {
+            if let Node::orientation { fraction, rect } = &mut self.tree[surface_index][node_index] {
                 debug_assert!(!rect.any_nan() && rect.is_finite());
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
@@ -347,14 +410,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let right = rect.intersect(Rect::[<everything_ right_of>](right_separator_border));
                 }
 
-                self.tree[node_index.left()].set_rect(left);
-                self.tree[node_index.right()].set_rect(right);
+                self.tree[surface_index][node_index.left()].set_rect(left);
+                self.tree[surface_index][node_index.right()].set_rect(right);
             }
         }
     }
 
-    fn show_separator(&mut self, ui: &mut Ui, node_index: NodeIndex) {
-        assert!(self.tree[node_index].is_parent());
+    fn show_separator(
+        &mut self,
+        ui: &mut Ui,
+        (surface_index, node_index): (SurfaceIndex, NodeIndex),
+    ) {
+        assert!(self.tree[surface_index][node_index].is_parent());
 
         let style = self.style.as_ref().unwrap();
         let pixels_per_point = ui.ctx().pixels_per_point();
@@ -365,7 +432,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 [Horizontal]  [x]        [width] ;
                 [Vertical]    [y]        [height];
             ]
-            if let Node::orientation { fraction, ref rect } = &mut self.tree[node_index] {
+            if let Node::orientation { fraction, ref rect } = &mut self.tree[surface_index][node_index] {
                 let mut separator = *rect;
 
                 let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
@@ -426,13 +493,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         &mut self,
         ui: &mut Ui,
         state: &mut State,
-        node_index: NodeIndex,
+        (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
     ) {
-        assert!(self.tree[node_index].is_leaf());
+        assert!(self.tree[surface_index][node_index].is_leaf());
 
         let rect = {
-            let Node::Leaf { rect, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let Node::Leaf { rect, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
             *rect
         };
         let ui = &mut ui.child_ui_with_id_source(
@@ -444,14 +511,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
         ui.set_clip_rect(rect);
 
-        let tabbar_response = self.tab_bar(ui, state, node_index, tab_viewer);
-        self.tab_body(ui, state, node_index, tab_viewer, spacing, tabbar_response);
+        let tabbar_response = self.tab_bar(ui, state, (surface_index, node_index), tab_viewer);
+        self.tab_body(
+            ui,
+            state,
+            (surface_index, node_index),
+            tab_viewer,
+            spacing,
+            tabbar_response,
+        );
 
-        let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else { unreachable!() };
+        let Node::Leaf { tabs, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
         for (tab_index, tab) in tabs.iter_mut().enumerate() {
             if tab_viewer.force_close(tab) {
                 self.to_remove
-                    .push((node_index, TabIndex(tab_index)).into());
+                    .push((surface_index, node_index, TabIndex(tab_index)).into());
             }
         }
     }
@@ -460,10 +534,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         &mut self,
         ui: &mut Ui,
         state: &mut State,
-        node_index: NodeIndex,
+        (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
     ) -> Response {
-        assert!(self.tree[node_index].is_leaf());
+        assert!(self.tree[surface_index][node_index].is_leaf());
 
         let style = self.style.as_ref().unwrap();
         let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
@@ -484,7 +558,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         let actual_width = {
-            let Node::Leaf { tabs, scroll, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let Node::Leaf { tabs, scroll, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
 
             let tabbar_inner_rect = Rect::from_min_size(
                 (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
@@ -507,7 +581,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             self.tabs(
                 tabs_ui,
                 state,
-                node_index,
+                (surface_index, node_index),
                 tab_viewer,
                 tabbar_outer_rect,
                 expanded_width,
@@ -539,7 +613,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         self.tab_bar_scroll(
             ui,
-            node_index,
+            (surface_index, node_index),
             actual_width,
             available_width,
             &tabbar_response,
@@ -552,21 +626,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         &mut self,
         tabs_ui: &mut Ui,
         state: &mut State,
-        node_index: NodeIndex,
+        (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         tabbar_outer_rect: Rect,
         expanded_width: f32,
     ) {
-        assert!(self.tree[node_index].is_leaf());
+        assert!(self.tree[surface_index][node_index].is_leaf());
 
         let focused = self.tree.focused_leaf();
         let tabs_len = {
-            let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let Node::Leaf { tabs, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
             tabs.len()
         };
 
         for tab_index in 0..tabs_len {
-            let id = self.id.with((node_index, "node")).with((tab_index, "tab"));
+            let id = self.id.with((surface_index, "surface")).with((node_index, "node")).with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
             let is_being_dragged =
                 tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
@@ -576,7 +650,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
 
             let (is_active, label, tab_style) = {
-                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+                let Node::Leaf { tabs, active, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
                 let style = self.style.as_ref().unwrap();
                 let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tabs);
                 (
@@ -595,7 +669,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             &tab_style,
                             id,
                             label,
-                            is_active && Some(node_index) == focused,
+                            is_active && Some((surface_index, node_index)) == focused,
                             is_active,
                             is_being_dragged,
                             expanded_width,
@@ -614,7 +688,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
                         tabs_ui.ctx().translate_layer(layer_id, delta);
 
-                        self.drag_data = Some(TabSource::Node(node_index, tab_index));
+                        self.drag_data =
+                            Some(TabSource::Node(surface_index, node_index, tab_index));
                     }
                 }
 
@@ -625,7 +700,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     &tab_style,
                     id,
                     label,
-                    is_active && Some(node_index) == focused,
+                    is_active && Some((surface_index, node_index)) == focused,
                     is_active,
                     is_being_dragged,
                     expanded_width,
@@ -641,7 +716,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     Sense::click_and_drag()
                 };
 
-                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+                let Node::Leaf { tabs, active, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
                 let tab = &mut tabs[tab_index.0];
                 if self.show_tab_name_on_hover {
                     response = response.on_hover_ui(|ui| {
@@ -654,10 +729,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         tab_viewer.context_menu(ui, tab);
                         if self.show_close_buttons && ui.button("Close").clicked() {
                             if tab_viewer.on_close(tab) {
-                                self.to_remove.push((node_index, tab_index).into());
+                                self.to_remove
+                                    .push((surface_index, node_index, tab_index).into());
                             } else {
                                 *active = tab_index;
-                                self.new_focused = Some(node_index);
+                                self.new_focused = Some((surface_index, node_index));
                             }
                         }
                     });
@@ -665,10 +741,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if close_clicked {
                     if tab_viewer.on_close(tab) {
-                        self.to_remove.push((node_index, tab_index).into());
+                        self.to_remove
+                            .push((surface_index, node_index, tab_index).into());
                     } else {
                         *active = tab_index;
-                        self.new_focused = Some(node_index);
+                        self.new_focused = Some((surface_index, node_index));
                     }
                 }
                 let response = tabs_ui.interact(response.rect, id, sense);
@@ -689,7 +766,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             };
 
             // Paint hline below each tab unless its active (or option says otherwise)
-            let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+            let Node::Leaf { tabs, active, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
             let tab = &mut tabs[tab_index.0];
             let style = self.style.as_ref().unwrap();
             let tab_style = tab_viewer.tab_style_override(tab, &style.tabs);
@@ -706,15 +783,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             if response.clicked() {
                 *active = tab_index;
-                self.new_focused = Some(node_index);
+                self.new_focused = Some((surface_index, node_index));
             }
 
             if self.show_close_buttons && response.middle_clicked() {
                 if tab_viewer.on_close(tab) {
-                    self.to_remove.push((node_index, tab_index).into());
+                    self.to_remove
+                        .push((surface_index, node_index, tab_index).into());
                 } else {
                     *active = tab_index;
-                    self.new_focused = Some(node_index);
+                    self.new_focused = Some((surface_index, node_index));
                 }
             }
 
@@ -926,12 +1004,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     fn tab_bar_scroll(
         &mut self,
         ui: &mut Ui,
-        node_index: NodeIndex,
+        (surface_index, node_index): (SurfaceIndex, NodeIndex),
         actual_width: f32,
         available_width: f32,
         tabbar_response: &Response,
     ) {
-        let Node::Leaf { scroll, .. } = &mut self.tree[node_index] else { unreachable!() };
+        let Node::Leaf { scroll, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
         let overflow = (actual_width - available_width).at_least(0.0);
         let style = self.style.as_ref().unwrap();
 
@@ -1007,7 +1085,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         &mut self,
         ui: &mut Ui,
         state: &mut State,
-        node_index: NodeIndex,
+        (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         spacing: Vec2,
         tabbar_response: Response,
@@ -1021,7 +1099,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             active,
             viewport,
             ..
-        } = &mut self.tree[node_index] else {
+        } = &mut self.tree[surface_index][node_index] else {
             unreachable!();
         };
 
@@ -1031,7 +1109,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             if ui.input(|i| i.pointer.any_click()) {
                 if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
                     if body_rect.contains(pos) {
-                        self.new_focused = Some(node_index);
+                        self.new_focused = Some((surface_index, node_index));
                     }
                 }
             }
@@ -1088,7 +1166,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let on_title_bar = tabbar_response.rect.contains(pointer);
                 self.hover_data = Some(HoverData {
                     rect: *rect,
-                    dst: node_index,
+                    dst: (surface_index, node_index),
                     tabs: on_title_bar.then_some(tabbar_response.rect),
                     tab: self.tab_hover_rect,
                     pointer,

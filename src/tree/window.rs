@@ -1,26 +1,52 @@
-use egui::{Id, Pos2, Rect, Ui};
+use egui::{ Pos2, Rect};
 
-use crate::{TabSource, TabViewer, WindowIndex};
 
 /// A window which can display a detached tab
 /// /// A window which can display a detached tab
 #[derive(Debug, Clone)]
-pub struct TabWindow<Tab> {
-    pub(crate) tab: Tab,
-    screen_rect: Rect,
-    dragged: bool,
-    next_position: Option<Pos2>,
+pub struct WindowState {
+    /// The rect which this window last was taking up
+    pub screen_rect: Rect,
+    /// Was this window dragged last frame?
+    pub dragged: bool,
+    /// The next position this window should be set to next frame
+    pub next_position: Option<Pos2>,
 }
-impl<Tab> TabWindow<Tab> {
-    ///Create a new Window with a given tab shown inside
-    pub fn new(content: Tab) -> Self {
+impl WindowState {
+    /// create a default windowstate
+    pub fn new() -> WindowState {
         Self {
-            tab: content,
             screen_rect: Rect::NOTHING,
             dragged: false,
             next_position: None,
         }
     }
+    /// Set the position for next frame on this window
+    pub fn set_position(&mut self, position: Pos2) -> &mut Self {
+        self.next_position = Some(position);
+        self
+    }
+    pub(crate) fn next_position(&mut self) -> Option<Pos2> {
+        self.next_position.take()
+    }
+    ///returns if window was dragged this frame, indicating with the inside bool if the drag was just started or not.
+    pub(crate) fn dragged(&mut self, ctx: &egui::Context, new_rect: Rect) -> Option<bool> {
+        if new_rect.min != self.screen_rect.min || self.dragged {
+            self.screen_rect = new_rect;
+            let something_dragged = ctx.memory(|mem| mem.is_anything_being_dragged());
+
+            //this enforces the drag start pattern which tabs follow, that is it's Some for the first frame of the drag, then none.
+            let did_drag_start = something_dragged && !self.dragged;
+            self.dragged = something_dragged;
+            Some(did_drag_start)
+        } else {
+            None
+        }
+    }
+}
+
+/*
+impl<Tab> TabWindow {
 
     ///Destroy the Window and get the Tab back
     pub fn into_tab(self) -> Tab {
@@ -37,7 +63,7 @@ impl<Tab> TabWindow<Tab> {
         &mut self,
         ui: &mut Ui,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
-        window_index: WindowIndex,
+        window_index: SurfaceIndex,
         open: Option<&mut bool>,
     ) -> (Option<Pos2>, Option<TabSource>) {
         let title = tab_viewer.title(&mut self.tab);
@@ -85,3 +111,4 @@ impl<Tab> TabWindow<Tab> {
         }
     }
 }
+ */
