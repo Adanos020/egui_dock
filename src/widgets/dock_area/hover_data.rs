@@ -1,4 +1,4 @@
-use crate::{AllowedSplits, NodeIndex, Split, Style, TabDestination, TabIndex};
+use crate::{AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex};
 use egui::{vec2, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
 
 #[derive(Debug)]
@@ -6,7 +6,7 @@ pub(super) struct HoverData {
     pub rect: Rect,
     pub tabs: Option<Rect>,
     pub tab: Option<(Rect, TabIndex)>,
-    pub dst: NodeIndex,
+    pub dst: (SurfaceIndex, NodeIndex),
     pub pointer: Pos2,
 }
 
@@ -22,11 +22,12 @@ impl HoverData {
         ui: &mut Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
+        is_window: bool,
     ) -> TabDestination {
         if self.is_on_title_bar() {
             self.resolve_traditional(ui, style, allowed_splits)
         } else {
-            self.resolve_icon_based(ui, style, allowed_splits)
+            self.resolve_icon_based(ui, style, allowed_splits, is_window)
         }
     }
 
@@ -35,6 +36,7 @@ impl HoverData {
         ui: &mut Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
+        is_window: bool,
     ) -> TabDestination {
         const PADDING: f32 = 10.0;
         const BUTTON_SPACING: f32 = 10.0;
@@ -51,14 +53,16 @@ impl HoverData {
 
         let center = rect.center();
 
-        if button_ui(
-            Rect::from_center_size(center, Vec2::splat(shortest_side)),
-            ui,
-            pointer,
-            style,
-            None,
-        ) {
-            destination = Some(TabDestination::Append);
+        if !is_window {
+            if button_ui(
+                Rect::from_center_size(center, Vec2::splat(shortest_side)),
+                ui,
+                pointer,
+                style,
+                None,
+            ) {
+                destination = Some(TabDestination::Append);
+            }
         }
         for (split, is_top_bottom) in vec![
             (Split::Below, true),

@@ -9,7 +9,8 @@ use egui::{
 };
 
 use egui_dock::{
-    AllowedSplits, DockArea, Node, NodeIndex, Style, TabInteractionStyle, TabViewer, Tree,
+    AllowedSplits, DockArea, Node, NodeIndex, Style, SurfaceIndex, TabInteractionStyle, TabViewer,
+    Tree,
 };
 
 fn main() -> eframe::Result<()> {
@@ -337,17 +338,21 @@ impl MyContext {
 impl Default for MyApp {
     fn default() -> Self {
         let mut tree = Tree::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
-        let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec!["Inspector".to_owned()]);
-        let [_, _] = tree.split_below(
+        let [a, b] = tree[SurfaceIndex::root()].split_left(
+            NodeIndex::root(),
+            0.3,
+            vec!["Inspector".to_owned()],
+        );
+        let [_, _] = tree[SurfaceIndex::root()].split_below(
             a,
             0.7,
             vec!["File Browser".to_owned(), "Asset Manager".to_owned()],
         );
-        let [_, _] = tree.split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
+        let [_, _] = tree[SurfaceIndex::root()].split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
 
         let mut open_tabs = HashSet::new();
 
-        for node in tree.iter() {
+        for node in tree[SurfaceIndex::root()].iter() {
             if let Node::Leaf { tabs, .. } = node {
                 for tab in tabs {
                     open_tabs.insert(tab.clone());
@@ -382,11 +387,14 @@ impl eframe::App for MyApp {
                             .selectable_label(self.context.open_tabs.contains(*tab), *tab)
                             .clicked()
                         {
-                            if let Some(index) = self.tree.find_tab(&tab.to_string()) {
-                                self.tree.remove_tab(index);
+                            if let Some(index) =
+                                self.tree[SurfaceIndex::root()].find_tab(&tab.to_string())
+                            {
+                                self.tree[SurfaceIndex::root()].remove_tab(index);
                                 self.context.open_tabs.remove(*tab);
                             } else {
-                                self.tree.push_to_focused_leaf(tab.to_string());
+                                self.tree[SurfaceIndex::root()]
+                                    .push_to_focused_leaf(tab.to_string());
                             }
 
                             ui.close_menu();

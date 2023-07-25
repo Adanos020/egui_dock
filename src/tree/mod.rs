@@ -30,8 +30,7 @@ pub use node::Node;
 pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
-pub use window::TabWindow;
-pub use window_index::WindowIndex;
+pub use window_index::SurfaceIndex;
 
 use egui::{Pos2, Rect};
 use std::fmt;
@@ -62,6 +61,14 @@ pub enum TabDestination {
 
 // ----------------------------------------------------------------------------
 
+/// enum which specifies the location of a tab on the tree, used when moving tabs.
+pub(crate) enum TabSource {
+    Node(SurfaceIndex, NodeIndex, TabIndex),
+    Window(SurfaceIndex),
+}
+
+// ----------------------------------------------------------------------------
+
 /// Binary tree representing the relationships between [`Node`]s.
 ///
 /// # Implementation details
@@ -81,37 +88,28 @@ pub enum TabDestination {
 ///  - right child contains Bottom node.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct Tree<Tab> {
-    //if you think of the normal dockerarea as a tree,
-    //detached nodes displayed as windows become detached branches
-    detached_branches: Vec<TabWindow<Tab>>,
-
+pub struct NodeTree<Tab> {
     //binary tree vector
-    tree: Vec<Node<Tab>>,
-
-    //part of the tree which is in focus
+    pub(super) tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
 }
 
-impl<Tab> fmt::Debug for Tree<Tab> {
+impl<Tab> fmt::Debug for NodeTree<Tab> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Tree")
-            .field("focused_node", &self.focused_node)
-            .finish_non_exhaustive()
+        f.debug_struct("Tree").finish_non_exhaustive()
     }
 }
 
-impl<Tab> Default for Tree<Tab> {
+impl<Tab> Default for NodeTree<Tab> {
     fn default() -> Self {
         Self {
             tree: Vec::new(),
-            detached_branches: Vec::new(),
             focused_node: None,
         }
     }
 }
 
-impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
+impl<Tab> std::ops::Index<NodeIndex> for NodeTree<Tab> {
     type Output = Node<Tab>;
 
     #[inline(always)]
@@ -120,36 +118,19 @@ impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
     }
 }
 
-impl<Tab> std::ops::IndexMut<NodeIndex> for Tree<Tab> {
+impl<Tab> std::ops::IndexMut<NodeIndex> for NodeTree<Tab> {
     #[inline(always)]
     fn index_mut(&mut self, index: NodeIndex) -> &mut Self::Output {
         &mut self.tree[index.0]
     }
 }
 
-impl<Tab> std::ops::Index<WindowIndex> for Tree<Tab> {
-    type Output = TabWindow<Tab>;
-
-    #[inline(always)]
-    fn index(&self, index: WindowIndex) -> &Self::Output {
-        &self.detached_branches[index.0]
-    }
-}
-
-impl<Tab> std::ops::IndexMut<WindowIndex> for Tree<Tab> {
-    #[inline(always)]
-    fn index_mut(&mut self, index: WindowIndex) -> &mut Self::Output {
-        &mut self.detached_branches[index.0]
-    }
-}
-
-impl<Tab> Tree<Tab> {
+impl<Tab> NodeTree<Tab> {
     /// Creates a new `Tree` with given `Vec` of `Tab`s in its root node.
     #[inline(always)]
     pub fn new(tabs: Vec<Tab>) -> Self {
         let root = Node::leaf_with(tabs);
         Self {
-            detached_branches: Vec::new(),
             tree: vec![root],
             focused_node: None,
         }
@@ -171,22 +152,6 @@ impl<Tab> Tree<Tab> {
                 None
             }
         })
-    }
-
-    /// Returns the viewport `Rect` and the `Tab` inside the focused leaf node or `None` if it does not exist.
-    #[inline]
-    pub fn find_active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
-        if let Some(Node::Leaf {
-            tabs,
-            active,
-            viewport,
-            ..
-        }) = self.focused_node.and_then(|idx| self.tree.get_mut(idx.0))
-        {
-            tabs.get_mut(active.0).map(|tab| (*viewport, tab))
-        } else {
-            None
-        }
     }
 
     /// Returns the number of nodes in the `Tree`.
@@ -217,12 +182,6 @@ impl<Tab> Tree<Tab> {
     #[inline(always)]
     pub(crate) fn breadth_first_index_iter(&self) -> impl Iterator<Item = NodeIndex> {
         (0..self.tree.len()).map(NodeIndex)
-    }
-
-    /// Returns an `Iterator` of all valid [`WindowIndex`]es.
-    #[inline(always)]
-    pub(crate) fn window_index_iter(&self) -> impl Iterator<Item = WindowIndex> {
-        (0..self.detached_branches.len()).map(WindowIndex)
     }
 
     /// Returns an iterator over all tabs in arbitrary order
@@ -377,64 +336,6 @@ impl<Tab> Tree<Tab> {
         index
     }
 
-    /// Add a window to the tree, which is disconnected from the rest of the nodes
-    pub fn add_window(&mut self, new: Tab) -> &mut TabWindow<Tab> {
-        self.detached_branches.push(TabWindow::new(new));
-        let index = self.detached_branches.len() - 1;
-        &mut self.detached_branches[index]
-    }
-
-    /// Moves a tab in a window to a node on the tree
-    pub fn move_window(
-        &mut self,
-        src_window: WindowIndex,
-        (dst_node, dst_tab): (NodeIndex, TabDestination),
-    ) {
-        let tab = self.remove_window(src_window).unwrap();
-
-        match dst_tab {
-            TabDestination::Split(split) => {
-                self.split(dst_node, split, 0.5, Node::leaf(tab));
-            }
-            TabDestination::Window(position) => {
-                self.add_window(tab).set_position(position);
-            }
-            TabDestination::Insert(index) => self[dst_node].insert_tab(index, tab),
-            TabDestination::Append => self[dst_node].append_tab(tab),
-        };
-    }
-    /// Moves a tab from a node to another node, you specify how the tab should
-    /// be moved with [`TabDestination`].
-    pub fn move_tab(
-        &mut self,
-        (src_node, src_tab): (NodeIndex, TabIndex),
-        (dst_node, dst_tab): (NodeIndex, TabDestination),
-    ) {
-        // Moving a single tab inside its own node is a no-op
-        if src_node == dst_node && self[src_node].tabs_count() == 1 {
-            return;
-        }
-
-        // Call `Node::remove_tab` to avoid auto remove of the node by
-        // `Tree::remove_tab` from Tree.
-        let tab = self[src_node].remove_tab(src_tab).unwrap();
-
-        match dst_tab {
-            TabDestination::Split(split) => {
-                self.split(dst_node, split, 0.5, Node::leaf(tab));
-            }
-            TabDestination::Window(position) => {
-                self.add_window(tab).set_position(position);
-            }
-            TabDestination::Insert(index) => self[dst_node].insert_tab(index, tab),
-            TabDestination::Append => self[dst_node].append_tab(tab),
-        };
-
-        if self[src_node].is_leaf() && self[src_node].tabs_count() == 0 {
-            self.remove_leaf(src_node);
-        }
-    }
-
     fn first_leaf(&self, top: NodeIndex) -> Option<NodeIndex> {
         let left = top.left();
         let right = top.right();
@@ -456,6 +357,38 @@ impl<Tab> Tree<Tab> {
             | (Some(&Node::Empty), None)
             | (None, Some(&Node::Empty))
             | (Some(&Node::Empty), Some(&Node::Empty)) => None,
+        }
+    }
+
+    /// Returns the viewport `Rect` and the `Tab` inside the focused leaf node or `None` if it does not exist.
+    #[inline]
+    pub fn find_active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
+        if let Some(Node::Leaf {
+            tabs,
+            active,
+            viewport,
+            ..
+        }) = self.focused_node.and_then(|idx| self.tree.get_mut(idx.0))
+        {
+            tabs.get_mut(active.0).map(|tab| (*viewport, tab))
+        } else {
+            None
+        }
+    }
+
+    /// Currently focused leaf.
+    #[inline]
+    pub fn focused_leaf(&self) -> Option<NodeIndex> {
+        self.focused_node
+    }
+
+    /// Sets the currently focused leaf to `node_index` if the node at `node_index` is a leaf.
+    #[inline]
+    pub fn set_focused_node(&mut self, node_index: NodeIndex) {
+        if let Some(Node::Leaf { .. }) = self.tree.get(node_index.0) {
+            self.focused_node = Some(node_index);
+        } else {
+            self.focused_node = None;
         }
     }
 
@@ -553,22 +486,6 @@ impl<Tab> Tree<Tab> {
         self.focused_node = Some(NodeIndex(0));
     }
 
-    /// Currently focused leaf.
-    #[inline]
-    pub fn focused_leaf(&self) -> Option<NodeIndex> {
-        self.focused_node
-    }
-
-    /// Sets the currently focused leaf to `node_index` if the node at `node_index` is a leaf.
-    #[inline]
-    pub fn set_focused_node(&mut self, node_index: NodeIndex) {
-        if let Some(Node::Leaf { .. }) = self.tree.get(node_index.0) {
-            self.focused_node = Some(node_index);
-        } else {
-            self.focused_node = None;
-        }
-    }
-
     /// Sets which is the active tab within a specific node.
     #[inline]
     pub fn set_active_tab(&mut self, node_index: NodeIndex, tab_index: TabIndex) {
@@ -629,18 +546,9 @@ impl<Tab> Tree<Tab> {
         }
         tab
     }
-
-    /// Remove a window based on it's [`WindowIndex`], returning it if it existed, otherwise returning `None`.
-    pub fn remove_window(&mut self, window_index: WindowIndex) -> Option<Tab> {
-        if window_index.0 < self.detached_branches.len() {
-            Some(self.detached_branches.remove(window_index.0).into_tab())
-        } else {
-            None
-        }
-    }
 }
 
-impl<Tab> Tree<Tab>
+impl<Tab> NodeTree<Tab>
 where
     Tab: PartialEq,
 {
@@ -663,10 +571,4 @@ where
         }
         None
     }
-}
-
-/// enum which specifies the location of a tab on the tree, used when moving tabs.
-pub(crate) enum TabSource {
-    Node(NodeIndex, TabIndex),
-    Window(WindowIndex),
 }

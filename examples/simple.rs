@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
-use egui_dock::{DockArea, NodeIndex, Style, Tree};
+use egui_dock::{DockArea, NodeIndex, Style, SurfaceIndex, Tree};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
@@ -36,9 +36,10 @@ impl Default for MyApp {
         let mut tree = Tree::new(vec!["tab1".to_owned(), "tab2".to_owned()]);
 
         // You can modify the tree before constructing the dock
-        let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec!["tab3".to_owned()]);
-        let [_, _] = tree.split_below(a, 0.7, vec!["tab4".to_owned()]);
-        let [_, _] = tree.split_below(b, 0.5, vec!["tab5".to_owned()]);
+        let [a, b] =
+            tree[SurfaceIndex::root()].split_left(NodeIndex::root(), 0.3, vec!["tab3".to_owned()]);
+        let [_, _] = tree[SurfaceIndex::root()].split_below(a, 0.7, vec!["tab4".to_owned()]);
+        let [_, _] = tree[SurfaceIndex::root()].split_below(b, 0.5, vec!["tab5".to_owned()]);
 
         Self { tree }
     }

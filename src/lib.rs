@@ -60,14 +60,19 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
+pub use abstract_tree::*;
 pub use egui;
 #[allow(deprecated)]
 pub use style::*;
 pub use tree::*;
 pub use widgets::*;
 
+
+/// The highest level tree
+pub mod abstract_tree;
 /// egui_dock theme (color, sizes...).
 pub mod style;
+/// Node tree
 pub mod tree;
 mod utils;
 
