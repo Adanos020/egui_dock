@@ -5,10 +5,11 @@
 //!
 //! ## Usage
 //!
-//! The library is centered around the [`Tree`].
-//! It stores the layout of [`Node`]s which contains tabs.
+//! The library is centered around the [`DockState`].
+//! It contains a series of [`Surface`]s which all have their own [`Tree`]
+//! each [`Tree`] stores a layout of [`Node`]s which then contains tabs.
 //!
-//! [`Tree`] is generic (`Tree<Tab>`) so you can use any data to represent a tab.
+//! [`DockState`] is generic (`DockState<Tab>`) so you can use any data to represent a tab.
 //! You show the tabs using [`DockArea`] and specify how they are shown
 //! by implementing [`TabViewer`].
 //!
@@ -24,8 +25,8 @@
 //!         let tab1 = "tab1".to_string();
 //!         let tab2 = "tab2".to_string();
 //!
-//!         let mut tree = Tree::new(vec![tab1]);
-//!         tree.split_left(NodeIndex::root(), 0.20, vec![tab2]);
+//!         let mut tree = DockState::new(vec![tab1]);
+//!         tree.root_split_left(NodeIndex::root(), 0.20, vec![tab2]);
 //!
 //!         Self { tree }
 //!     }
@@ -67,12 +68,13 @@ pub use style::*;
 pub use tree::*;
 pub use widgets::*;
 
-/// The highest level tree
+/// The main Structure of the library.
 pub mod dock_state;
+
 /// egui_dock theme (color, sizes...).
 pub mod style;
 
-mod utils;
-
 /// Widgets provided by the library.
 pub mod widgets;
+
+mod utils;
