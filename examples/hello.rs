@@ -8,7 +8,7 @@ use egui::{
     CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
-use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, Tree};
+use egui_dock::{DockArea, Node, NodeIndex, Style, TabViewer, DockState};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions {
@@ -36,7 +36,7 @@ struct MyContext {
 
 struct MyApp {
     context: MyContext,
-    tree: Tree<String>,
+    tree: DockState<String>,
 }
 
 impl TabViewer for MyContext {
@@ -277,7 +277,7 @@ impl MyContext {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = Tree::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
+        let mut tree = DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
         let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec!["Inspector".to_owned()]);
         let [_, _] = tree.split_below(
             a,
@@ -288,7 +288,7 @@ impl Default for MyApp {
 
         let mut open_tabs = HashSet::new();
 
-        for node in tree.iter() {
+        for node in tree.iter_nodes() {
             if let Node::Leaf { tabs, .. } = node {
                 for tab in tabs {
                     open_tabs.insert(tab.clone());

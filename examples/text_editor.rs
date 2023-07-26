@@ -37,7 +37,7 @@ impl egui_dock::TabViewer for Buffers {
 
 struct MyApp {
     buffers: Buffers,
-    tree: egui_dock::NodeTree<String>,
+    tree: egui_dock::DockState<String>,
 }
 
 impl Default for MyApp {
@@ -54,7 +54,7 @@ impl Default for MyApp {
         );
 
         let tree =
-            egui_dock::NodeTree::new(vec!["README.md".to_owned(), "CHANGELOG.md".to_owned()]);
+            egui_dock::DockState::new(vec!["README.md".to_owned(), "CHANGELOG.md".to_owned()]);
 
         Self {
             buffers: Buffers { buffers },

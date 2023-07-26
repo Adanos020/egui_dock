@@ -2,11 +2,10 @@ mod hover_data;
 mod state;
 
 use crate::{
-    abstract_tree::Tree,
+    dock_state::DockState,
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered},
     widgets::popup::popup_under_widget,
-     Node, NodeIndex,  Style,  SurfaceIndex, TabAddAlign,
-     TabIndex, TabSource, TabStyle, TabViewer,
+    Node, NodeIndex, Style, SurfaceIndex, TabAddAlign, TabIndex, TabSource, TabStyle, TabViewer,
 };
 
 use duplicate::duplicate;
@@ -21,7 +20,7 @@ use state::State;
 /// Displays a [`Tree`] in `egui`.
 pub struct DockArea<'tree, Tab> {
     id: Id,
-    tree: &'tree mut Tree<Tab>,
+    tree: &'tree mut DockState<Tab>,
     style: Option<Style>,
     show_add_popup: bool,
     show_add_buttons: bool,
@@ -59,7 +58,7 @@ impl Into<TabRemoval> for (SurfaceIndex, NodeIndex, TabIndex) {
 impl<'tree, Tab> DockArea<'tree, Tab> {
     /// Creates a new [`DockArea`] from the provided [`Tree`].
     #[inline(always)]
-    pub fn new(tree: &'tree mut Tree<Tab>) -> DockArea<'tree, Tab> {
+    pub fn new(tree: &'tree mut DockState<Tab>) -> DockArea<'tree, Tab> {
         Self {
             id: Id::new("egui_dock::DockArea"),
             tree,
@@ -228,20 +227,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let (_, _) = {
                 let id = Id::new(title.text()).with("TabWindow");
                 let mut window = egui::Window::new(title).title_bar(false).id(id);
-                if let Some(position) = self
-                    .tree
-                    .get_window_state_mut(surface)
-                    .unwrap()
-                    .next_position()
                 {
-                    window = window.current_pos(position);
+                    let state = self.tree.get_window_state_mut(surface).unwrap();
+                    if let Some(position) = state.next_position() {
+                        window = window.current_pos(position);
+                    }
+                    if let Some(size) = state.next_size() {
+                        window = window.fixed_size(size);
+                    }
                 }
+
                 if let Some(open) = None {
                     window = window.open(open);
                 }
 
                 let response = window.show(ui.ctx(), |ui| {
-                    
                     self.allocate_area_for_root(ui, surface);
                     for node_index in self.tree[surface].breadth_first_index_iter() {
                         if self.tree[surface][node_index].is_parent() {
@@ -316,7 +316,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if let Some(focused) = self.new_focused {
-            self.tree.set_focused_node(focused);
+            self.tree.set_focused_node_and_surface(focused);
         }
 
         if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
@@ -326,7 +326,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 TabSource::Node(src_surf, src_node, src_tab) => {
                     if self.tree[src_surf][src_node].is_leaf()
                         && self.tree[dst_surf][dst_node].is_leaf()
-                        && ((src_surf, src_node) != (dst_surf, dst_node) || self.tree[dst_surf][dst_node].tabs_count() > 1)
+                        && ((src_surf, src_node) != (dst_surf, dst_node)
+                            || self.tree[dst_surf][dst_node].tabs_count() > 1)
                     {
                         let tab_dst = if dst_surf == SurfaceIndex::root() {
                             hover.resolve(ui, style, false)
@@ -640,7 +641,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         };
 
         for tab_index in 0..tabs_len {
-            let id = self.id.with((surface_index, "surface")).with((node_index, "node")).with((tab_index, "tab"));
+            let id = self
+                .id
+                .with((surface_index, "surface"))
+                .with((node_index, "node"))
+                .with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
             let is_being_dragged =
                 tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
