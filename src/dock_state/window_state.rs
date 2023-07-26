@@ -29,21 +29,21 @@ impl WindowState {
         self.next_position = Some(position);
         self
     }
-    
+
     /// Set the size of this window in egui points
     pub fn set_size(&mut self, size: Vec2) -> &mut Self {
         self.next_size = Some(size);
         self
     }
-    
+
     pub(crate) fn next_position(&mut self) -> Option<Pos2> {
         self.next_position.take()
     }
-    
+
     pub(crate) fn next_size(&mut self) -> Option<Vec2> {
         self.next_size.take()
     }
-    
+
     ///returns if window was dragged this frame, indicating with the inside bool if the drag was just started or not.
     pub(crate) fn dragged(&mut self, ctx: &egui::Context, new_rect: Rect) -> Option<bool> {
         //we need to make sure we check the size hasn't changed, since it indicates a resize rather than a drag
@@ -61,7 +61,6 @@ impl WindowState {
             None
         }
     }
-    
 }
 
 /*

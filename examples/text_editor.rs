@@ -70,8 +70,9 @@ impl eframe::App for MyApp {
                 let tab_location = self.tree.find_tab(title);
                 let is_open = tab_location.is_some();
                 if ui.selectable_label(is_open, title).clicked() {
-                    if let Some((node_index, tab_index)) = tab_location {
-                        self.tree.set_active_tab(node_index, tab_index);
+                    if let Some((surface_index, node_index, tab_index)) = tab_location {
+                        self.tree
+                            .set_active_tab(surface_index, node_index, tab_index);
                     } else {
                         // Open the file for editing:
                         self.tree.push_to_focused_leaf(title.clone());

@@ -365,13 +365,29 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         };
 
                         if ui.input(|i| i.pointer.any_released()) {
-                            self.tree.move_tab(
-                                (src_surf, src_node, src_tab),
-                                (dst_surf, dst_node, tab_dst),
-                            );
+                            let allowed_to_move = {
+                                if !tab_dst.is_window() {
+                                    true
+                                } else {
+                                    if let Node::Leaf { tabs, .. } =
+                                        &mut self.tree[src_surf][src_node]
+                                    {
+                                        tab_viewer.allow_in_windows(&mut tabs[src_tab.0])
+                                    } else {
+                                        //we've already run ``is_leaf()`` on this node.
+                                        unreachable!()
+                                    }
+                                }
+                            };
+                            if allowed_to_move {
+                                self.tree.move_tab(
+                                    (src_surf, src_node, src_tab),
+                                    (dst_surf, dst_node, tab_dst),
+                                );
 
-                            self.drag_data = None;
-                            self.hover_data = None;
+                                self.drag_data = None;
+                                self.hover_data = None;
+                            }
                         }
                     }
                 }

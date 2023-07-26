@@ -1,4 +1,4 @@
-/// Wrapper around indices to the collection of Windows inside a [`Tree`](crate::Tree).
+/// Wrapper around indices to the collection of Surfaces inside a [`DockState`](crate::DockState).
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct SurfaceIndex(pub usize);

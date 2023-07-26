@@ -20,20 +20,15 @@ pub mod node;
 /// Wrapper around indices to the collection of nodes inside a [`Tree`].
 pub mod node_index;
 
-/// Wrapper around indices to the collection of windows inside a [`Tree`].
-pub mod surface_index;
-
-/// A detached `Tab` which is displayed as a window,
-pub mod window_state;
-
 pub use node::Node;
 pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
-pub use surface_index::SurfaceIndex;
 
 use egui::{Pos2, Rect};
 use std::fmt;
+
+use crate::SurfaceIndex;
 
 // ----------------------------------------------------------------------------
 
@@ -57,6 +52,16 @@ pub enum TabDestination {
     Window(Pos2),
     /// Append the tab to the node.
     Append,
+}
+impl TabDestination {
+    ///is this tab destination a [`Window`](crate::TabDestination::Window)?
+    pub fn is_window(&self) -> bool {
+        if let Self::Window(_) = self {
+            true
+        } else {
+            false
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
