@@ -9,8 +9,8 @@ use egui::{
 };
 
 use egui_dock::{
-    AllowedSplits, DockArea, Node, NodeIndex, Style, SurfaceIndex, TabInteractionStyle, TabViewer,
-    Tree,
+    AllowedSplits, DockArea, DockState, Node, NodeIndex, Style, SurfaceIndex, TabInteractionStyle,
+    TabViewer,
 };
 
 fn main() -> eframe::Result<()> {
@@ -40,7 +40,7 @@ struct MyContext {
 
 struct MyApp {
     context: MyContext,
-    tree: Tree<String>,
+    tree: DockState<String>,
 }
 
 impl TabViewer for MyContext {
@@ -337,13 +337,9 @@ impl MyContext {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = Tree::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
-        let [a, b] = tree[SurfaceIndex::root()].split_left(
-            NodeIndex::root(),
-            0.3,
-            vec!["Inspector".to_owned()],
-        );
-        let [_, _] = tree[SurfaceIndex::root()].split_below(
+        let mut tree = DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
+        let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec!["Inspector".to_owned()]);
+        let [_, _] = tree.split_below(
             a,
             0.7,
             vec!["File Browser".to_owned(), "Asset Manager".to_owned()],

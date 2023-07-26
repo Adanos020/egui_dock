@@ -1,14 +1,14 @@
-﻿use crate::{Node, NodeTree};
+﻿use crate::{Node, Tree};
 
 /// Iterates over all tabs in a [`Tree`].
 pub struct TabIter<'a, Tab> {
-    tree: &'a NodeTree<Tab>,
+    tree: &'a Tree<Tab>,
     node_idx: usize,
     tab_idx: usize,
 }
 
 impl<'a, Tab> TabIter<'a, Tab> {
-    pub(super) fn new(tree: &'a NodeTree<Tab>) -> Self {
+    pub(super) fn new(tree: &'a Tree<Tab>) -> Self {
         Self {
             tree,
             node_idx: 0,
@@ -50,11 +50,11 @@ impl<'a, Tab> std::fmt::Debug for TabIter<'a, Tab> {
 
 #[test]
 fn test_tabs_iter() {
-    fn tabs(tree: &NodeTree<i32>) -> Vec<i32> {
+    fn tabs(tree: &Tree<i32>) -> Vec<i32> {
         tree.tabs().copied().collect()
     }
 
-    let mut tree = NodeTree::new(vec![1, 2, 3]);
+    let mut tree = Tree::new(vec![1, 2, 3]);
     assert_eq!(tabs(&tree), vec![1, 2, 3]);
 
     tree.push_to_first_leaf(4);

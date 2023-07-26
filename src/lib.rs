@@ -60,20 +60,18 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-pub use abstract_tree::*;
-pub use egui;
 #[allow(deprecated)]
+pub use dock_state::*;
+pub use egui;
 pub use style::*;
 pub use tree::*;
 pub use widgets::*;
 
-
 /// The highest level tree
-pub mod abstract_tree;
+pub mod dock_state;
 /// egui_dock theme (color, sizes...).
 pub mod style;
-/// Node tree
-pub mod tree;
+
 mod utils;
 
 /// Widgets provided by the library.

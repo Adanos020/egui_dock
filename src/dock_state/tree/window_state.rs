@@ -1,5 +1,4 @@
-use egui::{ Pos2, Rect};
-
+use egui::{Pos2, Rect, Vec2};
 
 /// A window which can display a detached tab
 /// /// A window which can display a detached tab
@@ -11,6 +10,8 @@ pub struct WindowState {
     pub dragged: bool,
     /// The next position this window should be set to next frame
     pub next_position: Option<Pos2>,
+    /// The next size this window should be set to next frame
+    pub next_size: Option<Vec2>,
 }
 impl WindowState {
     /// create a default windowstate
@@ -19,19 +20,36 @@ impl WindowState {
             screen_rect: Rect::NOTHING,
             dragged: false,
             next_position: None,
+            next_size: None,
         }
     }
-    /// Set the position for next frame on this window
+
+    /// Set the position for this window in screen coordinates
     pub fn set_position(&mut self, position: Pos2) -> &mut Self {
         self.next_position = Some(position);
         self
     }
+    
+    /// Set the size of this window in egui points
+    pub fn set_size(&mut self, size: Vec2) -> &mut Self {
+        self.next_size = Some(size);
+        self
+    }
+    
     pub(crate) fn next_position(&mut self) -> Option<Pos2> {
         self.next_position.take()
     }
+    
+    pub(crate) fn next_size(&mut self) -> Option<Vec2> {
+        self.next_size.take()
+    }
+    
     ///returns if window was dragged this frame, indicating with the inside bool if the drag was just started or not.
     pub(crate) fn dragged(&mut self, ctx: &egui::Context, new_rect: Rect) -> Option<bool> {
-        if new_rect.min != self.screen_rect.min || self.dragged {
+        //we need to make sure we check the size hasn't changed, since it indicates a resize rather than a drag
+        if (new_rect != self.screen_rect && new_rect.size() == self.screen_rect.size())
+            || self.dragged
+        {
             self.screen_rect = new_rect;
             let something_dragged = ctx.memory(|mem| mem.is_anything_being_dragged());
 
@@ -43,6 +61,7 @@ impl WindowState {
             None
         }
     }
+    
 }
 
 /*

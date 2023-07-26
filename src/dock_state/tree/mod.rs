@@ -21,16 +21,16 @@ pub mod node;
 pub mod node_index;
 
 /// Wrapper around indices to the collection of windows inside a [`Tree`].
-pub mod window_index;
+pub mod surface_index;
 
 /// A detached `Tab` which is displayed as a window,
-pub mod window;
+pub mod window_state;
 
 pub use node::Node;
 pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
-pub use window_index::SurfaceIndex;
+pub use surface_index::SurfaceIndex;
 
 use egui::{Pos2, Rect};
 use std::fmt;
@@ -88,19 +88,19 @@ pub(crate) enum TabSource {
 ///  - right child contains Bottom node.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct NodeTree<Tab> {
+pub struct Tree<Tab> {
     //binary tree vector
     pub(super) tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
 }
 
-impl<Tab> fmt::Debug for NodeTree<Tab> {
+impl<Tab> fmt::Debug for Tree<Tab> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Tree").finish_non_exhaustive()
     }
 }
 
-impl<Tab> Default for NodeTree<Tab> {
+impl<Tab> Default for Tree<Tab> {
     fn default() -> Self {
         Self {
             tree: Vec::new(),
@@ -109,7 +109,7 @@ impl<Tab> Default for NodeTree<Tab> {
     }
 }
 
-impl<Tab> std::ops::Index<NodeIndex> for NodeTree<Tab> {
+impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
     type Output = Node<Tab>;
 
     #[inline(always)]
@@ -118,14 +118,14 @@ impl<Tab> std::ops::Index<NodeIndex> for NodeTree<Tab> {
     }
 }
 
-impl<Tab> std::ops::IndexMut<NodeIndex> for NodeTree<Tab> {
+impl<Tab> std::ops::IndexMut<NodeIndex> for Tree<Tab> {
     #[inline(always)]
     fn index_mut(&mut self, index: NodeIndex) -> &mut Self::Output {
         &mut self.tree[index.0]
     }
 }
 
-impl<Tab> NodeTree<Tab> {
+impl<Tab> Tree<Tab> {
     /// Creates a new `Tree` with given `Vec` of `Tab`s in its root node.
     #[inline(always)]
     pub fn new(tabs: Vec<Tab>) -> Self {
@@ -166,7 +166,7 @@ impl<Tab> NodeTree<Tab> {
         self.tree.is_empty()
     }
 
-    /// Returns `Iter` of the underlying collection of nodes.
+    /// Returns an `Iterator` of the underlying collection of nodes.
     #[inline(always)]
     pub fn iter(&self) -> std::slice::Iter<'_, Node<Tab>> {
         self.tree.iter()
@@ -548,7 +548,7 @@ impl<Tab> NodeTree<Tab> {
     }
 }
 
-impl<Tab> NodeTree<Tab>
+impl<Tab> Tree<Tab>
 where
     Tab: PartialEq,
 {
