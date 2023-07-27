@@ -14,6 +14,7 @@ use egui_dock::{
 };
 
 fn main() -> eframe::Result<()> {
+    std::env::set_var("RUST_BACKTRACE", "1");
     let options = NativeOptions {
         initial_window_size: Some(egui::vec2(1024.0, 1024.0)),
         ..Default::default()

@@ -1,4 +1,4 @@
-use egui::{Pos2, Rect, Vec2};
+use egui::{LayerId, Pos2, Rect, Vec2};
 
 /// A window which can display a detached tab
 /// /// A window which can display a detached tab
@@ -12,6 +12,8 @@ pub struct WindowState {
     pub next_position: Option<Pos2>,
     /// The next size this window should be set to next frame
     pub next_size: Option<Vec2>,
+    /// The layer id of this window
+    pub layer_id: Option<LayerId>,
 }
 impl WindowState {
     /// create a default windowstate
@@ -21,6 +23,7 @@ impl WindowState {
             dragged: false,
             next_position: None,
             next_size: None,
+            layer_id: None,
         }
     }
 

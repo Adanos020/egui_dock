@@ -115,12 +115,23 @@ impl<Tab> DockState<Tab> {
 
     /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`]
     ///
+<<<<<<< Updated upstream
     /// Returns None if the surface is an [`Empty`](crate::Surface::Empty), [`Root`](crate::Surface::Root), or doesn't exist.
     pub fn get_window_state_mut(&mut self, surface: SurfaceIndex) -> Option<&mut WindowState> {
         if let Surface::Window(_, state) = &mut self.surfaces[surface.0] {
             Some(state)
+=======
+    ///Returns None if the surface is an [`Empty`](crate::Surface::Empty), [`Root`](crate::Surface::Root), or doesn't exist.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the surface index doesn't point a [`Window`](crate::Surface::Window) surface.
+    pub fn get_window_state_mut(&mut self, surf_index: SurfaceIndex) -> &mut WindowState {
+        if let Surface::Window(_, state) = &mut self.surfaces[surf_index.0] {
+            state
+>>>>>>> Stashed changes
         } else {
-            None
+            panic!("surface index {} was not a window!", surf_index.0)
         }
     }
 
@@ -131,15 +142,34 @@ impl<Tab> DockState<Tab> {
             .and_then(|surface| self[surface].find_active_focused())
     }
 
-    ///Get the mutable borrow to the raw surface from a surface index
+    ///Get an exclusive borrow to the raw surface from a surface index
+    #[inline]
     pub fn get_surface_mut(&mut self, surface: SurfaceIndex) -> Option<&mut Surface<Tab>> {
         self.surfaces.get_mut(surface.0)
     }
 
+    /// Returns true if the specified surface exists and isn't [`Empty`](crate::Surface::Empty)
+    #[inline]
+    pub fn is_surface_valid(&self, surface_index: SurfaceIndex) -> bool {
+        self.surfaces
+            .get(surface_index.0)
+            .map_or(false, |surface| !surface.is_empty())
+    }
+
     /// Returns an `Iterator` of all valid [`SurfaceIndex`]es.
+
     #[inline]
     pub(crate) fn surface_index_iter(&self) -> impl Iterator<Item = SurfaceIndex> {
-        (0..self.surfaces.len()).map(SurfaceIndex)
+        //the collection and "re-itering" may seem odd here, but it is justified since the FilterMap uses &self.
+        //if we didn't do this it could end up in scenarios where a user will run into borrow checker issues,
+        //since the iterator would hold a borrow to self, despite seemingy just being a collection of wrapped up usizes.
+        (0..self.surfaces.len())
+            .filter_map(|index| {
+                self.is_surface_valid(SurfaceIndex(index))
+                    .then_some(SurfaceIndex(index))
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     /// Remove a surface based on it's [`SurfaceIndex`], returning it if it existed, otherwise returning `None`.
@@ -149,6 +179,7 @@ impl<Tab> DockState<Tab> {
     pub fn remove_surface(&mut self, surface_index: SurfaceIndex) -> Option<Surface<Tab>> {
         assert_ne!(surface_index, SurfaceIndex::root());
         if surface_index.0 < self.surfaces.len() {
+            self.focused_surface = Some(SurfaceIndex::root());
             let surface = {
                 if surface_index.0 == self.surfaces.len() - 1 {
                     self.surfaces.pop()?
@@ -156,7 +187,6 @@ impl<Tab> DockState<Tab> {
                     std::mem::replace(self.surfaces.get_mut(surface_index.0)?, Surface::Empty)
                 }
             };
-            self.focused_surface = Some(SurfaceIndex::root());
             Some(surface)
         } else {
             None
@@ -327,7 +357,7 @@ impl<Tab> DockState<Tab> {
                     }
                 };
 
-                let state = self.get_window_state_mut(surface_index).unwrap();
+                let state = self.get_window_state_mut(surface_index);
                 if src_surface == SurfaceIndex::root() {
                     state.set_size(rect.size() * 0.8);
                 }

@@ -67,8 +67,11 @@ impl TabDestination {
 // ----------------------------------------------------------------------------
 
 /// enum which specifies the location of a tab on the tree, used when moving tabs.
-pub(crate) enum TabSource {
+pub(crate) enum DragSource {
+    ///a tab on a surface
     Node(SurfaceIndex, NodeIndex, TabIndex),
+
+    ///A window (NOT USED)
     Window(SurfaceIndex),
 }
 

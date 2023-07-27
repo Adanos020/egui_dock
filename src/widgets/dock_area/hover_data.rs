@@ -6,7 +6,7 @@ pub(super) struct HoverData {
     pub rect: Rect,
     pub tabs: Option<Rect>,
     pub tab: Option<(Rect, TabIndex)>,
-    pub dst: (SurfaceIndex, NodeIndex),
+    pub dst: (SurfaceIndex, Option<NodeIndex>),
     pub pointer: Pos2,
 }
 
