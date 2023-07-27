@@ -8,8 +8,6 @@ pub mod window_state;
 pub use surface_index::SurfaceIndex;
 pub use window_state::WindowState;
 
-use tree::*;
-
 use egui::Rect;
 
 use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree};
@@ -115,23 +113,12 @@ impl<Tab> DockState<Tab> {
 
     /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`]
     ///
-<<<<<<< Updated upstream
     /// Returns None if the surface is an [`Empty`](crate::Surface::Empty), [`Root`](crate::Surface::Root), or doesn't exist.
     pub fn get_window_state_mut(&mut self, surface: SurfaceIndex) -> Option<&mut WindowState> {
         if let Surface::Window(_, state) = &mut self.surfaces[surface.0] {
             Some(state)
-=======
-    ///Returns None if the surface is an [`Empty`](crate::Surface::Empty), [`Root`](crate::Surface::Root), or doesn't exist.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the surface index doesn't point a [`Window`](crate::Surface::Window) surface.
-    pub fn get_window_state_mut(&mut self, surf_index: SurfaceIndex) -> &mut WindowState {
-        if let Surface::Window(_, state) = &mut self.surfaces[surf_index.0] {
-            state
->>>>>>> Stashed changes
         } else {
-            panic!("surface index {} was not a window!", surf_index.0)
+            None
         }
     }
 
@@ -357,7 +344,7 @@ impl<Tab> DockState<Tab> {
                     }
                 };
 
-                let state = self.get_window_state_mut(surface_index);
+                let state = self.get_window_state_mut(surface_index).unwrap();
                 if src_surface == SurfaceIndex::root() {
                     state.set_size(rect.size() * 0.8);
                 }

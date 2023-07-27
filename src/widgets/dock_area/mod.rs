@@ -8,6 +8,7 @@ use crate::{
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered, rect_stroke_box},
     widgets::popup::popup_under_widget,
     DragSource, Node, NodeIndex, Style, SurfaceIndex, TabAddAlign, TabIndex, TabStyle, TabViewer,
+    Tree,
 };
 
 use duplicate::duplicate;
@@ -240,35 +241,40 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let style = self.style.as_ref().unwrap();
             match source {
                 DragSource::Node(src_surf, src_node, src_tab) => {
-                    let not_invalid = {
-                        self.tree[src_surf][src_node].is_leaf()
-                        && self.tree[dst_surf][dst_node].is_leaf()
-                        && ((src_surf, src_node) != (dst_surf, dst_node)
-                            || self.tree[dst_surf][dst_node].tabs_count() > 1)
+                    let (empty_destination_surface, valid_move) = {
+                        //empty roots don't have destination nodes
+                        if let Some(dst_node) = dst_node {
+                            let not_invalid = {
+                                self.tree[src_surf][src_node].is_leaf()
+                                    && self.tree[dst_surf][dst_node].is_leaf()
+                                    && ((src_surf, src_node) != (dst_surf, dst_node)
+                                        || self.tree[dst_surf][dst_node].tabs_count() > 1)
+                            };
+                            (false, not_invalid)
+                        } else {
+                            let not_invalid = { self.tree[src_surf][src_node].is_leaf() };
+                            (true, not_invalid)
+                        }
                     };
-                    if not_invalid {
+                    if valid_move {
                         let tab_dst = if dst_surf == SurfaceIndex::root() {
                             hover.resolve(ui, style, self.allowed_splits, false)
                         } else {
-<<<<<<< Updated upstream
-                            ui.with_layer_id(
-                                LayerId::new(Order::Foreground, Id::new("__Overlay_Ui")),
-                                |ui| hover.resolve(ui, style, self.allowed_splits, false),
-                            )
-                            .inner
-=======
                             let layer_id = self
                                 .tree
                                 .get_window_state_mut(dst_surf)
+                                .unwrap()
                                 .layer_id
                                 .clone()
                                 .unwrap_or(LayerId::background());
-                            ui.with_layer_id(layer_id, |ui| hover.resolve(ui, style, false))
-                                .inner
->>>>>>> Stashed changes
+                            ui.with_layer_id(layer_id, |ui| {
+                                hover.resolve(ui, style, self.allowed_splits, false)
+                            })
+                            .inner
                         };
 
                         if ui.input(|i| i.pointer.any_released()) {
+                            //primarily used to allow/deny tabs to become/ be put in windows.
                             let allowed_to_move = {
                                 if !tab_dst.is_window() {
                                     true
@@ -284,17 +290,28 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 }
                             };
                             if allowed_to_move {
-                                self.tree.move_tab(
-                                    (src_surf, src_node, src_tab),
-                                    (dst_surf, dst_node, tab_dst),
-                                );
+                                if !empty_destination_surface {
+                                    self.tree.move_tab(
+                                        (src_surf, src_node, src_tab),
+                                        (dst_surf, dst_node.unwrap(), tab_dst),
+                                    );
+                                } else {
+                                    let tab = self
+                                        .tree
+                                        .remove_tab((src_surf, src_node, src_tab))
+                                        .unwrap();
+                                    self.tree[dst_surf] = Tree::new(vec![tab]);
+
+                                    if self.tree[src_surf].is_empty() {
+                                        self.tree.remove_surface(src_surf);
+                                    }
+                                }
 
                                 self.drag_data = None;
                                 self.hover_data = None;
                             }
                         }
                     }
-
                 }
                 DragSource::Window(_) => {
                     todo!("Inserting entire Windows into dock is not yet supported");
@@ -319,7 +336,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             if self.tree[surf_index].is_empty() {
                 let rect = ui.available_rect_before_wrap();
                 let response = ui.allocate_rect(rect, Sense::hover());
-                if response.hovered() {}
+                if response.hovered() {
+                    if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+                        self.hover_data = Some(HoverData {
+                            rect,
+                            tabs: None,
+                            tab: None,
+                            dst: (SurfaceIndex::root(), None),
+                            pointer,
+                        })
+                    }
+                }
             }
             // First compute all rect sizes in the node graph.
             self.allocate_area_for_root_node(ui, surf_index);
@@ -352,7 +379,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let (_, _) = {
                 let window = {
                     let mut window_constructor = egui::Window::new(title).title_bar(false);
-                    let state = self.tree.get_window_state_mut(surf_index);
+                    let state = self.tree.get_window_state_mut(surf_index).unwrap();
                     if let Some(position) = state.next_position() {
                         window_constructor = window_constructor.current_pos(position);
                     }
@@ -390,7 +417,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let screen_rect = {
                     if let Some(response) = response {
                         if let Some(layer_id) = response.inner {
-                            self.tree.get_window_state_mut(surf_index).layer_id = Some(layer_id);
+                            self.tree.get_window_state_mut(surf_index).unwrap().layer_id =
+                                Some(layer_id);
                         }
                         response.response.rect
                     } else {
@@ -403,6 +431,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 match self
                     .tree
                     .get_window_state_mut(surf_index)
+                    .unwrap()
                     .dragged(ui.ctx(), screen_rect)
                 {
                     Some(just_started) => (
