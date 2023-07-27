@@ -12,6 +12,8 @@ use tree::*;
 
 use egui::Rect;
 
+use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree};
+
 /// The basis for egui_dock
 ///
 /// This tree starts with a collection of surfaces, that then breaks down into nodes, and then into tabs.
@@ -111,9 +113,9 @@ impl<Tab> DockState<Tab> {
         }
     }
 
-    ///Get the [`WindowState`] which corresponds to a [`SurfaceIndex`]
+    /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`]
     ///
-    ///Returns None if the surface is an [`Empty`](crate::Surface::Empty), [`Root`](crate::Surface::Root), or doesn't exist.
+    /// Returns None if the surface is an [`Empty`](crate::Surface::Empty), [`Root`](crate::Surface::Root), or doesn't exist.
     pub fn get_window_state_mut(&mut self, surface: SurfaceIndex) -> Option<&mut WindowState> {
         if let Surface::Window(_, state) = &mut self.surfaces[surface.0] {
             Some(state)
@@ -121,6 +123,7 @@ impl<Tab> DockState<Tab> {
             None
         }
     }
+
     /// Returns the viewport `Rect` and the `Tab` inside the focused leaf node or `None` if it does not exist.
     #[inline]
     pub fn find_active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
@@ -144,7 +147,7 @@ impl<Tab> DockState<Tab> {
     /// Panics if you try to remove the root surface *( surface index 0 )*
     ///
     pub fn remove_surface(&mut self, surface_index: SurfaceIndex) -> Option<Surface<Tab>> {
-        assert!(surface_index != SurfaceIndex::root());
+        assert_ne!(surface_index, SurfaceIndex::root());
         if surface_index.0 < self.surfaces.len() {
             let surface = {
                 if surface_index.0 == self.surfaces.len() - 1 {

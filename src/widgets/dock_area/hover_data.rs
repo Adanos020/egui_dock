@@ -1,4 +1,4 @@
-use crate::{NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex};
+use crate::{AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex};
 use egui::{vec2, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
 
 #[derive(Debug)]
@@ -17,15 +17,27 @@ impl HoverData {
     }
 
     //resolve a TabDestination for whatever is hovered
-    pub(super) fn resolve(&self, ui: &mut Ui, style: &Style, is_window: bool) -> TabDestination {
+    pub(super) fn resolve(
+        &self,
+        ui: &mut Ui,
+        style: &Style,
+        allowed_splits: AllowedSplits,
+        is_window: bool,
+    ) -> TabDestination {
         if self.is_on_title_bar() {
-            self.resolve_traditional(ui, style)
+            self.resolve_traditional(ui, style, allowed_splits)
         } else {
-            self.resolve_icon_based(ui, style, is_window)
+            self.resolve_icon_based(ui, style, allowed_splits, is_window)
         }
     }
 
-    fn resolve_icon_based(&self, ui: &mut Ui, style: &Style, is_window: bool) -> TabDestination {
+    fn resolve_icon_based(
+        &self,
+        ui: &mut Ui,
+        style: &Style,
+        allowed_splits: AllowedSplits,
+        is_window: bool,
+    ) -> TabDestination {
         const PADDING: f32 = 10.0;
         const BUTTON_SPACING: f32 = 10.0;
         const TOTAL_BUTTON_SPACING: f32 = BUTTON_SPACING * 2.0;
@@ -58,22 +70,34 @@ impl HoverData {
             (Split::Above, true),
             (Split::Left, false),
         ] {
-            if button_ui(
-                Rect::from_center_size(center + offset_vector, Vec2::splat(shortest_side)),
-                ui,
-                pointer,
-                style,
-                Some(is_top_bottom),
-            ) {
-                destination = Some(TabDestination::Split(split));
+            match allowed_splits {
+                AllowedSplits::TopBottomOnly if is_top_bottom => continue,
+                AllowedSplits::LeftRightOnly if !is_top_bottom => continue,
+                AllowedSplits::None => continue,
+                _ => {
+                    if button_ui(
+                        Rect::from_center_size(center + offset_vector, Vec2::splat(shortest_side)),
+                        ui,
+                        pointer,
+                        style,
+                        Some(is_top_bottom),
+                    ) {
+                        destination = Some(TabDestination::Split(split));
+                    }
+                    offset_vector = offset_vector.rot90();
+                }
             }
-            offset_vector = offset_vector.rot90();
         }
 
         destination.unwrap_or(TabDestination::Window(self.pointer))
     }
 
-    fn resolve_traditional(&self, ui: &mut Ui, style: &Style) -> TabDestination {
+    fn resolve_traditional(
+        &self,
+        ui: &mut Ui,
+        style: &Style,
+        allowed_splits: AllowedSplits,
+    ) -> TabDestination {
         if let Some(tab) = self.tab {
             draw_drop_rect(tab.0, ui, style);
             return TabDestination::Insert(tab.1);
@@ -87,33 +111,70 @@ impl HoverData {
         let (rect, pointer) = (self.rect, self.pointer);
 
         let center = rect.center();
-        let pts = [
-            (
+
+        let pts = match allowed_splits {
+            AllowedSplits::All => vec![
+                (
+                    center.distance(pointer),
+                    TabDestination::Append,
+                    Rect::EVERYTHING,
+                ),
+                (
+                    rect.left_center().distance(pointer),
+                    TabDestination::Split(Split::Left),
+                    Rect::everything_left_of(center.x),
+                ),
+                (
+                    rect.right_center().distance(pointer),
+                    TabDestination::Split(Split::Right),
+                    Rect::everything_right_of(center.x),
+                ),
+                (
+                    rect.center_top().distance(pointer),
+                    TabDestination::Split(Split::Above),
+                    Rect::everything_above(center.y),
+                ),
+                (
+                    rect.center_bottom().distance(pointer),
+                    TabDestination::Split(Split::Below),
+                    Rect::everything_below(center.y),
+                ),
+            ],
+            AllowedSplits::LeftRightOnly => vec![
+                (
+                    center.distance(pointer),
+                    TabDestination::Append,
+                    Rect::EVERYTHING,
+                ),
+                (
+                    rect.left_center().distance(pointer),
+                    TabDestination::Split(Split::Left),
+                    Rect::everything_left_of(center.x),
+                ),
+                (
+                    rect.right_center().distance(pointer),
+                    TabDestination::Split(Split::Right),
+                    Rect::everything_right_of(center.x),
+                ),
+            ],
+            AllowedSplits::TopBottomOnly => vec![
+                (
+                    rect.center_top().distance(pointer),
+                    TabDestination::Split(Split::Above),
+                    Rect::everything_above(center.y),
+                ),
+                (
+                    rect.center_bottom().distance(pointer),
+                    TabDestination::Split(Split::Below),
+                    Rect::everything_below(center.y),
+                ),
+            ],
+            AllowedSplits::None => vec![(
                 center.distance(pointer),
                 TabDestination::Append,
                 Rect::EVERYTHING,
-            ),
-            (
-                rect.left_center().distance(pointer),
-                TabDestination::Split(Split::Left),
-                Rect::everything_left_of(center.x),
-            ),
-            (
-                rect.right_center().distance(pointer),
-                TabDestination::Split(Split::Right),
-                Rect::everything_right_of(center.x),
-            ),
-            (
-                rect.center_top().distance(pointer),
-                TabDestination::Split(Split::Above),
-                Rect::everything_above(center.y),
-            ),
-            (
-                rect.center_bottom().distance(pointer),
-                TabDestination::Split(Split::Below),
-                Rect::everything_below(center.y),
-            ),
-        ];
+            )],
+        };
 
         let (_, tab_dst, overlay) = pts
             .into_iter()
@@ -140,7 +201,7 @@ fn button_ui(
     painter.rect_stroke(rect, 0.0, visuals.bg_stroke);
     let rect = rect.shrink(10.0);
     painter.rect_stroke(rect, 0.0, visuals.fg_stroke);
-    let rim = { egui::Rect::from_two_pos(rect.min, rect.lerp_inside(vec2(1.0, 0.1))) };
+    let rim = { Rect::from_two_pos(rect.min, rect.lerp_inside(vec2(1.0, 0.1))) };
     painter.rect(rim, 0.0, visuals.fg_stroke.color, Stroke::NONE);
 
     if let Some(top_bottom) = is_top_bottom {
