@@ -123,7 +123,7 @@ impl eframe::App for MyApp {
             );
 
         added_nodes.drain(..).for_each(|node| {
-            self.tree.set_focused_node(node.node);
+            self.tree.root_set_focused_node(node.node);
             self.tree.push_to_focused_leaf(MyTab {
                 kind: node.kind,
                 node: NodeIndex(self.counter),

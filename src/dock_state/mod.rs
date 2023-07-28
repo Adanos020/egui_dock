@@ -29,10 +29,10 @@ pub struct DockState<Tab> {
 /// However if you drag a tab out in a way which creates a window,
 /// you also create a new surface in which nodes can appear.
 pub enum Surface<Tab> {
-    ///An empty surface, with nothing inside
+    ///An empty surface, with nothing inside (Practically, a Null surface)
     Empty,
 
-    ///The root surface
+    ///The root surface of a [`DockState`], only one should exist at surface index 0 at any one time.
     Root(Tree<Tab>),
 
     ///A windowed surface with a state
@@ -135,6 +135,12 @@ impl<Tab> DockState<Tab> {
         self.surfaces.get_mut(surface.0)
     }
 
+    ///Get a shared borrow to the raw surface from a surface index
+    #[inline]
+    pub fn get_surface(&self, surface: SurfaceIndex) -> Option<&Surface<Tab>> {
+        self.surfaces.get(surface.0)
+    }
+
     /// Returns true if the specified surface exists and isn't [`Empty`](crate::Surface::Empty)
     #[inline]
     pub fn is_surface_valid(&self, surface_index: SurfaceIndex) -> bool {
@@ -143,13 +149,13 @@ impl<Tab> DockState<Tab> {
             .map_or(false, |surface| !surface.is_empty())
     }
 
-    /// Returns an `Iterator` of all valid [`SurfaceIndex`]es.
+    /// Returns an [`Iterator`](std::iter::Iterator) of all valid [`SurfaceIndex`]es.
 
     #[inline]
     pub(crate) fn surface_index_iter(&self) -> impl Iterator<Item = SurfaceIndex> {
         //the collection and "re-itering" may seem odd here, but it is justified since the FilterMap uses &self.
-        //if we didn't do this it could end up in scenarios where a user will run into borrow checker issues,
-        //since the iterator would hold a borrow to self, despite seemingy just being a collection of wrapped up usizes.
+        //if we didn't do this it could end up in borrow checker issues, since the iterator would restrict the use
+        //of &mut self until it is dropped.
         (0..self.surfaces.len())
             .filter_map(|index| {
                 self.is_surface_valid(SurfaceIndex(index))
@@ -161,7 +167,7 @@ impl<Tab> DockState<Tab> {
 
     /// Remove a surface based on it's [`SurfaceIndex`], returning it if it existed, otherwise returning `None`.
     /// # Panics
-    /// Panics if you try to remove the root surface *( surface index 0 )*
+    /// Panics if you try to remove the root surface ( surface index 0 )
     ///
     pub fn remove_surface(&mut self, surface_index: SurfaceIndex) -> Option<Surface<Tab>> {
         assert_ne!(surface_index, SurfaceIndex::root());
@@ -182,7 +188,7 @@ impl<Tab> DockState<Tab> {
 
     /// Sets the currently focused leaf to `node_index` on the root surface if the node at `node_index` is a leaf.
     #[inline]
-    pub fn set_focused_node(&mut self, node_index: NodeIndex) {
+    pub fn root_set_focused_node(&mut self, node_index: NodeIndex) {
         if let Some(Node::Leaf { .. }) = self[SurfaceIndex::root()].tree.get(node_index.0) {
             self.focused_surface = Some(SurfaceIndex::root());
             self[SurfaceIndex::root()].set_focused_node(node_index);
@@ -221,18 +227,18 @@ impl<Tab> DockState<Tab> {
         &mut self,
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
     ) {
-        if !self.is_surface_valid(surface_index) {
-            return;
+        if self.is_surface_valid(surface_index) {
+            //i don't want this code to be evaluated until im absolutely sure the surface index is valid
+            if self[surface_index][node_index].is_leaf() {
+                self.focused_surface = Some(surface_index);
+                self[surface_index].set_focused_node(node_index);
+                return;
+            }
         }
-        if self[surface_index][node_index].is_leaf() {
-            self.focused_surface = Some(surface_index);
-            self[surface_index].set_focused_node(node_index);
-        } else {
-            return;
-        };
+        self.focused_surface = None;
     }
 
-    /// Get mutable access to the tree at the root surface
+    /// Get an exclusive borrow to the tree at the root surface
     pub fn root_surface_mut(&mut self) -> &mut Tree<Tab> {
         &mut self[SurfaceIndex::root()]
     }
@@ -359,7 +365,7 @@ impl<Tab> DockState<Tab> {
             self[src_surface].remove_leaf(src_node);
         }
 
-        if self[src_surface].is_empty() {
+        if self[src_surface].is_empty() && src_surface != SurfaceIndex::root() {
             self.remove_surface(src_surface);
         }
     }
