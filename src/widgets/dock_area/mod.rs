@@ -302,7 +302,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                         .unwrap();
                                     self.tree[dst_surf] = Tree::new(vec![tab]);
 
-                                    if self.tree[src_surf].is_empty() {
+                                    if self.tree[src_surf].is_empty()
+                                        && src_surf != SurfaceIndex::root()
+                                    {
                                         self.tree.remove_surface(src_surf);
                                     }
                                 }
@@ -349,10 +351,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
             }
             // First compute all rect sizes in the node graph.
-            self.allocate_area_for_root_node(ui, surf_index);
+            let max_rect = self.allocate_area_for_root_node(ui, surf_index);
             for node_index in self.tree[surf_index].breadth_first_index_iter() {
                 if self.tree[surf_index][node_index].is_parent() {
-                    self.compute_rect_sizes(ui, (surf_index, node_index));
+                    self.compute_rect_sizes(ui, (surf_index, node_index), max_rect);
                 }
             }
 
@@ -390,10 +392,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 };
 
                 let response = window.show(ui.ctx(), |ui| {
-                    self.allocate_area_for_root_node(ui, surf_index);
+                    let max_rect = self.allocate_area_for_root_node(ui, surf_index);
                     for node_index in self.tree[surf_index].breadth_first_index_iter() {
                         if self.tree[surf_index][node_index].is_parent() {
-                            self.compute_rect_sizes(ui, (surf_index, node_index));
+                            self.compute_rect_sizes(ui, (surf_index, node_index), max_rect);
                         }
                     }
 
@@ -444,7 +446,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         };
     }
 
-    fn allocate_area_for_root_node(&mut self, ui: &mut Ui, surface: SurfaceIndex) {
+    fn allocate_area_for_root_node(&mut self, ui: &mut Ui, surface: SurfaceIndex) -> Rect {
         let style = self.style.as_ref().unwrap();
         let mut rect = ui.available_rect_before_wrap();
 
@@ -458,16 +460,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.allocate_rect(rect, Sense::hover());
 
         if self.tree[surface].is_empty() {
-            return;
+            return rect;
         }
 
         self.tree[surface][NodeIndex::root()].set_rect(rect);
+        rect
     }
 
     fn compute_rect_sizes(
         &mut self,
         ui: &mut Ui,
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
+        max_rect: Rect,
     ) {
         assert!(self.tree[surface_index][node_index].is_parent());
 
@@ -497,8 +501,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 );
 
                 paste! {
-                    let left = rect.intersect(Rect::[<everything_ left_of>](left_separator_border));
-                    let right = rect.intersect(Rect::[<everything_ right_of>](right_separator_border));
+                    let left = rect.intersect(Rect::[<everything_ left_of>](left_separator_border)).intersect(max_rect);
+                    let right = rect.intersect(Rect::[<everything_ right_of>](right_separator_border)).intersect(max_rect);
                 }
 
                 self.tree[surface_index][node_index.left()].set_rect(left);

@@ -221,15 +221,15 @@ impl<Tab> DockState<Tab> {
         &mut self,
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
     ) {
-        if surface_index.0 >= self.surfaces.len() {
+        if !self.is_surface_valid(surface_index) {
             return;
         }
-        if let Some(Node::Leaf { .. }) = self[surface_index].tree.get(node_index.0) {
+        if self[surface_index][node_index].is_leaf() {
             self.focused_surface = Some(surface_index);
             self[surface_index].set_focused_node(node_index);
         } else {
-            self.focused_surface = None;
-        }
+            return;
+        };
     }
 
     /// Get mutable access to the tree at the root surface
