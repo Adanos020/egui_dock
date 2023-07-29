@@ -1,4 +1,4 @@
-﻿use egui::{Context, Id, Pos2};
+use egui::{Context, Id, Pos2};
 
 use super::hover_data::HoverData;
 
@@ -11,8 +11,10 @@ pub(super) struct State {
 impl State {
     #[inline(always)]
     pub(super) fn load(ctx: &Context, id: Id) -> Self {
-        ctx.data_mut(|d| d.get_temp(id))
-            .unwrap_or(Self { drag_start: None, hover_data: None})
+        ctx.data_mut(|d| d.get_temp(id)).unwrap_or(Self {
+            drag_start: None,
+            hover_data: None,
+        })
     }
 
     #[inline(always)]

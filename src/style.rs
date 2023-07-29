@@ -170,7 +170,6 @@ pub struct TabBodyStyle {
 /// Specifies the look and feel of the tab drop overlay.
 #[derive(Clone, Debug)]
 pub struct OverlayStyle {
-    
     ///units between each button
     pub button_padding: f32,
 
@@ -285,10 +284,10 @@ impl Default for TabBodyStyle {
 }
 impl Default for OverlayStyle {
     fn default() -> Self {
-        Self { 
-            button_padding: 10.0, 
-            interact_expansion: 20.0, 
-            max_button_size: 100.0 
+        Self {
+            button_padding: 10.0,
+            interact_expansion: 20.0,
+            max_button_size: 100.0,
         }
     }
 }

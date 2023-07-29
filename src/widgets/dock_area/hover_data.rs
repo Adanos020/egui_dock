@@ -7,7 +7,7 @@ use egui::{vec2, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
 pub(super) struct HoverData {
     /// rect of the hovered element
     pub rect: Rect,
-    /// 
+    ///
     pub tab: Option<Rect>,
     pub dst: DropPosition,
     pub pointer: Pos2,
@@ -28,6 +28,12 @@ impl DropPosition {
             DropPosition::Tab(surface, node, _) => (*surface, Some(*node)),
         }
     }
+    pub(super) fn is_surface(&self) -> bool {
+        match self {
+            DropPosition::Surface(_) => true,
+            _ => false,
+        }
+    }
 }
 impl HoverData {
     //determines if the hoverdata implies we're hovering over a tab or the tab title bar
@@ -43,6 +49,12 @@ impl HoverData {
         allowed_splits: AllowedSplits,
         is_window: bool,
     ) -> TabDestination {
+        let allowed_splits = allowed_splits
+            & if self.dst.is_surface() {
+                AllowedSplits::None
+            } else {
+                AllowedSplits::All
+            };
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
             self.pointer = pointer;
         }
@@ -122,7 +134,6 @@ impl HoverData {
         style: &Style,
         allowed_splits: AllowedSplits,
     ) -> TabDestination {
-
         if let Some(rect) = self.tab {
             draw_drop_rect(rect, ui, style);
 
@@ -239,7 +250,9 @@ fn button_ui(
             painter.line_segment([start, end], visuals.fg_stroke);
         }
     }
-    let over = rect.expand(style.overlay.interact_expansion).contains(mouse_pos);
+    let over = rect
+        .expand(style.overlay.interact_expansion)
+        .contains(mouse_pos);
     if over && !*lock {
         painter.rect_filled(rect, 0.0, style.selection_color);
     }
