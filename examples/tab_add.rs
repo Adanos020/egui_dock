@@ -58,7 +58,7 @@ impl eframe::App for MyApp {
             .show_add_buttons(true)
             .style({
                 let mut style = Style::from_egui(ctx.style().as_ref());
-                style.tabs.fill_tab_bar = true;
+                style.tab_bar.fill_tab_bar = true;
                 style
             })
             .show(

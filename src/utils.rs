@@ -25,3 +25,9 @@ pub fn rect_set_size_centered(rect: &mut Rect, size: Vec2) {
     rect.set_height(size.y);
     rect.set_center(center);
 }
+
+/// Shrink a rectangle so that the stroke is fully contained inside
+/// the original rectangle.
+pub fn rect_stroke_box(rect: Rect, width: f32) -> Rect {
+    rect.expand(-f32::ceil(width / 2.0))
+}
