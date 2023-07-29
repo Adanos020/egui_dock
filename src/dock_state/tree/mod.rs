@@ -323,18 +323,43 @@ impl<Tab> Tree<Tab> {
         new: Node<Tab>,
     ) -> [NodeIndex; 2] {
         let old = self[parent].split(split, fraction);
-        assert!(old.is_leaf());
+        assert!(old.is_leaf() || old.is_parent());
 
+        //resize vector to fit the new size of the binary tree
         {
             let index = self.tree.iter().rposition(|n| !n.is_empty()).unwrap_or(0);
             let level = NodeIndex(index).level();
-            self.tree.resize_with(1 << (level + 1), || Node::Empty);
+            self.tree.resize_with((1 << level + 1) - 1, || Node::Empty);
         }
 
         let index = match split {
             Split::Left | Split::Above => [parent.right(), parent.left()],
             Split::Right | Split::Below => [parent.left(), parent.right()],
         };
+
+        //if the node were splitting is a parent, all it's children need to be moved.
+        if old.is_parent() {
+            let levels_to_move = NodeIndex(self.tree.len()).level() - index[0].level();
+
+            //level 0 is ourself, which is done when we assign self[index[0]] = old, so start at 1.
+            for level in (1..levels_to_move).into_iter().rev() {
+                let old_start = parent.children_at(level).start;
+                let new_start = index[0].children_at(level).start;
+                let len = 1 << level;
+
+                //swap self[old_start..(old_start+len)] with self[new_start..(new_start+len)]
+                //(the new part will only contain empty entries)
+                let (old_range, new_range) = {
+                    let (first_part, second_part) = self.tree.split_at_mut(new_start);
+                    //cut to length
+                    (
+                        &mut first_part[old_start..old_start + len],
+                        &mut second_part[..len],
+                    )
+                };
+                old_range.swap_with_slice(new_range);
+            }
+        }
 
         self[index[0]] = old;
         self[index[1]] = new;

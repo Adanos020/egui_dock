@@ -462,7 +462,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if self.tree[surface].is_empty() {
             return rect;
         }
-
         self.tree[surface][NodeIndex::root()].set_rect(rect);
         rect
     }
