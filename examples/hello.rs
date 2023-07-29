@@ -66,6 +66,13 @@ impl TabViewer for MyContext {
         tab.as_str().into()
     }
 
+    fn closeable(&mut self, tab: &mut Self::Tab) -> bool {
+        match tab.as_str() {
+            "Inspector" => false,
+            _ => true,
+        }
+    }
+
     fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
         self.open_tabs.remove(tab);
         true

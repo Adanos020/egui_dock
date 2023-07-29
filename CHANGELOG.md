@@ -1,5 +1,11 @@
 # egui_dock changelog
 
+## Next
+
+### Added
+
+- `TabViewer::closable` lets individual tabs be closable or not ([#113])
+
 ## 0.6.3 - 2023-06-16
 
 ### Fixed

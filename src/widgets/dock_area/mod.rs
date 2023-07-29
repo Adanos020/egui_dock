@@ -502,7 +502,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
             }
 
-            let (is_active, label, tab_style) = {
+            let (is_active, label, tab_style, closeable) = {
                 let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
                 let style = self.style.as_ref().unwrap();
                 let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tabs);
@@ -510,8 +510,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     *active == tab_index || is_being_dragged,
                     tab_viewer.title(&mut tabs[tab_index.0]),
                     tab_style.unwrap_or(style.tabs.clone()),
+                    tab_viewer.closeable(&mut tabs[tab_index.0]),
                 )
             };
+
+            let show_close_button = self.show_close_buttons && closeable;
 
             let response = if is_being_dragged {
                 let layer_id = LayerId::new(Order::Tooltip, id);
@@ -526,6 +529,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             is_active,
                             is_being_dragged,
                             expanded_width,
+                            show_close_button,
                         )
                     })
                     .response;
@@ -556,6 +560,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     is_active,
                     is_being_dragged,
                     expanded_width,
+                    show_close_button,
                 );
 
                 let (close_hovered, close_clicked) = close_response
@@ -579,7 +584,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 if self.tab_context_menus {
                     response = response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab);
-                        if self.show_close_buttons && ui.button("Close").clicked() {
+                        if show_close_button && ui.button("Close").clicked() {
                             if tab_viewer.on_close(tab) {
                                 self.to_remove.push((node_index, tab_index));
                             } else {
@@ -732,6 +737,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         active: bool,
         is_being_dragged: bool,
         expanded_width: f32,
+        show_close_button: bool,
     ) -> (Response, Option<Response>) {
         let style = self.style.as_ref().unwrap();
         let rounding = tab_style.rounding;
@@ -805,7 +811,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             angle: 0.0,
         });
 
-        let close_response = self.show_close_buttons.then(|| {
+        let close_response = show_close_button.then(|| {
             let mut close_button_rect = rect;
             close_button_rect.set_left(text_rect.right());
             close_button_rect =
