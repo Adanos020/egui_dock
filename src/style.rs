@@ -27,6 +27,7 @@ pub struct Style {
     pub separator: SeparatorStyle,
     pub tab_bar: TabBarStyle,
     pub tab: TabStyle,
+    pub overlay: OverlayStyle,
 }
 
 /// Specifies the look and feel of buttons.
@@ -166,6 +167,20 @@ pub struct TabBodyStyle {
     pub bg_fill: Color32,
 }
 
+/// Specifies the look and feel of the tab drop overlay.
+#[derive(Clone, Debug)]
+pub struct OverlayStyle {
+    
+    ///units between each button
+    pub button_padding: f32,
+
+    ///units which the buttons interact area will be expanded by
+    pub interact_expansion: f32,
+
+    ///the max side length of a button on the overlay
+    pub max_button_size: f32,
+}
+
 impl Default for Style {
     fn default() -> Self {
         Self {
@@ -177,6 +192,7 @@ impl Default for Style {
             separator: SeparatorStyle::default(),
             tab_bar: TabBarStyle::default(),
             tab: TabStyle::default(),
+            overlay: OverlayStyle::default(),
         }
     }
 }
@@ -267,7 +283,15 @@ impl Default for TabBodyStyle {
         }
     }
 }
-
+impl Default for OverlayStyle {
+    fn default() -> Self {
+        Self { 
+            button_padding: 10.0, 
+            interact_expansion: 20.0, 
+            max_button_size: 100.0 
+        }
+    }
+}
 impl Style {
     pub(crate) const TAB_ADD_BUTTON_SIZE: f32 = 24.0;
     pub(crate) const TAB_ADD_PLUS_SIZE: f32 = 12.0;

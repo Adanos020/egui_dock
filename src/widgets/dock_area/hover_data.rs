@@ -1,29 +1,51 @@
+use std::ops::BitOrAssign;
+
 use crate::{AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex};
 use egui::{vec2, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(super) struct HoverData {
+    /// rect of the hovered element
     pub rect: Rect,
-    pub tabs: Option<Rect>,
-    pub tab: Option<(Rect, TabIndex)>,
-    pub dst: (SurfaceIndex, Option<NodeIndex>),
+    /// 
+    pub tab: Option<Rect>,
+    pub dst: DropPosition,
     pub pointer: Pos2,
+    pub locked: bool,
 }
-
+#[derive(Debug, Clone)]
+pub(super) enum DropPosition {
+    Surface(SurfaceIndex),
+    Node(SurfaceIndex, NodeIndex),
+    Tab(SurfaceIndex, NodeIndex, TabIndex),
+}
+impl DropPosition {
+    pub(super) fn break_down(&self) -> (SurfaceIndex, Option<NodeIndex>) {
+        match self {
+            DropPosition::Surface(surface) => (*surface, None),
+            DropPosition::Node(surface, node) => (*surface, Some(*node)),
+            //NOTE: TabIndex here is only used by `resolve`, since its used to factor the `TabDestination`
+            DropPosition::Tab(surface, node, _) => (*surface, Some(*node)),
+        }
+    }
+}
 impl HoverData {
     //determines if the hoverdata implies we're hovering over a tab or the tab title bar
     pub(super) fn is_on_title_bar(&self) -> bool {
-        self.tab.is_some() || self.tabs.is_some()
+        self.tab.is_some()
     }
 
     //resolve a TabDestination for whatever is hovered
     pub(super) fn resolve(
-        &self,
+        &mut self,
         ui: &mut Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
         is_window: bool,
     ) -> TabDestination {
+        if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+            self.pointer = pointer;
+        }
         if self.is_on_title_bar() {
             self.resolve_traditional(ui, style, allowed_splits)
         } else {
@@ -32,22 +54,21 @@ impl HoverData {
     }
 
     fn resolve_icon_based(
-        &self,
+        &mut self,
         ui: &mut Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
         is_window: bool,
     ) -> TabDestination {
-        const PADDING: f32 = 10.0;
-        const BUTTON_SPACING: f32 = 10.0;
-        const TOTAL_BUTTON_SPACING: f32 = BUTTON_SPACING * 2.0;
         assert!(!self.is_on_title_bar());
+        let mut lock = false;
+        let total_button_spacing = style.overlay.button_padding * 2.0;
         let (rect, pointer) = (self.rect, self.pointer);
-        let rect = rect.shrink(PADDING);
-        let shortest_side = ((rect.width() - TOTAL_BUTTON_SPACING) / 3.0)
-            .min((rect.height() - TOTAL_BUTTON_SPACING) / 3.0)
-            .min(100.0);
-        let mut offset_vector = vec2(0.0, shortest_side + BUTTON_SPACING);
+        let rect = rect.shrink(style.overlay.button_padding);
+        let shortest_side = ((rect.width() - total_button_spacing) / 3.0)
+            .min((rect.height() - total_button_spacing) / 3.0)
+            .min(style.overlay.max_button_size);
+        let mut offset_vector = vec2(0.0, shortest_side + style.overlay.button_padding);
 
         let mut destination = None;
 
@@ -57,6 +78,7 @@ impl HoverData {
             if button_ui(
                 Rect::from_center_size(center, Vec2::splat(shortest_side)),
                 ui,
+                &mut lock,
                 pointer,
                 style,
                 None,
@@ -78,6 +100,7 @@ impl HoverData {
                     if button_ui(
                         Rect::from_center_size(center + offset_vector, Vec2::splat(shortest_side)),
                         ui,
+                        &mut lock,
                         pointer,
                         style,
                         Some(is_top_bottom),
@@ -88,7 +111,8 @@ impl HoverData {
                 }
             }
         }
-
+        println!("{}", lock);
+        self.locked = lock;
         destination.unwrap_or(TabDestination::Window(self.pointer))
     }
 
@@ -98,13 +122,15 @@ impl HoverData {
         style: &Style,
         allowed_splits: AllowedSplits,
     ) -> TabDestination {
-        if let Some(tab) = self.tab {
-            draw_drop_rect(tab.0, ui, style);
-            return TabDestination::Insert(tab.1);
-        }
-        if let Some(tabs) = self.tabs {
-            draw_drop_rect(tabs, ui, style);
-            return TabDestination::Append;
+
+        if let Some(rect) = self.tab {
+            draw_drop_rect(rect, ui, style);
+
+            return match self.dst {
+                DropPosition::Surface(_) => TabDestination::Append,
+                DropPosition::Node(_, _) => TabDestination::Append,
+                DropPosition::Tab(_, _, tab_index) => TabDestination::Insert(tab_index),
+            };
         }
         //technically this code is unreachable
         //but i don't want to remove it in case we want a setting to enable/disable icon based drops
@@ -192,6 +218,7 @@ impl HoverData {
 fn button_ui(
     rect: Rect,
     ui: &mut Ui,
+    lock: &mut bool,
     mouse_pos: Pos2,
     style: &Style,
     is_top_bottom: Option<bool>,
@@ -212,10 +239,11 @@ fn button_ui(
             painter.line_segment([start, end], visuals.fg_stroke);
         }
     }
-    let over = rect.contains(mouse_pos);
-    if over {
+    let over = rect.expand(style.overlay.interact_expansion).contains(mouse_pos);
+    if over && !*lock {
         painter.rect_filled(rect, 0.0, style.selection_color);
     }
+    lock.bitor_assign(over);
     over
 }
 

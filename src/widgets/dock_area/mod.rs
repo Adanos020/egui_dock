@@ -20,6 +20,8 @@ use hover_data::HoverData;
 use paste::paste;
 use state::State;
 
+use self::hover_data::DropPosition;
+
 /// What directions can this dock split in?
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub enum AllowedSplits {
@@ -213,6 +215,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// See also [`show`](Self::show).
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         let mut state = State::load(ui.ctx(), self.id);
+        if let Some(hover_data) = state.hover_data.take() {
+            if hover_data.locked {
+                self.hover_data = Some(hover_data);
+            }
+        }
 
         for window_index in self.tree.surface_index_iter() {
             self.show_surface_inside(window_index, ui, tab_viewer, &mut state);
@@ -236,8 +243,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             self.tree.set_focused_node_and_surface(focused);
         }
 
-        if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
-            let (dst_surf, dst_node) = hover.dst;
+        if let (Some(source), Some(hover)) = (self.drag_data, &mut self.hover_data) {
+            let (dst_surf, dst_node) = hover.dst.break_down();
             let style = self.style.as_ref().unwrap();
             match source {
                 DragSource::Node(src_surf, src_node, src_tab) => {
@@ -257,16 +264,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         }
                     };
                     if valid_move {
-                        let tab_dst = if dst_surf == SurfaceIndex::root() {
-                            hover.resolve(ui, style, self.allowed_splits, false)
-                        } else {
-                            let layer_id = self
-                                .tree
-                                .get_window_state_mut(dst_surf)
-                                .unwrap()
-                                .layer_id
-                                .clone()
-                                .unwrap_or(LayerId::background());
+                        let tab_dst = {
+                            let layer_id = LayerId::new(Order::Foreground, "foreground".into());
                             ui.with_layer_id(layer_id, |ui| {
                                 hover.resolve(ui, style, self.allowed_splits, false)
                             })
@@ -320,6 +319,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
             }
         }
+        if self.hover_data.is_some() {
+            state.hover_data = self.hover_data;
+        }
         state.store(ui.ctx(), self.id);
     }
 
@@ -338,14 +340,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             if self.tree[surf_index].is_empty() {
                 let rect = ui.available_rect_before_wrap();
                 let response = ui.allocate_rect(rect, Sense::hover());
-                if response.hovered() {
+                if response.hovered() && !self.is_hover_data_locked() {
                     if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
                         self.hover_data = Some(HoverData {
                             rect,
-                            tabs: None,
                             tab: None,
-                            dst: (SurfaceIndex::root(), None),
+                            dst: DropPosition::Surface(surf_index),
                             pointer,
+                            locked: false,
                         })
                     }
                 }
@@ -1306,19 +1308,37 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+            //prevent borrow checker issues
+            let rect = *rect;
+
             // Use rect.contains instead of
             // response.hovered as the dragged tab covers
             // the underlying responses
-            if state.drag_start.is_some() && rect.contains(pointer) {
+            if state.drag_start.is_some() && rect.contains(pointer) && !self.is_hover_data_locked() {
                 let on_title_bar = tabbar_response.rect.contains(pointer);
+                let (dst, tab) = {
+                    match self.tab_hover_rect {
+                        Some((rect, tab_index)) => (DropPosition::Tab(surface_index, node_index, tab_index), Some(rect)),
+                        None => (DropPosition::Node(surface_index, node_index), on_title_bar.then_some(tabbar_response.rect)),
+                    }
+                } ;
+                
                 self.hover_data = Some(HoverData {
-                    rect: *rect,
-                    dst: (surface_index, Some(node_index)),
-                    tabs: on_title_bar.then_some(tabbar_response.rect),
-                    tab: self.tab_hover_rect,
+                    rect,
+                    dst,
+                    tab,
                     pointer,
+                    locked: false,
                 });
             }
+        }
+    }
+    #[inline(always)]
+    fn is_hover_data_locked(&self) -> bool {
+        if let Some(hover_data) = &self.hover_data {
+            hover_data.locked
+        } else {
+            false
         }
     }
 }
