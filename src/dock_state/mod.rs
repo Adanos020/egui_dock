@@ -228,11 +228,13 @@ impl<Tab> DockState<Tab> {
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
     ) {
         if self.is_surface_valid(surface_index) {
-            //i don't want this code to be evaluated until im absolutely sure the surface index is valid
-            if self[surface_index][node_index].is_leaf() {
-                self.focused_surface = Some(surface_index);
-                self[surface_index].set_focused_node(node_index);
-                return;
+            if node_index.0 < self[surface_index].len() {
+                //i don't want this code to be evaluated until im absolutely sure the surface index is valid
+                if self[surface_index][node_index].is_leaf() {
+                    self.focused_surface = Some(surface_index);
+                    self[surface_index].set_focused_node(node_index);
+                    return;
+                }
             }
         }
         self.focused_surface = None;
