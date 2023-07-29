@@ -23,6 +23,7 @@
   - `TabStyle::minimum_width` to set the minimum width of the tab.
   - `TabInteractionStyle` to style the active/inactive/focused/hovered states of a tab.
 - `AllowedSplits` enum which lets you choose in which directions a `DockArea` can be split. ([#145](https://github.com/Adanos020/egui_dock/pull/145))
+- `TabViewer::closable` lets individual tabs be closable or not. ([#150](https://github.com/Adanos020/egui_dock/pull/150))
 
 
 ### Breaking changes
