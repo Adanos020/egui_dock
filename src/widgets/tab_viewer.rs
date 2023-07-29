@@ -25,6 +25,13 @@ pub trait TabViewer {
     /// Called after each tab button is shown, so you can add a tooltip, check for clicks, etc.
     fn on_tab_button(&mut self, _tab: &mut Self::Tab, _response: &egui::Response) {}
 
+    /// Called before showing the close button.
+    ///
+    /// Return `false` if the close buttons should not be shown.
+    fn closeable(&mut self, _tab: &mut Self::Tab) -> bool {
+        true
+    }
+
     /// This is called when the tabs close button is pressed.
     ///
     /// Returns `true` if the tab should close immediately, `false` otherwise.
