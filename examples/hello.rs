@@ -70,10 +70,7 @@ impl TabViewer for MyContext {
     }
 
     fn closeable(&mut self, tab: &mut Self::Tab) -> bool {
-        match tab.as_str() {
-            "Inspector" => false,
-            _ => true,
-        }
+        ["Inspector", "Style Editor"].contains(&tab.as_str())
     }
 
     fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
