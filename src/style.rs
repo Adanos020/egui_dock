@@ -181,6 +181,12 @@ pub struct OverlayStyle {
 
     /// the amount of time the overlay waits before dropping the preference it may have for a node
     pub max_hold_time: f32,
+
+    ///The time for windows to fade
+    pub surface_fade_time: f32,
+
+    ///the opacity which surfaces will go towards when fading
+    pub surface_fade_opacity: f32,
 }
 
 impl Default for Style {
@@ -292,6 +298,8 @@ impl Default for OverlayStyle {
             interact_expansion: 20.0,
             max_button_size: 100.0,
             max_hold_time: 0.25,
+            surface_fade_time: 0.1,
+            surface_fade_opacity: 0.1,
         }
     }
 }

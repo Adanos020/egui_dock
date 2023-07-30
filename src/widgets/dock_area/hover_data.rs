@@ -1,7 +1,10 @@
-use std::{ops::BitOrAssign, time::{Instant, Duration}};
+use std::{
+    ops::BitOrAssign,
+    time::{Duration, Instant},
+};
 
 use crate::{AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex};
-use egui::{vec2, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
+use egui::{vec2, Context, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
 
 #[derive(Debug, Clone)]
 pub(super) struct HoverData {
@@ -27,6 +30,13 @@ impl DropPosition {
             DropPosition::Node(surface, node) => (*surface, Some(*node)),
             //NOTE: TabIndex here is only used by `resolve`, since its used to factor the `TabDestination`
             DropPosition::Tab(surface, node, _) => (*surface, Some(*node)),
+        }
+    }
+    pub(super) fn surface_index(&self) -> SurfaceIndex {
+        match self {
+            DropPosition::Surface(surface)
+            | DropPosition::Node(surface, _)
+            | DropPosition::Tab(surface, _, _) => *surface,
         }
     }
     pub(super) fn is_surface(&self) -> bool {
@@ -125,24 +135,8 @@ impl HoverData {
             }
         }
         let hovering_rect = self.rect.contains(pointer);
-        if hovering_rect && self.locked.is_none() {
-            self.locked = Some(Instant::now());
-        } else {
-            let drop_lock = if let Some(lock_time) = &mut self.locked {
-                if hovering_buttons {
-                    *lock_time = Instant::now();
-                }
-                let elapsed_lock_time = lock_time.elapsed().as_secs_f32();
-                ui.ctx().request_repaint_after(Duration::from_secs_f32((style.overlay.max_hold_time - elapsed_lock_time).max(0.0)));
-                elapsed_lock_time > style.overlay.max_hold_time || !hovering_rect
-            } else {
-                false
-            };
-            if drop_lock {
-                self.locked = None;
-            }
-        }
 
+        self.update_lock(hovering_rect, hovering_buttons, style, ui.ctx());
         destination.unwrap_or(TabDestination::Window(self.pointer))
     }
 
@@ -240,6 +234,46 @@ impl HoverData {
         draw_drop_rect(overlay, ui, style);
 
         tab_dst
+    }
+    fn update_lock(
+        &mut self,
+        on_node_rect: bool,
+        continue_locking: bool,
+        style: &Style,
+        ctx: &Context,
+    ) {
+        if on_node_rect && self.locked.is_none() {
+            self.locked = Some(Instant::now());
+        } else {
+            let keep_lock = if let Some(lock_time) = &mut self.locked {
+                if continue_locking {
+                    *lock_time = Instant::now();
+                }
+                let window_hold = {
+                    if self.dst.surface_index() != SurfaceIndex::root() {
+                        ctx.request_repaint();
+                        self.is_locked(style, ctx)
+                    } else {
+                        false
+                    }
+                };
+                on_node_rect || window_hold
+            } else {
+                true
+            };
+            if !keep_lock {
+                self.locked = None;
+            }
+        }
+    }
+    pub(super) fn is_locked(&self, style: &Style, ctx: &Context) -> bool {
+        if let Some(lock_time) = &self.locked {
+            let elapsed = lock_time.elapsed().as_secs_f32();
+            ctx.request_repaint_after(Duration::from_secs_f32((style.overlay.max_hold_time - elapsed).max(0.0)));
+            elapsed < style.overlay.max_hold_time
+        } else {
+            false
+        }
     }
 }
 
