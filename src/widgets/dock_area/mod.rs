@@ -236,7 +236,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         let mut state = State::load(ui.ctx(), self.id);
         if let Some(hover_data) = state.hover_data.take() {
-            if hover_data.locked {
+            if hover_data.locked.is_some() {
                 self.hover_data = Some(hover_data);
             }
         }
@@ -367,7 +367,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             tab: None,
                             dst: DropPosition::Surface(surf_index),
                             pointer,
-                            locked: false,
+                            locked: None,
                         })
                     }
                 }
@@ -1355,7 +1355,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     dst,
                     tab,
                     pointer,
-                    locked: false,
+                    locked: None,
                 });
             }
         }
@@ -1363,10 +1363,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     #[inline(always)]
     fn is_hover_data_locked(&self) -> bool {
         if let Some(hover_data) = &self.hover_data {
-            hover_data.locked
-        } else {
-            false
+            return hover_data.locked.is_some();
         }
+        false
     }
 }
 

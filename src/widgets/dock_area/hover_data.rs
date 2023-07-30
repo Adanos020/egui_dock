@@ -1,4 +1,4 @@
-use std::ops::BitOrAssign;
+use std::{ops::BitOrAssign, time::{Instant, Duration}};
 
 use crate::{AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex};
 use egui::{vec2, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
@@ -11,7 +11,8 @@ pub(super) struct HoverData {
     pub tab: Option<Rect>,
     pub dst: DropPosition,
     pub pointer: Pos2,
-    pub locked: bool,
+    ///is some when the pointer is over rect, instant holds when the lock was last active
+    pub locked: Option<Instant>,
 }
 #[derive(Debug, Clone)]
 pub(super) enum DropPosition {
@@ -73,7 +74,7 @@ impl HoverData {
         is_window: bool,
     ) -> TabDestination {
         assert!(!self.is_on_title_bar());
-        let mut lock = false;
+        let mut hovering_buttons = false;
         let total_button_spacing = style.overlay.button_padding * 2.0;
         let (rect, pointer) = (self.rect, self.pointer);
         let rect = rect.shrink(style.overlay.button_padding);
@@ -90,7 +91,7 @@ impl HoverData {
             if button_ui(
                 Rect::from_center_size(center, Vec2::splat(shortest_side)),
                 ui,
-                &mut lock,
+                &mut hovering_buttons,
                 pointer,
                 style,
                 None,
@@ -112,7 +113,7 @@ impl HoverData {
                     if button_ui(
                         Rect::from_center_size(center + offset_vector, Vec2::splat(shortest_side)),
                         ui,
-                        &mut lock,
+                        &mut hovering_buttons,
                         pointer,
                         style,
                         Some(is_top_bottom),
@@ -123,8 +124,25 @@ impl HoverData {
                 }
             }
         }
-        println!("{}", lock);
-        self.locked = lock;
+        let hovering_rect = self.rect.contains(pointer);
+        if hovering_rect && self.locked.is_none() {
+            self.locked = Some(Instant::now());
+        } else {
+            let drop_lock = if let Some(lock_time) = &mut self.locked {
+                if hovering_buttons {
+                    *lock_time = Instant::now();
+                }
+                let elapsed_lock_time = lock_time.elapsed().as_secs_f32();
+                ui.ctx().request_repaint_after(Duration::from_secs_f32((style.overlay.max_hold_time - elapsed_lock_time).max(0.0)));
+                elapsed_lock_time > style.overlay.max_hold_time || !hovering_rect
+            } else {
+                false
+            };
+            if drop_lock {
+                self.locked = None;
+            }
+        }
+
         destination.unwrap_or(TabDestination::Window(self.pointer))
     }
 

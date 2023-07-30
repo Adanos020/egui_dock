@@ -178,6 +178,9 @@ pub struct OverlayStyle {
 
     ///the max side length of a button on the overlay
     pub max_button_size: f32,
+
+    /// the amount of time the overlay waits before dropping the preference it may have for a node
+    pub max_hold_time: f32,
 }
 
 impl Default for Style {
@@ -288,6 +291,7 @@ impl Default for OverlayStyle {
             button_padding: 10.0,
             interact_expansion: 20.0,
             max_button_size: 100.0,
+            max_hold_time: 0.25,
         }
     }
 }
