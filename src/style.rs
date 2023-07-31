@@ -180,7 +180,10 @@ pub struct OverlayStyle {
     pub max_button_size: f32,
 
     /// the amount of time the overlay waits before dropping the preference it may have for a node
-    pub max_hold_time: f32,
+    pub max_preference_time: f32,
+
+    ///the amount of time windows should stay faded despite not needing to, prevents quick mouse movements from causing flashing.
+    pub fade_hold_time: f32,
 
     ///The time for windows to fade
     pub surface_fade_time: f32,
@@ -297,9 +300,10 @@ impl Default for OverlayStyle {
             button_padding: 10.0,
             interact_expansion: 20.0,
             max_button_size: 100.0,
-            max_hold_time: 0.25,
+            max_preference_time: 0.3,
             surface_fade_time: 0.1,
             surface_fade_opacity: 0.1,
+            fade_hold_time: 0.2,
         }
     }
 }

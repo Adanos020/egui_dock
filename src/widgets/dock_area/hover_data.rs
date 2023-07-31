@@ -269,8 +269,10 @@ impl HoverData {
     pub(super) fn is_locked(&self, style: &Style, ctx: &Context) -> bool {
         if let Some(lock_time) = &self.locked {
             let elapsed = lock_time.elapsed().as_secs_f32();
-            ctx.request_repaint_after(Duration::from_secs_f32((style.overlay.max_hold_time - elapsed).max(0.0)));
-            elapsed < style.overlay.max_hold_time
+            ctx.request_repaint_after(Duration::from_secs_f32(
+                (style.overlay.max_preference_time - elapsed).max(0.0),
+            ));
+            elapsed < style.overlay.max_preference_time
         } else {
             false
         }

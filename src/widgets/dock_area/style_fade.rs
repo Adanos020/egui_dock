@@ -3,7 +3,9 @@ use egui::{
     Visuals,
 };
 
-use crate::{TabBodyStyle, TabInteractionStyle, TabStyle, Style, ButtonsStyle, SeparatorStyle, TabBarStyle};
+use crate::{
+    ButtonsStyle, SeparatorStyle, Style, TabBarStyle, TabBodyStyle, TabInteractionStyle, TabStyle,
+};
 pub(super) fn fade_dock_style(style: &mut Style, factor: f32) {
     style.selection_color = style.selection_color.linear_multiply(factor);
     style.border.color = style.border.color.linear_multiply(factor);
