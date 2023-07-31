@@ -247,21 +247,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
         }
         let style = self.style.as_ref().unwrap();
-        let fade_surface = self.faded_window_surface(&mut state, style.overlay.fade_hold_time, ui.ctx());
-        let fade_factor = {
-            
-            let fade_factor = ui.ctx().animate_bool_with_time(
-                Id::new("__dock area fade"),
-                !fade_surface.is_some(),
-                style.overlay.surface_fade_time,
-            );
-
-            (fade_factor != 1.0).then(|| {
+        let fade_surface =
+            self.faded_window_surface(&mut state, style.overlay.fade_hold_time, ui.ctx());
+        let fade_style = {
+            (fade_surface.is_some()).then(|| {
                 let mut fade_style = style.clone();
-                let fade_alpha = fade_factor * (1.0 - style.overlay.surface_fade_opacity)
-                    + style.overlay.surface_fade_opacity;
-                fade_dock_style(&mut fade_style, fade_alpha);
-                (fade_style, fade_alpha)
+                fade_dock_style(&mut fade_style, style.overlay.surface_fade_opacity);
+                (fade_style, style.overlay.surface_fade_opacity)
             })
         };
 
@@ -271,7 +263,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui,
                 tab_viewer,
                 &mut state,
-                fade_factor.as_ref().map(|(style, factor)| {
+                fade_style.as_ref().map(|(style, factor)| {
                     (style, *factor, fade_surface.unwrap_or(SurfaceIndex::root()))
                 }),
             );
@@ -1390,7 +1382,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
 
             let tabs_style = tabs_styles.as_ref().unwrap_or(&style.tab);
-            
 
             if tab_viewer.clear_background(tab) {
                 ui.painter()
