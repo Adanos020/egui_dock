@@ -451,11 +451,18 @@ impl<Tab> DockState<Tab> {
             self[SurfaceIndex::root()].push_to_focused_leaf(tab)
         }
     }
-    /// Returns an `Iterator` of the underlying collection of nodes on the root surface.
+
+    /// Push a tab to the first leaf it finds or creates a leaf if an empty spot is encountered.
+    pub fn push_to_first_leaf(&mut self, tab: Tab) {
+        self[SurfaceIndex::root()].push_to_first_leaf(tab);
+    }
+
+    /// Returns an `Iterator` of the underlying collection of nodes on the *root surface*.
     #[deprecated = "Use `iter_root_surface_nodes` or `iter_nodes` instead"]
     pub fn iter(&self) -> std::slice::Iter<'_, Node<Tab>> {
         self.iter_root_surface_nodes()
     }
+
     /// Returns an `Iterator` of the underlying collection of nodes on the root surface.
     pub fn iter_root_surface_nodes(&self) -> std::slice::Iter<'_, Node<Tab>> {
         self[SurfaceIndex::root()].iter()

@@ -69,11 +69,13 @@ impl HoverData {
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
             self.pointer = pointer;
         }
+        
         if self.is_on_title_bar() {
             self.resolve_traditional(ui, style, allowed_splits)
         } else {
             self.resolve_icon_based(ui, style, allowed_splits, is_window)
         }
+
     }
 
     fn resolve_icon_based(
@@ -84,6 +86,7 @@ impl HoverData {
         is_window: bool,
     ) -> TabDestination {
         assert!(!self.is_on_title_bar());
+        draw_highlight_rect(self.rect, ui, style);
         let mut hovering_buttons = false;
         let total_button_spacing = style.overlay.button_padding * 2.0;
         let (rect, pointer) = (self.rect, self.pointer);
@@ -277,6 +280,14 @@ impl HoverData {
             false
         }
     }
+}
+fn draw_highlight_rect(rect: Rect, ui: &mut Ui, style: &Style) {
+    ui.painter().rect(
+        rect.expand(style.overlay.hovered_leaf_highlight.expansion),
+        style.overlay.hovered_leaf_highlight.rounding,
+        style.overlay.hovered_leaf_highlight.color,
+        style.overlay.hovered_leaf_highlight.stroke,
+    )
 }
 
 //draws one of the Tab drop destination icons inside "rect", which one you get is specified by "is_top_bottom"

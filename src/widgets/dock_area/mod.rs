@@ -392,6 +392,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         })
                     }
                 }
+                //all for loops will be empty, so theres no point going through them.
+                return;
             }
             // First compute all rect sizes in the node graph.
             let max_rect = self.allocate_area_for_root_node(ui, surf_index);
@@ -1489,8 +1491,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
         false
     }
+
+    /// Returns some when windows are fading, and what surface index is being hovered over
     #[inline(always)]
-    ///returns some when windows are fading, and what surface index is being hovered over
     fn faded_window_surface(
         &self,
         state: &mut State,

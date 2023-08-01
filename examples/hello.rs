@@ -388,10 +388,8 @@ impl eframe::App for MyApp {
                             .selectable_label(self.context.open_tabs.contains(*tab), *tab)
                             .clicked()
                         {
-                            if let Some(index) =
-                                self.tree[SurfaceIndex::root()].find_tab(&tab.to_string())
-                            {
-                                self.tree[SurfaceIndex::root()].remove_tab(index);
+                            if let Some(index) = self.tree.find_tab(&tab.to_string()) {
+                                self.tree.remove_tab(index);
                                 self.context.open_tabs.remove(*tab);
                             } else {
                                 self.tree[SurfaceIndex::root()]

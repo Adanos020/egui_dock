@@ -170,23 +170,42 @@ pub struct TabBodyStyle {
 /// Specifies the look and feel of the tab drop overlay.
 #[derive(Clone, Debug)]
 pub struct OverlayStyle {
-    ///units between each button
+    /// Units of padding between each button
     pub button_padding: f32,
 
-    ///units which the buttons interact area will be expanded by
+    /// Units which the buttons interact area will be expanded by
     pub interact_expansion: f32,
 
-    ///the max side length of a button on the overlay
+    /// Max side length of a button on the overlay
     pub max_button_size: f32,
 
-    /// the amount of time the overlay waits before dropping the preference it may have for a node
+    /// Amount of time the overlay waits before dropping a preference it may have for a node
     pub max_preference_time: f32,
 
-    ///the amount of time windows should stay faded despite not needing to, prevents quick mouse movements from causing flashing.
-    pub fade_hold_time: f32,
+    /// Style of the additional highlighting rectangle drawn on the surface which you're attempting to drop a tab in
+    pub hovered_leaf_highlight: LeafHighlighting,
 
-    ///the opacity which surfaces will go towards when fading
+    /// Opacity which surfaces will fade to in a range of ``0.0..=1.0``
     pub surface_fade_opacity: f32,
+
+    /// The amount of time windows should stay faded despite not needing to, prevents quick mouse movements from causing flashing.
+    pub fade_hold_time: f32,
+}
+
+/// Highlighting on the currently hovered lead
+#[derive(Clone, Debug)]
+pub struct LeafHighlighting {
+    /// Fill color
+    pub color: Color32,
+
+    /// Rounding of the resulting rectangle
+    pub rounding: Rounding,
+
+    /// Stroke
+    pub stroke: Stroke,
+
+    /// amount of egui units which each side should expand
+    pub expansion: f32,
 }
 
 impl Default for Style {
@@ -300,9 +319,21 @@ impl Default for OverlayStyle {
             max_preference_time: 0.3,
             surface_fade_opacity: 0.1,
             fade_hold_time: 0.2,
+            hovered_leaf_highlight: Default::default(),
         }
     }
 }
+impl Default for LeafHighlighting {
+    fn default() -> Self {
+        Self {
+            color: Color32::TRANSPARENT,
+            rounding: Rounding::same(0.0),
+            stroke: Stroke::NONE,
+            expansion: 0.0,
+        }
+    }
+}
+
 impl Style {
     pub(crate) const TAB_ADD_BUTTON_SIZE: f32 = 24.0;
     pub(crate) const TAB_ADD_PLUS_SIZE: f32 = 12.0;
