@@ -250,7 +250,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let fade_surface =
             self.faded_window_surface(&mut state, style.overlay.fade_hold_time, ui.ctx());
         let fade_style = {
-            (fade_surface.is_some()).then(|| {
+            fade_surface.is_some().then(|| {
                 let mut fade_style = style.clone();
                 fade_dock_style(&mut fade_style, style.overlay.surface_fade_opacity);
                 (fade_style, style.overlay.surface_fade_opacity)
@@ -368,7 +368,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         state.store(ui.ctx(), self.id);
     }
 
-    ///show a single surface of a [`DockState`]
+    /// Show a single surface of a [`DockState`]
     fn show_surface_inside(
         &mut self,
         surf_index: SurfaceIndex,
@@ -869,7 +869,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
 
             let (is_active, label, tab_style, closeable) = {
-                let Node::Leaf { tabs, active, .. } = &mut self.tree[surface_index][node_index] else { unreachable!() };
+                let Node::Leaf { tabs, active, .. } = &mut self.tree[surface_index][node_index]
+                else {
+                    unreachable!()
+                };
                 let style = if let Some(fade) = fade {
                     fade
                 } else {

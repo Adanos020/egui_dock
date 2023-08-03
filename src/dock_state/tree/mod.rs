@@ -42,6 +42,18 @@ pub enum Split {
     Below,
 }
 
+impl Split {
+    /// Returns whether the split is vertical.
+    pub const fn is_top_bottom(self) -> bool {
+        matches!(self, Split::Above | Split::Below)
+    }
+
+    /// Returns whether the split is horizontal.
+    pub const fn is_left_right(self) -> bool {
+        matches!(self, Split::Left | Split::Right)
+    }
+}
+
 /// Specify how a tab should be added to a Node.
 pub enum TabDestination {
     /// Split the node in the given direction.
@@ -53,6 +65,7 @@ pub enum TabDestination {
     /// Append the tab to the node.
     Append,
 }
+
 impl TabDestination {
     ///is this tab destination a [`Window`](crate::TabDestination::Window)?
     pub fn is_window(&self) -> bool {

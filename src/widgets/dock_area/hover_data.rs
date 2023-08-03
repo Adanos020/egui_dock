@@ -69,13 +69,12 @@ impl HoverData {
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
             self.pointer = pointer;
         }
-        
+
         if self.is_on_title_bar() {
             self.resolve_traditional(ui, style, allowed_splits)
         } else {
             self.resolve_icon_based(ui, style, allowed_splits, is_window)
         }
-
     }
 
     fn resolve_icon_based(
@@ -112,15 +111,10 @@ impl HoverData {
                 destination = Some(TabDestination::Append);
             }
         }
-        for (split, is_top_bottom) in vec![
-            (Split::Below, true),
-            (Split::Right, false),
-            (Split::Above, true),
-            (Split::Left, false),
-        ] {
+        for split in [Split::Below, Split::Right, Split::Above, Split::Left] {
             match allowed_splits {
-                AllowedSplits::TopBottomOnly if is_top_bottom => continue,
-                AllowedSplits::LeftRightOnly if !is_top_bottom => continue,
+                AllowedSplits::TopBottomOnly if split.is_top_bottom() => continue,
+                AllowedSplits::LeftRightOnly if split.is_left_right() => continue,
                 AllowedSplits::None => continue,
                 _ => {
                     if button_ui(
@@ -129,7 +123,7 @@ impl HoverData {
                         &mut hovering_buttons,
                         pointer,
                         style,
-                        Some(is_top_bottom),
+                        Some(split),
                     ) {
                         destination = Some(TabDestination::Split(split));
                     }
@@ -297,7 +291,7 @@ fn button_ui(
     lock: &mut bool,
     mouse_pos: Pos2,
     style: &Style,
-    is_top_bottom: Option<bool>,
+    split: Option<Split>,
 ) -> bool {
     let visuals = ui.style().visuals.widgets.noninteractive;
     let painter = ui.painter();
@@ -307,11 +301,10 @@ fn button_ui(
     let rim = { Rect::from_two_pos(rect.min, rect.lerp_inside(vec2(1.0, 0.1))) };
     painter.rect(rim, 0.0, visuals.fg_stroke.color, Stroke::NONE);
 
-    if let Some(top_bottom) = is_top_bottom {
-        let list = dashed_line_alphas();
-        for line in list.chunks(2) {
-            let start = rect.lerp_inside(lerp_vec(top_bottom, line[0]));
-            let end = rect.lerp_inside(lerp_vec(top_bottom, line[1]));
+    if let Some(split) = split {
+        for line in DASHED_LINE_ALPHAS.chunks(2) {
+            let start = rect.lerp_inside(lerp_vec(split, line[0]));
+            let end = rect.lerp_inside(lerp_vec(split, line[1]));
             painter.line_segment([start, end], visuals.fg_stroke);
         }
     }
@@ -319,23 +312,34 @@ fn button_ui(
         .expand(style.overlay.interact_expansion)
         .contains(mouse_pos);
     if over && !*lock {
+        let vertical_alphas = vec2(1.0, 0.5);
+        let horizontal_alphas = vec2(0.5, 1.0);
+        let rect = match split {
+            Some(Split::Above) => Rect::from_min_size(rect.min, rect.size() * vertical_alphas),
+            Some(Split::Left) => Rect::from_min_size(rect.min, rect.size() * horizontal_alphas),
+            Some(split @ Split::Below) => {
+                let min = rect.lerp_inside(lerp_vec(split, 0.0));
+                Rect::from_min_size(min, rect.size() * vertical_alphas)
+            }
+            Some(split @ Split::Right) => {
+                let min = rect.lerp_inside(lerp_vec(split, 0.0));
+                Rect::from_min_size(min, rect.size() * horizontal_alphas)
+            }
+            _ => rect,
+        };
         painter.rect_filled(rect, 0.0, style.selection_color);
     }
     lock.bitor_assign(over);
     over
 }
 
-//a bunch of lerp alphas describing the 4 dashed lines on the tab destination icons
-#[inline(always)]
-const fn dashed_line_alphas() -> &'static [f32] {
-    &[
-        0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375,
-    ]
-}
+const DASHED_LINE_ALPHAS: [f32; 8] = [
+    0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375,
+];
 
 #[inline(always)]
-const fn lerp_vec(top_bottom: bool, alpha: f32) -> Vec2 {
-    if top_bottom {
+const fn lerp_vec(split: Split, alpha: f32) -> Vec2 {
+    if split.is_top_bottom() {
         vec2(alpha, 0.5)
     } else {
         vec2(0.5, alpha)
