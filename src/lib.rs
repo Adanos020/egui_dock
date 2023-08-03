@@ -14,10 +14,10 @@
 //! by implementing [`TabViewer`].
 //!
 //! ```rust
-//! use egui_dock::{NodeIndex, Style, Tree};
+//! use egui_dock::{NodeIndex, Style, DockState};
 //!
 //! struct MyTabs {
-//!     tree: Tree<String>
+//!     tree: DockState<String>
 //! }
 //!
 //! impl MyTabs {

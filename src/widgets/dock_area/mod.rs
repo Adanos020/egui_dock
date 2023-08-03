@@ -202,7 +202,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ///
     /// This is the same as doing:
     /// ```
-    /// # use egui_dock::{DockArea, Tree};
+    /// # use egui_dock::{DockArea, DockState};
     /// # use egui::{CentralPanel, Frame};
     /// # struct TabViewer {}
     /// # impl egui_dock::TabViewer for TabViewer {
@@ -210,7 +210,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// #     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {}
     /// #     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText { (&*tab).into() }
     /// # }
-    /// # let mut tree: Tree<String> = Tree::new(vec![]);
+    /// # let mut tree: DockState<String> = DockState::new(vec![]);
     /// # let mut tab_viewer = TabViewer {};
     /// # egui::__run_test_ctx(|ctx| {
     /// CentralPanel::default()
