@@ -15,9 +15,9 @@ pub struct WindowState {
     /// The layer id of this window
     pub layer_id: Option<LayerId>,
 }
-impl WindowState {
-    /// create a default windowstate
-    pub fn new() -> WindowState {
+
+impl Default for WindowState {
+    fn default() -> Self {
         Self {
             screen_rect: Rect::NOTHING,
             dragged: false,
@@ -25,6 +25,13 @@ impl WindowState {
             next_size: None,
             layer_id: None,
         }
+    }
+}
+
+impl WindowState {
+    /// create a default window state
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Set the position for this window in screen coordinates

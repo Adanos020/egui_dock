@@ -39,11 +39,9 @@ impl DropPosition {
             | DropPosition::Tab(surface, _, _) => *surface,
         }
     }
+
     pub(super) fn is_surface(&self) -> bool {
-        match self {
-            DropPosition::Surface(_) => true,
-            _ => false,
-        }
+        matches!(self, DropPosition::Surface(_))
     }
 }
 impl HoverData {
@@ -55,7 +53,7 @@ impl HoverData {
     //resolve a TabDestination for whatever is hovered
     pub(super) fn resolve(
         &mut self,
-        ui: &mut Ui,
+        ui: &Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
         is_window: bool,
@@ -79,7 +77,7 @@ impl HoverData {
 
     fn resolve_icon_based(
         &mut self,
-        ui: &mut Ui,
+        ui: &Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
         is_window: bool,
@@ -100,14 +98,8 @@ impl HoverData {
         let center = rect.center();
 
         if !is_window {
-            if button_ui(
-                Rect::from_center_size(center, Vec2::splat(shortest_side)),
-                ui,
-                &mut hovering_buttons,
-                pointer,
-                style,
-                None,
-            ) {
+            let rect = Rect::from_center_size(center, Vec2::splat(shortest_side));
+            if button_ui(rect, ui, &mut hovering_buttons, pointer, style, None) {
                 destination = Some(TabDestination::Append);
             }
         }
@@ -139,7 +131,7 @@ impl HoverData {
 
     fn resolve_traditional(
         &self,
-        ui: &mut Ui,
+        ui: &Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
     ) -> TabDestination {
@@ -275,7 +267,7 @@ impl HoverData {
         }
     }
 }
-fn draw_highlight_rect(rect: Rect, ui: &mut Ui, style: &Style) {
+fn draw_highlight_rect(rect: Rect, ui: &Ui, style: &Style) {
     ui.painter().rect(
         rect.expand(style.overlay.hovered_leaf_highlight.expansion),
         style.overlay.hovered_leaf_highlight.rounding,
@@ -287,7 +279,7 @@ fn draw_highlight_rect(rect: Rect, ui: &mut Ui, style: &Style) {
 //draws one of the Tab drop destination icons inside "rect", which one you get is specified by "is_top_bottom"
 fn button_ui(
     rect: Rect,
-    ui: &mut Ui,
+    ui: &Ui,
     lock: &mut bool,
     mouse_pos: Pos2,
     style: &Style,
@@ -348,7 +340,7 @@ const fn lerp_vec(split: Split, alpha: f32) -> Vec2 {
 
 //this only draws the rect describing where a tab will be dropped
 #[inline(always)]
-fn draw_drop_rect(rect: Rect, ui: &mut Ui, style: &Style) {
+fn draw_drop_rect(rect: Rect, ui: &Ui, style: &Style) {
     let id = Id::new("overlay");
     let layer_id = LayerId::new(Order::Foreground, id);
     let painter = ui.ctx().layer_painter(layer_id);

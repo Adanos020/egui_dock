@@ -17,12 +17,12 @@ use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree};
 /// This tree starts with a collection of surfaces, that then breaks down into nodes, and then into tabs.
 ///
 /// Indexing it will yield a [`Tree`](crate::Tree) which then contains nodes and tabs.
-
 pub struct DockState<Tab> {
     surfaces: Vec<Surface<Tab>>,
     //part of the tree which is in focus
     focused_surface: Option<SurfaceIndex>,
 }
+
 /// A surface is the highest level component in a [`DockState`]
 /// [`Surface`]s represent an area in which nodes are placed,
 ///  Typically you're only using one surface, which is the root surface,
@@ -38,14 +38,11 @@ pub enum Surface<Tab> {
     ///A windowed surface with a state
     Window(Tree<Tab>, WindowState),
 }
+
 impl<Tab> Surface<Tab> {
     ///Is this surface Empty? (in practice null)
     pub const fn is_empty(&self) -> bool {
-        if let Self::Empty = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, Self::Empty)
     }
 
     /// Get mutable access to the node tree of this surface
@@ -227,14 +224,12 @@ impl<Tab> DockState<Tab> {
         &mut self,
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
     ) {
-        if self.is_surface_valid(surface_index) {
-            if node_index.0 < self[surface_index].len() {
-                //i don't want this code to be evaluated until im absolutely sure the surface index is valid
-                if self[surface_index][node_index].is_leaf() {
-                    self.focused_surface = Some(surface_index);
-                    self[surface_index].set_focused_node(node_index);
-                    return;
-                }
+        if self.is_surface_valid(surface_index) && node_index.0 < self[surface_index].len() {
+            //i don't want this code to be evaluated until im absolutely sure the surface index is valid
+            if self[surface_index][node_index].is_leaf() {
+                self.focused_surface = Some(surface_index);
+                self[surface_index].set_focused_node(node_index);
+                return;
             }
         }
         self.focused_surface = None;

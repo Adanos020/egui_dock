@@ -69,11 +69,7 @@ pub enum TabDestination {
 impl TabDestination {
     ///is this tab destination a [`Window`](crate::TabDestination::Window)?
     pub fn is_window(&self) -> bool {
-        if let Self::Window(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, Self::Window(_))
     }
 }
 
@@ -342,7 +338,8 @@ impl<Tab> Tree<Tab> {
         {
             let index = self.tree.iter().rposition(|n| !n.is_empty()).unwrap_or(0);
             let level = NodeIndex(index).level();
-            self.tree.resize_with((1 << level + 1) - 1, || Node::Empty);
+            self.tree
+                .resize_with((1 << (level + 1)) - 1, || Node::Empty);
         }
 
         let index = match split {
@@ -355,7 +352,7 @@ impl<Tab> Tree<Tab> {
             let levels_to_move = NodeIndex(self.tree.len()).level() - index[0].level();
 
             //level 0 is ourself, which is done when we assign self[index[0]] = old, so start at 1.
-            for level in (1..levels_to_move).into_iter().rev() {
+            for level in (1..levels_to_move).rev() {
                 let old_start = parent.children_at(level).start;
                 let new_start = index[0].children_at(level).start;
                 let len = 1 << level;

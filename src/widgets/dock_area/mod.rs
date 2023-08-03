@@ -84,17 +84,19 @@ pub struct DockArea<'tree, Tab> {
 /// An enum expressing an entry in the `to_remove` field in [`DockArea`]
 #[derive(Debug, Clone, Copy)]
 enum TabRemoval {
-    Node((SurfaceIndex, NodeIndex, TabIndex)),
+    Node(SurfaceIndex, NodeIndex, TabIndex),
     Window(SurfaceIndex),
 }
-impl Into<TabRemoval> for SurfaceIndex {
-    fn into(self) -> TabRemoval {
-        TabRemoval::Window(self)
+
+impl From<SurfaceIndex> for TabRemoval {
+    fn from(index: SurfaceIndex) -> Self {
+        TabRemoval::Window(index)
     }
 }
-impl Into<TabRemoval> for (SurfaceIndex, NodeIndex, TabIndex) {
-    fn into(self) -> TabRemoval {
-        TabRemoval::Node(self)
+
+impl From<(SurfaceIndex, NodeIndex, TabIndex)> for TabRemoval {
+    fn from((si, ni, ti): (SurfaceIndex, NodeIndex, TabIndex)) -> TabRemoval {
+        TabRemoval::Node(si, ni, ti)
     }
 }
 
@@ -271,7 +273,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         for index in self.to_remove.into_iter().rev() {
             match index {
-                TabRemoval::Node((surface, node, tab)) => {
+                TabRemoval::Node(surface, node, tab) => {
                     self.tree[surface].remove_tab((node, tab));
                     if self.tree[surface].is_empty() && surface != SurfaceIndex::root() {
                         self.tree.remove_surface(surface);
@@ -321,15 +323,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             let allowed_to_move = {
                                 if !tab_dst.is_window() {
                                     true
+                                } else if let Node::Leaf { tabs, .. } =
+                                    &mut self.tree[src_surf][src_node]
+                                {
+                                    tab_viewer.allow_in_windows(&mut tabs[src_tab.0])
                                 } else {
-                                    if let Node::Leaf { tabs, .. } =
-                                        &mut self.tree[src_surf][src_node]
-                                    {
-                                        tab_viewer.allow_in_windows(&mut tabs[src_tab.0])
-                                    } else {
-                                        //we've already run ``is_leaf()`` on this node.
-                                        unreachable!()
-                                    }
+                                    //we've already run `is_leaf()` on this node.
+                                    unreachable!()
                                 }
                             };
                             if allowed_to_move {
@@ -542,7 +542,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
     fn compute_rect_sizes(
         &mut self,
-        ui: &mut Ui,
+        ui: &Ui,
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         max_rect: Rect,
     ) {
@@ -834,6 +834,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tabbar_response
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn tabs(
         &mut self,
         tabs_ui: &mut Ui,
@@ -841,7 +842,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         tabbar_outer_rect: Rect,
-        prefered_width: Option<f32>,
+        preferred_width: Option<f32>,
         fade: Option<&Style>,
     ) {
         assert!(self.tree[surface_index][node_index].is_leaf());
@@ -901,7 +902,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             is_active && Some((surface_index, node_index)) == focused,
                             is_active,
                             is_being_dragged,
-                            prefered_width,
+                            preferred_width,
                             show_close_button,
                             fade,
                         )
@@ -934,7 +935,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     is_active && Some((surface_index, node_index)) == focused,
                     is_active,
                     is_being_dragged,
-                    prefered_width,
+                    preferred_width,
                     show_close_button,
                     fade,
                 );
@@ -1344,10 +1345,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         *scroll = scroll.clamp(-overflow, 0.0);
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn tab_body(
         &mut self,
         ui: &mut Ui,
-        state: &mut State,
+        state: &State,
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         spacing: Vec2,
