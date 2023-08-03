@@ -32,6 +32,6 @@ Once that's done, you can start using `egui_dock` – more details on that can b
 ![demo](images/demo.gif "Demo")
 
 ## Alternatives
-### [egui_ties](https://https://github.com/rerun-io/egui_tiles) 
+### [egui_tiles](https://https://github.com/rerun-io/egui_tiles) 
 > [!NOTE]
 > egui_tiles is not as mature as egui_docks check the [comparision](https://github.com/rerun-io/egui_tiles#comparison-with-egui_dock)
