@@ -170,6 +170,7 @@ pub struct TabBodyStyle {
 /// Specifies the look and feel of the tab drop overlay.
 #[derive(Clone, Debug)]
 pub struct OverlayStyle {
+    
     /// Units of padding between each button
     pub button_padding: f32,
 
@@ -190,6 +191,12 @@ pub struct OverlayStyle {
 
     /// The amount of time windows should stay faded despite not needing to, prevents quick mouse movements from causing flashing.
     pub fade_hold_time: f32,
+    
+    /// The color of the overlay buttons
+    pub button_color: Color32,
+
+    /// The stroke of the button border 
+    pub button_border_stroke: Stroke,
 }
 
 /// Highlighting on the currently hovered lead
@@ -320,6 +327,8 @@ impl Default for OverlayStyle {
             surface_fade_opacity: 0.1,
             fade_hold_time: 0.2,
             hovered_leaf_highlight: Default::default(),
+            button_color: Color32::from_gray(140),
+            button_border_stroke: Stroke::new(1.0, Color32::from_gray(60)),
         }
     }
 }

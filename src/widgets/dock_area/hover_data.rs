@@ -285,19 +285,20 @@ fn button_ui(
     style: &Style,
     split: Option<Split>,
 ) -> bool {
-    let visuals = ui.style().visuals.widgets.noninteractive;
+    let visuals = &style.overlay;
+    let button_stroke = Stroke::new(1.0, visuals.button_color);
     let painter = ui.painter();
-    painter.rect_stroke(rect, 0.0, visuals.bg_stroke);
+    painter.rect_stroke(rect, 0.0, visuals.button_border_stroke);
     let rect = rect.shrink(10.0);
-    painter.rect_stroke(rect, 0.0, visuals.fg_stroke);
+    painter.rect_stroke(rect, 0.0, button_stroke);
     let rim = { Rect::from_two_pos(rect.min, rect.lerp_inside(vec2(1.0, 0.1))) };
-    painter.rect(rim, 0.0, visuals.fg_stroke.color, Stroke::NONE);
+    painter.rect(rim, 0.0, visuals.button_color, Stroke::NONE);
 
     if let Some(split) = split {
         for line in DASHED_LINE_ALPHAS.chunks(2) {
             let start = rect.lerp_inside(lerp_vec(split, line[0]));
             let end = rect.lerp_inside(lerp_vec(split, line[1]));
-            painter.line_segment([start, end], visuals.fg_stroke);
+            painter.line_segment([start, end], button_stroke);
         }
     }
     let over = rect
