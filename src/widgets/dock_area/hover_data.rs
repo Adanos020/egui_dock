@@ -17,12 +17,14 @@ pub(super) struct HoverData {
     ///is some when the pointer is over rect, instant holds when the lock was last active
     pub locked: Option<Instant>,
 }
+
 #[derive(Debug, Clone)]
 pub(super) enum DropPosition {
     Surface(SurfaceIndex),
     Node(SurfaceIndex, NodeIndex),
     Tab(SurfaceIndex, NodeIndex, TabIndex),
 }
+
 impl DropPosition {
     pub(super) fn break_down(&self) -> (SurfaceIndex, Option<NodeIndex>) {
         match self {
@@ -32,6 +34,7 @@ impl DropPosition {
             DropPosition::Tab(surface, node, _) => (*surface, Some(*node)),
         }
     }
+
     pub(super) fn surface_index(&self) -> SurfaceIndex {
         match self {
             DropPosition::Surface(surface)
@@ -44,6 +47,7 @@ impl DropPosition {
         matches!(self, DropPosition::Surface(_))
     }
 }
+
 impl HoverData {
     //determines if the hoverdata implies we're hovering over a tab or the tab title bar
     pub(super) fn is_on_title_bar(&self) -> bool {
@@ -224,6 +228,7 @@ impl HoverData {
 
         tab_dst
     }
+
     fn update_lock(
         &mut self,
         on_node_rect: bool,
@@ -255,6 +260,7 @@ impl HoverData {
             }
         }
     }
+
     pub(super) fn is_locked(&self, style: &Style, ctx: &Context) -> bool {
         if let Some(lock_time) = &self.locked {
             let elapsed = lock_time.elapsed().as_secs_f32();
@@ -267,6 +273,7 @@ impl HoverData {
         }
     }
 }
+
 fn draw_highlight_rect(rect: Rect, ui: &Ui, style: &Style) {
     ui.painter().rect(
         rect.expand(style.overlay.hovered_leaf_highlight.expansion),
@@ -289,7 +296,7 @@ fn button_ui(
     let button_stroke = Stroke::new(1.0, visuals.button_color);
     let painter = ui.painter();
     painter.rect_stroke(rect, 0.0, visuals.button_border_stroke);
-    let rect = rect.shrink(10.0);
+    let rect = rect.shrink(rect.width() * 0.1);
     painter.rect_stroke(rect, 0.0, button_stroke);
     let rim = { Rect::from_two_pos(rect.min, rect.lerp_inside(vec2(1.0, 0.1))) };
     painter.rect(rim, 0.0, visuals.button_color, Stroke::NONE);
