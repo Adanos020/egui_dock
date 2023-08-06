@@ -72,7 +72,7 @@ pub trait TabViewer {
     /// Specifies a tabs ability to be shown in a window
     ///
     /// return ``false`` if you don't want this tab to be dragged into or be turned into a window.
-    fn allow_in_windows(&self, _tab: &mut Self::Tab) -> bool {
+    fn allowed_in_windows(&self, _tab: &mut Self::Tab) -> bool {
         true
     }
 

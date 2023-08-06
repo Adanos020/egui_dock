@@ -154,69 +154,43 @@ impl HoverData {
 
         let center = rect.center();
 
-        let pts = match allowed_splits {
-            AllowedSplits::All => vec![
-                (
-                    center.distance(pointer),
-                    TabDestination::Append,
-                    Rect::EVERYTHING,
-                ),
-                (
-                    rect.left_center().distance(pointer),
-                    TabDestination::Split(Split::Left),
-                    Rect::everything_left_of(center.x),
-                ),
-                (
-                    rect.right_center().distance(pointer),
-                    TabDestination::Split(Split::Right),
-                    Rect::everything_right_of(center.x),
-                ),
-                (
-                    rect.center_top().distance(pointer),
-                    TabDestination::Split(Split::Above),
-                    Rect::everything_above(center.y),
-                ),
-                (
-                    rect.center_bottom().distance(pointer),
-                    TabDestination::Split(Split::Below),
-                    Rect::everything_below(center.y),
-                ),
-            ],
-            AllowedSplits::LeftRightOnly => vec![
-                (
-                    center.distance(pointer),
-                    TabDestination::Append,
-                    Rect::EVERYTHING,
-                ),
-                (
-                    rect.left_center().distance(pointer),
-                    TabDestination::Split(Split::Left),
-                    Rect::everything_left_of(center.x),
-                ),
-                (
-                    rect.right_center().distance(pointer),
-                    TabDestination::Split(Split::Right),
-                    Rect::everything_right_of(center.x),
-                ),
-            ],
-            AllowedSplits::TopBottomOnly => vec![
-                (
-                    rect.center_top().distance(pointer),
-                    TabDestination::Split(Split::Above),
-                    Rect::everything_above(center.y),
-                ),
-                (
-                    rect.center_bottom().distance(pointer),
-                    TabDestination::Split(Split::Below),
-                    Rect::everything_below(center.y),
-                ),
-            ],
-            AllowedSplits::None => vec![(
-                center.distance(pointer),
-                TabDestination::Append,
-                Rect::EVERYTHING,
-            )],
-        };
+        let mut pts = vec![(
+            center.distance(pointer),
+            TabDestination::Append,
+            Rect::EVERYTHING,
+        )];
+
+        if matches!(
+            allowed_splits,
+            AllowedSplits::All | AllowedSplits::LeftRightOnly
+        ) {
+            pts.push((
+                rect.left_center().distance(pointer),
+                TabDestination::Split(Split::Left),
+                Rect::everything_left_of(center.x),
+            ));
+            pts.push((
+                rect.right_center().distance(pointer),
+                TabDestination::Split(Split::Right),
+                Rect::everything_right_of(center.x),
+            ))
+        }
+
+        if matches!(
+            allowed_splits,
+            AllowedSplits::All | AllowedSplits::TopBottomOnly
+        ) {
+            pts.push((
+                rect.center_top().distance(pointer),
+                TabDestination::Split(Split::Above),
+                Rect::everything_above(center.y),
+            ));
+            pts.push((
+                rect.center_bottom().distance(pointer),
+                TabDestination::Split(Split::Below),
+                Rect::everything_below(center.y),
+            ));
+        }
 
         let (_, tab_dst, overlay) = pts
             .into_iter()
@@ -236,40 +210,39 @@ impl HoverData {
         style: &Style,
         ctx: &Context,
     ) {
-        if on_node_rect && self.locked.is_none() {
-            self.locked = Some(Instant::now());
-        } else {
-            let keep_lock = if let Some(lock_time) = &mut self.locked {
+        match self.locked.as_mut() {
+            Some(lock_time) => {
                 if continue_locking {
                     *lock_time = Instant::now();
                 }
-                let window_hold = {
-                    if self.dst.surface_index() != SurfaceIndex::root() {
-                        ctx.request_repaint();
-                        self.is_locked(style, ctx)
-                    } else {
-                        false
-                    }
+                let window_hold = if !self.dst.surface_index().is_root() {
+                    ctx.request_repaint();
+                    self.is_locked(style, ctx)
+                } else {
+                    false
                 };
-                on_node_rect || window_hold
-            } else {
-                true
-            };
-            if !keep_lock {
-                self.locked = None;
+                if !on_node_rect && !window_hold {
+                    self.locked = None;
+                }
+            }
+            None => {
+                if on_node_rect {
+                    self.locked = Some(Instant::now());
+                }
             }
         }
     }
 
     pub(super) fn is_locked(&self, style: &Style, ctx: &Context) -> bool {
-        if let Some(lock_time) = &self.locked {
-            let elapsed = lock_time.elapsed().as_secs_f32();
-            ctx.request_repaint_after(Duration::from_secs_f32(
-                (style.overlay.max_preference_time - elapsed).max(0.0),
-            ));
-            elapsed < style.overlay.max_preference_time
-        } else {
-            false
+        match self.locked.as_ref() {
+            Some(lock_time) => {
+                let elapsed = lock_time.elapsed().as_secs_f32();
+                ctx.request_repaint_after(Duration::from_secs_f32(
+                    (style.overlay.max_preference_time - elapsed).max(0.0),
+                ));
+                elapsed < style.overlay.max_preference_time
+            }
+            None => false,
         }
     }
 }

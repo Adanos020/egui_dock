@@ -9,10 +9,17 @@ impl From<usize> for SurfaceIndex {
         SurfaceIndex(index)
     }
 }
+
 impl SurfaceIndex {
     /// Returns the index of the root surface.
     #[inline(always)]
     pub const fn root() -> Self {
         Self(0)
+    }
+
+    /// Returns the index of the root surface.
+    #[inline(always)]
+    pub const fn is_root(self) -> bool {
+        self.0 == Self::root().0
     }
 }

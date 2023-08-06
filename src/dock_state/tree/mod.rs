@@ -67,7 +67,7 @@ pub enum TabDestination {
 }
 
 impl TabDestination {
-    ///is this tab destination a [`Window`](crate::TabDestination::Window)?
+    /// Returns if this tab destination is a [`Window`](TabDestination::Window).
     pub fn is_window(&self) -> bool {
         matches!(self, Self::Window(_))
     }
@@ -75,12 +75,12 @@ impl TabDestination {
 
 // ----------------------------------------------------------------------------
 
-/// enum which specifies the location of a tab on the tree, used when moving tabs.
+/// Specifies the location of a tab on the tree, used when moving tabs.
 pub(crate) enum DragSource {
-    ///a tab on a surface
+    /// A tab on a surface
     Node(SurfaceIndex, NodeIndex, TabIndex),
 
-    ///A window (NOT USED)
+    /// A window (NOT USED)
     Window(SurfaceIndex),
 }
 

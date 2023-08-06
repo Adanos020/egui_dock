@@ -47,7 +47,7 @@ impl egui_dock::TabViewer for TabViewer {
         (&tab.title).into()
     }
 
-    fn allow_in_windows(&self, tab: &mut Self::Tab) -> bool {
+    fn allowed_in_windows(&self, tab: &mut Self::Tab) -> bool {
         match tab.can_become_window {
             Ok(opinion) | Err(opinion) => opinion,
         }

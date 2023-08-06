@@ -8,7 +8,7 @@ pub mod window_state;
 pub use surface_index::SurfaceIndex;
 pub use window_state::WindowState;
 
-use egui::Rect;
+use egui::{Pos2, Rect};
 
 use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree};
 
@@ -63,6 +63,7 @@ impl<Tab> Surface<Tab> {
         }
     }
 }
+
 impl<Tab> std::ops::Index<SurfaceIndex> for DockState<Tab> {
     type Output = Tree<Tab>;
 
@@ -90,17 +91,17 @@ impl<Tab> std::ops::IndexMut<SurfaceIndex> for DockState<Tab> {
 }
 
 impl<Tab> DockState<Tab> {
-    ///Access to the root node tree
+    /// Access to the root node tree.
     pub fn root(&self) -> &Tree<Tab> {
         &self[SurfaceIndex::root()]
     }
 
-    ///Access to the root node tree
+    /// Access to the root node tree.
     pub fn root_mut(&mut self) -> &mut Tree<Tab> {
         &mut self[SurfaceIndex::root()]
     }
 
-    ///Create a new tree with these tabs at the root
+    /// Create a new tree with these tabs at the root.
     pub fn new(tabs: Vec<Tab>) -> Self {
         Self {
             surfaces: vec![Surface::Root(Tree::new(tabs))],
@@ -110,12 +111,11 @@ impl<Tab> DockState<Tab> {
 
     /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`]
     ///
-    /// Returns None if the surface is an [`Empty`](crate::Surface::Empty), [`Root`](crate::Surface::Root), or doesn't exist.
+    /// Returns None if the surface is an [`Empty`](Surface::Empty), [`Root`](Surface::Root), or doesn't exist.
     pub fn get_window_state_mut(&mut self, surface: SurfaceIndex) -> Option<&mut WindowState> {
-        if let Surface::Window(_, state) = &mut self.surfaces[surface.0] {
-            Some(state)
-        } else {
-            None
+        match &mut self.surfaces[surface.0] {
+            Surface::Window(_, state) => Some(state),
+            _ => None,
         }
     }
 
@@ -146,8 +146,7 @@ impl<Tab> DockState<Tab> {
             .map_or(false, |surface| !surface.is_empty())
     }
 
-    /// Returns an [`Iterator`](std::iter::Iterator) of all valid [`SurfaceIndex`]es.
-
+    /// Returns an [`Iterator`] of all valid [`SurfaceIndex`]es.
     #[inline]
     pub(crate) fn surface_index_iter(&self) -> impl Iterator<Item = SurfaceIndex> {
         //the collection and "re-itering" may seem odd here, but it is justified since the FilterMap uses &self.
@@ -163,34 +162,31 @@ impl<Tab> DockState<Tab> {
     }
 
     /// Remove a surface based on it's [`SurfaceIndex`], returning it if it existed, otherwise returning `None`.
-    /// # Panics
-    /// Panics if you try to remove the root surface ( surface index 0 )
     ///
+    /// # Panics
+    /// Panics if you try to remove the root surface (surface index 0)
     pub fn remove_surface(&mut self, surface_index: SurfaceIndex) -> Option<Surface<Tab>> {
-        assert_ne!(surface_index, SurfaceIndex::root());
-        if surface_index.0 < self.surfaces.len() {
+        assert!(!surface_index.is_root());
+        (surface_index.0 < self.surfaces.len()).then(|| {
             self.focused_surface = Some(SurfaceIndex::root());
-            let surface = {
-                if surface_index.0 == self.surfaces.len() - 1 {
-                    self.surfaces.pop()?
-                } else {
-                    std::mem::replace(self.surfaces.get_mut(surface_index.0)?, Surface::Empty)
-                }
-            };
-            Some(surface)
-        } else {
-            None
-        }
+            if surface_index.0 == self.surfaces.len() - 1 {
+                self.surfaces.pop().unwrap()
+            } else {
+                let dest = &mut self.surfaces[surface_index.0];
+                std::mem::replace(dest, Surface::Empty)
+            }
+        })
     }
 
     /// Sets the currently focused leaf to `node_index` on the root surface if the node at `node_index` is a leaf.
     #[inline]
     pub fn root_set_focused_node(&mut self, node_index: NodeIndex) {
-        if let Some(Node::Leaf { .. }) = self[SurfaceIndex::root()].tree.get(node_index.0) {
-            self.focused_surface = Some(SurfaceIndex::root());
-            self[SurfaceIndex::root()].set_focused_node(node_index);
-        } else {
-            self.focused_surface = None;
+        match self[SurfaceIndex::root()].tree.get(node_index.0) {
+            Some(Node::Leaf { .. }) => {
+                self.focused_surface = Some(SurfaceIndex::root());
+                self[SurfaceIndex::root()].set_focused_node(node_index);
+            }
+            _ => self.focused_surface = None,
         }
     }
 
@@ -311,6 +307,7 @@ impl<Tab> DockState<Tab> {
     ) -> [NodeIndex; 2] {
         self[SurfaceIndex::root()].split_below(parent, fraction, tabs)
     }
+
     /// Moves a tab from a node to another node, you specify how the tab should
     /// be moved with [`TabDestination`].
     pub fn move_tab(
@@ -328,7 +325,6 @@ impl<Tab> DockState<Tab> {
 
         // Call `Node::remove_tab` to avoid auto remove of the node by
         // `Tree::remove_tab` from Tree.
-
         let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
 
         match dst_tab {
@@ -336,23 +332,7 @@ impl<Tab> DockState<Tab> {
                 self[dst_surface].split(dst_node, split, 0.5, Node::leaf(tab));
             }
             TabDestination::Window(position) => {
-                let surface_index = self.add_window(vec![tab]);
-
-                let rect = {
-                    match self[src_surface][src_node] {
-                        Node::Empty => panic!(),
-                        Node::Leaf { rect, .. } => rect,
-                        Node::Vertical { rect, .. } => rect,
-                        Node::Horizontal { rect, .. } => rect,
-                    }
-                };
-
-                let state = self.get_window_state_mut(surface_index).unwrap();
-                if src_surface == SurfaceIndex::root() {
-                    state.set_size(rect.size() * 0.8);
-                }
-
-                state.set_position(position);
+                self.detach_tab(tab, src_surface, src_node, position);
             }
             TabDestination::Insert(index) => self[dst_surface][dst_node].insert_tab(index, tab),
             TabDestination::Append => self[dst_surface][dst_node].append_tab(tab),
@@ -362,9 +342,39 @@ impl<Tab> DockState<Tab> {
             self[src_surface].remove_leaf(src_node);
         }
 
-        if self[src_surface].is_empty() && src_surface != SurfaceIndex::root() {
+        if self[src_surface].is_empty() && !src_surface.is_root() {
             self.remove_surface(src_surface);
         }
+    }
+
+    /// Takes a tab out of its current surface and puts it in a new window.
+    /// Returns the surface index of the new window.
+    pub fn detach_tab(
+        &mut self,
+        tab: Tab,
+        src_surface: SurfaceIndex,
+        src_node: NodeIndex,
+        window_pos: Pos2,
+    ) -> SurfaceIndex {
+        let surface_index = self.add_window(vec![tab]);
+
+        let rect = {
+            match self[src_surface][src_node] {
+                Node::Leaf { rect, .. }
+                | Node::Vertical { rect, .. }
+                | Node::Horizontal { rect, .. } => rect,
+                Node::Empty => unreachable!(),
+            }
+        };
+
+        let state = self.get_window_state_mut(surface_index).unwrap();
+        if src_surface.is_root() {
+            state.set_size(rect.size() * 0.8);
+        }
+
+        state.set_position(window_pos);
+
+        surface_index
     }
 
     /// Currently focused leaf.
@@ -419,7 +429,7 @@ impl<Tab> DockState<Tab> {
         index
     }
 
-    ///Finds the first empty surface index which may be used.
+    /// Finds the first empty surface index which may be used.
     ///
     /// WARNING!: in cases where one isn't found, ``SurfaceIndex(self.surfaces.len())`` is used.
     /// therefore it's not inherently safe to index the [`DockState`] with this index, as it may panic.
