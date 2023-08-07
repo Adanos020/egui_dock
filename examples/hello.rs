@@ -9,8 +9,8 @@ use egui::{
 };
 
 use egui_dock::{
-    AllowedSplits, DockArea, DockState, Node, NodeIndex, Style, SurfaceIndex, TabInteractionStyle,
-    TabViewer,
+    AllowedSplits, DockArea, DockState, Node, NodeIndex, OverlayType, Style, SurfaceIndex,
+    TabInteractionStyle, TabViewer,
 };
 
 fn main() -> eframe::Result<()> {
@@ -336,6 +336,26 @@ impl MyContext {
                 color_edit_button_srgba(ui, &mut style.tab.tab_body.bg_fill, Alpha::OnlyBlend);
                 ui.end_row();
             });
+        });
+        ui.collapsing("Overlay", |ui| {
+            let selected_text = match style.overlay.overlay_type {
+                OverlayType::HighlightedAreas => "Highlighted Areas",
+                OverlayType::Widgets => "Widgets",
+            };
+            egui::ComboBox::new("overlay styles", "Overlay Style")
+                .selected_text(selected_text)
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(
+                        &mut style.overlay.overlay_type,
+                        OverlayType::HighlightedAreas,
+                        "Highlighted Areas",
+                    );
+                    ui.selectable_value(
+                        &mut style.overlay.overlay_type,
+                        OverlayType::Widgets,
+                        "Widgets",
+                    );
+                });
         });
     }
 }

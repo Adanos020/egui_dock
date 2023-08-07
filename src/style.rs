@@ -170,12 +170,14 @@ pub struct TabBodyStyle {
 /// Specifies the look and feel of the tab drop overlay.
 #[derive(Clone, Debug)]
 pub struct OverlayStyle {
-    
     /// Units of padding between each button
     pub button_padding: f32,
 
     /// Units which the buttons interact area will be expanded by
     pub interact_expansion: f32,
+
+    /// Max distance that the pointer can be from a drop point before it's deemed unsuitable (used only by the traditional overlay)
+    pub max_relevancy_distance: f32,
 
     /// Max side length of a button on the overlay
     pub max_button_size: f32,
@@ -183,7 +185,9 @@ pub struct OverlayStyle {
     /// Amount of time the overlay waits before dropping a preference it may have for a node
     pub max_preference_time: f32,
 
-    /// Style of the additional highlighting rectangle drawn on the surface which you're attempting to drop a tab in
+    /// Style of the additional highlighting rectangle drawn on the surface which you're attempting to drop a tab in.
+    ///
+    /// By default this value shows no highlighting.
     pub hovered_leaf_highlight: LeafHighlighting,
 
     /// Opacity which surfaces will fade to in a range of ``0.0..=1.0``
@@ -191,12 +195,35 @@ pub struct OverlayStyle {
 
     /// The amount of time windows should stay faded despite not needing to, prevents quick mouse movements from causing flashing.
     pub fade_hold_time: f32,
-    
+
     /// The color of the overlay buttons
     pub button_color: Color32,
 
-    /// The stroke of the button border 
+    /// The stroke of the button border
     pub button_border_stroke: Stroke,
+
+    /// The type of overlay used
+    pub overlay_type: OverlayType,
+
+    /// range is ``0.0..=1.0``
+    pub window_drop_coverage: f32,
+
+    /// range is ``0.0..=1.0``
+    pub center_drop_coverage: f32,
+}
+
+/// Specifies the type of overlay used.
+#[derive(Clone, Debug, PartialEq)]
+pub enum OverlayType {
+    /// Shows highlighted areas predicting where a dropped tab would land were it to be dropped this frame
+    ///
+    /// Always used when hovering over tabs and tab head
+    HighlightedAreas,
+
+    /// Shows icons indicating the possible drop poisitions which the user may hover over to drop a tab at that given location.
+    ///
+    /// This is the default type of overlay for leaves.
+    Widgets,
 }
 
 /// Highlighting on the currently hovered lead
@@ -320,6 +347,7 @@ impl Default for TabBodyStyle {
 impl Default for OverlayStyle {
     fn default() -> Self {
         Self {
+            max_relevancy_distance: 400.0,
             button_padding: 10.0,
             interact_expansion: 20.0,
             max_button_size: 100.0,
@@ -329,6 +357,9 @@ impl Default for OverlayStyle {
             hovered_leaf_highlight: Default::default(),
             button_color: Color32::from_gray(140),
             button_border_stroke: Stroke::new(1.0, Color32::from_gray(60)),
+            overlay_type: OverlayType::Widgets,
+            window_drop_coverage: 0.5,
+            center_drop_coverage: 0.25,
         }
     }
 }

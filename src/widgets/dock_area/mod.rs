@@ -252,7 +252,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
         let style = self.style.as_ref().unwrap();
         let fade_surface =
-            self.faded_window_surface(&mut state, style.overlay.fade_hold_time, ui.ctx());
+            self.hovered_window_surface(&mut state, style.overlay.fade_hold_time, ui.ctx());
         let fade_style = {
             fade_surface.is_some().then(|| {
                 let mut fade_style = style.clone();
@@ -288,14 +288,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         for (surface_index, node_index, tab_index) in self.to_detach.drain(..).rev() {
-            let tab = self.dock_state[surface_index][node_index]
-                .remove_tab(tab_index)
-                .expect("Invalid detached tab index");
             let mouse_pos = ui.input(|input| input.pointer.hover_pos());
-            let new_surface = self.dock_state.detach_tab(
-                tab,
+            let _new_surface = self.dock_state.detach_tab(
                 surface_index,
                 node_index,
+                tab_index,
                 mouse_pos.unwrap_or(Pos2::ZERO),
             );
         }
@@ -1538,7 +1535,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
     /// Returns some when windows are fading, and what surface index is being hovered over
     #[inline(always)]
-    fn faded_window_surface(
+    fn hovered_window_surface(
         &self,
         state: &mut State,
         hold_time: f32,

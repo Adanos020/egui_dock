@@ -323,39 +323,47 @@ impl<Tab> DockState<Tab> {
             return;
         }
 
-        // Call `Node::remove_tab` to avoid auto remove of the node by
-        // `Tree::remove_tab` from Tree.
-        let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
-
         match dst_tab {
-            TabDestination::Split(split) => {
-                self[dst_surface].split(dst_node, split, 0.5, Node::leaf(tab));
-            }
             TabDestination::Window(position) => {
-                self.detach_tab(tab, src_surface, src_node, position);
+                self.detach_tab(src_surface, src_node, src_tab, position);
             }
-            TabDestination::Insert(index) => self[dst_surface][dst_node].insert_tab(index, tab),
-            TabDestination::Append => self[dst_surface][dst_node].append_tab(tab),
+            _ => {
+                // Call `Node::remove_tab` to avoid auto remove of the node by
+                // `Tree::remove_tab` from Tree.
+                let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
+                match dst_tab {
+                    TabDestination::Split(split) => {
+                        self[dst_surface].split(dst_node, split, 0.5, Node::leaf(tab));
+                    }
+
+                    TabDestination::Insert(index) => {
+                        self[dst_surface][dst_node].insert_tab(index, tab)
+                    }
+                    TabDestination::Append => self[dst_surface][dst_node].append_tab(tab),
+                    _ => (),
+                }
+                if self[src_surface][src_node].is_leaf()
+                    && self[src_surface][src_node].tabs_count() == 0
+                {
+                    self[src_surface].remove_leaf(src_node);
+                }
+                if self[src_surface].is_empty() && !src_surface.is_root() {
+                    self.remove_surface(src_surface);
+                }
+            }
         };
-
-        if self[src_surface][src_node].is_leaf() && self[src_surface][src_node].tabs_count() == 0 {
-            self[src_surface].remove_leaf(src_node);
-        }
-
-        if self[src_surface].is_empty() && !src_surface.is_root() {
-            self.remove_surface(src_surface);
-        }
     }
 
     /// Takes a tab out of its current surface and puts it in a new window.
     /// Returns the surface index of the new window.
     pub fn detach_tab(
         &mut self,
-        tab: Tab,
         src_surface: SurfaceIndex,
         src_node: NodeIndex,
+        src_tab: TabIndex,
         window_pos: Pos2,
     ) -> SurfaceIndex {
+        let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
         let surface_index = self.add_window(vec![tab]);
 
         let rect = {
@@ -373,7 +381,12 @@ impl<Tab> DockState<Tab> {
         }
 
         state.set_position(window_pos);
-
+        if self[src_surface][src_node].is_leaf() && self[src_surface][src_node].tabs_count() == 0 {
+            self[src_surface].remove_leaf(src_node);
+        }
+        if self[src_surface].is_empty() && !src_surface.is_root() {
+            self.remove_surface(src_surface);
+        }
         surface_index
     }
 

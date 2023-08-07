@@ -3,19 +3,18 @@ use egui::{LayerId, Pos2, Rect, Vec2};
 /// The state for a [`Window`](crate::Surface::Window) surface.
 #[derive(Debug, Clone)]
 pub struct WindowState {
-
     /// The rect which this window last was taking up
     pub screen_rect: Rect,
-    
+
     /// Was this window dragged last frame?
     pub dragged: bool,
-    
+
     /// The next position this window should be set to next frame
     pub next_position: Option<Pos2>,
-    
+
     /// The next size this window should be set to next frame
     pub next_size: Option<Vec2>,
-    
+
     /// The layer id of this window
     pub layer_id: Option<LayerId>,
 }

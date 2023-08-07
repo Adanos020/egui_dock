@@ -3,8 +3,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex};
-use egui::{vec2, Context, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
+use crate::{
+    AllowedSplits, NodeIndex, OverlayType, Split, Style, SurfaceIndex, TabDestination, TabIndex,
+};
+use egui::{emath::inverse_lerp, vec2, Context, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
 
 #[derive(Debug, Clone)]
 pub(super) struct HoverData {
@@ -72,7 +74,7 @@ impl HoverData {
             self.pointer = pointer;
         }
 
-        if self.is_on_title_bar() {
+        if self.is_on_title_bar() || style.overlay.overlay_type == OverlayType::HighlightedAreas {
             self.resolve_traditional(ui, style, allowed_splits)
         } else {
             self.resolve_icon_based(ui, style, allowed_splits, is_window)
@@ -148,54 +150,65 @@ impl HoverData {
                 DropPosition::Tab(_, _, tab_index) => TabDestination::Insert(tab_index),
             };
         }
-        //technically this code is unreachable
-        //but i don't want to remove it in case we want a setting to enable/disable icon based drops
         let (rect, pointer) = (self.rect, self.pointer);
 
         let center = rect.center();
 
-        let mut pts = vec![(
-            center.distance(pointer),
-            TabDestination::Append,
-            Rect::EVERYTHING,
-        )];
-
-        if matches!(
-            allowed_splits,
-            AllowedSplits::All | AllowedSplits::LeftRightOnly
-        ) {
-            pts.push((
-                rect.left_center().distance(pointer),
-                TabDestination::Split(Split::Left),
-                Rect::everything_left_of(center.x),
-            ));
-            pts.push((
-                rect.right_center().distance(pointer),
-                TabDestination::Split(Split::Right),
-                Rect::everything_right_of(center.x),
-            ))
-        }
-
-        if matches!(
-            allowed_splits,
-            AllowedSplits::All | AllowedSplits::TopBottomOnly
-        ) {
-            pts.push((
-                rect.center_top().distance(pointer),
-                TabDestination::Split(Split::Above),
-                Rect::everything_above(center.y),
-            ));
-            pts.push((
-                rect.center_bottom().distance(pointer),
-                TabDestination::Split(Split::Below),
-                Rect::everything_below(center.y),
-            ));
-        }
-
-        let (_, tab_dst, overlay) = pts
-            .into_iter()
-            .min_by(|(lhs, ..), (rhs, ..)| lhs.total_cmp(rhs))
-            .unwrap();
+        let (tab_dst, overlay) = {
+            // a reverse lerp of the pointers position relative to the hovered leaf rect.
+            // range is (-0.5, -0.5) to (0.5, 0.5)
+            let a_pos = (Pos2::new(
+                inverse_lerp(rect.x_range(), pointer.x).unwrap(),
+                inverse_lerp(rect.y_range(), pointer.y).unwrap(),
+            ) - Pos2::new(0.5, 0.5))
+            .to_pos2();
+            if Rect::from_center_size(
+                Pos2::default(),
+                Vec2::splat(style.overlay.center_drop_coverage),
+            )
+            .contains(a_pos)
+            {
+                (TabDestination::Append, Rect::EVERYTHING)
+            } else if Rect::from_center_size(
+                Pos2::default(),
+                Vec2::splat(style.overlay.window_drop_coverage),
+            )
+            .contains(a_pos)
+            {
+                (TabDestination::Window(pointer), Rect::NOTHING)
+            } else {
+                //assessing if were above/below the two linear functions x-y=0 and -x-y=0 determines
+                //what "diagonal" quadrant were in.
+                let a_pos = match allowed_splits {
+                    AllowedSplits::All => a_pos,
+                    AllowedSplits::LeftRightOnly => Pos2::new(a_pos.x, 0.0),
+                    AllowedSplits::TopBottomOnly => Pos2::new(0.0, a_pos.y),
+                    AllowedSplits::None => Pos2::default(),
+                };
+                if a_pos == Pos2::default() {
+                    (TabDestination::Append, Rect::EVERYTHING)
+                } else {
+                    match ((a_pos.x - a_pos.y > 0.), (-a_pos.x - a_pos.y > 0.)) {
+                        (true, true) => (
+                            TabDestination::Split(Split::Above),
+                            Rect::everything_above(center.y),
+                        ),
+                        (false, true) => (
+                            TabDestination::Split(Split::Left),
+                            Rect::everything_left_of(center.x),
+                        ),
+                        (true, false) => (
+                            TabDestination::Split(Split::Right),
+                            Rect::everything_right_of(center.x),
+                        ),
+                        (false, false) => (
+                            TabDestination::Split(Split::Below),
+                            Rect::everything_below(center.y),
+                        ),
+                    }
+                }
+            }
+        };
 
         let overlay = rect.intersect(overlay);
         draw_drop_rect(overlay, ui, style);
