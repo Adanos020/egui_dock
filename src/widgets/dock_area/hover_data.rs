@@ -290,12 +290,12 @@ fn button_ui(
         let rect = match split {
             Some(Split::Above) => Rect::from_min_size(rect.min, rect.size() * vertical_alphas),
             Some(Split::Left) => Rect::from_min_size(rect.min, rect.size() * horizontal_alphas),
-            Some(split @ Split::Below) => {
-                let min = rect.lerp_inside(lerp_vec(split, 0.0));
+            Some(Split::Below) => {
+                let min = rect.lerp_inside(lerp_vec(Split::Below, 0.0));
                 Rect::from_min_size(min, rect.size() * vertical_alphas)
             }
-            Some(split @ Split::Right) => {
-                let min = rect.lerp_inside(lerp_vec(split, 0.0));
+            Some(Split::Right) => {
+                let min = rect.lerp_inside(lerp_vec(Split::Right, 0.0));
                 Rect::from_min_size(min, rect.size() * horizontal_alphas)
             }
             _ => rect,
