@@ -29,3 +29,15 @@ eframe = { version = "0.22", default-features = false, features = [
     "default_fonts",
     "glow",
 ] }
+
+# examples
+[[example]]
+name = "hello" # examples/hello.rs
+[[example]]
+name = "simple" # examples/simple.rs
+[[example]]
+name = "tab_add_popup" # examples/tab_add_popup.rs
+[[example]]
+name = "tab_add" # examples/tab_add.rs
+[[example]]
+name = "text_editor" # examples/text_editor.rs

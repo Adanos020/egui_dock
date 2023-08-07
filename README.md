@@ -30,3 +30,14 @@ Once that's done, you can start using `egui_dock` – more details on that can b
 ## Demo
 
 ![demo](images/demo.gif "Demo")
+
+## Examples
+
+Run examples locally with `cargo run --example example_name`.
+
+Available examples:
+- [hello](examples/hello.rs)
+- [simple](examples/simple.rs)
+- [tab_add_popup](examples/tab_add_popup.rs)
+- [tab_add](examples/tab_add.rs)
+- [text_editor](examples/text_editor.rs)
