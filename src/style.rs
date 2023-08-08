@@ -182,9 +182,6 @@ pub struct OverlayStyle {
     /// Max side length of a button on the overlay
     pub max_button_size: f32,
 
-    /// Amount of time the overlay waits before dropping a preference it may have for a node
-    pub max_preference_time: f32,
-
     /// Style of the additional highlighting rectangle drawn on the surface which you're attempting to drop a tab in.
     ///
     /// By default this value shows no highlighting.
@@ -192,9 +189,6 @@ pub struct OverlayStyle {
 
     /// Opacity which surfaces will fade to in a range of ``0.0..=1.0``
     pub surface_fade_opacity: f32,
-
-    /// The amount of time windows should stay faded despite not needing to, prevents quick mouse movements from causing flashing.
-    pub fade_hold_time: f32,
 
     /// The color of the overlay buttons
     pub button_color: Color32,
@@ -205,11 +199,24 @@ pub struct OverlayStyle {
     /// The type of overlay used
     pub overlay_type: OverlayType,
 
+    /// The feel of the overlay, timings, detection, etc.
+    pub feel: OverlayFeel,
+}
+
+/// Specifies the feel of the tab drop overlay.
+#[derive(Clone, Debug)]
+pub struct OverlayFeel {
     /// range is ``0.0..=1.0``
     pub window_drop_coverage: f32,
 
     /// range is ``0.0..=1.0``
     pub center_drop_coverage: f32,
+
+    /// The amount of time windows should stay faded despite not needing to, prevents quick mouse movements from causing flashing.
+    pub fade_hold_time: f32,
+
+    /// Amount of time the overlay waits before dropping a preference it may have for a node
+    pub max_preference_time: f32,
 }
 
 /// Specifies the type of overlay used.
@@ -351,15 +358,24 @@ impl Default for OverlayStyle {
             button_padding: 10.0,
             interact_expansion: 20.0,
             max_button_size: 100.0,
-            max_preference_time: 0.3,
+
             surface_fade_opacity: 0.1,
-            fade_hold_time: 0.2,
+
             hovered_leaf_highlight: Default::default(),
             button_color: Color32::from_gray(140),
             button_border_stroke: Stroke::new(1.0, Color32::from_gray(60)),
             overlay_type: OverlayType::Widgets,
+            feel: Default::default(),
+        }
+    }
+}
+impl Default for OverlayFeel {
+    fn default() -> Self {
+        Self {
+            max_preference_time: 0.3,
             window_drop_coverage: 0.5,
             center_drop_coverage: 0.25,
+            fade_hold_time: 0.2,
         }
     }
 }

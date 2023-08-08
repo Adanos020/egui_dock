@@ -13,6 +13,21 @@ use egui_dock::{
     TabInteractionStyle, TabViewer,
 };
 
+macro_rules! labeled_widget {
+    ($ui:expr, $x:expr, $l:expr) => {
+        $ui.horizontal(|ui| {
+            ui.add($x);
+            ui.label($l);
+        });
+    };
+    ($ui:expr, $x:expr, $l:expr, $d:expr) => {
+        $ui.horizontal(|ui| {
+            ui.add($x).on_hover_text($d);
+            ui.label($l).on_hover_text($d);
+        });
+    };
+}
+
 fn main() -> eframe::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     let options = NativeOptions {
@@ -217,22 +232,26 @@ impl MyContext {
                 ui.separator();
 
                 ui.label("Rounding");
-                ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut tab_style.rounding.nw, 0.0..=15.0));
-                    ui.label("North-West");
-                });
-                ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut tab_style.rounding.ne, 0.0..=15.0));
-                    ui.label("North-East");
-                });
-                ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut tab_style.rounding.sw, 0.0..=15.0));
-                    ui.label("South-West");
-                });
-                ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut tab_style.rounding.se, 0.0..=15.0));
-                    ui.label("South-East");
-                });
+                labeled_widget!(
+                    ui,
+                    Slider::new(&mut tab_style.rounding.nw, 0.0..=15.0),
+                    "North-West"
+                );
+                labeled_widget!(
+                    ui,
+                    Slider::new(&mut tab_style.rounding.ne, 0.0..=15.0),
+                    "North-East"
+                );
+                labeled_widget!(
+                    ui,
+                    Slider::new(&mut tab_style.rounding.sw, 0.0..=15.0),
+                    "South-West"
+                );
+                labeled_widget!(
+                    ui,
+                    Slider::new(&mut tab_style.rounding.se, 0.0..=15.0),
+                    "South-East"
+                );
 
                 ui.separator();
 
@@ -303,22 +322,26 @@ impl MyContext {
             ui.separator();
 
             ui.label("Rounding");
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tab.tab_body.rounding.nw, 0.0..=15.0));
-                ui.label("North-West");
-            });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tab.tab_body.rounding.ne, 0.0..=15.0));
-                ui.label("North-East");
-            });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tab.tab_body.rounding.sw, 0.0..=15.0));
-                ui.label("South-West");
-            });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tab.tab_body.rounding.se, 0.0..=15.0));
-                ui.label("South-East");
-            });
+            labeled_widget!(
+                ui,
+                Slider::new(&mut style.tab.tab_body.rounding.nw, 0.0..=15.0),
+                "North-West"
+            );
+            labeled_widget!(
+                ui,
+                Slider::new(&mut style.tab.tab_body.rounding.ne, 0.0..=15.0),
+                "North-East"
+            );
+            labeled_widget!(
+                ui,
+                Slider::new(&mut style.tab.tab_body.rounding.sw, 0.0..=15.0),
+                "South-West"
+            );
+            labeled_widget!(
+                ui,
+                Slider::new(&mut style.tab.tab_body.rounding.se, 0.0..=15.0),
+                "South-East"
+            );
 
             ui.label("Stroke width:");
             ui.add(Slider::new(
@@ -342,7 +365,8 @@ impl MyContext {
                 OverlayType::HighlightedAreas => "Highlighted Areas",
                 OverlayType::Widgets => "Widgets",
             };
-            egui::ComboBox::new("overlay styles", "Overlay Style")
+            ui.label("Overlay Style:");
+            egui::ComboBox::new("overlay styles", "")
                 .selected_text(selected_text)
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
@@ -356,6 +380,34 @@ impl MyContext {
                         "Widgets",
                     );
                 });
+            ui.label("Feel:");
+            labeled_widget!(
+                ui,
+                Slider::new(&mut style.overlay.feel.center_drop_coverage, 0.0..=1.0),
+                "Center drop coverage",
+                "how big the area where dropping a tab into the center of another should be."
+            );
+            labeled_widget!(
+                ui,
+                Slider::new(&mut style.overlay.feel.fade_hold_time, 0.0..=4.0),
+                "fade hold time",
+                "how long faded windows should hold their fade before unfading, in seconds."
+            );
+            labeled_widget!(
+                ui,
+                Slider::new(&mut style.overlay.feel.window_drop_coverage, 0.0..=1.0),
+                "Window drop coverage",
+                "how big the area for undocking a window should be. [is overshadowed by center drop coverage]"
+            );
+            egui::Grid::new("overlay style preferences").show(ui, |ui| {
+                ui.label("Button color:");
+                color_edit_button_srgba(ui, &mut style.overlay.button_color, Alpha::OnlyBlend);
+                ui.end_row();
+
+                ui.label("Button border color:");
+                color_edit_button_srgba(ui, &mut style.overlay.button_border_stroke.color, Alpha::OnlyBlend);
+                ui.end_row();
+            });
         });
     }
 }

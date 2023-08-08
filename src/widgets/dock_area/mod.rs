@@ -252,7 +252,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
         let style = self.style.as_ref().unwrap();
         let fade_surface =
-            self.hovered_window_surface(&mut state, style.overlay.fade_hold_time, ui.ctx());
+            self.hovered_window_surface(&mut state, style.overlay.feel.fade_hold_time, ui.ctx());
         let fade_style = {
             fade_surface.is_some().then(|| {
                 let mut fade_style = style.clone();

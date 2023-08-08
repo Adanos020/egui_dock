@@ -164,14 +164,14 @@ impl HoverData {
             .to_pos2();
             if Rect::from_center_size(
                 Pos2::default(),
-                Vec2::splat(style.overlay.center_drop_coverage),
+                Vec2::splat(style.overlay.feel.center_drop_coverage),
             )
             .contains(a_pos)
             {
                 (TabDestination::Append, Rect::EVERYTHING)
             } else if Rect::from_center_size(
                 Pos2::default(),
-                Vec2::splat(style.overlay.window_drop_coverage),
+                Vec2::splat(style.overlay.feel.window_drop_coverage),
             )
             .contains(a_pos)
             {
@@ -251,9 +251,9 @@ impl HoverData {
             Some(lock_time) => {
                 let elapsed = lock_time.elapsed().as_secs_f32();
                 ctx.request_repaint_after(Duration::from_secs_f32(
-                    (style.overlay.max_preference_time - elapsed).max(0.0),
+                    (style.overlay.feel.max_preference_time - elapsed).max(0.0),
                 ));
-                elapsed < style.overlay.max_preference_time
+                elapsed < style.overlay.feel.max_preference_time
             }
             None => false,
         }
