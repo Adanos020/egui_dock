@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use egui::{Context, Id, Pos2};
 
-use crate::{style, Style, SurfaceIndex};
+use crate::{Style, SurfaceIndex};
 
 use super::hover_data::{DragData, DragDropState, HoverData};
 

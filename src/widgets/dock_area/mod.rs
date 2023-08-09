@@ -16,7 +16,6 @@ use egui::{
     containers::*, emath::*, epaint::*, layers::*, Context, CursorIcon, Id, Layout, Response,
     Sense, TextStyle, Ui, WidgetText,
 };
-use hover_data::DragDropState;
 use paste::paste;
 use state::State;
 
@@ -331,13 +330,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 state
                                     .drag
                                     .as_mut()
-                                    .and_then(|drag_drop_state| {
-                                        Some(drag_drop_state.resolve(
+                                    .map(|drag_drop_state| {
+                                        drag_drop_state.resolve(
                                             ui,
                                             style,
                                             self.allowed_splits,
                                             false,
-                                        ))
+                                        )
                                     })
                                     .unwrap()
                             })
@@ -429,33 +428,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             return;
         }
 
-        // First compute all rect sizes in the node graph.
-        let max_rect = self.allocate_area_for_root_node(ui, surf_index);
-        for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
-            if self.dock_state[surf_index][node_index].is_parent() {
-                self.compute_rect_sizes(ui, (surf_index, node_index), max_rect);
-            }
-        }
-
-        // Then draw the bodies of each leafs.
-        for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
-            if self.dock_state[surf_index][node_index].is_leaf() {
-                self.show_leaf(ui, state, (surf_index, node_index), tab_viewer, None);
-            }
-        }
-
-        // Finaly draw separators so that their "interaction zone" is above
-        // bodies (see `SeparatorStyle::extra_interact_width`).
-        for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
-            if self.dock_state[surf_index][node_index].is_parent() {
-                self.show_separator(ui, (surf_index, node_index), None);
-            }
-        }
+        self.render_nodes(ui, tab_viewer, state, surf_index, None);
     }
 
     fn show_window_surface(
         &mut self,
-        ui: &mut Ui,
+        ui: &Ui,
         surf_index: SurfaceIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         state: &mut State,
@@ -478,16 +456,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             window_constructor
         };
 
-        let (fade_factor, fade_style) = {
-            if let Some((style, factor, surface_index)) = fade_style {
+        let (fade_factor, fade_style) = match fade_style {
+            Some((style, factor, surface_index)) => {
                 if surface_index == surf_index {
                     (1.0, None)
                 } else {
                     (factor, Some((style, factor)))
                 }
-            } else {
-                (1.0, None)
             }
+            None => (1.0, None),
         };
         let mut frame = Frame::window(ui.style());
         frame.fill = frame.fill.linear_multiply(fade_factor);
@@ -498,36 +475,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 if fade_factor != 1.0 {
                     fade_visuals(ui.visuals_mut(), fade_factor);
                 }
-
-                let max_rect = self.allocate_area_for_root_node(ui, surf_index);
-                for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
-                    if self.dock_state[surf_index][node_index].is_parent() {
-                        self.compute_rect_sizes(ui, (surf_index, node_index), max_rect);
-                    }
-                }
-
-                // Then draw the bodies of each leafs.
-                for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
-                    if self.dock_state[surf_index][node_index].is_leaf() {
-                        self.show_leaf(ui, state, (surf_index, node_index), tab_viewer, fade_style);
-                    }
-                }
-
-                // Finaly draw separators so that their "interaction zone" is above
-                // bodies (see `SeparatorStyle::extra_interact_width`).
-                let fade_style = fade_style.map(|(style, _)| style);
-                for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
-                    if self.dock_state[surf_index][node_index].is_parent() {
-                        self.show_separator(ui, (surf_index, node_index), fade_style);
-                    }
-                }
+                self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
             });
 
             ui.layer_id()
         });
 
-        let screen_rect = {
-            if let Some(response) = response {
+        let screen_rect = match response {
+            Some(response) => {
                 if let Some(layer_id) = response.inner {
                     self.dock_state
                         .get_window_state_mut(surf_index)
@@ -535,13 +490,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         .layer_id = Some(layer_id);
                 }
                 response.response.rect
-            } else {
-                Rect::NOTHING
             }
+            None => Rect::NOTHING,
         };
 
-        //this is our janky way of detecting drags on the window
-        //Some indicates that we were dragged, with just started specifiying if this is the first frame of drag.
+        // This is our janky way of detecting drags on the window.
+        // Some indicates that we were dragged, with just started specifying if this is the first frame of drag.
         match self
             .dock_state
             .get_window_state_mut(surf_index)
@@ -558,6 +512,39 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }),
             ),
             None => (None, None),
+        }
+    }
+
+    fn render_nodes(
+        &mut self,
+        ui: &mut Ui,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        state: &mut State,
+        surf_index: SurfaceIndex,
+        fade_style: Option<(&Style, f32)>,
+    ) {
+        // First compute all rect sizes in the node graph.
+        let max_rect = self.allocate_area_for_root_node(ui, surf_index);
+        for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
+            if self.dock_state[surf_index][node_index].is_parent() {
+                self.compute_rect_sizes(ui, (surf_index, node_index), max_rect);
+            }
+        }
+
+        // Then, draw the bodies of each leaves.
+        for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
+            if self.dock_state[surf_index][node_index].is_leaf() {
+                self.show_leaf(ui, state, (surf_index, node_index), tab_viewer, fade_style);
+            }
+        }
+
+        // Finally, draw separators so that their "interaction zone" is above
+        // bodies (see `SeparatorStyle::extra_interact_width`).
+        let fade_style = fade_style.map(|(style, _)| style);
+        for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
+            if self.dock_state[surf_index][node_index].is_parent() {
+                self.show_separator(ui, (surf_index, node_index), fade_style);
+            }
         }
     }
 
@@ -633,11 +620,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) {
         assert!(self.dock_state[surface_index][node_index].is_parent());
 
-        let style = if let Some(fade_style) = fade_style {
-            fade_style
-        } else {
-            self.style.as_ref().unwrap()
-        };
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let pixels_per_point = ui.ctx().pixels_per_point();
 
         duplicate! {
@@ -717,12 +700,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
-        let rect = {
-            let Node::Leaf { rect, .. } = &mut self.dock_state[surface_index][node_index] else {
-                unreachable!()
-            };
-            *rect
-        };
+        let rect = self.dock_state[surface_index][node_index]
+            .rect()
+            .expect("This node must be a leaf");
         let ui = &mut ui.child_ui_with_id_source(
             rect,
             Layout::top_down_justified(Align::Min),
@@ -749,14 +729,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             fade_style,
         );
 
-        let Node::Leaf { tabs, .. } = &mut self.dock_state[surface_index][node_index] else {
-            unreachable!()
-        };
-        for (tab_index, tab) in tabs.iter_mut().enumerate() {
-            if tab_viewer.force_close(tab) {
-                self.to_remove
-                    .push((surface_index, node_index, TabIndex(tab_index)).into());
+        match &mut self.dock_state[surface_index][node_index] {
+            Node::Leaf { tabs, .. } => {
+                for (tab_index, tab) in tabs.iter_mut().enumerate() {
+                    if tab_viewer.force_close(tab) {
+                        self.to_remove
+                            .push((surface_index, node_index, TabIndex(tab_index)).into());
+                    }
+                }
             }
+            _ => unreachable!(),
         }
     }
 
@@ -770,11 +752,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) -> Response {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
-        let style = if let Some(fade) = fade_style {
-            fade
-        } else {
-            self.style.as_ref().unwrap()
-        };
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
             vec2(ui.available_width(), style.tab_bar.height),
             Sense::hover(),
@@ -831,11 +809,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             // Draw hline from tab end to edge of tabbar
             let px = ui.ctx().pixels_per_point().recip();
-            let style = if let Some(fade) = fade_style {
-                fade
-            } else {
-                self.style.as_ref().unwrap()
-            };
+            let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
 
             ui.painter().hline(
                 tabs_ui.min_rect().right().min(clip_rect.right())..=tabbar_outer_rect.right(),
@@ -917,11 +891,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 else {
                     unreachable!()
                 };
-                let style = if let Some(fade) = fade {
-                    fade
-                } else {
-                    self.style.as_ref().unwrap()
-                };
+                let style = fade.unwrap_or_else(|| self.style.as_ref().unwrap());
                 let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tab);
                 (
                     *active == tab_index || is_being_dragged,
@@ -1122,11 +1092,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         response = response.on_hover_cursor(CursorIcon::PointingHand);
 
-        let style = if let Some(fade_style) = fade_style {
-            fade_style
-        } else {
-            self.style.as_ref().unwrap()
-        };
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let color = if response.hovered() {
             ui.painter()
                 .rect_filled(rect, Rounding::none(), style.buttons.add_tab_bg_fill);
@@ -1189,11 +1155,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         show_close_button: bool,
         fade: Option<&Style>,
     ) -> (Response, Option<Response>) {
-        let style = if let Some(fade) = fade {
-            fade
-        } else {
-            self.style.as_ref().unwrap()
-        };
+        let style = fade.unwrap_or_else(|| self.style.as_ref().unwrap());
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
         let text_width = galley.size().x + 2.0 * x_spacing;
@@ -1326,11 +1288,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             unreachable!()
         };
         let overflow = (actual_width - available_width).at_least(0.0);
-        let style = if let Some(fade_style) = fade_style {
-            fade_style
-        } else {
-            self.style.as_ref().unwrap()
-        };
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
 
         // Compare to 1.0 and not 0.0 to avoid drawing a scroll bar due
         // to floating point precision issue during tab drawing
@@ -1436,11 +1394,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
             }
 
-            let (style, fade_factor) = if let Some(fade) = fade {
-                fade
-            } else {
-                (self.style.as_ref().unwrap(), 1.0)
-            };
+            let (style, fade_factor) = fade.unwrap_or_else(|| (self.style.as_ref().unwrap(), 1.0));
             let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
 
             let tabs_style = tabs_styles.as_ref().unwrap_or(&style.tab);

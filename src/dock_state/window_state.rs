@@ -57,7 +57,7 @@ impl WindowState {
         self.next_size.take()
     }
 
-    ///returns if window was dragged this frame, indicating with the inside bool if the drag was just started or not.
+    /// Returns if window was dragged this frame, indicating with the inside bool if the drag was just started or not.
     pub(crate) fn dragged(&mut self, ctx: &egui::Context, new_rect: Rect) -> Option<bool> {
         //we need to make sure we check the size hasn't changed, since it indicates a resize rather than a drag
         if (new_rect != self.screen_rect && new_rect.size() == self.screen_rect.size())
