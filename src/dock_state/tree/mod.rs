@@ -28,8 +28,6 @@ pub use tab_iter::TabIter;
 use egui::{Pos2, Rect};
 use std::fmt;
 
-use crate::SurfaceIndex;
-
 // ----------------------------------------------------------------------------
 
 /// Direction in which a new node is created relatively to the parent node at which the split occurs.
@@ -72,19 +70,6 @@ impl TabDestination {
         matches!(self, Self::Window(_))
     }
 }
-
-// ----------------------------------------------------------------------------
-
-/// Specifies the location of a tab on the tree, used when moving tabs.
-pub(crate) enum DragSource {
-    /// A tab on a surface
-    Node(SurfaceIndex, NodeIndex, TabIndex),
-
-    /// A window (NOT USED)
-    Window(SurfaceIndex),
-}
-
-// ----------------------------------------------------------------------------
 
 /// Binary tree representing the relationships between [`Node`]s.
 ///

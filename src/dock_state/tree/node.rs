@@ -1,4 +1,4 @@
-﻿use crate::{Split, TabIndex};
+use crate::{Split, TabIndex};
 use egui::Rect;
 
 /// Represents an abstract node of a [`Tree`](crate::Tree).
@@ -75,6 +75,19 @@ impl<Tab> Node<Tab> {
             Self::Leaf { rect, .. }
             | Self::Vertical { rect, .. }
             | Self::Horizontal { rect, .. } => *rect = new_rect,
+        }
+    }
+
+    /// Gets the area occupied by the node.
+    ///
+    /// Returns `None` if the node is a `Empty`
+    #[inline]
+    pub fn rect(&self) -> Option<Rect> {
+        match self {
+            Node::Empty => None,
+            Node::Leaf { rect, .. }
+            | Node::Vertical { rect, .. }
+            | Node::Horizontal { rect, .. } => Some(*rect),
         }
     }
 

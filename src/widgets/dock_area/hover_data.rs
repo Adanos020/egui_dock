@@ -12,9 +12,23 @@ use egui::{emath::inverse_lerp, vec2, Context, Id, LayerId, Order, Pos2, Rect, S
 pub(super) struct HoverData {
     /// rect of the hovered element
     pub rect: Rect,
-    ///
-    pub tab: Option<Rect>,
+    /// The "address" of the tab/node hovered
     pub dst: DropPosition,
+    /// if a tab title or the tab head is hovered, this is the rect of it.
+    pub tab: Option<Rect>,
+}
+
+/// Specifies the location of a tab on the tree, used when moving tabs.
+#[derive(Debug, Clone)]
+pub(super) struct DragData {
+    pub src: DropPosition,
+    pub rect: Rect,
+}
+
+#[derive(Debug, Clone)]
+pub(super) struct DragDropState {
+    pub hover: HoverData,
+    pub drag: DragData,
     pub pointer: Pos2,
     ///is some when the pointer is over rect, instant holds when the lock was last active
     pub locked: Option<Instant>,
@@ -50,10 +64,10 @@ impl DropPosition {
     }
 }
 
-impl HoverData {
+impl DragDropState {
     //determines if the hoverdata implies we're hovering over a tab or the tab title bar
     pub(super) fn is_on_title_bar(&self) -> bool {
-        self.tab.is_some()
+        self.hover.tab.is_some()
     }
 
     //resolve a TabDestination for whatever is hovered
@@ -65,7 +79,7 @@ impl HoverData {
         is_window: bool,
     ) -> TabDestination {
         let allowed_splits = allowed_splits
-            & if self.dst.is_surface() {
+            & if self.hover.dst.is_surface() {
                 AllowedSplits::None
             } else {
                 AllowedSplits::All
@@ -89,10 +103,10 @@ impl HoverData {
         is_window: bool,
     ) -> TabDestination {
         assert!(!self.is_on_title_bar());
-        draw_highlight_rect(self.rect, ui, style);
+        draw_highlight_rect(self.hover.rect, ui, style);
         let mut hovering_buttons = false;
         let total_button_spacing = style.overlay.button_padding * 2.0;
-        let (rect, pointer) = (self.rect, self.pointer);
+        let (rect, pointer) = (self.hover.rect, self.pointer);
         let rect = rect.shrink(style.overlay.button_padding);
         let shortest_side = ((rect.width() - total_button_spacing) / 3.0)
             .min((rect.height() - total_button_spacing) / 3.0)
@@ -129,7 +143,7 @@ impl HoverData {
                 }
             }
         }
-        let hovering_rect = self.rect.contains(pointer);
+        let hovering_rect = self.hover.rect.contains(pointer);
 
         self.update_lock(hovering_rect, hovering_buttons, style, ui.ctx());
         destination.unwrap_or(TabDestination::Window(self.pointer))
@@ -141,16 +155,16 @@ impl HoverData {
         style: &Style,
         allowed_splits: AllowedSplits,
     ) -> TabDestination {
-        if let Some(rect) = self.tab {
+        if let Some(rect) = self.hover.tab {
             draw_drop_rect(rect, ui, style);
 
-            return match self.dst {
+            return match self.hover.dst {
                 DropPosition::Surface(_) => TabDestination::Append,
                 DropPosition::Node(_, _) => TabDestination::Append,
                 DropPosition::Tab(_, _, tab_index) => TabDestination::Insert(tab_index),
             };
         }
-        let (rect, pointer) = (self.rect, self.pointer);
+        let (rect, pointer) = (self.hover.rect, self.pointer);
 
         let center = rect.center();
 
@@ -228,7 +242,7 @@ impl HoverData {
                 if continue_locking {
                     *lock_time = Instant::now();
                 }
-                let window_hold = if !self.dst.surface_index().is_root() {
+                let window_hold = if !self.hover.dst.surface_index().is_root() {
                     ctx.request_repaint();
                     self.is_locked(style, ctx)
                 } else {

@@ -8,8 +8,7 @@ use crate::{
     dock_state::DockState,
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered, rect_stroke_box},
     widgets::popup::popup_under_widget,
-    DragSource, Node, NodeIndex, Style, SurfaceIndex, TabAddAlign, TabIndex, TabStyle, TabViewer,
-    Tree,
+    Node, NodeIndex, Style, SurfaceIndex, TabAddAlign, TabIndex, TabStyle, TabViewer, Tree,
 };
 
 use duplicate::duplicate;
@@ -17,12 +16,12 @@ use egui::{
     containers::*, emath::*, epaint::*, layers::*, Context, CursorIcon, Id, Layout, Response,
     Sense, TextStyle, Ui, WidgetText,
 };
-use hover_data::HoverData;
+use hover_data::DragDropState;
 use paste::paste;
 use state::State;
 
 use self::{
-    hover_data::DropPosition,
+    hover_data::{DragData, DropPosition, HoverData},
     style_fade::{fade_dock_style, fade_visuals},
 };
 
@@ -74,7 +73,7 @@ pub struct DockArea<'tree, Tab> {
     scroll_area_in_tabs: bool,
     allowed_splits: AllowedSplits,
 
-    drag_data: Option<DragSource>,
+    drag_data: Option<DragData>,
     hover_data: Option<HoverData>,
     to_remove: Vec<TabRemoval>,
     to_detach: Vec<(SurfaceIndex, NodeIndex, TabIndex)>,
@@ -245,11 +244,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.style
             .get_or_insert_with(|| Style::from_egui(ui.style().as_ref()));
         let mut state = State::load(ui.ctx(), self.id);
-        if let Some(hover_data) = state.hover_data.take() {
-            if hover_data.locked.is_some() {
-                self.hover_data = Some(hover_data);
-            }
-        }
+        //if let Some(hover_data) = state.drag.take() {
+        //    if hover_data.locked.is_some() {
+        //        self.hover_data = Some(hover_data);
+        //    }
+        //}
         let style = self.style.as_ref().unwrap();
         let fade_surface =
             self.hovered_window_surface(&mut state, style.overlay.feel.fade_hold_time, ui.ctx());
@@ -301,11 +300,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             self.dock_state.set_focused_node_and_surface(focused);
         }
 
-        if let (Some(source), Some(hover)) = (self.drag_data, &mut self.hover_data) {
+        if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
+            
             let (dst_surf, dst_node) = hover.dst.break_down();
             let style = self.style.as_ref().unwrap();
-            match source {
-                DragSource::Node(src_surf, src_node, src_tab) => {
+            state.set_drag_and_drop(source.clone(), hover, ui.ctx(), style);
+            match source.src {
+                DropPosition::Tab(src_surf, src_node, src_tab) => {
                     let (empty_destination_surface, valid_move) = {
                         //empty roots don't have destination nodes
                         match dst_node {
@@ -328,7 +329,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         let tab_dst = {
                             let layer_id = LayerId::new(Order::Foreground, "foreground".into());
                             ui.with_layer_id(layer_id, |ui| {
-                                hover.resolve(ui, style, self.allowed_splits, false)
+                                state
+                                    .drag
+                                    .as_mut()
+                                    .and_then(|drag_drop_state| {
+                                        Some(drag_drop_state.resolve(
+                                            ui,
+                                            style,
+                                            self.allowed_splits,
+                                            false,
+                                        ))
+                                    })
+                                    .unwrap()
                             })
                             .inner
                         };
@@ -365,19 +377,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     );
                                 }
 
-                                self.drag_data = None;
-                                self.hover_data = None;
                                 state.window_fade = None;
                             }
                         }
                     }
                 }
-                DragSource::Window(_) => {
-                    todo!("Inserting entire Windows into dock is not yet supported");
+                _ => {
+                    todo!("Inserting surfaces or entire nodes into dock is not yet supported");
                 }
             }
         }
-        state.hover_data = self.hover_data;
         state.store(ui.ctx(), self.id);
     }
 
@@ -408,14 +417,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if self.dock_state[surf_index].is_empty() {
             let rect = ui.available_rect_before_wrap();
             let response = ui.allocate_rect(rect, Sense::hover());
-            if response.hovered() && !self.is_hover_data_locked(ui.ctx()) {
+            if response.hovered() {
                 if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
                     self.hover_data = Some(HoverData {
                         rect,
-                        tab: None,
                         dst: DropPosition::Surface(surf_index),
-                        pointer,
-                        locked: None,
+                        tab: None,
                     })
                 }
             }
@@ -454,7 +461,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         state: &mut State,
         fade_style: Option<(&Style, f32, SurfaceIndex)>,
-    ) -> (Option<Pos2>, Option<DragSource>) {
+    ) -> (Option<Pos2>, Option<DragData>) {
         let title: WidgetText = format!("window {surf_index:?}").into();
 
         // TODO: let the user dock entire windows,
@@ -544,7 +551,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         {
             Some(just_started) => (
                 just_started.then_some(screen_rect.min),
-                Some(DragSource::Window(surf_index)),
+                Some(DragData {
+                    src: DropPosition::Surface(surf_index),
+                    rect: self.dock_state[surf_index][NodeIndex::root()]
+                        .rect()
+                        .unwrap(),
+                }),
             ),
             None => (None, None),
         }
@@ -952,8 +964,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
                         tabs_ui.ctx().translate_layer(layer_id, delta);
 
-                        self.drag_data =
-                            Some(DragSource::Node(surface_index, node_index, tab_index));
+                        self.drag_data = Some(DragData {
+                            src: DropPosition::Tab(surface_index, node_index, tab_index),
+                            rect: self.dock_state[surface_index][node_index].rect().unwrap(),
+                        });
                     }
                 }
 
@@ -1499,7 +1513,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // the underlying responses
             if state.drag_start.is_some()
                 && rect.contains(pointer)
-                && !self.is_hover_data_locked(ui.ctx())
             {
                 let on_title_bar = tabbar_response.rect.contains(pointer);
                 let (dst, tab) = {
@@ -1515,22 +1528,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 };
 
-                self.hover_data = Some(HoverData {
-                    rect,
-                    dst,
-                    tab,
-                    pointer,
-                    locked: None,
-                });
+                self.hover_data = Some(HoverData { rect, dst, tab });
             }
         }
-    }
-
-    #[inline(always)]
-    fn is_hover_data_locked(&self, ctx: &Context) -> bool {
-        self.hover_data
-            .as_ref()
-            .is_some_and(|hover_data| hover_data.is_locked(self.style.as_ref().unwrap(), ctx))
     }
 
     /// Returns some when windows are fading, and what surface index is being hovered over
@@ -1542,7 +1542,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ctx: &Context,
     ) -> Option<SurfaceIndex> {
         if let Some(hover_data) = &self.hover_data {
-            if hover_data.locked.is_some() {
+            if state.is_drag_drop_lock_some() {
                 state.window_fade = Some((Instant::now(), hover_data.dst.surface_index()))
             }
         }
