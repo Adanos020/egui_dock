@@ -995,6 +995,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     Sense::click_and_drag()
                 };
 
+                let is_lonely_tab = self.dock_state[surface_index].num_tabs() == 1;
+
                 let Node::Leaf { tabs, active, .. } =
                     &mut self.dock_state[surface_index][node_index]
                 else {
@@ -1010,7 +1012,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 if self.tab_context_menus {
                     response = response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab);
-                        if ui.button("Eject").clicked() {
+                        if (surface_index.is_root() || !is_lonely_tab)
+                            && ui.button("Eject").clicked()
+                        {
                             self.to_detach.push((surface_index, node_index, tab_index));
                             ui.close_menu();
                         }
