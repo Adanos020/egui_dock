@@ -301,7 +301,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
-            
             let (dst_surf, dst_node) = hover.dst.break_down();
             let style = self.style.as_ref().unwrap();
             state.set_drag_and_drop(source.clone(), hover, ui.ctx(), style);
@@ -1013,6 +1012,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         tab_viewer.context_menu(ui, tab);
                         if ui.button("Eject").clicked() {
                             self.to_detach.push((surface_index, node_index, tab_index));
+                            ui.close_menu();
                         }
                         if show_close_button && ui.button("Close").clicked() {
                             if tab_viewer.on_close(tab) {
@@ -1022,6 +1022,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 *active = tab_index;
                                 self.new_focused = Some((surface_index, node_index));
                             }
+                            ui.close_menu();
                         }
                     });
                 }
@@ -1511,9 +1512,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // Use rect.contains instead of
             // response.hovered as the dragged tab covers
             // the underlying responses
-            if state.drag_start.is_some()
-                && rect.contains(pointer)
-            {
+            if state.drag_start.is_some() && rect.contains(pointer) {
                 let on_title_bar = tabbar_response.rect.contains(pointer);
                 let (dst, tab) = {
                     match self.tab_hover_rect {
