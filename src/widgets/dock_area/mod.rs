@@ -300,9 +300,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
-            let (dst_surf, dst_node) = hover.dst.break_down();
+            
             let style = self.style.as_ref().unwrap();
             state.set_drag_and_drop(source.clone(), hover, ui.ctx(), style);
+            let (source, hover) = {
+                let drag_data = state.drag.as_ref().unwrap();
+                (drag_data.drag.clone(), drag_data.hover.clone())
+            };
+            let (dst_surf, dst_node) = hover.dst.break_down();
             match source.src {
                 DropPosition::Tab(src_surf, src_node, src_tab) => {
                     let (empty_destination_surface, valid_move) = {
@@ -414,7 +419,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         if self.dock_state.root().is_empty() {
             let rect = ui.available_rect_before_wrap();
-            let response = ui.allocate_rect(rect, Sense::hover());
+            let response = ui.allocate_rect(rect, Sense::click());
             if response.hovered() {
                 self.hover_data = Some(HoverData {
                     rect,
@@ -753,7 +758,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
             vec2(ui.available_width(), style.tab_bar.height),
-            Sense::hover(),
+            Sense::click(),
         );
         ui.painter().rect_filled(
             tabbar_outer_rect,
@@ -1367,7 +1372,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tabbar_response: Response,
         fade: Option<(&Style, f32)>,
     ) {
-        let (body_rect, _body_response) =
+        let (body_rect, body_response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
 
         let Node::Leaf {
@@ -1380,18 +1385,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         else {
             unreachable!();
         };
+        
+
 
         if let Some(tab) = tabs.get_mut(active.0) {
             *viewport = body_rect;
-
-            if ui.input(|i| i.pointer.any_click()) {
-                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
-                    if body_rect.contains(pos) {
-                        self.new_focused = Some((surface_index, node_index));
-                    }
-                }
+            if body_response.clicked() {
+                self.new_focused = Some((surface_index, node_index));
             }
-
             let (style, fade_factor) = fade.unwrap_or_else(|| (self.style.as_ref().unwrap(), 1.0));
             let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
 
