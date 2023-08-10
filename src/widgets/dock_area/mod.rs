@@ -1372,7 +1372,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tabbar_response: Response,
         fade: Option<(&Style, f32)>,
     ) {
-        let (body_rect, body_response) =
+        let (body_rect, _body_response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
 
         let Node::Leaf {
@@ -1385,14 +1385,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         else {
             unreachable!();
         };
-        
-
 
         if let Some(tab) = tabs.get_mut(active.0) {
             *viewport = body_rect;
-            if body_response.clicked() {
-                self.new_focused = Some((surface_index, node_index));
+
+            if ui.input(|i| i.pointer.any_click()) {
+                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+                    if body_rect.contains(pos) && Some(ui.layer_id()) == ui.ctx().layer_id_at(pos) {
+                        self.new_focused = Some((surface_index, node_index));
+                    }
+                }
             }
+
             let (style, fade_factor) = fade.unwrap_or_else(|| (self.style.as_ref().unwrap(), 1.0));
             let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
 
