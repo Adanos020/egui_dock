@@ -37,6 +37,11 @@ impl State {
         }
     }
 
+    pub(super) fn reset_drag(&mut self) {
+        self.drag = None;
+        self.window_fade = None;
+    }
+    //HACKY: Fix asap! 
     pub(super) fn set_drag_and_drop(
         &mut self,
         drag: DragData,

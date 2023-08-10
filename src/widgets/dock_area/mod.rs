@@ -375,7 +375,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                     );
                                 }
 
-                                state.window_fade = None;
+                                state.reset_drag();
                             }
                         }
                     }
@@ -412,17 +412,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) {
         let surf_index = SurfaceIndex::root();
 
-        if self.dock_state[surf_index].is_empty() {
+        if self.dock_state.root().is_empty() {
             let rect = ui.available_rect_before_wrap();
             let response = ui.allocate_rect(rect, Sense::hover());
             if response.hovered() {
-                if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
-                    self.hover_data = Some(HoverData {
-                        rect,
-                        dst: DropPosition::Surface(surf_index),
-                        tab: None,
-                    })
-                }
+                self.hover_data = Some(HoverData {
+                    rect,
+                    dst: DropPosition::Surface(surf_index),
+                    tab: None,
+                }) 
             }
             //all for loops will be empty, so theres no point going through them.
             return;
@@ -559,7 +557,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         ui.painter().rect_stroke(rect, style.rounding, style.border);
         rect = rect.expand(-style.border.width / 2.0);
-        ui.allocate_rect(rect, Sense::hover());
+        ui.allocate_rect(rect, Sense::click());
 
         if self.dock_state[surface].is_empty() {
             return rect;
@@ -1498,11 +1496,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         hold_time: f32,
         ctx: &Context,
     ) -> Option<SurfaceIndex> {
-        if let Some(hover_data) = &self.hover_data {
-            if state.is_drag_drop_lock_some() {
-                state.window_fade = Some((Instant::now(), hover_data.dst.surface_index()))
+        if let Some(hover_data) = &state.drag {
+            if hover_data.locked.is_some() {
+                state.window_fade = Some((Instant::now(), hover_data.hover.dst.surface_index()));
             }
         }
+        
         state.window_fade.and_then(|(time, surface)| {
             ctx.request_repaint();
             (time.elapsed().as_secs_f32() < hold_time).then_some(surface)
