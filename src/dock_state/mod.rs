@@ -444,7 +444,7 @@ impl<Tab> DockState<Tab> {
 
     /// Finds the first empty surface index which may be used.
     ///
-    /// WARNING!: in cases where one isn't found, ``SurfaceIndex(self.surfaces.len())`` is used.
+    /// WARNING: in cases where one isn't found, ``SurfaceIndex(self.surfaces.len())`` is used.
     /// therefore it's not inherently safe to index the [`DockState`] with this index, as it may panic.
     fn find_empty_surface_index(&self) -> SurfaceIndex {
         //find the first possible empty surface to insert our window into.

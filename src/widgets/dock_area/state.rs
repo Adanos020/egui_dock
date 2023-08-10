@@ -30,18 +30,19 @@ impl State {
 
     #[inline(always)]
     pub(super) fn is_drag_drop_lock_some(&self) -> bool {
-        if let Some(drag) = &self.drag {
-            drag.locked.is_some()
-        } else {
-            false
-        }
+        self.drag
+            .as_ref()
+            .map(|drag| drag.locked)
+            .flatten()
+            .is_some()
     }
 
     pub(super) fn reset_drag(&mut self) {
         self.drag = None;
         self.window_fade = None;
     }
-    //HACKY: Fix asap! 
+
+    //HACKY: Fix asap!
     pub(super) fn set_drag_and_drop(
         &mut self,
         drag: DragData,
@@ -53,12 +54,12 @@ impl State {
             self.drag = Some(DragDropState {
                 hover: drop,
                 drag,
-                pointer: ctx.pointer_hover_pos().unwrap_or(Pos2::new(0., 0.)),
+                pointer: ctx.pointer_hover_pos().unwrap_or(Pos2::ZERO),
                 locked: None,
             })
         }
-
     }
+
     #[inline(always)]
     fn is_drag_drop_locked(&self, ctx: &Context, style: &Style) -> bool {
         self.drag

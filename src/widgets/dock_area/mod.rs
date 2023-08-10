@@ -300,7 +300,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
-            
             let style = self.style.as_ref().unwrap();
             state.set_drag_and_drop(source.clone(), hover, ui.ctx(), style);
             let (source, hover) = {
@@ -425,7 +424,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     rect,
                     dst: DropPosition::Surface(surf_index),
                     tab: None,
-                }) 
+                })
             }
             //all for loops will be empty, so theres no point going through them.
             return;
@@ -448,7 +447,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         // part 0 here goes into state.drag_start, 1 goes into self.drag_data
         // from there implement move_window properly.
         let window = {
-            let mut window_constructor = egui::Window::new(title).title_bar(false);
+            let mut window_constructor = Window::new(title).title_bar(false);
             let state = self.dock_state.get_window_state_mut(surf_index).unwrap();
             if let Some(position) = state.next_position() {
                 window_constructor = window_constructor.current_pos(position);
@@ -1373,7 +1372,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         fade: Option<(&Style, f32)>,
     ) {
         let (body_rect, _body_response) =
-            ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
+            ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::hover());
 
         let Node::Leaf {
             rect,
@@ -1506,7 +1505,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 state.window_fade = Some((Instant::now(), hover_data.hover.dst.surface_index()));
             }
         }
-        
+
         state.window_fade.and_then(|(time, surface)| {
             ctx.request_repaint();
             (time.elapsed().as_secs_f32() < hold_time).then_some(surface)

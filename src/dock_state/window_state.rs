@@ -60,19 +60,17 @@ impl WindowState {
     /// Returns if window was dragged this frame, indicating with the inside bool if the drag was just started or not.
     pub(crate) fn dragged(&mut self, ctx: &egui::Context, new_rect: Rect) -> Option<bool> {
         //we need to make sure we check the size hasn't changed, since it indicates a resize rather than a drag
-        if (new_rect != self.screen_rect && new_rect.size() == self.screen_rect.size())
-            || self.dragged
-        {
-            self.screen_rect = new_rect;
-            let something_dragged = ctx.memory(|mem| mem.is_anything_being_dragged());
+        ((new_rect != self.screen_rect && new_rect.size() == self.screen_rect.size())
+            || self.dragged)
+            .then(|| {
+                self.screen_rect = new_rect;
+                let something_dragged = ctx.memory(|mem| mem.is_anything_being_dragged());
 
-            //this enforces the drag start pattern which tabs follow, that is it's Some for the first frame of the drag, then none.
-            let did_drag_start = something_dragged && !self.dragged;
-            self.dragged = something_dragged;
-            Some(did_drag_start)
-        } else {
-            None
-        }
+                //this enforces the drag start pattern which tabs follow, that is it's Some for the first frame of the drag, then none.
+                let did_drag_start = something_dragged && !self.dragged;
+                self.dragged = something_dragged;
+                did_drag_start
+            })
     }
 }
 
