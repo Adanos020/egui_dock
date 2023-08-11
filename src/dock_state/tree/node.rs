@@ -80,7 +80,7 @@ impl<Tab> Node<Tab> {
 
     /// Gets the area occupied by the node.
     ///
-    /// Returns `None` if the node is a `Empty`
+    /// Returns `None` if the node is a `Empty`.
     #[inline]
     pub fn rect(&self) -> Option<Rect> {
         match self {
@@ -132,10 +132,28 @@ impl<Tab> Node<Tab> {
         std::mem::replace(self, src)
     }
 
+    /// Returns `Some` with an immutable slice of the list of tabs if the node is a `Leaf`, otherwise `None`.
+    #[inline]
+    pub fn tabs(&self) -> Option<&[Tab]> {
+        match self {
+            Node::Leaf { tabs, .. } => Some(tabs),
+            _ => None,
+        }
+    }
+
+    /// Returns `Some` with a mutable slice of the list of tabs if the node is a `Leaf`, otherwise `None`.
+    #[inline]
+    pub fn tabs_mut(&mut self) -> Option<&mut [Tab]> {
+        match self {
+            Node::Leaf { tabs, .. } => Some(tabs),
+            _ => None,
+        }
+    }
+
     /// Adds a `tab` to the node.
     ///
     /// # Panics
-    /// Panics if the new capacity of `tabs` exceeds isize::MAX bytes.
+    /// Panics if the new capacity of `tabs` exceeds `isize::MAX` bytes.
     #[track_caller]
     #[inline]
     pub fn append_tab(&mut self, tab: Tab) {
@@ -151,8 +169,7 @@ impl<Tab> Node<Tab> {
     /// Adds a `tab` to the node.
     ///
     /// # Panics
-    /// Panics if the new capacity of `tabs` exceeds isize::MAX bytes.
-    /// index > tabs_count()
+    /// Panics if the new capacity of `tabs` exceeds `isize::MAX` bytes, or `index > tabs_count()`.
     #[track_caller]
     #[inline]
     pub fn insert_tab(&mut self, index: TabIndex, tab: Tab) {

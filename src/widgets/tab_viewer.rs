@@ -69,14 +69,14 @@ pub trait TabViewer {
         None
     }
 
-    /// Specifies a tabs ability to be shown in a window
+    /// Specifies a tabs ability to be shown in a window.
     ///
-    /// return ``false`` if you don't want this tab to be dragged into or be turned into a window.
+    /// Returns ``false`` if you don't want this tab to be dragged into or be turned into a window.
     fn allowed_in_windows(&self, _tab: &mut Self::Tab) -> bool {
         true
     }
 
-    /// Whether the tab will be cleared with the color specified in [`TabBarStyle::bg_fill`](crate::TabBarStyle::bg_fill)
+    /// Whether the tab will be cleared with the color specified in [`TabBarStyle::bg_fill`](crate::TabBarStyle::bg_fill).
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }

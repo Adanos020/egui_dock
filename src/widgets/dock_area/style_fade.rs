@@ -26,6 +26,7 @@ fn fade_seperator_style(style: &mut SeparatorStyle, factor: f32) {
     style.color_hovered = style.color_hovered.linear_multiply(factor);
     style.color_dragged = style.color_dragged.linear_multiply(factor);
 }
+
 fn fade_button_style(style: &mut ButtonsStyle, factor: f32) {
     style.close_tab_color = style.close_tab_color.linear_multiply(factor);
     style.close_tab_active_color = style.close_tab_active_color.linear_multiply(factor);

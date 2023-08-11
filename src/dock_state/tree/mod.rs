@@ -26,7 +26,11 @@ pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
 
 use egui::{Pos2, Rect};
-use std::fmt;
+use std::{
+    fmt,
+    ops::{Index, IndexMut},
+    slice::{Iter, IterMut},
+};
 
 // ----------------------------------------------------------------------------
 
@@ -91,7 +95,7 @@ impl TabDestination {
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree<Tab> {
-    //binary tree vector
+    // Binary tree vector
     pub(super) tree: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
 }
@@ -111,7 +115,7 @@ impl<Tab> Default for Tree<Tab> {
     }
 }
 
-impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
+impl<Tab> Index<NodeIndex> for Tree<Tab> {
     type Output = Node<Tab>;
 
     #[inline(always)]
@@ -120,7 +124,7 @@ impl<Tab> std::ops::Index<NodeIndex> for Tree<Tab> {
     }
 }
 
-impl<Tab> std::ops::IndexMut<NodeIndex> for Tree<Tab> {
+impl<Tab> IndexMut<NodeIndex> for Tree<Tab> {
     #[inline(always)]
     fn index_mut(&mut self, index: NodeIndex) -> &mut Self::Output {
         &mut self.tree[index.0]
@@ -141,18 +145,14 @@ impl<Tab> Tree<Tab> {
     /// Returns the viewport `Rect` and the `Tab` inside the first leaf node, or `None` of no leaf exists in the `Tree`.
     #[inline]
     pub fn find_active(&mut self) -> Option<(Rect, &mut Tab)> {
-        self.tree.iter_mut().find_map(|node| {
-            if let Node::Leaf {
+        self.tree.iter_mut().find_map(|node| match node {
+            Node::Leaf {
                 tabs,
                 active,
                 viewport,
                 ..
-            } = node
-            {
-                tabs.get_mut(active.0).map(|tab| (*viewport, tab))
-            } else {
-                None
-            }
+            } => tabs.get_mut(active.0).map(|tab| (viewport.to_owned(), tab)),
+            _ => None,
         })
     }
 
@@ -170,13 +170,13 @@ impl<Tab> Tree<Tab> {
 
     /// Returns an `Iterator` of the underlying collection of nodes.
     #[inline(always)]
-    pub fn iter(&self) -> std::slice::Iter<'_, Node<Tab>> {
+    pub fn iter(&self) -> Iter<'_, Node<Tab>> {
         self.tree.iter()
     }
 
     /// Returns `IterMut` of the underlying collection of nodes.
     #[inline(always)]
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Node<Tab>> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, Node<Tab>> {
         self.tree.iter_mut()
     }
 
@@ -319,7 +319,7 @@ impl<Tab> Tree<Tab> {
         let old = self[parent].split(split, fraction);
         assert!(old.is_leaf() || old.is_parent());
 
-        //resize vector to fit the new size of the binary tree
+        // Resize vector to fit the new size of the binary tree.
         {
             let index = self.tree.iter().rposition(|n| !n.is_empty()).unwrap_or(0);
             let level = NodeIndex(index).level();
@@ -332,21 +332,21 @@ impl<Tab> Tree<Tab> {
             Split::Right | Split::Below => [parent.left(), parent.right()],
         };
 
-        //if the node were splitting is a parent, all it's children need to be moved.
+        // If the node were splitting is a parent, all it's children need to be moved.
         if old.is_parent() {
             let levels_to_move = NodeIndex(self.tree.len()).level() - index[0].level();
 
-            //level 0 is ourself, which is done when we assign self[index[0]] = old, so start at 1.
+            // Level 0 is ourself, which is done when we assign self[index[0]] = old, so start at 1.
             for level in (1..levels_to_move).rev() {
                 let old_start = parent.children_at(level).start;
                 let new_start = index[0].children_at(level).start;
                 let len = 1 << level;
 
-                //swap self[old_start..(old_start+len)] with self[new_start..(new_start+len)]
-                //(the new part will only contain empty entries)
+                // Swap self[old_start..(old_start+len)] with self[new_start..(new_start+len)]
+                // (the new part will only contain empty entries).
                 let (old_range, new_range) = {
                     let (first_part, second_part) = self.tree.split_at_mut(new_start);
-                    //cut to length
+                    // Cut to length.
                     (
                         &mut first_part[old_start..old_start + len],
                         &mut second_part[..len],
@@ -374,10 +374,7 @@ impl<Tab> Tree<Tab> {
             (
                 Some(Node::Horizontal { .. } | Node::Vertical { .. }),
                 Some(Node::Horizontal { .. } | Node::Vertical { .. }),
-            ) => match self.first_leaf(left) {
-                ret @ Some(_) => ret,
-                None => self.first_leaf(right),
-            },
+            ) => self.first_leaf(left).or(self.first_leaf(right)),
             (Some(Node::Horizontal { .. } | Node::Vertical { .. }), _) => self.first_leaf(left),
             (_, Some(Node::Horizontal { .. } | Node::Vertical { .. })) => self.first_leaf(right),
 
@@ -391,16 +388,14 @@ impl<Tab> Tree<Tab> {
     /// Returns the viewport `Rect` and the `Tab` inside the focused leaf node or `None` if it does not exist.
     #[inline]
     pub fn find_active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
-        if let Some(Node::Leaf {
-            tabs,
-            active,
-            viewport,
-            ..
-        }) = self.focused_node.and_then(|idx| self.tree.get_mut(idx.0))
-        {
-            tabs.get_mut(active.0).map(|tab| (*viewport, tab))
-        } else {
-            None
+        match self.focused_node.and_then(|idx| self.tree.get_mut(idx.0)) {
+            Some(Node::Leaf {
+                tabs,
+                active,
+                viewport,
+                ..
+            }) => tabs.get_mut(active.0).map(|tab| (*viewport, tab)),
+            _ => None,
         }
     }
 
@@ -413,23 +408,20 @@ impl<Tab> Tree<Tab> {
     /// Sets the currently focused leaf to `node_index` if the node at `node_index` is a leaf.
     #[inline]
     pub fn set_focused_node(&mut self, node_index: NodeIndex) {
-        if let Some(Node::Leaf { .. }) = self.tree.get(node_index.0) {
-            self.focused_node = Some(node_index);
-        } else {
-            self.focused_node = None;
-        }
+        self.focused_node = self
+            .tree
+            .get(node_index.0)
+            .filter(|node| node.is_leaf())
+            .map(|_| node_index);
     }
 
     /// Removes the given node from the [`Tree`].
     pub fn remove_leaf(&mut self, node: NodeIndex) {
         assert!(self[node].is_leaf());
 
-        let parent = match node.parent() {
-            Some(val) => val,
-            None => {
-                self.tree.clear();
-                return;
-            }
+        let Some(parent) = node.parent() else {
+            self.tree.clear();
+            return;
         };
 
         if Some(node) == self.focused_node {
@@ -441,7 +433,7 @@ impl<Tab> Tree<Tab> {
                 } else {
                     parent.left()
                 };
-                if let Some(Node::Leaf { .. }) = self.tree.get(next.0) {
+                if self.tree.get(next.0).is_some_and(|node| node.is_leaf()) {
                     self.focused_node = Some(next);
                     break;
                 }
@@ -589,7 +581,7 @@ where
     /// In case there are several hits, only the first is returned.
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(NodeIndex, TabIndex)> {
         for (node_index, node) in self.tree.iter().enumerate() {
-            if let Node::Leaf { tabs, .. } = node {
+            if let Some(tabs) = node.tabs() {
                 for (tab_index, tab) in tabs.iter().enumerate() {
                     if tab == needle_tab {
                         return Some((node_index.into(), tab_index.into()));

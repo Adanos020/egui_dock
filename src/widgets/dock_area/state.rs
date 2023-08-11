@@ -30,11 +30,7 @@ impl State {
 
     #[inline(always)]
     pub(super) fn is_drag_drop_lock_some(&self) -> bool {
-        self.drag
-            .as_ref()
-            .map(|drag| drag.locked)
-            .flatten()
-            .is_some()
+        self.drag.as_ref().and_then(|drag| drag.locked).is_some()
     }
 
     pub(super) fn reset_drag(&mut self) {
@@ -42,7 +38,7 @@ impl State {
         self.window_fade = None;
     }
 
-    //HACKY: Fix asap!
+    // HACKY: Fix asap!
     pub(super) fn set_drag_and_drop(
         &mut self,
         drag: DragData,

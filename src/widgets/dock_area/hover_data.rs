@@ -30,7 +30,7 @@ pub(super) struct DragDropState {
     pub hover: HoverData,
     pub drag: DragData,
     pub pointer: Pos2,
-    ///is some when the pointer is over rect, instant holds when the lock was last active
+    /// Is some when the pointer is over rect, instant holds when the lock was last active.
     pub locked: Option<Instant>,
 }
 
@@ -46,7 +46,7 @@ impl DropPosition {
         match self {
             DropPosition::Surface(surface) => (*surface, None),
             DropPosition::Node(surface, node) => (*surface, Some(*node)),
-            //NOTE: TabIndex here is only used by `resolve`, since its used to factor the `TabDestination`
+            // NOTE: TabIndex here is only used by `resolve`, since its used to factor the `TabDestination`
             DropPosition::Tab(surface, node, _) => (*surface, Some(*node)),
         }
     }
@@ -65,12 +65,12 @@ impl DropPosition {
 }
 
 impl DragDropState {
-    //determines if the hoverdata implies we're hovering over a tab or the tab title bar
+    // Determines if the hover data implies we're hovering over a tab or the tab title bar.
     pub(super) fn is_on_title_bar(&self) -> bool {
         self.hover.tab.is_some()
     }
 
-    //resolve a TabDestination for whatever is hovered
+    // Resolve a TabDestination for whatever is hovered.
     pub(super) fn resolve(
         &mut self,
         ui: &Ui,
@@ -169,8 +169,8 @@ impl DragDropState {
         let center = rect.center();
 
         let (tab_dst, overlay) = {
-            // a reverse lerp of the pointers position relative to the hovered leaf rect.
-            // range is (-0.5, -0.5) to (0.5, 0.5)
+            // A reverse lerp of the pointers position relative to the hovered leaf rect.
+            // Range is (-0.5, -0.5) to (0.5, 0.5)
             let a_pos = (Pos2::new(
                 inverse_lerp(rect.x_range(), pointer.x).unwrap(),
                 inverse_lerp(rect.y_range(), pointer.y).unwrap(),
@@ -191,8 +191,8 @@ impl DragDropState {
             {
                 (TabDestination::Window(pointer), Rect::NOTHING)
             } else {
-                //assessing if were above/below the two linear functions x-y=0 and -x-y=0 determines
-                //what "diagonal" quadrant were in.
+                // Assessing if were above/below the two linear functions x-y=0 and -x-y=0 determines
+                // what "diagonal" quadrant were in.
                 let a_pos = match allowed_splits {
                     AllowedSplits::All => a_pos,
                     AllowedSplits::LeftRightOnly => Pos2::new(a_pos.x, 0.0),
@@ -283,7 +283,7 @@ fn draw_highlight_rect(rect: Rect, ui: &Ui, style: &Style) {
     )
 }
 
-//draws one of the Tab drop destination icons inside "rect", which one you get is specified by "is_top_bottom"
+// Draws one of the Tab drop destination icons inside `rect`, which one you get is specified by `is_top_bottom`.
 fn button_ui(
     rect: Rect,
     ui: &Ui,
@@ -346,7 +346,7 @@ const fn lerp_vec(split: Split, alpha: f32) -> Vec2 {
     }
 }
 
-//this only draws the rect describing where a tab will be dropped
+// This only draws the rect describing where a tab will be dropped.
 #[inline(always)]
 fn draw_drop_rect(rect: Rect, ui: &Ui, style: &Style) {
     let id = Id::new("overlay");

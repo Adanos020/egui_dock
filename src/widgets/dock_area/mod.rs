@@ -37,6 +37,7 @@ pub enum AllowedSplits {
     /// Don't allow splits at all.
     None = 0b00,
 }
+
 impl std::ops::BitAnd for AllowedSplits {
     type Output = Self;
 
@@ -44,9 +45,9 @@ impl std::ops::BitAnd for AllowedSplits {
         Self::from_u8(self as u8 & rhs as u8)
     }
 }
+
 impl AllowedSplits {
-    ///Create an allowedsplits from a u8,
-    ///panics if an invalid value is given
+    /// Create an allowed splits from a u8, panics if an invalid value is given.
     #[inline(always)]
     fn from_u8(u8: u8) -> Self {
         match u8 {
@@ -58,6 +59,7 @@ impl AllowedSplits {
         }
     }
 }
+
 /// Displays a [`Tree`] in `egui`.
 pub struct DockArea<'tree, Tab> {
     id: Id,
@@ -80,7 +82,7 @@ pub struct DockArea<'tree, Tab> {
     tab_hover_rect: Option<(Rect, TabIndex)>,
 }
 
-/// An enum expressing an entry in the `to_remove` field in [`DockArea`]
+/// An enum expressing an entry in the `to_remove` field in [`DockArea`].
 #[derive(Debug, Clone, Copy)]
 enum TabRemoval {
     Node(SurfaceIndex, NodeIndex, TabIndex),
@@ -310,7 +312,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             match source.src {
                 DropPosition::Tab(src_surf, src_node, src_tab) => {
                     let (empty_destination_surface, valid_move) = {
-                        //empty roots don't have destination nodes
+                        // Empty roots don't have destination nodes
                         match dst_node {
                             Some(dst_node) => {
                                 let src = &self.dock_state[src_surf][src_node];
@@ -348,7 +350,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         };
 
                         if ui.input(|i| i.pointer.any_released()) {
-                            //primarily used to allow/deny tabs to become/ be put in windows.
+                            // Primarily used to allow/deny tabs to become/ be put in windows.
                             let allowed_to_move = {
                                 if !tab_dst.is_window() {
                                     true
@@ -357,7 +359,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                 {
                                     tab_viewer.allowed_in_windows(&mut tabs[src_tab.0])
                                 } else {
-                                    //we've already run `is_leaf()` on this node.
+                                    // We've already run `is_leaf()` on this node.
                                     unreachable!()
                                 }
                             };
@@ -373,9 +375,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                                         self.dock_state.remove_surface(src_surf);
                                     }
                                 } else {
+                                    let dst_node = dst_node.expect("Must be `Some` because `empty_destination_surface == false`");
                                     self.dock_state.move_tab(
                                         (src_surf, src_node, src_tab),
-                                        (dst_surf, dst_node.unwrap(), tab_dst),
+                                        (dst_surf, dst_node, tab_dst),
                                     );
                                 }
 
@@ -392,7 +395,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         state.store(ui.ctx(), self.id);
     }
 
-    /// Show a single surface of a [`DockState`]
+    /// Show a single surface of a [`DockState`].
     fn show_surface_inside(
         &mut self,
         surf_index: SurfaceIndex,
@@ -426,7 +429,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     tab: None,
                 })
             }
-            //all for loops will be empty, so theres no point going through them.
+            // All for loops will be empty, so theres no point going through them.
             return;
         }
 
@@ -667,8 +670,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 ui.painter().rect_filled(separator, Rounding::none(), color);
 
-                // Update 'fraction' interaction after drawing seperator,
-                // overwise it may overlap on other separator / bodies when
+                // Update 'fraction' interaction after drawing separator,
+                // otherwise it may overlap on other separator / bodies when
                 // shrunk fast.
                 if let Some(pos) = response.interact_pointer_pos() {
                     let dim_point = pos.dim_point;
@@ -731,16 +734,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             fade_style,
         );
 
-        match &mut self.dock_state[surface_index][node_index] {
-            Node::Leaf { tabs, .. } => {
-                for (tab_index, tab) in tabs.iter_mut().enumerate() {
-                    if tab_viewer.force_close(tab) {
-                        self.to_remove
-                            .push((surface_index, node_index, TabIndex(tab_index)).into());
-                    }
-                }
+        let tabs = self.dock_state[surface_index][node_index]
+            .tabs_mut()
+            .expect("This node must be a leaf here");
+        for (tab_index, tab) in tabs.iter_mut().enumerate() {
+            if tab_viewer.force_close(tab) {
+                self.to_remove
+                    .push((surface_index, node_index, TabIndex(tab_index)).into());
             }
-            _ => unreachable!(),
         }
     }
 
@@ -767,7 +768,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let mut available_width = tabbar_outer_rect.width();
 
-        // Reserve space for the add button at the end of the tab bar
+        // Reserve space for the add button at the end of the tab bar.
         if self.show_add_buttons {
             available_width -= Style::TAB_ADD_BUTTON_SIZE;
         }
@@ -793,7 +794,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             clip_rect.set_width(available_width);
             tabs_ui.set_clip_rect(clip_rect);
 
-            // Desired size for tabs in "expanded" mode
+            // Desired size for tabs in "expanded" mode.
             let prefered_width = style
                 .tab_bar
                 .fill_tab_bar
@@ -867,9 +868,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let focused = self.dock_state.focused_leaf();
         let tabs_len = {
-            let Node::Leaf { tabs, .. } = &mut self.dock_state[surface_index][node_index] else {
-                unreachable!()
-            };
+            let tabs = self.dock_state[surface_index][node_index]
+                .tabs_mut()
+                .expect("This node must be a leaf here");
             tabs.len()
         };
 
@@ -1029,7 +1030,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 response
             };
 
-            // Paint hline below each tab unless its active (or option says otherwise)
+            // Paint hline below each tab unless its active (or option says otherwise).
             let Node::Leaf { tabs, active, .. } = &mut self.dock_state[surface_index][node_index]
             else {
                 unreachable!()
@@ -1167,7 +1168,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             0.0
         };
 
-        // Compute total width of the tab bar
+        // Compute total width of the tab bar.
         let minimum_width = tab_style
             .minimum_width
             .unwrap_or(0.0)
@@ -1201,7 +1202,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             Stroke::new(1.0, tab_style.outline_color),
         );
         if !is_being_dragged {
-            // Make the tab name area connect with the tab ui area:
+            // Make the tab name area connect with the tab ui area.
             ui.painter().hline(
                 RangeInclusive::new(
                     stroke_rect.min.x + f32::max(tab_style.rounding.sw, 1.5),
@@ -1216,10 +1217,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         text_rect.set_width(tab_width - close_button_size);
 
         let text_pos = {
-            let mut pos =
-                Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
-            pos -= galley.size() / 2.0;
-            pos
+            let pos = Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
+            pos - galley.size() / 2.0
         };
 
         let override_text_color = (!galley.galley_has_color).then_some(tab_style.text_color);
@@ -1323,8 +1322,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     Sense::drag(),
                 );
 
-                // Coefficient to apply to input displacements so that we
-                // move the scroll by the correct amount.
+                // Coefficient to apply to input displacements so that we move the scroll by the correct amount.
                 let points_to_scroll_coefficient =
                     overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
 
@@ -1427,7 +1425,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             // Offset the background rectangle up to hide the top border behind the clip rect.
             // To avoid anti-aliasing lines when the stroke width is not divisible by two, we
-            // need to calulate the effective anti aliased stroke width.
+            // need to calculate the effective anti-aliased stroke width.
             let effective_stroke_width = (tabs_style.tab_body.stroke.width / 2.0).ceil() * 2.0;
             let tab_body_rect = Rect::from_min_max(
                 ui.clip_rect().min - vec2(0.0, effective_stroke_width),
@@ -1466,12 +1464,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
-            //prevent borrow checker issues
-            let rect = *rect;
+            // Prevent borrow checker issues.
+            let rect = rect.to_owned();
 
-            // Use rect.contains instead of
-            // response.hovered as the dragged tab covers
-            // the underlying responses
+            // Use rect.contains instead of response.hovered as the dragged tab covers
+            // the underlying responses.
             if state.drag_start.is_some() && rect.contains(pointer) {
                 let on_title_bar = tabbar_response.rect.contains(pointer);
                 let (dst, tab) = {

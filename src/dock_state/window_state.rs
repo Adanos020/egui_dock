@@ -32,7 +32,7 @@ impl Default for WindowState {
 }
 
 impl WindowState {
-    /// create a default window state
+    /// Create a default window state.
     pub fn new() -> Self {
         Self::default()
     }
