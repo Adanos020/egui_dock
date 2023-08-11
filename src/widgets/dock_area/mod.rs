@@ -789,7 +789,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
         let text_width = galley.size().x + 2.0 * x_spacing;
-        let close_button_size = if self.show_close_buttons {
+        let close_button_size = if show_close_button {
             Style::TAB_CLOSE_BUTTON_SIZE.min(style.tab_bar.height)
         } else {
             0.0
