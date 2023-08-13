@@ -185,17 +185,21 @@ impl DragDropState {
 
         let center = rect.center();
         let rect = Rect::from_center_size(center, Vec2::splat(shortest_side));
-        if button_ui(rect, ui, &mut hovering_buttons, pointer, style, None) {
-            match self.hover.dst {
-                TreeComponent::Node(surface, node) => {
-                    destination = Some(TabDestination::Node(surface, node, TabInsert::Append))
+
+        if self.drag.src.node_address() != self.hover.dst.node_address() {
+            if button_ui(rect, ui, &mut hovering_buttons, pointer, style, None) {
+                match self.hover.dst {
+                    TreeComponent::Node(surface, node) => {
+                        destination = Some(TabDestination::Node(surface, node, TabInsert::Append))
+                    }
+                    TreeComponent::Surface(surface) => {
+                        destination = Some(TabDestination::EmptySurface(surface))
+                    }
+                    _ => (),
                 }
-                TreeComponent::Surface(surface) => {
-                    destination = Some(TabDestination::EmptySurface(surface))
-                }
-                _ => (),
             }
         }
+        
         for split in [Split::Below, Split::Right, Split::Above, Split::Left] {
             match allowed_splits {
                 AllowedSplits::TopBottomOnly if split.is_top_bottom() => continue,
@@ -226,6 +230,10 @@ impl DragDropState {
             (true, _) => LockState::SoftLock,
         };
         self.update_lock(target_lock_state, style, ui.ctx());
+        if let Some(TabDestination::Window(rect)) = destination {
+            let rect = self.window_preview_rect(rect);
+            draw_window_rect(rect, ui, style);
+        }
         destination
     }
 
@@ -240,7 +248,8 @@ impl DragDropState {
         if !windows_allowed && self.hover.dst.surface_address() != SurfaceIndex::root() {
             return None;
         }
-
+        draw_highlight_rect(self.hover.rect, ui, style);
+        
         //deals with hovers over tab bar and tab titles
         if let Some(rect) = self.hover.tab {
             draw_drop_rect(rect, ui, style);
@@ -344,9 +353,12 @@ impl DragDropState {
             _ => None,
         });
 
+        self.update_lock(LockState::SoftLock, style, ui.ctx());
+
         //Draw the overlay
         match final_result {
             Some(TabDestination::Window(rect)) => {
+                let rect = self.window_preview_rect(rect);
                 draw_window_rect(rect, ui, style);
             }
             Some(_) => {
@@ -392,6 +404,13 @@ impl DragDropState {
                 elapsed < style.overlay.feel.max_preference_time
             }
             None => false,
+        }
+    }
+    fn window_preview_rect(&self, rect: Rect) -> Rect {
+        if self.drag.src.surface_address() == SurfaceIndex::root() {
+            Rect::from_min_size(rect.min, rect.size() * 0.8)
+        } else {
+            rect
         }
     }
 }

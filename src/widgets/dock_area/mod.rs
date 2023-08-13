@@ -312,15 +312,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         if self.dock_state.root().is_empty() {
             let rect = ui.available_rect_before_wrap();
-            let response = ui.allocate_rect(rect, Sense::click());
+            let response = ui.allocate_rect(rect, Sense::hover());
             if response.hovered() {
+                println!("tried");
                 self.hover_data = Some(HoverData {
                     rect,
                     dst: TreeComponent::Surface(surf_index),
                     tab: None,
                 })
             }
-            // All for loops will be empty, so theres no point going through them.
             return;
         }
 
@@ -1410,6 +1410,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let drag_state = state.dnd.as_mut().unwrap();
         let style = self.style.as_ref().unwrap();
 
+
         //if were hovering over ourselves, we're not moving anywhere.
         if drag_state.hover.dst.node_address() == drag_state.drag.src.node_address()
             && drag_state.is_on_title_bar()
@@ -1436,7 +1437,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
             _ => todo!("collections of tabs, like nodes or surfaces, can't be dragged! (yet)"),
         };
-
+       
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
             drag_state.pointer = pointer;
         }
