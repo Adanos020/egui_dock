@@ -8,9 +8,9 @@ pub mod window_state;
 pub use surface_index::SurfaceIndex;
 pub use window_state::WindowState;
 
-use egui::{Pos2, Rect};
+use egui::Rect;
 
-use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, Tree};
+use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Tree};
 
 /// The basis for egui_dock
 ///
@@ -313,34 +313,30 @@ impl<Tab> DockState<Tab> {
     pub fn move_tab(
         &mut self,
         (src_surface, src_node, src_tab): (SurfaceIndex, NodeIndex, TabIndex),
-        (dst_surface, dst_node, dst_tab): (SurfaceIndex, NodeIndex, TabDestination),
+        dst_tab: impl Into<TabDestination>,
     ) {
-        // Moving a single tab inside its own node is a no-op
-        if src_surface == dst_surface
-            && src_node == dst_node
-            && self[src_surface][src_node].tabs_count() == 1
-        {
-            return;
-        }
-
-        match dst_tab {
+        match dst_tab.into() {
             TabDestination::Window(position) => {
                 self.detach_tab(src_surface, src_node, src_tab, position);
             }
-            _ => {
+            TabDestination::Node(dst_surface, dst_node, dst_tab) => {
+                // Moving a single tab inside its own node is a no-op
+                if src_surface == dst_surface
+                    && src_node == dst_node
+                    && self[src_surface][src_node].tabs_count() == 1
+                {
+                    return;
+                }
+
                 // Call `Node::remove_tab` to avoid auto remove of the node by
                 // `Tree::remove_tab` from Tree.
                 let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
                 match dst_tab {
-                    TabDestination::Split(split) => {
+                    TabInsert::Split(split) => {
                         self[dst_surface].split(dst_node, split, 0.5, Node::leaf(tab));
                     }
-
-                    TabDestination::Insert(index) => {
-                        self[dst_surface][dst_node].insert_tab(index, tab)
-                    }
-                    TabDestination::Append => self[dst_surface][dst_node].append_tab(tab),
-                    _ => (),
+                    TabInsert::Insert(index) => self[dst_surface][dst_node].insert_tab(index, tab),
+                    TabInsert::Append => self[dst_surface][dst_node].append_tab(tab),
                 }
                 if self[src_surface][src_node].is_leaf()
                     && self[src_surface][src_node].tabs_count() == 0
@@ -350,6 +346,11 @@ impl<Tab> DockState<Tab> {
                 if self[src_surface].is_empty() && !src_surface.is_root() {
                     self.remove_surface(src_surface);
                 }
+            }
+            TabDestination::EmptySurface(dst_surface) => {
+                assert!(self[dst_surface].is_empty());
+                let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
+                self[dst_surface] = Tree::new(vec![tab])
             }
         };
     }
@@ -361,26 +362,22 @@ impl<Tab> DockState<Tab> {
         src_surface: SurfaceIndex,
         src_node: NodeIndex,
         src_tab: TabIndex,
-        window_pos: Pos2,
+        window_rect: Rect,
     ) -> SurfaceIndex {
+        //Remove the tab from the tree and add to a new window
         let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
         let surface_index = self.add_window(vec![tab]);
 
-        let rect = {
-            match self[src_surface][src_node] {
-                Node::Leaf { rect, .. }
-                | Node::Vertical { rect, .. }
-                | Node::Horizontal { rect, .. } => rect,
-                Node::Empty => unreachable!(),
-            }
-        };
-
+        //set the windows size and position to match `window_rect`
         let state = self.get_window_state_mut(surface_index).unwrap();
+        state.set_position(window_rect.min);
         if src_surface.is_root() {
-            state.set_size(rect.size() * 0.8);
+            state.set_size(window_rect.size() * 0.8);
+        } else {
+            state.set_size(window_rect.size());
         }
 
-        state.set_position(window_pos);
+        //Clean up any empty leaves and surfaces which may be left behind from the detachment
         if self[src_surface][src_node].is_leaf() && self[src_surface][src_node].tabs_count() == 0 {
             self[src_surface].remove_leaf(src_node);
         }

@@ -25,12 +25,14 @@ pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
 
-use egui::{Pos2, Rect};
+use egui::Rect;
 use std::{
     fmt,
     ops::{Index, IndexMut},
     slice::{Iter, IterMut},
 };
+
+use crate::SurfaceIndex;
 
 // ----------------------------------------------------------------------------
 
@@ -57,15 +59,36 @@ impl Split {
 }
 
 /// Specify how a tab should be added to a Node.
-pub enum TabDestination {
+pub enum TabInsert {
     /// Split the node in the given direction.
     Split(Split),
     /// Insert the tab at the given index.
     Insert(TabIndex),
     /// Create a window from the tab
-    Window(Pos2),
+
     /// Append the tab to the node.
     Append,
+}
+/// The destination for a tab which is being moved
+pub enum TabDestination {
+    /// Move to a new window with this rect
+    Window(Rect),
+
+    /// Move to a an existing node with this insetion
+    Node(SurfaceIndex, NodeIndex, TabInsert),
+
+    /// Move to an empty surface
+    EmptySurface(SurfaceIndex),
+}
+impl Into<TabDestination> for (SurfaceIndex, NodeIndex, TabInsert) {
+    fn into(self) -> TabDestination {
+        TabDestination::Node(self.0, self.1, self.2)
+    }
+}
+impl Into<TabDestination> for SurfaceIndex {
+    fn into(self) -> TabDestination {
+        TabDestination::EmptySurface(self)
+    }
 }
 
 impl TabDestination {

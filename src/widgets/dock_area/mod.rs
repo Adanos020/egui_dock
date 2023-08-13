@@ -1,14 +1,19 @@
-mod hover_data;
+mod allowed_splits;
+mod drag_and_drop;
 mod state;
 mod style_fade;
+mod tab_removal;
 
+pub use allowed_splits::AllowedSplits;
+use tab_removal::TabRemoval;
 use std::{ops::RangeInclusive, time::Instant};
 
 use crate::{
     dock_state::DockState,
     utils::{expand_to_pixel, map_to_pixel, rect_set_size_centered, rect_stroke_box},
     widgets::popup::popup_under_widget,
-    Node, NodeIndex, Style, SurfaceIndex, TabAddAlign, TabIndex, TabStyle, TabViewer, Tree,
+    Node, NodeIndex, OverlayType, Style, SurfaceIndex, TabAddAlign, TabDestination, TabIndex,
+    TabStyle, TabViewer,
 };
 
 use duplicate::duplicate;
@@ -20,45 +25,9 @@ use paste::paste;
 use state::State;
 
 use self::{
-    hover_data::{DragData, DropPosition, HoverData},
+    drag_and_drop::{DragData, HoverData, TreeComponent},
     style_fade::{fade_dock_style, fade_visuals},
 };
-
-/// What directions can this dock split in?
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
-pub enum AllowedSplits {
-    #[default]
-    /// Allow splits in any direction (horizontal and vertical).
-    All = 0b11,
-    /// Only allow split in a horizontal direction.
-    LeftRightOnly = 0b10,
-    /// Only allow splits in a vertical direction.
-    TopBottomOnly = 0b01,
-    /// Don't allow splits at all.
-    None = 0b00,
-}
-
-impl std::ops::BitAnd for AllowedSplits {
-    type Output = Self;
-
-    fn bitand(self, rhs: Self) -> Self::Output {
-        Self::from_u8(self as u8 & rhs as u8)
-    }
-}
-
-impl AllowedSplits {
-    /// Create an allowed splits from a u8, panics if an invalid value is given.
-    #[inline(always)]
-    fn from_u8(u8: u8) -> Self {
-        match u8 {
-            0b11 => AllowedSplits::All,
-            0b10 => AllowedSplits::LeftRightOnly,
-            0b01 => AllowedSplits::TopBottomOnly,
-            0b00 => AllowedSplits::None,
-            _ => panic!(),
-        }
-    }
-}
 
 /// Displays a [`Tree`] in `egui`.
 pub struct DockArea<'tree, Tab> {
@@ -80,25 +49,6 @@ pub struct DockArea<'tree, Tab> {
     to_detach: Vec<(SurfaceIndex, NodeIndex, TabIndex)>,
     new_focused: Option<(SurfaceIndex, NodeIndex)>,
     tab_hover_rect: Option<(Rect, TabIndex)>,
-}
-
-/// An enum expressing an entry in the `to_remove` field in [`DockArea`].
-#[derive(Debug, Clone, Copy)]
-enum TabRemoval {
-    Node(SurfaceIndex, NodeIndex, TabIndex),
-    Window(SurfaceIndex),
-}
-
-impl From<SurfaceIndex> for TabRemoval {
-    fn from(index: SurfaceIndex) -> Self {
-        TabRemoval::Window(index)
-    }
-}
-
-impl From<(SurfaceIndex, NodeIndex, TabIndex)> for TabRemoval {
-    fn from((si, ni, ti): (SurfaceIndex, NodeIndex, TabIndex)) -> TabRemoval {
-        TabRemoval::Node(si, ni, ti)
-    }
 }
 
 // Builder
@@ -293,7 +243,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 surface_index,
                 node_index,
                 tab_index,
-                mouse_pos.unwrap_or(Pos2::ZERO),
+                Rect::from_min_size(
+                    mouse_pos.unwrap_or(Pos2::ZERO),
+                    self.dock_state[surface_index][node_index]
+                        .rect()
+                        .map_or(Vec2::new(100., 150.), |rect| rect.size()),
+                ),
             );
         }
 
@@ -301,94 +256,30 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             self.dock_state.set_focused_node_and_surface(focused);
         }
 
-        if let (Some(source), Some(hover)) = (self.drag_data, self.hover_data) {
+        if let (Some(source), Some(hover)) = (self.drag_data.take(), self.hover_data.take()) {
             let style = self.style.as_ref().unwrap();
-            state.set_drag_and_drop(source.clone(), hover, ui.ctx(), style);
-            let (source, hover) = {
-                let drag_data = state.drag.as_ref().unwrap();
-                (drag_data.drag.clone(), drag_data.hover.clone())
+            state.set_drag_and_drop(source, hover, ui.ctx(), style);
+            let tab_dst = {
+                let layer_id = LayerId::new(Order::Foreground, "foreground".into());
+                ui.with_layer_id(layer_id, |ui| {
+                    self.show_drag_drop_overlay(ui, &mut state, tab_viewer)
+                })
+                .inner
             };
-            let (dst_surf, dst_node) = hover.dst.break_down();
-            match source.src {
-                DropPosition::Tab(src_surf, src_node, src_tab) => {
-                    let (empty_destination_surface, valid_move) = {
-                        // Empty roots don't have destination nodes
-                        match dst_node {
-                            Some(dst_node) => {
-                                let src = &self.dock_state[src_surf][src_node];
-                                let dst = &self.dock_state[dst_surf][dst_node];
-                                let not_invalid = src.is_leaf()
-                                    && dst.is_leaf()
-                                    && ((src_surf, src_node) != (dst_surf, dst_node)
-                                        || src.tabs_count() > 1);
-                                (false, not_invalid)
-                            }
-                            None => {
-                                let not_invalid = self.dock_state[src_surf][src_node].is_leaf();
-                                (true, not_invalid)
-                            }
+            if ui.input(|i| i.pointer.any_released()) {
+                let source = {
+                    match state.dnd.as_ref().unwrap().drag.src {
+                        TreeComponent::Tab(src_surf, src_node, src_tab) => {
+                            (src_surf, src_node, src_tab)
                         }
-                    };
-                    if valid_move {
-                        let tab_dst = {
-                            let layer_id = LayerId::new(Order::Foreground, "foreground".into());
-                            ui.with_layer_id(layer_id, |ui| {
-                                state
-                                    .drag
-                                    .as_mut()
-                                    .map(|drag_drop_state| {
-                                        drag_drop_state.resolve(
-                                            ui,
-                                            style,
-                                            self.allowed_splits,
-                                            false,
-                                        )
-                                    })
-                                    .unwrap()
-                            })
-                            .inner
-                        };
-
-                        if ui.input(|i| i.pointer.any_released()) {
-                            // Primarily used to allow/deny tabs to become/ be put in windows.
-                            let allowed_to_move = {
-                                if !tab_dst.is_window() {
-                                    true
-                                } else if let Node::Leaf { tabs, .. } =
-                                    &mut self.dock_state[src_surf][src_node]
-                                {
-                                    tab_viewer.allowed_in_windows(&mut tabs[src_tab.0])
-                                } else {
-                                    // We've already run `is_leaf()` on this node.
-                                    unreachable!()
-                                }
-                            };
-                            if allowed_to_move {
-                                if empty_destination_surface {
-                                    let tab = self
-                                        .dock_state
-                                        .remove_tab((src_surf, src_node, src_tab))
-                                        .unwrap();
-                                    self.dock_state[dst_surf] = Tree::new(vec![tab]);
-
-                                    if self.dock_state[src_surf].is_empty() && !src_surf.is_root() {
-                                        self.dock_state.remove_surface(src_surf);
-                                    }
-                                } else {
-                                    let dst_node = dst_node.expect("Must be `Some` because `empty_destination_surface == false`");
-                                    self.dock_state.move_tab(
-                                        (src_surf, src_node, src_tab),
-                                        (dst_surf, dst_node, tab_dst),
-                                    );
-                                }
-
-                                state.reset_drag();
-                            }
-                        }
+                        _ => todo!(
+                            "collections of tabs, like nodes and surfaces can't be docked (yet)"
+                        ),
                     }
-                }
-                _ => {
-                    todo!("Inserting surfaces or entire nodes into dock is not yet supported");
+                };
+                if let Some(destination) = tab_dst {
+                    self.dock_state.move_tab(source, destination);
+                    state.reset_drag();
                 }
             }
         }
@@ -425,7 +316,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             if response.hovered() {
                 self.hover_data = Some(HoverData {
                     rect,
-                    dst: DropPosition::Surface(surf_index),
+                    dst: TreeComponent::Surface(surf_index),
                     tab: None,
                 })
             }
@@ -510,7 +401,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             Some(just_started) => (
                 just_started.then_some(screen_rect.min),
                 Some(DragData {
-                    src: DropPosition::Surface(surf_index),
+                    src: TreeComponent::Surface(surf_index),
                     rect: self.dock_state[surf_index][NodeIndex::root()]
                         .rect()
                         .unwrap(),
@@ -937,7 +828,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         tabs_ui.ctx().translate_layer(layer_id, delta);
 
                         self.drag_data = Some(DragData {
-                            src: DropPosition::Tab(surface_index, node_index, tab_index),
+                            src: TreeComponent::Tab(surface_index, node_index, tab_index),
                             rect: self.dock_state[surface_index][node_index].rect().unwrap(),
                         });
                     }
@@ -1474,11 +1365,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let (dst, tab) = {
                     match self.tab_hover_rect {
                         Some((rect, tab_index)) => (
-                            DropPosition::Tab(surface_index, node_index, tab_index),
+                            TreeComponent::Tab(surface_index, node_index, tab_index),
                             Some(rect),
                         ),
                         None => (
-                            DropPosition::Node(surface_index, node_index),
+                            TreeComponent::Node(surface_index, node_index),
                             on_title_bar.then_some(tabbar_response.rect),
                         ),
                     }
@@ -1497,9 +1388,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         hold_time: f32,
         ctx: &Context,
     ) -> Option<SurfaceIndex> {
-        if let Some(hover_data) = &state.drag {
-            if hover_data.locked.is_some() {
-                state.window_fade = Some((Instant::now(), hover_data.hover.dst.surface_index()));
+        if let Some(dnd_state) = &state.dnd {
+            if dnd_state.is_locked(self.style.as_ref().unwrap(), ctx) {
+                state.window_fade = Some((Instant::now(), dnd_state.hover.dst.surface_address()));
             }
         }
 
@@ -1507,6 +1398,56 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             ctx.request_repaint();
             (time.elapsed().as_secs_f32() < hold_time).then_some(surface)
         })
+    }
+
+    ///resolve where a dragged tab would land given it's dropped this frame, returns ``None`` when the resulting drop is an invalid move.
+    fn show_drag_drop_overlay(
+        &mut self,
+        ui: &mut Ui,
+        state: &mut State,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+    ) -> Option<TabDestination> {
+        let drag_state = state.dnd.as_mut().unwrap();
+        let style = self.style.as_ref().unwrap();
+
+        //if were hovering over ourselves, we're not moving anywhere.
+        if drag_state.hover.dst.node_address() == drag_state.drag.src.node_address()
+            && drag_state.is_on_title_bar()
+        {
+            return None;
+        }
+
+        //not all scenarios can house all splits
+        let restricted_splits = if drag_state.hover.dst.is_surface() {
+            //empty surfaces have nothing to split!
+            AllowedSplits::None
+        } else {
+            AllowedSplits::All
+        };
+        let allowed_splits = self.allowed_splits & restricted_splits;
+
+        let allowed_in_window = match drag_state.drag.src {
+            TreeComponent::Tab(surface, node, tab) => {
+                if let Node::Leaf { tabs, .. } = &mut self.dock_state[surface][node] {
+                    tab_viewer.allowed_in_windows(&mut tabs[tab.0])
+                } else {
+                    unreachable!("tab drags can only come from leaf nodes")
+                }
+            }
+            _ => todo!("collections of tabs, like nodes or surfaces, can't be dragged! (yet)"),
+        };
+
+        if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+            drag_state.pointer = pointer;
+        }
+
+        if drag_state.is_on_title_bar()
+            || style.overlay.overlay_type == OverlayType::HighlightedAreas
+        {
+            drag_state.resolve_traditional(ui, style, allowed_splits, allowed_in_window)
+        } else {
+            drag_state.resolve_icon_based(ui, style, allowed_splits, allowed_in_window)
+        }
     }
 }
 
