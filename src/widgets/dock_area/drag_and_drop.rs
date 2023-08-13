@@ -260,18 +260,6 @@ impl DragDropState {
             return Some(self.hover.dst.as_tab_destination());
         }
 
-        //we shouldn't split or append to ourselves, so this scenario can only create windows
-        if self.drag.src.node_address() == self.hover.dst.node_address() {
-            return if windows_allowed {
-                Some(TabDestination::Window(Rect::from_min_size(
-                    self.pointer,
-                    self.drag.rect.size(),
-                )))
-            } else {
-                None
-            };
-        }
-
         //main cases, splits, window creations, etc.
         let (hover_rect, pointer) = (self.hover.rect, self.pointer);
         let center = hover_rect.center();
@@ -312,7 +300,10 @@ impl DragDropState {
                     AllowedSplits::None => Pos2::ZERO,
                 };
                 if a_pos == Pos2::ZERO {
-                    (Some(TabInsert::Append), Rect::EVERYTHING)
+                    match windows_allowed {
+                        true => (None, Rect::NOTHING),
+                        false => (Some(TabInsert::Append), Rect::EVERYTHING),
+                    }
                 } else {
                     match (a_pos.x - a_pos.y > 0., -a_pos.x - a_pos.y > 0.) {
                         (true, true) => (
