@@ -1,4 +1,4 @@
-use crate::{SurfaceIndex, TabIndex, NodeIndex};
+use crate::{NodeIndex, SurfaceIndex, TabIndex};
 
 /// An enum expressing an entry in the `to_remove` field in [`DockArea`].
 #[derive(Debug, Clone, Copy)]

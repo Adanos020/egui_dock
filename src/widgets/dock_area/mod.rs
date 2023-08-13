@@ -5,8 +5,8 @@ mod style_fade;
 mod tab_removal;
 
 pub use allowed_splits::AllowedSplits;
-use tab_removal::TabRemoval;
 use std::{ops::RangeInclusive, time::Instant};
+use tab_removal::TabRemoval;
 
 use crate::{
     dock_state::DockState,
@@ -1410,7 +1410,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let drag_state = state.dnd.as_mut().unwrap();
         let style = self.style.as_ref().unwrap();
 
-
         //if were hovering over ourselves, we're not moving anywhere.
         if drag_state.hover.dst.node_address() == drag_state.drag.src.node_address()
             && drag_state.is_on_title_bar()
@@ -1418,9 +1417,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             return None;
         }
 
+        let deserted_node = {
+            match (
+                drag_state.drag.src.node_address(),
+                drag_state.hover.dst.node_address(),
+            ) {
+                ((src_surf, Some(src_node)), (dst_surf, Some(dst_node))) => {
+                    src_surf == dst_surf
+                        && src_node == dst_node
+                        && self.dock_state[src_surf][src_node].tabs_count() == 1
+                }
+                _ => false,
+            }
+        };
         //not all scenarios can house all splits
-        let restricted_splits = if drag_state.hover.dst.is_surface() {
-            //empty surfaces have nothing to split!
+        let restricted_splits = if drag_state.hover.dst.is_surface() || deserted_node {
             AllowedSplits::None
         } else {
             AllowedSplits::All
@@ -1437,7 +1448,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
             _ => todo!("collections of tabs, like nodes or surfaces, can't be dragged! (yet)"),
         };
-       
+
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
             drag_state.pointer = pointer;
         }

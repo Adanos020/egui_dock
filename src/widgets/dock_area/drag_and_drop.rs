@@ -186,20 +186,18 @@ impl DragDropState {
         let center = rect.center();
         let rect = Rect::from_center_size(center, Vec2::splat(shortest_side));
 
-        if self.drag.src.node_address() != self.hover.dst.node_address() {
-            if button_ui(rect, ui, &mut hovering_buttons, pointer, style, None) {
-                match self.hover.dst {
-                    TreeComponent::Node(surface, node) => {
-                        destination = Some(TabDestination::Node(surface, node, TabInsert::Append))
-                    }
-                    TreeComponent::Surface(surface) => {
-                        destination = Some(TabDestination::EmptySurface(surface))
-                    }
-                    _ => (),
+        if button_ui(rect, ui, &mut hovering_buttons, pointer, style, None) {
+            match self.hover.dst {
+                TreeComponent::Node(surface, node) => {
+                    destination = Some(TabDestination::Node(surface, node, TabInsert::Append))
                 }
+                TreeComponent::Surface(surface) => {
+                    destination = Some(TabDestination::EmptySurface(surface))
+                }
+                _ => (),
             }
         }
-        
+
         for split in [Split::Below, Split::Right, Split::Above, Split::Left] {
             match allowed_splits {
                 AllowedSplits::TopBottomOnly if split.is_top_bottom() => continue,
@@ -249,7 +247,7 @@ impl DragDropState {
             return None;
         }
         draw_highlight_rect(self.hover.rect, ui, style);
-        
+
         //deals with hovers over tab bar and tab titles
         if let Some(rect) = self.hover.tab {
             draw_drop_rect(rect, ui, style);
@@ -277,7 +275,6 @@ impl DragDropState {
         //main cases, splits, window creations, etc.
         let (hover_rect, pointer) = (self.hover.rect, self.pointer);
         let center = hover_rect.center();
-
 
         let (tab_insertion, overlay_rect) = {
             // A reverse lerp of the pointers position relative to the hovered leaf rect.
