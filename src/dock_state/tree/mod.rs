@@ -64,30 +64,31 @@ pub enum TabInsert {
     Split(Split),
     /// Insert the tab at the given index.
     Insert(TabIndex),
-    /// Create a window from the tab
-
     /// Append the tab to the node.
     Append,
 }
-/// The destination for a tab which is being moved
+
+/// The destination for a tab which is being moved.
 pub enum TabDestination {
-    /// Move to a new window with this rect
+    /// Move to a new window with this rect.
     Window(Rect),
 
-    /// Move to a an existing node with this insetion
+    /// Move to a an existing node with this insertion.
     Node(SurfaceIndex, NodeIndex, TabInsert),
 
-    /// Move to an empty surface
+    /// Move to an empty surface.
     EmptySurface(SurfaceIndex),
 }
-impl Into<TabDestination> for (SurfaceIndex, NodeIndex, TabInsert) {
-    fn into(self) -> TabDestination {
-        TabDestination::Node(self.0, self.1, self.2)
+
+impl From<(SurfaceIndex, NodeIndex, TabInsert)> for TabDestination {
+    fn from(value: (SurfaceIndex, NodeIndex, TabInsert)) -> TabDestination {
+        TabDestination::Node(value.0, value.1, value.2)
     }
 }
-impl Into<TabDestination> for SurfaceIndex {
-    fn into(self) -> TabDestination {
-        TabDestination::EmptySurface(self)
+
+impl From<SurfaceIndex> for TabDestination {
+    fn from(value: SurfaceIndex) -> TabDestination {
+        TabDestination::EmptySurface(value)
     }
 }
 
@@ -209,13 +210,13 @@ impl<Tab> Tree<Tab> {
         (0..self.tree.len()).map(NodeIndex)
     }
 
-    /// Returns an iterator over all tabs in arbitrary order
+    /// Returns an iterator over all tabs in arbitrary order.
     #[inline(always)]
     pub fn tabs(&self) -> TabIter<'_, Tab> {
         TabIter::new(self)
     }
 
-    /// Number of tabs
+    /// Counts and returns the number of tabs in the whole tree.
     #[inline]
     pub fn num_tabs(&self) -> usize {
         let mut count = 0;

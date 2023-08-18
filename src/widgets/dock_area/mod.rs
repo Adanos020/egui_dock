@@ -490,9 +490,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         duplicate! {
             [
-                orientation   dim_point  dim_size  left_of    right_of  ;
+                orientation   dim_point  dim_size  left_of    right_of;
                 [Horizontal]  [x]        [width]   [left_of]  [right_of];
-                [Vertical]    [y]        [height]  [above]    [below]   ;
+                [Vertical]    [y]        [height]  [above]    [below];
             ]
             if let Node::orientation { fraction, rect } = &mut self.dock_state[surface_index][node_index] {
                 debug_assert!(!rect.any_nan() && rect.is_finite());
@@ -535,7 +535,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         duplicate! {
             [
                 orientation   dim_point  dim_size;
-                [Horizontal]  [x]        [width] ;
+                [Horizontal]  [x]        [width];
                 [Vertical]    [y]        [height];
             ]
             if let Node::orientation { fraction, ref rect } = &mut self.dock_state[surface_index][node_index] {
@@ -714,7 +714,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 fade_style,
             );
 
-            // Draw hline from tab end to edge of tabbar
+            // Draw hline from tab end to edge of tab bar.
             let px = ui.ctx().pixels_per_point().recip();
             let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
 
@@ -724,7 +724,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 (px, style.tab_bar.hline_color),
             );
 
-            // Add button at the end of the tab bar
+            // Add button at the end of the tab bar.
             if self.show_add_buttons {
                 let offset = match style.buttons.add_tab_align {
                     TabAddAlign::Left => {
@@ -1095,7 +1095,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             &tab_style.inactive
         };
 
-        // Draw the full tab first and then the stroke ontop to avoid the stroke
+        // Draw the full tab first and then the stroke on top to avoid the stroke
         // mixing with the background color.
         ui.painter()
             .rect_filled(rect, tab_style.rounding, tab_style.bg_fill);
@@ -1196,7 +1196,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
 
         // Compare to 1.0 and not 0.0 to avoid drawing a scroll bar due
-        // to floating point precision issue during tab drawing
+        // to floating point precision issue during tab drawing.
         if overflow > 1.0 {
             if style.tab_bar.show_scroll_bar_on_overflow {
                 // Draw scroll bar
@@ -1206,7 +1206,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     Sense::click_and_drag(),
                 );
 
-                // Compute scroll bar handle position and size
+                // Compute scroll bar handle position and size.
                 let overflow_ratio = actual_width / available_width;
                 let scroll_ratio = -*scroll / overflow;
 
@@ -1239,7 +1239,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
 
-                // Draw the bar
+                // Draw the bar.
                 ui.painter()
                     .rect_filled(scroll_bar_rect, 0.0, ui.visuals().extreme_bg_color);
 
@@ -1253,7 +1253,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 );
             }
 
-            // Handle user input
+            // Handle user input.
             if tabbar_response.hovered() {
                 *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
             }
@@ -1308,7 +1308,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .rect_filled(body_rect, 0.0, tabs_style.tab_body.bg_fill);
             }
 
-            // Construct a new ui with the correct tab id
+            // Construct a new ui with the correct tab id.
             //
             // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
             // the provided id with their own which would cause tabs to change id when moved
@@ -1324,7 +1324,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             );
             ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 
-            // Use initial spacing for ui
+            // Use initial spacing for ui.
             ui.spacing_mut().item_spacing = spacing;
 
             // Offset the background rectangle up to hide the top border behind the clip rect.
@@ -1413,17 +1413,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         })
     }
 
-    ///resolve where a dragged tab would land given it's dropped this frame, returns ``None`` when the resulting drop is an invalid move.
+    /// Resolve where a dragged tab would land given it's dropped this frame, returns ``None`` when the resulting drop is an invalid move.
     fn show_drag_drop_overlay(
         &mut self,
-        ui: &mut Ui,
+        ui: &Ui,
         state: &mut State,
-        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        tab_viewer: &impl TabViewer<Tab = Tab>,
     ) -> Option<TabDestination> {
         let drag_state = state.dnd.as_mut().unwrap();
         let style = self.style.as_ref().unwrap();
 
-        //if were hovering over ourselves, we're not moving anywhere.
+        // If were hovering over ourselves, we're not moving anywhere.
         if drag_state.hover.dst.node_address() == drag_state.drag.src.node_address()
             && drag_state.is_on_title_bar()
         {
@@ -1443,7 +1443,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 _ => false,
             }
         };
-        //not all scenarios can house all splits
+
+        // Not all scenarios can house all splits.
         let restricted_splits = if drag_state.hover.dst.is_surface() || deserted_node {
             AllowedSplits::None
         } else {
@@ -1453,11 +1454,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let allowed_in_window = match drag_state.drag.src {
             TreeComponent::Tab(surface, node, tab) => {
-                if let Node::Leaf { tabs, .. } = &mut self.dock_state[surface][node] {
-                    tab_viewer.allowed_in_windows(&mut tabs[tab.0])
-                } else {
+                let Node::Leaf { tabs, .. } = &mut self.dock_state[surface][node] else {
                     unreachable!("tab drags can only come from leaf nodes")
-                }
+                };
+                tab_viewer.allowed_in_windows(&mut tabs[tab.0])
             }
             _ => todo!("collections of tabs, like nodes or surfaces, can't be dragged! (yet)"),
         };
@@ -1470,9 +1470,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if drag_state.is_on_title_bar()
             || style.overlay.overlay_type == OverlayType::HighlightedAreas
         {
-            drag_state.resolve_traditional(ui, style, allowed_splits, allowed_in_window, window_bounds)
+            drag_state.resolve_traditional(
+                ui,
+                style,
+                allowed_splits,
+                allowed_in_window,
+                window_bounds,
+            )
         } else {
-            drag_state.resolve_icon_based(ui, style, allowed_splits, allowed_in_window, window_bounds)
+            drag_state.resolve_icon_based(
+                ui,
+                style,
+                allowed_splits,
+                allowed_in_window,
+                window_bounds,
+            )
         }
     }
 }

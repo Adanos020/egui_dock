@@ -90,7 +90,7 @@ pub struct TabBarStyle {
     /// Show a scroll bar when tab bar overflows. By `Default` it's `true`.
     pub show_scroll_bar_on_overflow: bool,
 
-    /// Tab rounding. By `Default` it's [`Rounding::default`]
+    /// Tab rounding. By `Default` it's [`Rounding::default`].
     pub rounding: Rounding,
 
     /// Color of th line separating the tab name area from the tab content area.
@@ -137,10 +137,10 @@ pub struct TabInteractionStyle {
     /// Color of the outline around tabs. By `Default` it's [`Color32::BLACK`].
     pub outline_color: Color32,
 
-    /// Tab rounding. By `Default` it's [`Rounding::default`]
+    /// Tab rounding. By `Default` it's [`Rounding::default`].
     pub rounding: Rounding,
 
-    /// Colour of the tab's background. By `Default` it's [`Color32::WHITE`]
+    /// Colour of the tab's background. By `Default` it's [`Color32::WHITE`].
     pub bg_fill: Color32,
 
     /// Color of the title text.
@@ -150,34 +150,33 @@ pub struct TabInteractionStyle {
 /// Specifies the look and feel of the tab body.
 #[derive(Clone, Debug)]
 pub struct TabBodyStyle {
-    /// Inner margin of tab body. By `Default` it's `Margin::same(4.0)`
+    /// Inner margin of tab body. By `Default` it's `Margin::same(4.0)`.
     pub inner_margin: Margin,
 
-    /// The stroke of the tabs border. By `Default` it's ['Stroke::default']
+    /// The stroke of the tabs border. By `Default` it's ['Stroke::default'].
     pub stroke: Stroke,
 
-    /// Tab rounding. By `Default` it's [`Rounding::default`]
+    /// Tab rounding. By `Default` it's [`Rounding::default`].
     pub rounding: Rounding,
 
-    /// Colour of the tab's background. By `Default` it's [`Color32::WHITE`]
+    /// Colour of the tab's background. By `Default` it's [`Color32::WHITE`].
     pub bg_fill: Color32,
 }
 
 /// Specifies the look and feel of the tab drop overlay.
 #[derive(Clone, Debug)]
 pub struct OverlayStyle {
-    
     /// Sets selection color for the placing area of the tab where this tab targeted on it.
     /// By `Default` it's `(0, 191, 255)` (light blue) with `0.5` capacity.
     pub selection_color: Color32,
 
     /// Width of stroke when a selection uses an outline instead of filled rectangle.
-    pub selection_storke_width: f32, 
+    pub selection_storke_width: f32,
 
-    /// Units of padding between each button
+    /// Units of padding between each button.
     pub button_spacing: f32,
 
-    /// Max side length of a button on the overlay
+    /// Max side length of a button on the overlay.
     pub max_button_size: f32,
 
     /// Style of the additional highlighting rectangle drawn on the surface which you're attempting to drop a tab in.
@@ -185,16 +184,16 @@ pub struct OverlayStyle {
     /// By default this value shows no highlighting.
     pub hovered_leaf_highlight: LeafHighlighting,
 
-    /// Opacity which surfaces will fade to in a range of ``0.0..=1.0``
+    /// Opacity which surfaces will fade to in a range of `0.0..=1.0`.
     pub surface_fade_opacity: f32,
 
-    /// The color of the overlay buttons
+    /// The color of the overlay buttons.
     pub button_color: Color32,
 
-    /// The stroke of the button border
+    /// The stroke of the button border.
     pub button_border_stroke: Stroke,
 
-    /// The type of overlay used
+    /// The type of overlay used.
     pub overlay_type: OverlayType,
 
     /// The feel of the overlay, timings, detection, etc.
@@ -204,49 +203,49 @@ pub struct OverlayStyle {
 /// Specifies the feel of the tab drop overlay, i.e anything non visual about the overlay.
 #[derive(Clone, Debug)]
 pub struct OverlayFeel {
-    /// range is ``0.0..=1.0``
+    /// range is `0.0..=1.0`.
     pub window_drop_coverage: f32,
 
-    /// range is ``0.0..=1.0``
+    /// range is `0.0..=1.0`.
     pub center_drop_coverage: f32,
 
     /// The amount of time windows should stay faded despite not needing to, prevents quick mouse movements from causing flashing.
     pub fade_hold_time: f32,
 
-    /// Amount of time the overlay waits before dropping a preference it may have for a node
+    /// Amount of time the overlay waits before dropping a preference it may have for a node.
     pub max_preference_time: f32,
 
-    /// Units which the buttons interact area will be expanded by
+    /// Units which the buttons interact area will be expanded by.
     pub interact_expansion: f32,
 }
 
 /// Specifies the type of overlay used.
 #[derive(Clone, Debug, PartialEq)]
 pub enum OverlayType {
-    /// Shows highlighted areas predicting where a dropped tab would land were it to be dropped this frame
+    /// Shows highlighted areas predicting where a dropped tab would land were it to be dropped this frame.
     ///
-    /// Always used when hovering over tabs and tab head
+    /// Always used when hovering over tabs and tab head.
     HighlightedAreas,
 
-    /// Shows icons indicating the possible drop poisitions which the user may hover over to drop a tab at that given location.
+    /// Shows icons indicating the possible drop positions which the user may hover over to drop a tab at that given location.
     ///
     /// This is the default type of overlay for leaves.
     Widgets,
 }
 
-/// Highlighting on the currently hovered lead
+/// Highlighting on the currently hovered lead.
 #[derive(Clone, Debug)]
 pub struct LeafHighlighting {
-    /// Fill color
+    /// Fill color.
     pub color: Color32,
 
-    /// Rounding of the resulting rectangle
+    /// Rounding of the resulting rectangle.
     pub rounding: Rounding,
 
-    /// Stroke
+    /// Stroke.
     pub stroke: Stroke,
 
-    /// amount of egui units which each side should expand
+    /// Amount of egui units which each side should expand.
     pub expansion: f32,
 }
 
@@ -593,7 +592,6 @@ impl TabBodyStyle {
 }
 
 impl OverlayStyle {
-
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
@@ -602,11 +600,11 @@ impl OverlayStyle {
     /// - [`OverlayStyle::button_color`]
     /// - [`OverlayStyle::button_border_stroke`]
     pub fn from_egui(style: &egui::Style) -> Self {
-        Self { 
-            selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5), 
-            button_spacing: style.spacing.icon_spacing, 
-            button_color: style.visuals.widgets.noninteractive.fg_stroke.color, 
-            button_border_stroke: style.visuals.widgets.noninteractive.bg_stroke, 
+        Self {
+            selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
+            button_spacing: style.spacing.icon_spacing,
+            button_color: style.visuals.widgets.noninteractive.fg_stroke.color,
+            button_border_stroke: style.visuals.widgets.noninteractive.bg_stroke,
             ..Default::default()
         }
     }

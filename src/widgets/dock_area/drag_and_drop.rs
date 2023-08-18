@@ -12,11 +12,11 @@ use egui::{
 
 #[derive(Debug, Clone)]
 pub(super) struct HoverData {
-    /// rect of the hovered element
+    /// Rect of the hovered element.
     pub rect: Rect,
-    /// The "address" of the tab/node hovered
+    /// The "address" of the tab/node hovered.
     pub dst: TreeComponent,
-    /// if a tab title or the tab head is hovered, this is the rect of it.
+    /// If a tab title or the tab head is hovered, this is the rect of it.
     pub tab: Option<Rect>,
 }
 
@@ -133,10 +133,10 @@ const DASHED_LINE_ALPHAS: [f32; 8] = [
 
 #[derive(PartialEq, Eq)]
 enum LockState {
-    /// Lock is Unlocked
+    /// Lock is Unlocked.
     Unlocked,
 
-    /// Lock remains Locked, but can be unlocked/relocked
+    /// Lock remains Locked, but can be unlocked/relocked.
     SoftLock,
 
     /// Lock is Locked, no questions asked.  
@@ -160,7 +160,7 @@ impl DragDropState {
 
     pub(super) fn resolve_icon_based(
         &mut self,
-        ui: &mut Ui,
+        ui: &Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
         windows_allowed: bool,
@@ -247,13 +247,13 @@ impl DragDropState {
         windows_allowed: bool,
         window_bounds: Rect,
     ) -> Option<TabDestination> {
-        //if windows are not allowed, any hover over a window is immediately dissallowed
+        // If windows are not allowed, any hover over a window is immediately disallowed.
         if !windows_allowed && self.hover.dst.surface_address() != SurfaceIndex::root() {
             return None;
         }
         draw_highlight_rect(self.hover.rect, ui, style);
 
-        //deals with hovers over tab bar and tab titles
+        // Deals with hovers over tab bar and tab titles.
         if let Some(rect) = self.hover.tab {
             draw_drop_rect(rect, ui, style);
             let target_lock_state = if rect.contains(self.pointer) {
@@ -265,7 +265,7 @@ impl DragDropState {
             return Some(self.hover.dst.as_tab_destination());
         }
 
-        //main cases, splits, window creations, etc.
+        // Main cases, splits, window creations, etc.
         let (hover_rect, pointer) = (self.hover.rect, self.pointer);
         let center = hover_rect.center();
 
@@ -287,7 +287,7 @@ impl DragDropState {
                 Vec2::splat(style.overlay.feel.window_drop_coverage),
             );
 
-            //find out what kind of tab insertion (if any) should be used to move this widget
+            // Find out what kind of tab insertion (if any) should be used to move this widget.
             if center_drop_rect.contains(a_pos) {
                 (Some(TabInsert::Append), Rect::EVERYTHING)
             } else if window_drop_rect.contains(a_pos) {
@@ -332,14 +332,8 @@ impl DragDropState {
             }
         };
 
-        let default_value = if windows_allowed {
-            Some(TabDestination::Window(Rect::from_min_size(
-                pointer,
-                self.drag.rect.size(),
-            )))
-        } else {
-            None
-        };
+        let default_value = windows_allowed
+            .then(|| TabDestination::Window(Rect::from_min_size(pointer, self.drag.rect.size())));
         let final_result = tab_insertion.map_or(default_value, |tab| match self.hover.dst {
             TreeComponent::Surface(surface) => Some(TabDestination::EmptySurface(surface)),
             TreeComponent::Node(surface, node) => Some(TabDestination::Node(surface, node, tab)),
@@ -400,6 +394,7 @@ impl DragDropState {
             None => false,
         }
     }
+
     fn window_preview_rect(&self, rect: Rect) -> Rect {
         if self.drag.src.surface_address() == SurfaceIndex::root() {
             Rect::from_min_size(rect.min, rect.size() * 0.8)
@@ -418,7 +413,7 @@ const fn lerp_vec(split: Split, alpha: f32) -> Vec2 {
     }
 }
 
-// draws a filled rect describing where a tab will be dropped.
+// Draws a filled rect describing where a tab will be dropped.
 #[inline(always)]
 fn draw_drop_rect(rect: Rect, ui: &Ui, style: &Style) {
     let id = Id::new("overlay");
@@ -427,16 +422,23 @@ fn draw_drop_rect(rect: Rect, ui: &Ui, style: &Style) {
     painter.rect_filled(rect, 0.0, style.overlay.selection_color);
 }
 
-// draws a stroked rect describing where a tab will be dropped.
+// Draws a stroked rect describing where a tab will be dropped.
 #[inline(always)]
 fn draw_window_rect(rect: Rect, ui: &Ui, style: &Style) {
     let id = Id::new("overlay");
     let layer_id = LayerId::new(Order::Foreground, id);
     let painter = ui.ctx().layer_painter(layer_id);
-    painter.rect_stroke(rect, 0.0, Stroke::new(style.overlay.selection_storke_width, style.overlay.selection_color));
+    painter.rect_stroke(
+        rect,
+        0.0,
+        Stroke::new(
+            style.overlay.selection_storke_width,
+            style.overlay.selection_color,
+        ),
+    );
 }
 
-/// An adapted version of the [egui::Area]s code for restricting an area rect to a bound.
+/// An adapted version of the [`egui::Area`]s code for restricting an area rect to a bound.
 fn constrain_rect_to_area(ui: &Ui, rect: Rect, mut bounds: Rect) -> Rect {
     if rect.width() > bounds.width() {
         // Allow overlapping side bars.

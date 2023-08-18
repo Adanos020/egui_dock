@@ -16,7 +16,7 @@ use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Tree};
 ///
 /// This tree starts with a collection of surfaces, that then breaks down into nodes, and then into tabs.
 ///
-/// Indexing it will yield a [`Tree`](crate::Tree) which then contains nodes and tabs.
+/// Indexing it will yield a [`Tree`] which then contains nodes and tabs.
 pub struct DockState<Tab> {
     surfaces: Vec<Surface<Tab>>,
     //part of the tree which is in focus
@@ -29,23 +29,23 @@ pub struct DockState<Tab> {
 /// However if you drag a tab out in a way which creates a window,
 /// you also create a new surface in which nodes can appear.
 pub enum Surface<Tab> {
-    ///An empty surface, with nothing inside (Practically, a Null surface)
+    /// An empty surface, with nothing inside (Practically, a Null surface)
     Empty,
 
-    ///The root surface of a [`DockState`], only one should exist at surface index 0 at any one time.
+    /// The root surface of a [`DockState`], only one should exist at surface index 0 at any one time.
     Root(Tree<Tab>),
 
-    ///A windowed surface with a state
+    /// A windowed surface with a state
     Window(Tree<Tab>, WindowState),
 }
 
 impl<Tab> Surface<Tab> {
-    ///Is this surface Empty? (in practice null)
+    /// Is this surface [`Empty`](Self::Empty)? (in practice null)
     pub const fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
     }
 
-    /// Get mutable access to the node tree of this surface
+    /// Get mutable access to the node tree of this surface.
     pub fn node_tree_mut(&mut self) -> Option<&mut Tree<Tab>> {
         match self {
             Surface::Empty => None,
@@ -54,7 +54,7 @@ impl<Tab> Surface<Tab> {
         }
     }
 
-    ///Get access to the node tree of this surface
+    /// Get access to the node tree of this surface.
     pub fn node_tree(&self) -> Option<&Tree<Tab>> {
         match self {
             Surface::Empty => None,
@@ -126,19 +126,19 @@ impl<Tab> DockState<Tab> {
             .and_then(|surface| self[surface].find_active_focused())
     }
 
-    ///Get an exclusive borrow to the raw surface from a surface index
+    /// Get an exclusive borrow to the raw surface from a surface index.
     #[inline]
     pub fn get_surface_mut(&mut self, surface: SurfaceIndex) -> Option<&mut Surface<Tab>> {
         self.surfaces.get_mut(surface.0)
     }
 
-    ///Get a shared borrow to the raw surface from a surface index
+    /// Get a shared borrow to the raw surface from a surface index.
     #[inline]
     pub fn get_surface(&self, surface: SurfaceIndex) -> Option<&Surface<Tab>> {
         self.surfaces.get(surface.0)
     }
 
-    /// Returns true if the specified surface exists and isn't [`Empty`](crate::Surface::Empty)
+    /// Returns true if the specified surface exists and isn't [`Empty`](Surface::Empty)
     #[inline]
     pub fn is_surface_valid(&self, surface_index: SurfaceIndex) -> bool {
         self.surfaces
@@ -149,9 +149,9 @@ impl<Tab> DockState<Tab> {
     /// Returns an [`Iterator`] of all valid [`SurfaceIndex`]es.
     #[inline]
     pub(crate) fn surface_index_iter(&self) -> impl Iterator<Item = SurfaceIndex> {
-        //the collection and "re-itering" may seem odd here, but it is justified since the FilterMap uses &self.
-        //if we didn't do this it could end up in borrow checker issues, since the iterator would restrict the use
-        //of &mut self until it is dropped.
+        // the collection and "re-iterating" may seem odd here, but it is justified since the FilterMap uses &self.
+        // if we didn't do this it could end up in borrow checker issues, since the iterator would restrict the use
+        // of &mut self until it is dropped.
         (0..self.surfaces.len())
             .filter_map(|index| {
                 self.is_surface_valid(SurfaceIndex(index))
@@ -236,8 +236,8 @@ impl<Tab> DockState<Tab> {
         &mut self[SurfaceIndex::root()]
     }
 
-    /// Creates two new nodes by splitting a given `parent` node at the root surface and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// Creates two new nodes by splitting a given `parent` node at the root surface and assigns them as its children.
+    /// The first (old) node inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
     /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
     /// split.
@@ -254,8 +254,8 @@ impl<Tab> DockState<Tab> {
         self[SurfaceIndex::root()].split_left(parent, fraction, tabs)
     }
 
-    /// Creates two new nodes by splitting a given `parent` node at the root surface and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// Creates two new nodes by splitting a given `parent` node at the root surface and assigns them as its children.
+    /// The first (old) node inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
     /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
     /// split.
@@ -272,8 +272,8 @@ impl<Tab> DockState<Tab> {
         self[SurfaceIndex::root()].split_right(parent, fraction, tabs)
     }
 
-    /// Creates two new nodes by splitting a given `parent` node at the root surface and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// Creates two new nodes by splitting a given `parent` node at the root surface and assigns them as its children.
+    /// The first (old) node inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
     /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
     /// split.
@@ -290,8 +290,8 @@ impl<Tab> DockState<Tab> {
         self[SurfaceIndex::root()].split_above(parent, fraction, tabs)
     }
 
-    /// Creates two new nodes by splitting a given `parent` node at the root surface and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// Creates two new nodes by splitting a given `parent` node at the root surface and assigns them as its children.
+    /// The first (old) node inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
     /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
     /// split.
@@ -364,7 +364,7 @@ impl<Tab> DockState<Tab> {
         src_tab: TabIndex,
         window_rect: Rect,
     ) -> SurfaceIndex {
-        //Remove the tab from the tree and add to a new window
+        // Remove the tab from the tree and add to a new window
         let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
         let surface_index = self.add_window(vec![tab]);
 
@@ -377,7 +377,7 @@ impl<Tab> DockState<Tab> {
             state.set_size(window_rect.size());
         }
 
-        //Clean up any empty leaves and surfaces which may be left behind from the detachment
+        // Clean up any empty leaves and surfaces which may be left behind from the detachment
         if self[src_surface][src_node].is_leaf() && self[src_surface][src_node].tabs_count() == 0 {
             self[src_surface].remove_leaf(src_node);
         }
@@ -441,7 +441,7 @@ impl<Tab> DockState<Tab> {
 
     /// Finds the first empty surface index which may be used.
     ///
-    /// WARNING: in cases where one isn't found, ``SurfaceIndex(self.surfaces.len())`` is used.
+    /// WARNING: in cases where one isn't found, `SurfaceIndex(self.surfaces.len())` is used.
     /// therefore it's not inherently safe to index the [`DockState`] with this index, as it may panic.
     fn find_empty_surface_index(&self) -> SurfaceIndex {
         //find the first possible empty surface to insert our window into.
@@ -504,7 +504,7 @@ where
     ///
     /// In case there are several hits, only the first is returned.
     ///
-    /// See also: [`find_root_surface_tab`](crate::dock_state::DockState::find_root_surface_tab)
+    /// See also: [`find_root_surface_tab`](DockState::find_root_surface_tab)
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
         for surface_index in self.surface_index_iter() {
             if !self.surfaces[surface_index.0].is_empty() {
