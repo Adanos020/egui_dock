@@ -407,7 +407,7 @@ impl MyContext {
                 );
             });
             
-            ui.collapsing("visuals", |ui|{
+            ui.collapsing("Visuals", |ui|{
                 labeled_widget!(
                     ui,
                     unit_slider!(&mut style.overlay.max_button_size, 10.0..=500.0, "ps"),
@@ -424,7 +424,7 @@ impl MyContext {
                     ui,
                     unit_slider!(&mut style.overlay.surface_fade_opacity, 0.0..=1.0, "%", 100.0),
                     "Window fade opacity",
-                    "how visible windows are when draging a tab behind them."
+                    "how visible windows are when dragging a tab behind them."
                 );
                 labeled_widget!(
                     ui,
@@ -457,7 +457,7 @@ impl MyContext {
             
 
             ui.collapsing("Hover highlight", |ui|{
-                egui::Grid::new("leaf highlighing prefs").show(ui, |ui|{
+                egui::Grid::new("leaf highlighting prefs").show(ui, |ui|{
                     ui.label("Fill color:");
                     color_edit_button_srgba(ui, &mut style.overlay.hovered_leaf_highlight.color, Alpha::OnlyBlend);
                     ui.end_row();
