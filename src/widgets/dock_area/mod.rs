@@ -29,7 +29,7 @@ use self::{
     style_fade::{fade_dock_style, fade_visuals},
 };
 
-/// Displays a [`Tree`] in `egui`.
+/// Displays a [`DockState`] in `egui`.
 pub struct DockArea<'tree, Tab> {
     id: Id,
     dock_state: &'tree mut DockState<Tab>,
@@ -54,7 +54,7 @@ pub struct DockArea<'tree, Tab> {
 
 // Builder
 impl<'tree, Tab> DockArea<'tree, Tab> {
-    /// Creates a new [`DockArea`] from the provided [`Tree`].
+    /// Creates a new [`DockArea`] from the provided [`DockState`].
     #[inline(always)]
     pub fn new(tree: &'tree mut DockState<Tab>) -> DockArea<'tree, Tab> {
         Self {

@@ -402,7 +402,6 @@ impl Style {
     ///
     /// Fields overwritten by [`egui::Style`] are:
     /// - [`Style::border`]
-    /// - [`Style::selection_color`]
     ///
     /// See also: [`ButtonsStyle::from_egui`], [`SeparatorStyle::from_egui`], [`TabBarStyle::from_egui`],
     /// [`TabStyle::from_egui`]
