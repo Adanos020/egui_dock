@@ -42,6 +42,7 @@ pub struct DockArea<'tree, Tab> {
     show_tab_name_on_hover: bool,
     scroll_area_in_tabs: bool,
     allowed_splits: AllowedSplits,
+    window_bounds: Option<Rect>,
 
     drag_data: Option<DragData>,
     hover_data: Option<HoverData>,
@@ -74,6 +75,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             to_detach: Vec::new(),
             new_focused: None,
             tab_hover_rect: None,
+            window_bounds: None,
         }
     }
 
@@ -146,6 +148,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.allowed_splits = allowed_splits;
         self
     }
+
+    /// Sets the bounds for any windows inside the [`DockArea`]. Defaults to the area of the root surface.
+    #[inline(always)]
+    pub fn window_bounds(mut self, bounds: Rect) -> Self {
+        self.window_bounds = Some(bounds);
+        self
+    }
 }
 
 // UI
@@ -193,7 +202,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// See also [`show`](Self::show).
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         self.style
-            .get_or_insert_with(|| Style::from_egui(ui.style().as_ref()));
+            .get_or_insert(Style::from_egui(ui.style().as_ref()));
+        self.window_bounds.get_or_insert(ui.ctx().screen_rect());
         let mut state = State::load(ui.ctx(), self.id);
         //if let Some(hover_data) = state.drag.take() {
         //    if hover_data.locked.is_some() {
@@ -314,7 +324,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let rect = ui.available_rect_before_wrap();
             let response = ui.allocate_rect(rect, Sense::hover());
             if response.hovered() {
-                println!("tried");
                 self.hover_data = Some(HoverData {
                     rect,
                     dst: TreeComponent::Surface(surf_index),
@@ -341,7 +350,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         // part 0 here goes into state.drag_start, 1 goes into self.drag_data
         // from there implement move_window properly.
         let window = {
-            let mut window_constructor = Window::new(title).title_bar(false);
+            let mut window_constructor = Window::new(title)
+                .title_bar(false)
+                .drag_bounds(self.window_bounds.unwrap());
             let state = self.dock_state.get_window_state_mut(surf_index).unwrap();
             if let Some(position) = state.next_position() {
                 window_constructor = window_constructor.current_pos(position);
@@ -454,7 +465,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         ui.painter().rect_stroke(rect, style.rounding, style.border);
-        rect = rect.expand(-style.border.width / 2.0);
+        if surface == SurfaceIndex::root() {
+            rect = rect.expand(-style.border.width / 2.0);
+        }
         ui.allocate_rect(rect, Sense::click());
 
         if self.dock_state[surface].is_empty() {
@@ -1453,12 +1466,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             drag_state.pointer = pointer;
         }
 
+        let window_bounds = self.window_bounds.unwrap();
         if drag_state.is_on_title_bar()
             || style.overlay.overlay_type == OverlayType::HighlightedAreas
         {
-            drag_state.resolve_traditional(ui, style, allowed_splits, allowed_in_window)
+            drag_state.resolve_traditional(ui, style, allowed_splits, allowed_in_window, window_bounds)
         } else {
-            drag_state.resolve_icon_based(ui, style, allowed_splits, allowed_in_window)
+            drag_state.resolve_icon_based(ui, style, allowed_splits, allowed_in_window, window_bounds)
         }
     }
 }

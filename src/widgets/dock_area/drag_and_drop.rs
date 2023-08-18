@@ -6,7 +6,9 @@ use std::{
 use crate::{
     AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex, TabInsert,
 };
-use egui::{emath::inverse_lerp, vec2, Context, Id, LayerId, Order, Pos2, Rect, Stroke, Ui, Vec2};
+use egui::{
+    emath::inverse_lerp, vec2, Context, Id, LayerId, NumExt, Order, Pos2, Rect, Stroke, Ui, Vec2,
+};
 
 #[derive(Debug, Clone)]
 pub(super) struct HoverData {
@@ -101,7 +103,7 @@ fn button_ui(
         }
     }
     let is_mouse_over = rect
-        .expand(style.overlay.interact_expansion)
+        .expand(style.overlay.feel.interact_expansion)
         .contains(mouse_pos);
     if is_mouse_over && !*lock {
         let vertical_alphas = vec2(1.0, 0.5);
@@ -119,7 +121,7 @@ fn button_ui(
             }
             _ => rect,
         };
-        painter.rect_filled(rect, 0.0, style.selection_color);
+        painter.rect_filled(rect, 0.0, style.overlay.selection_color);
     }
     lock.bitor_assign(is_mouse_over);
     is_mouse_over
@@ -158,22 +160,23 @@ impl DragDropState {
 
     pub(super) fn resolve_icon_based(
         &mut self,
-        ui: &Ui,
+        ui: &mut Ui,
         style: &Style,
         allowed_splits: AllowedSplits,
         windows_allowed: bool,
+        window_bounds: Rect,
     ) -> Option<TabDestination> {
         assert!(!self.is_on_title_bar());
 
         draw_highlight_rect(self.hover.rect, ui, style);
         let mut hovering_buttons = false;
-        let total_button_spacing = style.overlay.button_padding * 2.0;
+        let total_button_spacing = style.overlay.button_spacing * 2.0;
         let (rect, pointer) = (self.hover.rect, self.pointer);
-        let rect = rect.shrink(style.overlay.button_padding);
+        let rect = rect.shrink(style.overlay.button_spacing);
         let shortest_side = ((rect.width() - total_button_spacing) / 3.0)
             .min((rect.height() - total_button_spacing) / 3.0)
             .min(style.overlay.max_button_size);
-        let mut offset_vector = vec2(0.0, shortest_side + style.overlay.button_padding);
+        let mut offset_vector = vec2(0.0, shortest_side + style.overlay.button_spacing);
 
         let mut destination: Option<TabDestination> = match windows_allowed {
             true => Some(TabDestination::Window(Rect::from_min_size(
@@ -230,7 +233,8 @@ impl DragDropState {
         self.update_lock(target_lock_state, style, ui.ctx());
         if let Some(TabDestination::Window(rect)) = destination {
             let rect = self.window_preview_rect(rect);
-            draw_window_rect(rect, ui, style);
+            let rect_bounded = constrain_rect_to_area(ui, rect, window_bounds);
+            draw_window_rect(rect_bounded, ui, style);
         }
         destination
     }
@@ -241,6 +245,7 @@ impl DragDropState {
         style: &Style,
         allowed_splits: AllowedSplits,
         windows_allowed: bool,
+        window_bounds: Rect,
     ) -> Option<TabDestination> {
         //if windows are not allowed, any hover over a window is immediately dissallowed
         if !windows_allowed && self.hover.dst.surface_address() != SurfaceIndex::root() {
@@ -347,7 +352,8 @@ impl DragDropState {
         match final_result {
             Some(TabDestination::Window(rect)) => {
                 let rect = self.window_preview_rect(rect);
-                draw_window_rect(rect, ui, style);
+                let rect_bounded = constrain_rect_to_area(ui, rect, window_bounds);
+                draw_window_rect(rect_bounded, ui, style);
             }
             Some(_) => {
                 draw_drop_rect(hover_rect.intersect(overlay_rect), ui, style);
@@ -418,7 +424,7 @@ fn draw_drop_rect(rect: Rect, ui: &Ui, style: &Style) {
     let id = Id::new("overlay");
     let layer_id = LayerId::new(Order::Foreground, id);
     let painter = ui.ctx().layer_painter(layer_id);
-    painter.rect_filled(rect, 0.0, style.selection_color);
+    painter.rect_filled(rect, 0.0, style.overlay.selection_color);
 }
 
 // draws a stroked rect describing where a tab will be dropped.
@@ -427,5 +433,34 @@ fn draw_window_rect(rect: Rect, ui: &Ui, style: &Style) {
     let id = Id::new("overlay");
     let layer_id = LayerId::new(Order::Foreground, id);
     let painter = ui.ctx().layer_painter(layer_id);
-    painter.rect_stroke(rect, 0.0, Stroke::new(1.0, style.selection_color));
+    painter.rect_stroke(rect, 0.0, Stroke::new(style.overlay.selection_storke_width, style.overlay.selection_color));
+}
+
+/// An adapted version of the [egui::Area]s code for restricting an area rect to a bound.
+fn constrain_rect_to_area(ui: &Ui, rect: Rect, mut bounds: Rect) -> Rect {
+    if rect.width() > bounds.width() {
+        // Allow overlapping side bars.
+        let screen_rect = ui.ctx().screen_rect();
+        (bounds.min.x, bounds.max.x) = (screen_rect.min.x, screen_rect.max.x);
+    }
+    if rect.height() > bounds.height() {
+        // Allow overlapping top/bottom bars:
+        let screen_rect = ui.ctx().screen_rect();
+        (bounds.min.y, bounds.max.y) = (screen_rect.min.y, screen_rect.max.y);
+    }
+
+    let mut pos = rect.min;
+
+    // Constrain to screen, unless window is too large to fit:
+    let margin_x = (rect.width() - bounds.width()).at_least(0.0);
+    let margin_y = (rect.height() - bounds.height()).at_least(0.0);
+
+    pos.x = pos.x.at_most(bounds.right() + margin_x - rect.width()); // move left if needed
+    pos.x = pos.x.at_least(bounds.left() - margin_x); // move right if needed
+    pos.y = pos.y.at_most(bounds.bottom() + margin_y - rect.height()); // move right if needed
+    pos.y = pos.y.at_least(bounds.top() - margin_y); // move down if needed
+
+    pos = ui.painter().round_pos_to_pixels(pos);
+
+    Rect::from_min_size(pos, rect.size())
 }

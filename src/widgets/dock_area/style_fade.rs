@@ -8,7 +8,6 @@ use crate::{
 };
 
 pub(super) fn fade_dock_style(style: &mut Style, factor: f32) {
-    style.selection_color = style.selection_color.linear_multiply(factor);
     style.border.color = style.border.color.linear_multiply(factor);
     fade_tab_style(&mut style.tab, factor);
     fade_button_style(&mut style.buttons, factor);

@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
-    CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText,
+    CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText, Rounding,
 };
 
 use egui_dock::{
@@ -13,6 +13,7 @@ use egui_dock::{
     TabInteractionStyle, TabViewer,
 };
 
+/// Adds a widget with a label next to it, can be given an extra parameter in order to show a hover text
 macro_rules! labeled_widget {
     ($ui:expr, $x:expr, $l:expr) => {
         $ui.horizontal(|ui| {
@@ -25,6 +26,26 @@ macro_rules! labeled_widget {
             ui.add($x).on_hover_text($d);
             ui.label($l).on_hover_text($d);
         });
+    };
+}
+
+// Creates a slider which has a unit attached to it
+// When given an extra parameter it will be used as a multiplier (e.g 100.0 when working with precentages)
+macro_rules! unit_slider {
+    ($val:expr, $range:expr) => {
+        egui::Slider::new($val, $range)
+    };
+    ($val:expr, $range:expr, $unit:expr) => {
+        egui::Slider::new($val, $range).custom_formatter(|value, decimal_range| {
+            egui::emath::format_with_decimals_in_range(value, decimal_range) + $unit
+        })
+    };
+    ($val:expr, $range:expr, $unit:expr, $mul:expr) => {
+        egui::Slider::new($val, $range)
+            .custom_formatter(|value, decimal_range| {
+                egui::emath::format_with_decimals_in_range(value * $mul, decimal_range) + $unit
+            })
+            .custom_parser(|string| string.parse::<f64>().ok().map(|valid| valid / $mul))
     };
 }
 
@@ -154,14 +175,6 @@ impl MyContext {
 
                 ui.label("Color:");
                 color_edit_button_srgba(ui, &mut style.border.color, Alpha::OnlyBlend);
-                ui.end_row();
-            });
-        });
-
-        ui.collapsing("Selection", |ui| {
-            egui::Grid::new("selection").show(ui, |ui| {
-                ui.label("Color:");
-                color_edit_button_srgba(ui, &mut style.selection_color, Alpha::OnlyBlend);
                 ui.end_row();
             });
         });
@@ -322,26 +335,7 @@ impl MyContext {
             ui.separator();
 
             ui.label("Rounding");
-            labeled_widget!(
-                ui,
-                Slider::new(&mut style.tab.tab_body.rounding.nw, 0.0..=15.0),
-                "North-West"
-            );
-            labeled_widget!(
-                ui,
-                Slider::new(&mut style.tab.tab_body.rounding.ne, 0.0..=15.0),
-                "North-East"
-            );
-            labeled_widget!(
-                ui,
-                Slider::new(&mut style.tab.tab_body.rounding.sw, 0.0..=15.0),
-                "South-West"
-            );
-            labeled_widget!(
-                ui,
-                Slider::new(&mut style.tab.tab_body.rounding.se, 0.0..=15.0),
-                "South-East"
-            );
+            rounding_ui(ui, &mut style.tab.tab_body.rounding);
 
             ui.label("Stroke width:");
             ui.add(Slider::new(
@@ -380,34 +374,111 @@ impl MyContext {
                         "Widgets",
                     );
                 });
-            ui.label("Feel:");
-            labeled_widget!(
-                ui,
-                Slider::new(&mut style.overlay.feel.center_drop_coverage, 0.0..=1.0),
-                "Center drop coverage",
-                "how big the area where dropping a tab into the center of another should be."
-            );
-            labeled_widget!(
-                ui,
-                Slider::new(&mut style.overlay.feel.fade_hold_time, 0.0..=4.0),
-                "fade hold time",
-                "how long faded windows should hold their fade before unfading, in seconds."
-            );
-            labeled_widget!(
-                ui,
-                Slider::new(&mut style.overlay.feel.window_drop_coverage, 0.0..=1.0),
-                "Window drop coverage",
-                "how big the area for undocking a window should be. [is overshadowed by center drop coverage]"
-            );
-            egui::Grid::new("overlay style preferences").show(ui, |ui| {
-                ui.label("Button color:");
-                color_edit_button_srgba(ui, &mut style.overlay.button_color, Alpha::OnlyBlend);
-                ui.end_row();
-
-                ui.label("Button border color:");
-                color_edit_button_srgba(ui, &mut style.overlay.button_border_stroke.color, Alpha::OnlyBlend);
-                ui.end_row();
+            ui.collapsing("Feel", |ui|{
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.center_drop_coverage, 0.0..=1.0, "%", 100.0),
+                    "Center drop coverage",
+                    "how big the area where dropping a tab into the center of another should be."
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.fade_hold_time, 0.0..=4.0, "s"),
+                    "Fade hold time",
+                    "How long faded windows should hold their fade before unfading, in seconds."
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.max_preference_time, 0.0..=4.0, "s"),
+                    "Max preference time",
+                    "How long the overlay may prefer to stick to a surface despite hovering over another, in seconds."
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.window_drop_coverage, 0.0..=1.0, "%", 100.0),
+                    "Window drop coverage",
+                    "How big the area for undocking a window should be. [is overshadowed by center drop coverage]"
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.interact_expansion, 1.0..=100.0, "ps"),
+                    "Interact expansion",
+                    "How much extra interaction area should be allocated for buttons on the overlay"
+                );
             });
+            
+            ui.collapsing("visuals", |ui|{
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.max_button_size, 10.0..=500.0, "ps"),
+                    "Max button size",
+                    "The max length of a side on a overlay button in egui points"
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.button_spacing, 0.0..=50.0, "ps"),
+                    "Button spacing",
+                    "Spacing between buttons on the overlay, in egui units."
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.surface_fade_opacity, 0.0..=1.0, "%", 100.0),
+                    "Window fade opacity",
+                    "how visible windows are when draging a tab behind them."
+                );
+                labeled_widget!(
+                    ui,
+                    egui::Slider::new(&mut style.overlay.selection_storke_width, 0.0..=50.0),
+                    "Selection stroke width",
+                    "width of a selection which uses a outline stroke instead of filled rect."
+                );
+                egui::Grid::new("overlay style preferences").show(ui, |ui| {
+                    ui.label("Button color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.button_color, Alpha::OnlyBlend);
+                    ui.end_row();
+    
+                    ui.label("Button border color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.button_border_stroke.color, Alpha::OnlyBlend);
+                    ui.end_row();
+    
+                    ui.label("Selection color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.selection_color, Alpha::OnlyBlend);
+                    ui.end_row();
+    
+                    ui.label("Button stroke color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.button_border_stroke.color, Alpha::OnlyBlend);
+                    ui.end_row();
+    
+                    ui.label("Button stroke width:");
+                    ui.add(Slider::new(&mut style.overlay.button_border_stroke.width, 0.0..=50.0));
+                    ui.end_row();
+                });
+            });
+            
+
+            ui.collapsing("Hover highlight", |ui|{
+                egui::Grid::new("leaf highlighing prefs").show(ui, |ui|{
+                    ui.label("Fill color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.hovered_leaf_highlight.color, Alpha::OnlyBlend);
+                    ui.end_row();
+    
+                    ui.label("Stroke color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.hovered_leaf_highlight.stroke.color, Alpha::OnlyBlend);
+                    ui.end_row();
+    
+                    ui.label("Stroke width:");
+                    ui.add(Slider::new(&mut style.overlay.hovered_leaf_highlight.stroke.width, 0.0..=50.0));
+                    ui.end_row();
+    
+                    ui.label("Expansion:");
+                    ui.add(Slider::new(&mut style.overlay.hovered_leaf_highlight.expansion, -50.0..=50.0));
+                    ui.end_row();
+                    
+
+                });
+                ui.label("Rounding:");
+                rounding_ui(ui, &mut style.overlay.hovered_leaf_highlight.rounding);
+            })
         });
     }
 }
@@ -495,4 +566,27 @@ impl eframe::App for MyApp {
                     .show_inside(ui, &mut self.context);
             });
     }
+}
+
+fn rounding_ui(ui: &mut Ui, rounding: &mut Rounding) {
+    labeled_widget!(
+        ui,
+        Slider::new(&mut rounding.nw, 0.0..=15.0),
+        "North-West"
+    );
+    labeled_widget!(
+        ui,
+        Slider::new(&mut rounding.ne, 0.0..=15.0),
+        "North-East"
+    );
+    labeled_widget!(
+        ui,
+        Slider::new(&mut rounding.sw, 0.0..=15.0),
+        "South-West"
+    );
+    labeled_widget!(
+        ui,
+        Slider::new(&mut rounding.se, 0.0..=15.0),
+        "South-East"
+    );
 }

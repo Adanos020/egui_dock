@@ -16,10 +16,6 @@ pub struct Style {
     /// Sets padding to indent from the edges of the window. By `Default` it's `None`.
     pub dock_area_padding: Option<Margin>,
 
-    /// Sets selection color for the placing area of the tab where this tab targeted on it.
-    /// By `Default` it's `(0, 191, 255)` (light blue) with `0.5` capacity.
-    pub selection_color: Color32,
-
     pub border: Stroke,
     pub rounding: Rounding,
 
@@ -170,14 +166,16 @@ pub struct TabBodyStyle {
 /// Specifies the look and feel of the tab drop overlay.
 #[derive(Clone, Debug)]
 pub struct OverlayStyle {
+    
+    /// Sets selection color for the placing area of the tab where this tab targeted on it.
+    /// By `Default` it's `(0, 191, 255)` (light blue) with `0.5` capacity.
+    pub selection_color: Color32,
+
+    /// Width of stroke when a selection uses an outline instead of filled rectangle.
+    pub selection_storke_width: f32, 
+
     /// Units of padding between each button
-    pub button_padding: f32,
-
-    /// Units which the buttons interact area will be expanded by
-    pub interact_expansion: f32,
-
-    /// Max distance that the pointer can be from a drop point before it's deemed unsuitable (used only by the traditional overlay)
-    pub max_relevancy_distance: f32,
+    pub button_spacing: f32,
 
     /// Max side length of a button on the overlay
     pub max_button_size: f32,
@@ -203,7 +201,7 @@ pub struct OverlayStyle {
     pub feel: OverlayFeel,
 }
 
-/// Specifies the feel of the tab drop overlay.
+/// Specifies the feel of the tab drop overlay, i.e anything non visual about the overlay.
 #[derive(Clone, Debug)]
 pub struct OverlayFeel {
     /// range is ``0.0..=1.0``
@@ -217,6 +215,9 @@ pub struct OverlayFeel {
 
     /// Amount of time the overlay waits before dropping a preference it may have for a node
     pub max_preference_time: f32,
+
+    /// Units which the buttons interact area will be expanded by
+    pub interact_expansion: f32,
 }
 
 /// Specifies the type of overlay used.
@@ -255,7 +256,6 @@ impl Default for Style {
             dock_area_padding: None,
             border: Stroke::new(f32::default(), Color32::BLACK),
             rounding: Rounding::default(),
-            selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
             buttons: ButtonsStyle::default(),
             separator: SeparatorStyle::default(),
             tab_bar: TabBarStyle::default(),
@@ -354,9 +354,9 @@ impl Default for TabBodyStyle {
 impl Default for OverlayStyle {
     fn default() -> Self {
         Self {
-            max_relevancy_distance: 400.0,
-            button_padding: 10.0,
-            interact_expansion: 20.0,
+            selection_color: Color32::from_rgb(0, 191, 255).linear_multiply(0.5),
+            selection_storke_width: 1.0,
+            button_spacing: 10.0,
             max_button_size: 100.0,
 
             surface_fade_opacity: 0.1,
@@ -376,6 +376,7 @@ impl Default for OverlayFeel {
             window_drop_coverage: 0.5,
             center_drop_coverage: 0.25,
             fade_hold_time: 0.2,
+            interact_expansion: 20.0,
         }
     }
 }
@@ -410,11 +411,11 @@ impl Style {
         Self {
             border: Stroke::NONE,
             rounding: Rounding::none(),
-            selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5),
             buttons: ButtonsStyle::from_egui(style),
             separator: SeparatorStyle::from_egui(style),
             tab_bar: TabBarStyle::from_egui(style),
             tab: TabStyle::from_egui(style),
+            overlay: OverlayStyle::from_egui(style),
             ..Self::default()
         }
     }
@@ -587,6 +588,26 @@ impl TabBodyStyle {
             stroke: style.visuals.widgets.noninteractive.bg_stroke,
             rounding: style.visuals.widgets.active.rounding,
             bg_fill: style.visuals.window_fill(),
+        }
+    }
+}
+
+impl OverlayStyle {
+
+    /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
+    /// - [`OverlayStyle::selection_color`]
+    /// - [`OverlayStyle::button_spacing]
+    /// - [`OverlayStyle::button_color`]
+    /// - [`OverlayStyle::button_border_stroke`]
+    pub fn from_egui(style: &egui::Style) -> Self {
+        Self { 
+            selection_color: style.visuals.selection.bg_fill.linear_multiply(0.5), 
+            button_spacing: style.spacing.icon_spacing, 
+            button_color: style.visuals.widgets.noninteractive.fg_stroke.color, 
+            button_border_stroke: style.visuals.widgets.noninteractive.bg_stroke, 
+            ..Default::default()
         }
     }
 }
