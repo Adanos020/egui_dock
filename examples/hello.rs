@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
-    CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText, Rounding,
+    CentralPanel, ComboBox, Frame, Rounding, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
 use egui_dock::{
@@ -406,7 +406,7 @@ impl MyContext {
                     "How much extra interaction area should be allocated for buttons on the overlay"
                 );
             });
-            
+
             ui.collapsing("Visuals", |ui|{
                 labeled_widget!(
                     ui,
@@ -436,45 +436,42 @@ impl MyContext {
                     ui.label("Button color:");
                     color_edit_button_srgba(ui, &mut style.overlay.button_color, Alpha::OnlyBlend);
                     ui.end_row();
-    
+
                     ui.label("Button border color:");
                     color_edit_button_srgba(ui, &mut style.overlay.button_border_stroke.color, Alpha::OnlyBlend);
                     ui.end_row();
-    
+
                     ui.label("Selection color:");
                     color_edit_button_srgba(ui, &mut style.overlay.selection_color, Alpha::OnlyBlend);
                     ui.end_row();
-    
+
                     ui.label("Button stroke color:");
                     color_edit_button_srgba(ui, &mut style.overlay.button_border_stroke.color, Alpha::OnlyBlend);
                     ui.end_row();
-    
+
                     ui.label("Button stroke width:");
                     ui.add(Slider::new(&mut style.overlay.button_border_stroke.width, 0.0..=50.0));
                     ui.end_row();
                 });
             });
-            
 
             ui.collapsing("Hover highlight", |ui|{
                 egui::Grid::new("leaf highlighting prefs").show(ui, |ui|{
                     ui.label("Fill color:");
                     color_edit_button_srgba(ui, &mut style.overlay.hovered_leaf_highlight.color, Alpha::OnlyBlend);
                     ui.end_row();
-    
+
                     ui.label("Stroke color:");
                     color_edit_button_srgba(ui, &mut style.overlay.hovered_leaf_highlight.stroke.color, Alpha::OnlyBlend);
                     ui.end_row();
-    
+
                     ui.label("Stroke width:");
                     ui.add(Slider::new(&mut style.overlay.hovered_leaf_highlight.stroke.width, 0.0..=50.0));
                     ui.end_row();
-    
+
                     ui.label("Expansion:");
                     ui.add(Slider::new(&mut style.overlay.hovered_leaf_highlight.expansion, -50.0..=50.0));
                     ui.end_row();
-                    
-
                 });
                 ui.label("Rounding:");
                 rounding_ui(ui, &mut style.overlay.hovered_leaf_highlight.rounding);
@@ -569,24 +566,8 @@ impl eframe::App for MyApp {
 }
 
 fn rounding_ui(ui: &mut Ui, rounding: &mut Rounding) {
-    labeled_widget!(
-        ui,
-        Slider::new(&mut rounding.nw, 0.0..=15.0),
-        "North-West"
-    );
-    labeled_widget!(
-        ui,
-        Slider::new(&mut rounding.ne, 0.0..=15.0),
-        "North-East"
-    );
-    labeled_widget!(
-        ui,
-        Slider::new(&mut rounding.sw, 0.0..=15.0),
-        "South-West"
-    );
-    labeled_widget!(
-        ui,
-        Slider::new(&mut rounding.se, 0.0..=15.0),
-        "South-East"
-    );
+    labeled_widget!(ui, Slider::new(&mut rounding.nw, 0.0..=15.0), "North-West");
+    labeled_widget!(ui, Slider::new(&mut rounding.ne, 0.0..=15.0), "North-East");
+    labeled_widget!(ui, Slider::new(&mut rounding.sw, 0.0..=15.0), "South-West");
+    labeled_widget!(ui, Slider::new(&mut rounding.se, 0.0..=15.0), "South-East");
 }
