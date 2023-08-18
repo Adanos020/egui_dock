@@ -149,7 +149,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self
     }
 
-    /// Sets the bounds for any windows inside the [`DockArea`]. Defaults to the area of the root surface.
+    /// Sets the bounds for any windows inside the [`DockArea`]. Defaults to the screen rect.
     #[inline(always)]
     pub fn window_bounds(mut self, bounds: Rect) -> Self {
         self.window_bounds = Some(bounds);
