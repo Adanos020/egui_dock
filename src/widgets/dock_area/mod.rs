@@ -384,18 +384,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
                 self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
             });
-
-            ui.layer_id()
         });
 
         let screen_rect = match response {
             Some(response) => {
-                if let Some(layer_id) = response.inner {
-                    self.dock_state
-                        .get_window_state_mut(surf_index)
-                        .unwrap()
-                        .layer_id = Some(layer_id);
-                }
                 response.response.rect
             }
             None => Rect::NOTHING,
@@ -407,7 +399,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .dock_state
             .get_window_state_mut(surf_index)
             .unwrap()
-            .dragged(ui.ctx(), screen_rect)
+            .was_dragged(ui.ctx(), screen_rect)
         {
             Some(just_started) => (
                 just_started.then_some(screen_rect.min),

@@ -1,5 +1,7 @@
-/// Wrapper around indices to the collection of windows inside a [`Tree`].
+/// Wrapper around indices to the collection of surfaces inside a [`DockState`].
 pub mod surface_index;
+
+
 pub mod tree;
 
 /// Window states which tells floating tabs how to be displayed inside their window,
@@ -16,7 +18,11 @@ use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Tree};
 ///
 /// This tree starts with a collection of surfaces, that then breaks down into nodes, and then into tabs.
 ///
-/// Indexing it will yield a [`Tree`] which then contains nodes and tabs.
+/// Indexing it with a [`SurfaceIndex`] will yield a [`Tree`] which then contains nodes and tabs.
+/// 
+/// [`DockState`] is generic, so you can use any type of data to represent a tab.
+/// 
+
 pub struct DockState<Tab> {
     surfaces: Vec<Surface<Tab>>,
     //part of the tree which is in focus
@@ -112,8 +118,33 @@ impl<Tab> DockState<Tab> {
     /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`]
     ///
     /// Returns None if the surface is an [`Empty`](Surface::Empty), [`Root`](Surface::Root), or doesn't exist.
+    /// 
+    /// Can be used to modify properties of a window, eg. size and position.
+    /// # Examples 
+    /// ```rust
+    /// # use egui_dock::DockState;
+    /// # use egui::{Vec2, Pos2};
+    /// let mut dock_state: DockState<String> = DockState::new(vec![]);
+    /// let mut surface_index = dock_state.add_window(vec!["Window Tab".to_string()]);
+    /// let window_state = dock_state.get_window_state_mut(surface_index).unwrap();
+    /// 
+    /// 
+    /// window_state.set_position(Pos2::new(0.0, 0.0));
+    /// window_state.set_size(Vec2::new(100.0, 100.0));
+    /// 
+    /// ```
     pub fn get_window_state_mut(&mut self, surface: SurfaceIndex) -> Option<&mut WindowState> {
         match &mut self.surfaces[surface.0] {
+            Surface::Window(_, state) => Some(state),
+            _ => None,
+        }
+    }
+
+    /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`]
+    ///
+    /// Returns None if the surface is an [`Empty`](Surface::Empty), [`Root`](Surface::Root), or doesn't exist.
+    pub fn get_window_state(&mut self, surface: SurfaceIndex) -> Option<&WindowState> {
+        match &self.surfaces[surface.0] {
             Surface::Window(_, state) => Some(state),
             _ => None,
         }

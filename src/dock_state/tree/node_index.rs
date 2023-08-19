@@ -12,6 +12,18 @@ impl From<usize> for NodeIndex {
 
 impl NodeIndex {
     /// Returns the index of the root node.
+    /// 
+    /// In the context of a [`Tree`](crate::Tree), this will be the node that contains all other nodes.
+    /// 
+    /// # Example usage
+    /// splitting the current tree in two
+    /// 
+    /// ```rust
+    /// # use create::DockState;
+    /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
+    /// let _ = dock_state.split_tabs();
+    /// 
+    /// ```
     #[inline(always)]
     pub const fn root() -> Self {
         Self(0)

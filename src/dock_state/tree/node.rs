@@ -56,6 +56,7 @@ impl<Tab> Node<Tab> {
     }
 
     /// Constructs a leaf node with a given list of `tabs`.
+    /// 
     #[inline(always)]
     pub const fn leaf_with(tabs: Vec<Tab>) -> Self {
         Self::Leaf {

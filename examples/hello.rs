@@ -483,8 +483,9 @@ impl MyContext {
 impl Default for MyApp {
     fn default() -> Self {
         let mut tree = DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
-        let [a, b] = tree.root_split_left(NodeIndex::root(), 0.3, vec!["Inspector".to_owned()]);
-        let [_, _] = tree.root_split_below(
+        let [a, b] = tree.root_mut().split_left(NodeIndex::root(), 0.3, vec!["Inspector".to_owned()]);
+        tree.root_mut().split(b, egui_dock::Split::Above, 0.2, Node::leaf_with(vec![]));
+        let [_, _] = tree.root_mut().split_below(
             a,
             0.7,
             vec!["File Browser".to_owned(), "Asset Manager".to_owned()],

@@ -1,22 +1,21 @@
-use egui::{LayerId, Pos2, Rect, Vec2};
+use egui::{Pos2, Rect, Vec2};
 
 /// The state for a [`Window`](crate::Surface::Window) surface.
+/// 
+/// Doubles up as a handle for the surface, allowing the user to set its size and position.
 #[derive(Debug, Clone)]
 pub struct WindowState {
     /// The rect which this window last was taking up.
-    pub screen_rect: Rect,
+    screen_rect: Rect,
 
     /// Was this window dragged last frame?
-    pub dragged: bool,
+    dragged: bool,
 
     /// The next position this window should be set to next frame.
-    pub next_position: Option<Pos2>,
+    next_position: Option<Pos2>,
 
     /// The next size this window should be set to next frame.
-    pub next_size: Option<Vec2>,
-
-    /// The layer id of this window.
-    pub layer_id: Option<LayerId>,
+    next_size: Option<Vec2>,
 }
 
 impl Default for WindowState {
@@ -26,14 +25,13 @@ impl Default for WindowState {
             dragged: false,
             next_position: None,
             next_size: None,
-            layer_id: None,
         }
     }
 }
 
 impl WindowState {
     /// Create a default window state.
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
@@ -49,6 +47,18 @@ impl WindowState {
         self
     }
 
+    /// Get the rect which this window occupies
+    /// If this window hasn't been shown before, this will be ``Rect::NOTHING``
+    pub fn rect(&self) -> Rect {
+        self.screen_rect
+    }
+
+    /// 
+    pub fn dragged(&self) -> bool {
+        self.dragged
+    }
+
+
     pub(crate) fn next_position(&mut self) -> Option<Pos2> {
         self.next_position.take()
     }
@@ -58,7 +68,7 @@ impl WindowState {
     }
 
     /// Returns if window was dragged this frame, indicating with the inside bool if the drag was just started or not.
-    pub(crate) fn dragged(&mut self, ctx: &egui::Context, new_rect: Rect) -> Option<bool> {
+    pub(crate) fn was_dragged(&mut self, ctx: &egui::Context, new_rect: Rect) -> Option<bool> {
         // We need to make sure we check the size hasn't changed, since it indicates a resize rather than a drag.
         ((new_rect != self.screen_rect && new_rect.size() == self.screen_rect.size())
             || self.dragged)
