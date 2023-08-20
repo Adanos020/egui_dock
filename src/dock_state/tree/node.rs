@@ -56,7 +56,7 @@ impl<Tab> Node<Tab> {
     }
 
     /// Constructs a leaf node with a given list of `tabs`.
-    /// 
+    ///
     #[inline(always)]
     pub const fn leaf_with(tabs: Vec<Tab>) -> Self {
         Self::Leaf {
@@ -81,7 +81,7 @@ impl<Tab> Node<Tab> {
 
     /// Get a [`Rect`] indicating the area occupied by the node, could be used to e.g draw a highlight rect around a node.
     ///
-    /// Returns [`None`] if node is of the [`Empty`](crate::Node::Empty) variant.
+    /// Returns [`None`] if node is of the [`Empty`](Node::Empty) variant.
     #[inline]
     pub fn rect(&self) -> Option<Rect> {
         match self {
@@ -123,8 +123,13 @@ impl<Tab> Node<Tab> {
     }
 
     /// Replaces the node with a `Horizontal` or `Vertical` one (depending on `split`) and assigns it an empty rect.
+    ///
+    /// # Panics
+    ///
+    /// If `fraction` isn't in range 0..=1.
     #[inline]
     pub fn split(&mut self, split: Split, fraction: f32) -> Self {
+        assert!((0.0..=1.0).contains(&fraction));
         let rect = Rect::NOTHING;
         let src = match split {
             Split::Left | Split::Right => Node::Horizontal { fraction, rect },
@@ -134,15 +139,15 @@ impl<Tab> Node<Tab> {
     }
 
     /// Provides an immutable slice over the tabs inside this node.
-    /// 
-    /// Returns [`None`] if the node is not a [`Leaf`](crate::Node::Leaf)
-    /// 
+    ///
+    /// Returns [`None`] if the node is not a [`Leaf`](Node::Leaf)
+    ///
     /// # Examples
     /// ```rust
     /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec![1, 2, 3, 4, 5, 6]);
     /// assert!(dock_state.main_surface().root_node().unwrap().tabs().unwrap().contains(&4));
-    /// 
+    ///
     /// ```
     #[inline]
     pub fn tabs(&self) -> Option<&[Tab]> {
@@ -153,9 +158,9 @@ impl<Tab> Node<Tab> {
     }
 
     /// Provides an mutable slice over the tabs inside this node.
-    /// 
-    /// Returns [`None`] if the node is not a [`Leaf`](crate::Node::Leaf)
-    /// 
+    ///
+    /// Returns [`None`] if the node is not a [`Leaf`](Node::Leaf)
+    ///
     /// # Examples
     /// modifying tabs inside a node:
     /// ```rust
@@ -167,10 +172,10 @@ impl<Tab> Node<Tab> {
     ///     .unwrap()
     ///     .tabs_mut()
     ///     .unwrap();
-    /// 
+    ///
     /// tabs[0] = 7;
     /// tabs[5] = 8;
-    /// 
+    ///
     /// assert_eq!(&tabs, &[7, 2, 3, 4, 5, 8]);
     /// ```
     #[inline]
@@ -182,21 +187,21 @@ impl<Tab> Node<Tab> {
     }
 
     /// Adds `tab` to the node and sets it as the active tab.
-    /// 
+    ///
     /// # Examples
     /// ```rust
     /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec!["a tab"]);
     /// assert_eq!(dock_state.main_surface().root_node().unwrap().tabs_count(), 1);
-    /// 
+    ///
     /// dock_state.main_surface_mut().root_node_mut().unwrap().append_tab("another tab");
     /// assert_eq!(dock_state.main_surface().root_node().unwrap().tabs_count(), 2);
     /// ```
     ///
     /// # Panics
     /// If the new capacity of `tabs` exceeds `isize::MAX` bytes.
-    /// 
-    /// If `self` is not a [`Leaf`](crate::Node::Leaf) node.
+    ///
+    /// If `self` is not a [`Leaf`](Node::Leaf) node.
     #[track_caller]
     #[inline]
     pub fn append_tab(&mut self, tab: Tab) {
