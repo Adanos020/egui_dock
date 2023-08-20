@@ -248,7 +248,7 @@ impl DragDropState {
         window_bounds: Rect,
     ) -> Option<TabDestination> {
         // If windows are not allowed, any hover over a window is immediately disallowed.
-        if !windows_allowed && self.hover.dst.surface_address() != SurfaceIndex::root() {
+        if !windows_allowed && self.hover.dst.surface_address() != SurfaceIndex::main() {
             return None;
         }
         draw_highlight_rect(self.hover.rect, ui, style);
@@ -364,7 +364,7 @@ impl DragDropState {
                 if target_state == LockState::HardLock {
                     *lock_time = Instant::now();
                 }
-                let window_hold = if !self.hover.dst.surface_address().is_root() {
+                let window_hold = if !self.hover.dst.surface_address().is_main() {
                     ctx.request_repaint();
                     self.is_locked(style, ctx)
                 } else {
@@ -396,7 +396,7 @@ impl DragDropState {
     }
 
     fn window_preview_rect(&self, rect: Rect) -> Rect {
-        if self.drag.src.surface_address() == SurfaceIndex::root() {
+        if self.drag.src.surface_address() == SurfaceIndex::main() {
             Rect::from_min_size(rect.min, rect.size() * 0.8)
         } else {
             rect

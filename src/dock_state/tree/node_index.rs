@@ -19,10 +19,9 @@ impl NodeIndex {
     /// splitting the current tree in two
     /// 
     /// ```rust
-    /// # use create::DockState;
+    /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
-    /// let _ = dock_state.split_tabs();
-    /// 
+    /// let _ = dock_state.main_surface_mut().split_left(NodeIndex::root(), 0.5, vec!["tab 3", "tab 4"]);
     /// ```
     #[inline(always)]
     pub const fn root() -> Self {

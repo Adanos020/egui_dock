@@ -228,7 +228,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tab_viewer,
                 &mut state,
                 fade_style.as_ref().map(|(style, factor)| {
-                    (style, *factor, fade_surface.unwrap_or(SurfaceIndex::root()))
+                    (style, *factor, fade_surface.unwrap_or(SurfaceIndex::main()))
                 }),
             );
         }
@@ -237,7 +237,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             match index {
                 TabRemoval::Node(surface, node, tab) => {
                     self.dock_state[surface].remove_tab((node, tab));
-                    if self.dock_state[surface].is_empty() && !surface.is_root() {
+                    if self.dock_state[surface].is_empty() && !surface.is_main() {
                         self.dock_state.remove_surface(surface);
                     }
                 }
@@ -305,7 +305,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         state: &mut State,
         fade_style: Option<(&Style, f32, SurfaceIndex)>,
     ) {
-        if surf_index.is_root() {
+        if surf_index.is_main() {
             self.show_root_surface_inside(ui, tab_viewer, state);
         } else {
             self.show_window_surface(ui, surf_index, tab_viewer, state, fade_style);
@@ -318,9 +318,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         state: &mut State,
     ) {
-        let surf_index = SurfaceIndex::root();
+        let surf_index = SurfaceIndex::main();
 
-        if self.dock_state.root().is_empty() {
+        if self.dock_state.main_surface().is_empty() {
             let rect = ui.available_rect_before_wrap();
             let response = ui.allocate_rect(rect, Sense::hover());
             if response.hovered() {
@@ -457,7 +457,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         ui.painter().rect_stroke(rect, style.rounding, style.border);
-        if surface == SurfaceIndex::root() {
+        if surface == SurfaceIndex::main() {
             rect = rect.expand(-style.border.width / 2.0);
         }
         ui.allocate_rect(rect, Sense::click());
@@ -765,7 +765,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let focused = self.dock_state.focused_leaf();
         let tabs_len = {
             let tabs = self.dock_state[surface_index][node_index]
-                .tabs_mut()
+                .tabs()
                 .expect("This node must be a leaf here");
             tabs.len()
         };
@@ -881,7 +881,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 if self.tab_context_menus {
                     response = response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab);
-                        if (surface_index.is_root() || !is_lonely_tab)
+                        if (surface_index.is_main() || !is_lonely_tab)
                             && ui.button("Eject").clicked()
                         {
                             self.to_detach.push((surface_index, node_index, tab_index));

@@ -74,7 +74,7 @@ impl Default for MyApp {
         ]);
 
         // You can modify the tree before constructing the dock
-        let [a, _] = tree.root_split_right(
+        let [a, _] = tree.main_surface_mut().split_right(
             NodeIndex::root(),
             0.6,
             vec![OpinionatedTab {
@@ -83,7 +83,7 @@ impl Default for MyApp {
                 content: "egui_dock 0.7!".to_string(),
             }],
         );
-        let [_, _] = tree.root_split_below(
+        let [_, _] = tree.main_surface_mut().split_below(
             a,
             0.4,
             vec![OpinionatedTab {

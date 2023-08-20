@@ -180,25 +180,31 @@ impl<Tab> Tree<Tab> {
         })
     }
 
-    /// Returns the number of nodes in the `Tree`.
+    /// Returns the number of nodes in the [`Tree`].
+    /// 
+    /// This includes [`Empty`](crate::Node::Empty) nodes.
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.tree.len()
     }
 
-    /// Returns `true` if the number of nodes in the tree is 0, `false` otherwise.
+    /// Returns [`true`](bool) if the number of nodes in the tree is 0, otherwise [`false`](bool).
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.tree.is_empty()
     }
 
     /// Returns an `Iterator` of the underlying collection of nodes.
+    /// 
+    /// This includes [`Empty`](crate::Node::Empty) nodes.
     #[inline(always)]
     pub fn iter(&self) -> Iter<'_, Node<Tab>> {
         self.tree.iter()
     }
 
     /// Returns `IterMut` of the underlying collection of nodes.
+    /// 
+    /// This includes [`Empty`](crate::Node::Empty) nodes.
     #[inline(always)]
     pub fn iter_mut(&mut self) -> IterMut<'_, Node<Tab>> {
         self.tree.iter_mut()
@@ -217,6 +223,19 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Counts and returns the number of tabs in the whole tree.
+    /// 
+    /// # Examples 
+    /// ```rust
+    /// # use egui_dock::{DockState, NodeIndex, TabIndex};
+    /// let mut dock_state = DockState::new(vec!["node 1", "node 2", "node 3"]);
+    /// assert_eq!(dock_state.main_surface().num_tabs(), 3);
+    /// 
+    /// let [a,b] = dock_state.main_surface_mut().split_left(NodeIndex::root(), 0.5, vec!["tab 4", "tab 5"]);
+    /// assert_eq!(dock_state.main_surface().num_tabs(), 5);
+    /// 
+    /// dock_state.main_surface_mut().remove_leaf(a);
+    /// assert_eq!(dock_state.main_surface().num_tabs(), 2);
+    /// ```
     #[inline]
     pub fn num_tabs(&self) -> usize {
         let mut count = 0;
@@ -226,6 +245,38 @@ impl<Tab> Tree<Tab> {
             }
         }
         count
+    }
+
+    /// Aquire a immutable borrow to the [`Node`] at the root of the tree.
+    /// Returns [`None`] if the tree is empty.
+    /// 
+    /// # Examples
+    /// ```rust
+    /// # use egui_dock::{DockState};
+    /// let mut dock_state = DockState::new(vec!["single tab"]);
+    /// let root_node = dock_state.main_surface().root_node().unwrap();
+    /// 
+    /// assert_eq!(root_node.tabs(), Some(["single tab"].as_slice()));
+    /// ```
+    pub fn root_node(&self) -> Option<&Node<Tab>> {
+        self.tree.get(0)
+    }
+    
+    /// Aquire a mutable borrow to the [`Node`] at the root of the tree.
+    /// Returns [`None`] if the tree is empty.
+    /// 
+    /// # Examples
+    /// ```rust
+    /// # use egui_dock::{DockState, Node};
+    /// let mut dock_state = DockState::new(vec!["single tab"]);
+    /// let root_node = dock_state.main_surface_mut().root_node_mut().unwrap();
+    /// if let Node::Leaf { tabs, ..} = root_node {
+    ///     tabs.push("partner tab");
+    /// }
+    /// assert_eq!(root_node.tabs(), Some(["single tab", "partner tab"].as_slice()));
+    /// ```
+    pub fn root_node_mut(&mut self) -> Option<&mut Node<Tab>> {
+        self.tree.get_mut(0)
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
@@ -246,16 +297,16 @@ impl<Tab> Tree<Tab> {
     /// 
     /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
     /// 
-    /// //at this point, the root surface and index contains the leaf with tab 1 and 2
-    /// assert!(dock_state[SurfaceIndex::root()][NodeIndex::root()].is_leaf());
+    /// //at this point, the main surface and index contains the leaf with tab 1 and 2
+    /// assert!(dock_state.main_surface().root_node().unwrap().is_leaf());
     /// 
     /// //splits the node, giving 50% of the space to the new nodes and 50% to the old ones.
-    /// let [old, new] = dock_state[SurfaceIndex::root()]
+    /// let [old, new] = dock_state.main_surface_mut()
     ///     .split_tabs(NodeIndex::root(), Split::Below, 0.5, vec!["tab 3"]);
     /// 
-    /// assert!(dock_state[SurfaceIndex::root()][NodeIndex::root()].is_parent());
-    /// assert!(old == NodeIndex::root().left());
-    /// assert!(new == NodeIndex::root().right());
+    /// assert!(dock_state.main_surface().root_node().unwrap().is_parent());
+    /// assert!(dock_state[SurfaceIndex::main()][old].is_leaf());
+    /// assert!(dock_state[SurfaceIndex::main()][new].is_leaf());
     /// ```
     #[inline(always)]
     pub fn split_tabs(
@@ -372,21 +423,23 @@ impl<Tab> Tree<Tab> {
     /// if `parent` points to an [`Empty`](crate::Node::Empty) node.
     /// 
     /// # Example
+    /// 
     /// ```rust
     /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split, Node};
+    /// 
+    /// 
     /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
     /// 
-    /// //at this point, the root surface and index contains the leaf with tab 1 and 2.
-    /// assert!(dock_state.root()[NodeIndex::root()].is_leaf());
+    /// //at this point, the main surface and index contains the leaf with tab 1 and 2
+    /// assert!(dock_state.main_surface().root_node().unwrap().is_leaf());
     /// 
     /// //splits the node, giving 50% of the space to the new nodes and 50% to the old ones.
-    /// let [old_tabs_index, new_tabs_index] = dock_state
-    ///     .root_mut()
+    /// let [old, new] = dock_state.main_surface_mut()
     ///     .split(NodeIndex::root(), Split::Below, 0.5, Node::leaf_with(vec!["tab 3"]));
     /// 
-    /// assert!(dock_state.root()[NodeIndex::root()].is_parent());
-    /// assert!(dock_state.root()[old_tabs_index].is_leaf());
-    /// assert!(dock_state.root()[new_tabs_index].is_leaf());
+    /// assert!(dock_state.main_surface().root_node().unwrap().is_parent());
+    /// assert!(dock_state[SurfaceIndex::main()][old].is_leaf());
+    /// assert!(dock_state[SurfaceIndex::main()][new].is_leaf());
     /// ```
     pub fn split(
         &mut self,
@@ -504,7 +557,7 @@ impl<Tab> Tree<Tab> {
     /// 
     /// # Panics
     /// 
-    /// if the node at index `node` is not a leaf.
+    /// if the node at index `node` is not a [`Leaf`](crate::Node::Leaf).
     pub fn remove_leaf(&mut self, node: NodeIndex) {
         assert!(self[node].is_leaf());
 

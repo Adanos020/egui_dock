@@ -17,7 +17,7 @@
 //! use egui_dock::{NodeIndex, Style, DockState};
 //!
 //! struct MyTabs {
-//!     tree: DockState<String>
+//!     dock_state: DockState<String>
 //! }
 //!
 //! impl MyTabs {
@@ -25,14 +25,14 @@
 //!         let tab1 = "tab1".to_string();
 //!         let tab2 = "tab2".to_string();
 //!
-//!         let mut tree = DockState::new(vec![tab1]);
-//!         tree.root_split_left(NodeIndex::root(), 0.20, vec![tab2]);
+//!         let mut dock_state = DockState::new(vec![tab1]);
+//!         dock_state.main_surface_mut().split_left(NodeIndex::root(), 0.20, vec![tab2]);
 //!
-//!         Self { tree }
+//!         Self { dock_state }
 //!     }
 //!
 //!     fn ui(&mut self, ui: &mut egui::Ui) {
-//!         egui_dock::DockArea::new(&mut self.tree)
+//!         egui_dock::DockArea::new(&mut self.dock_state)
 //!             .style(Style::from_egui(ui.style().as_ref()))
 //!             .show_inside(ui, &mut TabViewer {});
 //!     }

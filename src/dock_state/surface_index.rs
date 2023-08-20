@@ -11,15 +11,15 @@ impl From<usize> for SurfaceIndex {
 }
 
 impl SurfaceIndex {
-    /// Returns the index of the root surface.
+    /// Returns the index of the main surface.
     #[inline(always)]
-    pub const fn root() -> Self {
+    pub const fn main() -> Self {
         Self(0)
     }
 
-    /// Returns the index of the root surface.
+    /// Compares this surface index with `SurfaceIndex::root()`.
     #[inline(always)]
-    pub const fn is_root(self) -> bool {
-        self.0 == Self::root().0
+    pub const fn is_main(self) -> bool {
+        self.0 == Self::main().0
     }
 }
