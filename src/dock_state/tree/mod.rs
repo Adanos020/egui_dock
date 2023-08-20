@@ -188,7 +188,7 @@ impl<Tab> Tree<Tab> {
         self.tree.len()
     }
 
-    /// Returns [`true`](bool) if the number of nodes in the tree is 0, otherwise [`false`](bool).
+    /// Returns `true` if the number of nodes in the tree is 0, otherwise `false`.
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.tree.is_empty()
