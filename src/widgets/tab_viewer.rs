@@ -10,7 +10,10 @@ pub trait TabViewer {
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab);
 
     /// Content inside context_menu.
-    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab) {}
+    ///
+    /// The `_node` specifies which `Node` or split of the tree that this
+    /// particular context menu belongs to.
+    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab, _node: NodeIndex) {}
 
     /// The title to be displayed.
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText;
