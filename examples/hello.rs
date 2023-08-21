@@ -55,7 +55,7 @@ impl TabViewer for MyContext {
         }
     }
 
-    fn context_menu(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
+    fn context_menu(&mut self, ui: &mut Ui, tab: &mut Self::Tab, _node: NodeIndex) {
         match tab.as_str() {
             "Simple Demo" => self.simple_demo_menu(ui),
             _ => {
