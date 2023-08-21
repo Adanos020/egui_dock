@@ -387,9 +387,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         });
 
         let screen_rect = match response {
-            Some(response) => {
-                response.response.rect
-            }
+            Some(response) => response.response.rect,
             None => Rect::NOTHING,
         };
 

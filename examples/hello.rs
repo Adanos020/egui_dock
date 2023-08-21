@@ -483,13 +483,19 @@ impl MyContext {
 impl Default for MyApp {
     fn default() -> Self {
         let mut tree = DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
-        let [a, b] = tree.main_surface_mut().split_left(NodeIndex::root(), 0.3, vec!["Inspector".to_owned()]);
+        let [a, b] = tree.main_surface_mut().split_left(
+            NodeIndex::root(),
+            0.3,
+            vec!["Inspector".to_owned()],
+        );
         let [_, _] = tree.main_surface_mut().split_below(
             a,
             0.7,
             vec!["File Browser".to_owned(), "Asset Manager".to_owned()],
         );
-        let [_, _] = tree.main_surface_mut().split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
+        let [_, _] = tree
+            .main_surface_mut()
+            .split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
 
         let mut open_tabs = HashSet::new();
 

@@ -1,7 +1,7 @@
 use egui::{Pos2, Rect, Vec2};
 
 /// The state for a [`Window`](crate::Surface::Window) surface.
-/// 
+///
 /// Doubles up as a handle for the surface, allowing the user to set its size and position.
 #[derive(Debug, Clone)]
 pub struct WindowState {
@@ -53,11 +53,10 @@ impl WindowState {
         self.screen_rect
     }
 
-    /// 
+    ///
     pub fn dragged(&self) -> bool {
         self.dragged
     }
-
 
     pub(crate) fn next_position(&mut self) -> Option<Pos2> {
         self.next_position.take()

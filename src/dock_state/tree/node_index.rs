@@ -1,4 +1,4 @@
-﻿/// Wrapper around indices to the collection of nodes inside a [`Tree`](crate::Tree).
+/// Wrapper around indices to the collection of nodes inside a [`Tree`](crate::Tree).
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NodeIndex(pub usize);
@@ -12,12 +12,12 @@ impl From<usize> for NodeIndex {
 
 impl NodeIndex {
     /// Returns the index of the root node.
-    /// 
+    ///
     /// In the context of a [`Tree`](crate::Tree), this will be the node that contains all other nodes.
-    /// 
+    ///
     /// # Example usage
     /// splitting the current tree in two
-    /// 
+    ///
     /// ```rust
     /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
