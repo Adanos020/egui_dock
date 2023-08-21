@@ -20,7 +20,6 @@ use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Tree};
 /// Indexing it with a [`SurfaceIndex`] will yield a [`Tree`] which then contains nodes and tabs.
 ///
 /// [`DockState`] is generic, so you can use any type of data to represent a tab.
-///
 
 pub struct DockState<Tab> {
     surfaces: Vec<Surface<Tab>>,
@@ -28,9 +27,9 @@ pub struct DockState<Tab> {
     focused_surface: Option<SurfaceIndex>,
 }
 
-/// A surface is the highest level component in a [`DockState`]
+/// A surface is the highest level component in a [`DockState`].
 /// [`Surface`]s represent an area in which nodes are placed,
-///  Typically you're only using one surface, which is the main surface,
+/// Typically, you're only using one surface, which is the main surface,
 /// However if you drag a tab out in a way which creates a window,
 /// you also create a new surface in which nodes can appear.
 pub enum Surface<Tab> {
@@ -114,6 +113,7 @@ impl<Tab> DockState<Tab> {
     /// Returns None if the surface is an [`Empty`](Surface::Empty), [`Main`](Surface::Main), or doesn't exist.
     ///
     /// Can be used to modify properties of a window, eg. size and position.
+    ///
     /// # Examples
     /// ```rust
     /// # use egui_dock::DockState;
@@ -122,10 +122,8 @@ impl<Tab> DockState<Tab> {
     /// let mut surface_index = dock_state.add_window(vec!["Window Tab".to_string()]);
     /// let window_state = dock_state.get_window_state_mut(surface_index).unwrap();
     ///
-    ///
     /// window_state.set_position(Pos2::new(0.0, 0.0));
     /// window_state.set_size(Vec2::new(100.0, 100.0));
-    ///
     /// ```
     pub fn get_window_state_mut(&mut self, surface: SurfaceIndex) -> Option<&mut WindowState> {
         match &mut self.surfaces[surface.0] {
