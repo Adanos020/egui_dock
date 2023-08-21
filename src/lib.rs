@@ -50,7 +50,7 @@
 //! impl MyTabs {
 //!     pub fn new() -> Self {
 //!         // Create a `DockState` with an initial tab "tab1" in the main `Surface`'s root node.
-//!         let tabs = ["tab1", "tab2", "tab3"].map(str::to_string).collect();
+//!         let tabs = ["tab1", "tab2", "tab3"].map(str::to_string).into_iter().collect();
 //!         let dock_state = DockState::new(tabs);
 //!         Self { dock_state }
 //!     }
