@@ -880,7 +880,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if self.tab_context_menus {
                     response = response.context_menu(|ui| {
-                        tab_viewer.context_menu(ui, tab);
+                        tab_viewer.context_menu(ui, tab, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
                             && ui.button("Eject").clicked()
                         {
@@ -1058,7 +1058,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
         let text_width = galley.size().x + 2.0 * x_spacing;
-        let close_button_size = if self.show_close_buttons {
+        let close_button_size = if show_close_button {
             Style::TAB_CLOSE_BUTTON_SIZE.min(style.tab_bar.height)
         } else {
             0.0
