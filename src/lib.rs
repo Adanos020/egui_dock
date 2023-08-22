@@ -8,7 +8,7 @@
 //!
 //! The library is centered around the [`DockState`].
 //! It contains a series of [`Surface`]s which all have their own [`Tree`].
-//! Each [`Tree`] stores a hierarchy of [`Node`]s which then contain splits and tabs.
+//! Each [`Tree`] stores a hierarchy of [`Node`]s which contain the splits and tabs.
 //!
 //! [`DockState`] is generic (`DockState<Tab>`) so you can use any data to represent a tab.
 //! You show the tabs using [`DockArea`] and specify how they are shown by implementing [`TabViewer`].
@@ -17,26 +17,25 @@
 //! use egui_dock::{DockArea, DockState, NodeIndex, Style, TabViewer};
 //! use egui::{Ui, WidgetText};
 //!
-//! // First, let's pick a type that will be used to attach some data to each tab.
+//! // First, let's pick a type that we'll use to attach some data to each tab.
 //! // It can be any type.
 //! type Tab = String;
 //!
-//! // To define the contents and properties of individual tabs, we need to implement the
-//! // `TabViewer` trait. Only three things are mandatory: the `Tab` associated type, and
-//! // the `ui` and `title` methods. There are more methods in `TabViewer` which you can
-//! // also override.
+//! // To define the contents and properties of individual tabs, we implement the `TabViewer`
+//! // trait. Only three things are mandatory: the `Tab` associated type, and the `ui` and
+//! // `title` methods. There are more methods in `TabViewer` which you can also override.
 //! struct MyTabViewer;
 //!
 //! impl TabViewer for MyTabViewer {
 //!     // This associated type is used to attach some data to each tab.
 //!     type Tab = Tab;
 //!
-//!     // In this method, we define the contents of a given `tab`.
+//!     // Defines the contents of a given `tab`.
 //!     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
 //!         ui.label(format!("Content of {tab}"));
 //!     }
 //!
-//!     // This method returns the current `tab`'s title.
+//!     // Returns the current `tab`'s title.
 //!     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
 //!         tab.as_str().into()
 //!     }
@@ -73,6 +72,45 @@
 //! # });
 //! ```
 //!
+//! ## Look and feel customization
+//!
+//! `egui_dock` exposes the [`Style`] struct that lets you change how tabs and the [`DockArea`]
+//! should look and feel. [`Style`] is divided into several, more specialized structs that handle
+//! individual elements.
+//!
+//! Your [`Style`] can inherit all its properties from an [`egui::Style`] through the
+//! [`Style::from_egui`] function.
+//!
+//! Example:
+//!
+//! ```rust
+//! # use egui_dock::{DockArea, DockState, OverlayType, Style, TabAddAlign, TabViewer};
+//! # use egui::{Ui, WidgetText};
+//! # struct MyTabViewer;
+//! # impl TabViewer for MyTabViewer {
+//! #     type Tab = ();
+//! #     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {}
+//! #     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText { WidgetText::default() }
+//! # }
+//! # egui::__run_test_ctx(|ctx| {
+//! # egui::CentralPanel::default().show(ctx, |ui| {
+//! # let mut dock_state = DockState::new(vec![]);
+//! // Inherit the look and feel from egui.
+//! let mut style = Style::from_egui(ui.style());
+//!
+//! // Modify a few fields.
+//! style.overlay.overlay_type = OverlayType::HighlightedAreas;
+//! style.buttons.add_tab_align = TabAddAlign::Left;
+//!
+//! // Use the style with the `DockArea`.
+//! DockArea::new(&mut dock_state)
+//!     .style(style)
+//!     .show_inside(ui, &mut MyTabViewer);
+//! # });
+//! # });
+//! #
+//! ```
+//!
 //! ## Surfaces
 //!
 //! A [`Surface`] is an abstraction for any tab hierarchy. There are two kinds of
@@ -94,9 +132,7 @@
 //! ```rust
 //! # use egui_dock::DockState;
 //! # use egui::{Pos2, Vec2};
-//! // Create a new `DockState` with no tabs in the main `Surface`.
-//! let mut dock_state = DockState::new(vec![]);
-//!
+//! # let mut dock_state = DockState::new(vec![]);
 //! // Create a new window `Surface` with one tab inside it.
 //! let mut surface_index = dock_state.add_window(vec!["Window Tab".to_string()]);
 //!
@@ -122,7 +158,7 @@
 //! // Create a `DockState` with an initial tab "tab1" in the main `Surface`'s root node.
 //! let mut dock_state = DockState::new(vec!["tab1".to_string()]);
 //!
-//! // Currently, the `DockState` only has one Surface: the main one.
+//! // Currently, the `DockState` only has one `Surface`: the main one.
 //! // Let's get mutable access to add more nodes in it.
 //! let surface = dock_state.main_surface_mut();
 //!
@@ -135,15 +171,15 @@
 //! surface.split_below(new_node, 0.5, vec!["tab3".to_string()]);
 //!
 //! // The layout will look similar to this:
-//! // +------+------------------------+
-//! // |      |                        |
-//! // | tab2 |                        |
-//! // |      |                        |
-//! // +------+          tab1          |
-//! // |      |                        |
-//! // | tab3 |                        |
-//! // |      |                        |
-//! // +------+------------------------+
+//! // +--------+--------------------------------+
+//! // |        |                                |
+//! // |  tab2  |                                |
+//! // |        |                                |
+//! // +--------+              tab1              |
+//! // |        |                                |
+//! // |  tab3  |                                |
+//! // |        |                                |
+//! // +--------+--------------------------------+
 //! ```
 
 #![warn(missing_docs)]
