@@ -80,11 +80,11 @@
 //!
 //! There can only be one `Main` surface. It's the one surface that is rendered inside the
 //! [`Ui`](egui::Ui) you've passed to [`DockArea::show_inside`], or inside the
-//! [`CentralPanel`](egui::CentralPanel) created by [`DockArea::show`].
+//! [`egui::CentralPanel`] created by [`DockArea::show`].
 //!
 //! On the other hand, there can be multiple `Window` surfaces. Those represent surfaces that were
 //! created by undocking tabs from the `Main` surface, and each of them is rendered inside
-//! a [`Window`](egui::Window) hence their name.
+//! a [`egui::Window`] - hence their name.
 //!
 //! While most of surface management will be done by the user of your application, you can also do it
 //! programatically using the [`DockState`] API.
@@ -159,7 +159,7 @@ pub use widgets::*;
 /// The main Structure of the library.
 pub mod dock_state;
 
-/// egui_dock theme (color, sizes...).
+/// Look and feel.
 pub mod style;
 
 /// Widgets provided by the library.
