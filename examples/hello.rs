@@ -170,11 +170,18 @@ impl MyContext {
         ui.collapsing("Border", |ui| {
             egui::Grid::new("border").show(ui, |ui| {
                 ui.label("Width:");
-                ui.add(Slider::new(&mut style.border.width, 1.0..=50.0));
+                ui.add(Slider::new(
+                    &mut style.main_surface_border_stroke.width,
+                    1.0..=50.0,
+                ));
                 ui.end_row();
 
                 ui.label("Color:");
-                color_edit_button_srgba(ui, &mut style.border.color, Alpha::OnlyBlend);
+                color_edit_button_srgba(
+                    ui,
+                    &mut style.main_surface_border_stroke.color,
+                    Alpha::OnlyBlend,
+                );
                 ui.end_row();
             });
         });

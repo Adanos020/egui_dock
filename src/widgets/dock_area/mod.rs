@@ -454,9 +454,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             rect.max -= margin.right_bottom();
         }
 
-        ui.painter().rect_stroke(rect, style.rounding, style.border);
+        ui.painter().rect_stroke(
+            rect,
+            style.main_surface_border_rounding,
+            style.main_surface_border_stroke,
+        );
         if surface == SurfaceIndex::main() {
-            rect = rect.expand(-style.border.width / 2.0);
+            rect = rect.expand(-style.main_surface_border_stroke.width / 2.0);
         }
         ui.allocate_rect(rect, Sense::click());
 

@@ -9,15 +9,50 @@ pub enum TabAddAlign {
     Right,
 }
 
-/// Specifies the look and feel of egui_dock.
+/// Lets you change how tabs and the [`DockArea`](crate::DockArea) should look and feel.
+/// [`Style`] is divided into several, more specialized structs that handle individual
+/// elements of the UI.
+///
+/// Your [`Style`] can inherit all its properties from an [`egui::Style`] through the
+/// [`Style::from_egui`] function.
+///
+/// Example:
+///
+/// ```rust
+/// # use egui_dock::{DockArea, DockState, OverlayType, Style, TabAddAlign, TabViewer};
+/// # use egui::{Ui, WidgetText};
+/// # struct MyTabViewer;
+/// # impl TabViewer for MyTabViewer {
+/// #     type Tab = ();
+/// #     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {}
+/// #     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText { WidgetText::default() }
+/// # }
+/// # egui::__run_test_ctx(|ctx| {
+/// # egui::CentralPanel::default().show(ctx, |ui| {
+/// # let mut dock_state = DockState::new(vec![]);
+/// // Inherit the look and feel from egui.
+/// let mut style = Style::from_egui(ui.style());
+///
+/// // Modify a few fields.
+/// style.overlay.overlay_type = OverlayType::HighlightedAreas;
+/// style.buttons.add_tab_align = TabAddAlign::Left;
+///
+/// // Use the style with the `DockArea`.
+/// DockArea::new(&mut dock_state)
+///     .style(style)
+///     .show_inside(ui, &mut MyTabViewer);
+/// # });
+/// # });
+/// #
+/// ```
 #[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub struct Style {
     /// Sets padding to indent from the edges of the window. By `Default` it's `None`.
     pub dock_area_padding: Option<Margin>,
 
-    pub border: Stroke,
-    pub rounding: Rounding,
+    pub main_surface_border_stroke: Stroke,
+    pub main_surface_border_rounding: Rounding,
 
     pub buttons: ButtonsStyle,
     pub separator: SeparatorStyle,
@@ -253,8 +288,8 @@ impl Default for Style {
     fn default() -> Self {
         Self {
             dock_area_padding: None,
-            border: Stroke::new(f32::default(), Color32::BLACK),
-            rounding: Rounding::default(),
+            main_surface_border_stroke: Stroke::new(f32::default(), Color32::BLACK),
+            main_surface_border_rounding: Rounding::default(),
             buttons: ButtonsStyle::default(),
             separator: SeparatorStyle::default(),
             tab_bar: TabBarStyle::default(),
@@ -401,14 +436,14 @@ impl Style {
     /// Derives relevant fields from `egui::Style` and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
-    /// - [`Style::border`]
+    /// - [`Style::main_surface_border_stroke`]
     ///
     /// See also: [`ButtonsStyle::from_egui`], [`SeparatorStyle::from_egui`], [`TabBarStyle::from_egui`],
     /// [`TabStyle::from_egui`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
-            border: Stroke::NONE,
-            rounding: Rounding::none(),
+            main_surface_border_stroke: Stroke::NONE,
+            main_surface_border_rounding: Rounding::none(),
             buttons: ButtonsStyle::from_egui(style),
             separator: SeparatorStyle::from_egui(style),
             tab_bar: TabBarStyle::from_egui(style),

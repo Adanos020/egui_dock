@@ -76,7 +76,7 @@
 //!
 //! `egui_dock` exposes the [`Style`] struct that lets you change how tabs and the [`DockArea`]
 //! should look and feel. [`Style`] is divided into several, more specialized structs that handle
-//! individual elements.
+//! individual elements of the UI.
 //!
 //! Your [`Style`] can inherit all its properties from an [`egui::Style`] through the
 //! [`Style::from_egui`] function.
