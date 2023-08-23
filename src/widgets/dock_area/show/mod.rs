@@ -20,6 +20,18 @@ mod leaf;
 mod main_surface;
 mod window_surface;
 
+#[derive(Copy, Clone)]
+struct LineSeparator {
+    surface_index: SurfaceIndex,
+    node_index: NodeIndex,
+    separator: Rect,
+    interact_rect: Rect,
+}
+struct CrossSeparator {
+    related_line_seperators: Vec<LineSeparator>,
+    interact_rect: Rect,
+}
+
 impl<'tree, Tab> DockArea<'tree, Tab> {
     /// Show the `DockArea` at the top level.
     ///
@@ -289,12 +301,20 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         // Finally, draw separators so that their "interaction zone" is above
         // bodies (see `SeparatorStyle::extra_interact_width`).
+        let mut separators: Vec<LineSeparator> = vec![];
         let fade_style = fade_style.map(|(style, _)| style);
         for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
             if self.dock_state[surf_index][node_index].is_parent() {
-                self.show_separator(ui, (surf_index, node_index), fade_style);
+                separators.append(&mut self.show_separator(
+                    ui,
+                    (surf_index, node_index),
+                    fade_style,
+                ));
             }
         }
+
+        // Finally draw cross section seperators
+        self.show_cross_section_separators(ui, separators);
     }
 
     fn allocate_area_for_root_node(&mut self, ui: &mut Ui, surface: SurfaceIndex) -> Rect {
@@ -372,11 +392,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui: &mut Ui,
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         fade_style: Option<&Style>,
-    ) {
+    ) -> Vec<LineSeparator> {
         assert!(self.dock_state[surface_index][node_index].is_parent());
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let pixels_per_point = ui.ctx().pixels_per_point();
+        let mut separators: Vec<LineSeparator> = vec![];
 
         duplicate! {
             [
@@ -394,6 +415,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let mut expand = Vec2::ZERO;
                 expand.dim_point += style.separator.extra_interact_width / 2.0;
                 let interact_rect = separator.expand2(expand);
+
+                separators.push(LineSeparator { surface_index,node_index, separator, interact_rect });
 
                 let response = ui.allocate_rect(interact_rect, Sense::click_and_drag())
                     .on_hover_and_drag_cursor(paste!{ CursorIcon::[<Resize orientation>]});
@@ -440,6 +463,81 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if response.double_clicked() {
                     *fraction = 0.5;
+                }
+            }
+        }
+
+        separators
+    }
+
+    fn show_cross_section_separators(&mut self, ui: &mut Ui, separators: Vec<LineSeparator>) {
+        let style = self.style.as_ref().unwrap();
+        let mut cross_section_seperators: Vec<CrossSeparator> = vec![];
+
+        // detect overlapping line separators
+        for (i, sep1) in separators.iter().enumerate() {
+            for sep2 in separators[i + 1..].iter() {
+                let separator = sep1.interact_rect.intersect(sep2.interact_rect);
+                let interact_rect = separator.expand(style.separator.extra_interact_width / 2.0);
+                let cross_separator = CrossSeparator {
+                    related_line_seperators: vec![*sep1, *sep2],
+                    interact_rect,
+                };
+                cross_section_seperators.push(cross_separator);
+            }
+        }
+
+        for separator in cross_section_seperators {
+            let response = ui
+                .allocate_rect(separator.interact_rect, Sense::click_and_drag())
+                .on_hover_and_drag_cursor(CursorIcon::Move);
+
+            // highlight all affected line separators
+            if response.dragged() || response.hovered() {
+                let color = if response.dragged() {
+                    style.separator.color_dragged
+                } else if response.hovered() {
+                    style.separator.color_hovered
+                } else {
+                    style.separator.color_idle
+                };
+
+                for line_separator in separator.related_line_seperators.iter() {
+                    ui.painter()
+                        .rect_filled(line_separator.separator, Rounding::none(), color);
+                }
+            }
+
+            for line_separator in separator.related_line_seperators.iter() {
+                duplicate! {
+                    [
+                        orientation   dim_point  dim_size;
+                        [Horizontal]  [x]        [width] ;
+                        [Vertical]    [y]        [height];
+                    ]
+                    if let Node::orientation { fraction, ref rect } =
+                        &mut self.dock_state[line_separator.surface_index][line_separator.node_index]
+                    {
+                        let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
+
+                        // Update 'fraction' interaction after drawing seperator,
+                        // overwise it may overlap on other separator / bodies when
+                        // shrunk fast.
+                        if let Some(pos) = response.interact_pointer_pos() {
+                            let dim_point = pos.dim_point;
+                            let delta = response.drag_delta().dim_point;
+
+                            if (delta > 0. && dim_point > midpoint && dim_point < rect.max.dim_point)
+                                || (delta < 0. && dim_point < midpoint && dim_point > rect.min.dim_point)
+                            {
+                                let range = rect.max.dim_point - rect.min.dim_point;
+                                let min = (style.separator.extra / range).min(1.0);
+                                let max = 1.0 - min;
+                                let (min, max) = (min.min(max), max.max(min));
+                                *fraction = (*fraction + delta / range).clamp(min, max);
+                            }
+                        }
+                    }
                 }
             }
         }
