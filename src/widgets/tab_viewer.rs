@@ -73,4 +73,7 @@ pub trait TabViewer {
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }
+    fn tab_scroll(&self, _tab: &Self::Tab) -> bool {
+        false
+    }
 }
