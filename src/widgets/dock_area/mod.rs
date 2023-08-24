@@ -1064,7 +1064,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             );
 
             if self.scroll_area_in_tabs && tab_viewer.tab_scroll(tab) {
-                ScrollArea::both().show(ui, |ui| {
+                ScrollArea::new(tab_viewer.scroll_both(tab)).show(ui, |ui| {
                     Frame::none()
                         .inner_margin(tabs_style.tab_body.inner_margin)
                         .show(ui, |ui| {
