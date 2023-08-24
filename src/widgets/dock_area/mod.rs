@@ -579,7 +579,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 if self.tab_context_menus {
                     response = response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab);
-                        if self.show_close_buttons && ui.button("Close").clicked() {
+                        if self.show_close_buttons && tab_viewer.show_close_button(tab) && ui.button("Close").clicked() {
                             if tab_viewer.on_close(tab) {
                                 self.to_remove.push((node_index, tab_index));
                             } else {
@@ -636,7 +636,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 self.new_focused = Some(node_index);
             }
 
-            if self.show_close_buttons && response.middle_clicked() {
+            if self.show_close_buttons && tab_viewer.show_close_button(tab) && response.middle_clicked() {
                 if tab_viewer.on_close(tab) {
                     self.to_remove.push((node_index, tab_index));
                 } else {
@@ -738,7 +738,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
         let text_width = galley.size().x + 2.0 * x_spacing;
-        let close_button_size = if self.show_close_buttons {
+        let close_button_size = if self.show_close_buttons{
             Style::TAB_CLOSE_BUTTON_SIZE.min(style.tab_bar.height)
         } else {
             0.0
