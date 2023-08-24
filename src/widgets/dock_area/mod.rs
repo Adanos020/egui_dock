@@ -564,7 +564,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if self.tab_context_menus {
                     response = response.context_menu(|ui| {
-                        tab_viewer.context_menu(ui, tab);
+                        tab_viewer.context_menu(ui, tab, node_index);
                         if show_close_button && ui.button("Close").clicked() {
                             if tab_viewer.on_close(tab) {
                                 self.to_remove.push((node_index, tab_index));
