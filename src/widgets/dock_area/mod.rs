@@ -805,7 +805,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             angle: 0.0,
         });
 
-        let close_response = self.show_close_buttons.then(|| {
+        let close_response = (false && self.show_close_buttons).then(|| {
             let mut close_button_rect = rect;
             close_button_rect.set_left(text_rect.right());
             close_button_rect =
