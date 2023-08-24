@@ -81,9 +81,5 @@ pub trait TabViewer {
         true
     }
 
-    /// allow setting if an individual tab should show the title bar
-    /// will default to true if not implemented. 
-    fn show_title(&self, _tab: &Self::Tab) -> bool {
-        true
-    }
+    
 }
