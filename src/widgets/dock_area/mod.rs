@@ -502,7 +502,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
             }
 
-            let (is_active, label, tab_style) = {
+            let (is_active, label, tab_style, show_tab_close_button) = {
                 let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
                 let style = self.style.as_ref().unwrap();
                 let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tabs);
@@ -510,6 +510,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     *active == tab_index || is_being_dragged,
                     tab_viewer.title(&mut tabs[tab_index.0]),
                     tab_style.unwrap_or(style.tabs.clone()),
+                    tab_viewer.show_close_button(&tabs[tab_index.0]),
                 )
             };
 
@@ -526,6 +527,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             is_active,
                             is_being_dragged,
                             expanded_width,
+                            show_tab_close_button,
                         )
                     })
                     .response;
@@ -556,6 +558,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     is_active,
                     is_being_dragged,
                     expanded_width,
+                    show_tab_close_button
                 );
 
                 let (close_hovered, close_clicked) = close_response
@@ -732,6 +735,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         active: bool,
         is_being_dragged: bool,
         expanded_width: f32,
+        show_tab_close_button: bool
     ) -> (Response, Option<Response>) {
         let style = self.style.as_ref().unwrap();
         let rounding = tab_style.rounding;
