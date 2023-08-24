@@ -66,4 +66,11 @@ pub trait TabViewer {
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }
+
+    /// allows setting if individual tabs should show the close button. 
+    /// only works if show_close_buttons is also set.
+    /// will defaul to true if not implemented. 
+    fn show_close_button(&self, _tab: &Self::Tab) -> bool {
+        true
+    }
 }
