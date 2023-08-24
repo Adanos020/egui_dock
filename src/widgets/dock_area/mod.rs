@@ -495,24 +495,41 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         for tab_index in 0..tabs_len {
             let id = self.id.with((node_index, "node")).with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
+            
+            // this seems a bit messy as we need to to this same iteration again in a couple of lines - putting it here to see if I can make if work but should revise. 
+            let (mut is_active, label, tab_style, show_tab_close_button, allow_tab_drag) = {
+                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+                let style = self.style.as_ref().unwrap();
+                let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tabs);
+                (
+                    *active == tab_index,
+                    tab_viewer.title(&mut tabs[tab_index.0]),
+                    tab_style.unwrap_or(style.tabs.clone()),
+                    tab_viewer.show_close_button(&tabs[tab_index.0]),
+                    tab_viewer.allow_drag(&tabs[tab_index.0])
+                )
+            };
+            
+            
             let is_being_dragged =
-                tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
+                tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs && allow_tab_drag;
 
             if is_being_dragged {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
             }
 
-            let (is_active, label, tab_style, show_tab_close_button) = {
-                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
-                let style = self.style.as_ref().unwrap();
-                let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tabs);
-                (
-                    *active == tab_index || is_being_dragged,
-                    tab_viewer.title(&mut tabs[tab_index.0]),
-                    tab_style.unwrap_or(style.tabs.clone()),
-                    tab_viewer.show_close_button(&tabs[tab_index.0]),
-                )
-            };
+            is_active = is_active || is_being_dragged;
+            // let (is_active, label, tab_style, show_tab_close_button) = {
+            //     let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else { unreachable!() };
+            //     let style = self.style.as_ref().unwrap();
+            //     let tab_style = tab_viewer.tab_style_override(&tabs[tab_index.0], &style.tabs);
+            //     (
+            //         *active == tab_index || is_being_dragged,
+            //         tab_viewer.title(&mut tabs[tab_index.0]),
+            //         tab_style.unwrap_or(style.tabs.clone()),
+            //         tab_viewer.show_close_button(&tabs[tab_index.0]),
+            //     )
+            // };
 
             let response = if is_being_dragged {
                 let layer_id = LayerId::new(Order::Tooltip, id);
@@ -528,6 +545,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             is_being_dragged,
                             expanded_width,
                             show_tab_close_button,
+                            allow_tab_drag
                         )
                     })
                     .response;
@@ -558,7 +576,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     is_active,
                     is_being_dragged,
                     expanded_width,
-                    show_tab_close_button
+                    show_tab_close_button,
+                    allow_tab_drag
                 );
 
                 let (close_hovered, close_clicked) = close_response
@@ -735,7 +754,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         active: bool,
         is_being_dragged: bool,
         expanded_width: f32,
-        show_tab_close_button: bool
+        show_tab_close_button: bool,
+        allow_tab_drag: bool,
     ) -> (Response, Option<Response>) {
         let style = self.style.as_ref().unwrap();
         let rounding = tab_style.rounding;
@@ -759,7 +779,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let (rect, mut response) =
             ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
-        if !ui.memory(|mem| mem.is_anything_being_dragged()) && self.draggable_tabs {
+        if !ui.memory(|mem| mem.is_anything_being_dragged()) && self.draggable_tabs && allow_tab_drag{
             response = response.on_hover_cursor(CursorIcon::Grab);
         }
 

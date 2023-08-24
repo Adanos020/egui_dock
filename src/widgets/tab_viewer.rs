@@ -73,4 +73,17 @@ pub trait TabViewer {
     fn show_close_button(&self, _tab: &Self::Tab) -> bool {
         true
     }
+
+    /// allow setting if an individaul tabs should be draggable
+    /// only workd if draggable_tabs is set to true
+    /// will default to true if not implemented
+    fn allow_drag(&self, _tab: &Self::Tab) -> bool {
+        true
+    }
+
+    /// allow setting if an individual tab should show the title bar
+    /// will default to true if not implemented. 
+    fn show_title(&self, _tab: &Self::Tab) -> bool {
+        true
+    }
 }
