@@ -81,6 +81,8 @@ pub trait TabViewer {
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }
+    /// The scrolling of each tab is controlled by themselves
+
     fn tab_scroll(&self, _tab: &Self::Tab) -> bool {
         false
     }
