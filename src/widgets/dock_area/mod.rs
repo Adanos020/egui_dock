@@ -10,7 +10,10 @@ use crate::{
 };
 
 use duplicate::duplicate;
-use egui::{containers::*, emath::*, epaint::*, layers::*, Context, CursorIcon, Id, Layout, Response, Sense, TextStyle, Ui, WidgetText};
+use egui::{
+    containers::*, emath::*, epaint::*, layers::*, Context, CursorIcon, Id, Layout, Response,
+    Sense, TextStyle, Ui, WidgetText,
+};
 use hover_data::HoverData;
 use paste::paste;
 use state::State;
@@ -176,7 +179,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     #[inline]
     pub fn show(self, ctx: &Context, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         CentralPanel::default()
-            .frame(Frame::central_panel(&ctx.style()).inner_margin(0.).fill(Color32::TRANSPARENT))
+            .frame(
+                Frame::central_panel(&ctx.style())
+                    .inner_margin(0.)
+                    .fill(Color32::TRANSPARENT),
+            )
             .show(ctx, |ui| {
                 self.show_inside(ui, tab_viewer);
             });
@@ -186,7 +193,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ///
     /// See also [`show`](Self::show).
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
-        self.style.get_or_insert_with(|| Style::from_egui(ui.style().as_ref()));
+        self.style
+            .get_or_insert_with(|| Style::from_egui(ui.style().as_ref()));
 
         let mut state = State::load(ui.ctx(), self.id);
 
@@ -225,7 +233,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let dst = hover.dst;
             let style = self.style.as_ref().unwrap();
 
-            if self.tree[src].is_leaf() && self.tree[dst].is_leaf() && (src != dst || self.tree[dst].tabs_count() > 1) {
+            if self.tree[src].is_leaf()
+                && self.tree[dst].is_leaf()
+                && (src != dst || self.tree[dst].tabs_count() > 1)
+            {
                 let (overlay, tab_dst) = hover.resolve(&self.allowed_splits);
                 let id = Id::new("overlay");
                 let layer_id = LayerId::new(Order::Foreground, id);
@@ -370,7 +381,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
-    fn show_leaf(&mut self, ui: &mut Ui, state: &mut State, node_index: NodeIndex, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
+    fn show_leaf(
+        &mut self,
+        ui: &mut Ui,
+        state: &mut State,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+    ) {
         assert!(self.tree[node_index].is_leaf());
 
         let rect = {
@@ -379,7 +396,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             };
             *rect
         };
-        let ui = &mut ui.child_ui_with_id_source(rect, Layout::top_down_justified(Align::Min), (node_index, "node"));
+        let ui = &mut ui.child_ui_with_id_source(
+            rect,
+            Layout::top_down_justified(Align::Min),
+            (node_index, "node"),
+        );
         let spacing = ui.spacing().item_spacing;
         ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
         ui.set_clip_rect(rect);
@@ -397,12 +418,25 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
-    fn tab_bar(&mut self, ui: &mut Ui, state: &mut State, node_index: NodeIndex, tab_viewer: &mut impl TabViewer<Tab = Tab>) -> Response {
+    fn tab_bar(
+        &mut self,
+        ui: &mut Ui,
+        state: &mut State,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+    ) -> Response {
         assert!(self.tree[node_index].is_leaf());
 
         let style = self.style.as_ref().unwrap();
-        let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(vec2(ui.available_width(), style.tab_bar.height), Sense::hover());
-        ui.painter().rect_filled(tabbar_outer_rect, style.tab_bar.rounding, style.tab_bar.bg_fill);
+        let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
+            vec2(ui.available_width(), style.tab_bar.height),
+            Sense::hover(),
+        );
+        ui.painter().rect_filled(
+            tabbar_outer_rect,
+            style.tab_bar.rounding,
+            style.tab_bar.bg_fill,
+        );
 
         let mut available_width = tabbar_outer_rect.width();
 
@@ -421,16 +455,30 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 vec2(tabbar_outer_rect.width(), tabbar_outer_rect.height()),
             );
 
-            let tabs_ui = &mut ui.child_ui_with_id_source(tabbar_inner_rect, Layout::left_to_right(Align::Center), "tabs");
+            let tabs_ui = &mut ui.child_ui_with_id_source(
+                tabbar_inner_rect,
+                Layout::left_to_right(Align::Center),
+                "tabs",
+            );
 
             let mut clip_rect = tabbar_outer_rect;
             clip_rect.set_width(available_width);
             tabs_ui.set_clip_rect(clip_rect);
 
             // Desired size for tabs in "expanded" mode
-            let prefered_width = style.tab_bar.fill_tab_bar.then_some(available_width / (tabs.len() as f32));
+            let prefered_width = style
+                .tab_bar
+                .fill_tab_bar
+                .then_some(available_width / (tabs.len() as f32));
 
-            self.tabs(tabs_ui, state, node_index, tab_viewer, tabbar_outer_rect, prefered_width);
+            self.tabs(
+                tabs_ui,
+                state,
+                node_index,
+                tab_viewer,
+                tabbar_outer_rect,
+                prefered_width,
+            );
 
             // Draw hline from tab end to edge of tabbar
             let px = ui.ctx().pixels_per_point().recip();
@@ -445,7 +493,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // Add button at the end of the tab bar
             if self.show_add_buttons {
                 let offset = match style.buttons.add_tab_align {
-                    TabAddAlign::Left => (clip_rect.width() - tabs_ui.min_rect().width()).at_least(0.0),
+                    TabAddAlign::Left => {
+                        (clip_rect.width() - tabs_ui.min_rect().width()).at_least(0.0)
+                    }
                     TabAddAlign::Right => 0.0,
                 };
                 self.tab_plus(ui, node_index, tab_viewer, tabbar_outer_rect, offset);
@@ -454,7 +504,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tabs_ui.min_rect().width()
         };
 
-        self.tab_bar_scroll(ui, node_index, actual_width, available_width, &tabbar_response);
+        self.tab_bar_scroll(
+            ui,
+            node_index,
+            actual_width,
+            available_width,
+            &tabbar_response,
+        );
 
         tabbar_response
     }
@@ -481,7 +537,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         for tab_index in 0..tabs_len {
             let id = self.id.with((node_index, "node")).with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
-            let is_being_dragged = tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
+            let is_being_dragged =
+                tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
 
             if is_being_dragged {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
@@ -548,9 +605,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     show_close_button,
                 );
 
-                let (close_hovered, close_clicked) = close_response.map(|res| (res.hovered(), res.clicked())).unwrap_or_default();
+                let (close_hovered, close_clicked) = close_response
+                    .map(|res| (res.hovered(), res.clicked()))
+                    .unwrap_or_default();
 
-                let sense = if close_hovered { Sense::click() } else { Sense::click_and_drag() };
+                let sense = if close_hovered {
+                    Sense::click()
+                } else {
+                    Sense::click_and_drag()
+                };
 
                 let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else {
                     unreachable!()
@@ -612,9 +675,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             if !is_active || tab_style.hline_below_active_tab_name {
                 let px = tabs_ui.ctx().pixels_per_point().recip();
-                tabs_ui
-                    .painter()
-                    .hline(response.rect.x_range(), tabbar_outer_rect.bottom() - px, (px, style.tab_bar.hline_color));
+                tabs_ui.painter().hline(
+                    response.rect.x_range(),
+                    tabbar_outer_rect.bottom() - px,
+                    (px, style.tab_bar.hline_color),
+                );
             }
 
             if response.clicked() {
@@ -635,13 +700,24 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
-    fn tab_plus(&mut self, ui: &mut Ui, node_index: NodeIndex, tab_viewer: &mut impl TabViewer<Tab = Tab>, tabbar_outer_rect: Rect, offset: f32) {
+    fn tab_plus(
+        &mut self,
+        ui: &mut Ui,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        tabbar_outer_rect: Rect,
+        offset: f32,
+    ) {
         let rect = Rect::from_min_max(
             tabbar_outer_rect.right_top() - vec2(Style::TAB_ADD_BUTTON_SIZE + offset, 0.0),
             tabbar_outer_rect.right_bottom() - vec2(offset, 2.0),
         );
 
-        let ui = &mut ui.child_ui_with_id_source(rect, Layout::left_to_right(Align::Center), (node_index, "tab_add"));
+        let ui = &mut ui.child_ui_with_id_source(
+            rect,
+            Layout::left_to_right(Align::Center),
+            (node_index, "tab_add"),
+        );
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
@@ -649,7 +725,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let style = self.style.as_ref().unwrap();
         let color = if response.hovered() {
-            ui.painter().rect_filled(rect, Rounding::none(), style.buttons.add_tab_bg_fill);
+            ui.painter()
+                .rect_filled(rect, Rounding::none(), style.buttons.add_tab_bg_fill);
             style.buttons.add_tab_active_color
         } else {
             style.buttons.add_tab_color
@@ -659,14 +736,23 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         rect_set_size_centered(&mut plus_rect, Vec2::splat(Style::TAB_ADD_PLUS_SIZE));
 
-        ui.painter().line_segment([plus_rect.center_top(), plus_rect.center_bottom()], Stroke::new(1.0, color));
-        ui.painter().line_segment([plus_rect.right_center(), plus_rect.left_center()], Stroke::new(1.0, color));
+        ui.painter().line_segment(
+            [plus_rect.center_top(), plus_rect.center_bottom()],
+            Stroke::new(1.0, color),
+        );
+        ui.painter().line_segment(
+            [plus_rect.right_center(), plus_rect.left_center()],
+            Stroke::new(1.0, color),
+        );
 
         // Draw button left border
         ui.painter().vline(
             rect.left(),
             rect.y_range(),
-            Stroke::new(ui.ctx().pixels_per_point().recip(), style.buttons.add_tab_border_color),
+            Stroke::new(
+                ui.ctx().pixels_per_point().recip(),
+                style.buttons.add_tab_border_color,
+            ),
         );
 
         let popup_id = ui.id().with("tab_add_popup");
@@ -710,10 +796,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         };
 
         // Compute total width of the tab bar
-        let minimum_width = tab_style.minimum_width.unwrap_or(0.0).at_least(text_width + close_button_size);
+        let minimum_width = tab_style
+            .minimum_width
+            .unwrap_or(0.0)
+            .at_least(text_width + close_button_size);
         let tab_width = prefered_width.unwrap_or(0.0).at_least(minimum_width);
 
-        let (rect, mut response) = ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
+        let (rect, mut response) =
+            ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
         if !ui.memory(|mem| mem.is_anything_being_dragged()) && self.draggable_tabs {
             response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
@@ -730,9 +820,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         // Draw the full tab first and then the stroke ontop to avoid the stroke
         // mixing with the background color.
-        ui.painter().rect_filled(rect, tab_style.rounding, tab_style.bg_fill);
+        ui.painter()
+            .rect_filled(rect, tab_style.rounding, tab_style.bg_fill);
         let stroke_rect = rect_stroke_box(rect, 1.0);
-        ui.painter().rect_stroke(stroke_rect, tab_style.rounding, Stroke::new(1.0, tab_style.outline_color));
+        ui.painter().rect_stroke(
+            stroke_rect,
+            tab_style.rounding,
+            Stroke::new(1.0, tab_style.outline_color),
+        );
         if !is_being_dragged {
             // Make the tab name area connect with the tab ui area:
             ui.painter().hline(
@@ -749,7 +844,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         text_rect.set_width(tab_width - close_button_size);
 
         let text_pos = {
-            let mut pos = Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
+            let mut pos =
+                Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
             pos -= galley.size() / 2.0;
             pos
         };
@@ -767,9 +863,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let close_response = show_close_button.then(|| {
             let mut close_button_rect = rect;
             close_button_rect.set_left(text_rect.right());
-            close_button_rect = Rect::from_center_size(close_button_rect.center(), Vec2::splat(close_button_size));
+            close_button_rect =
+                Rect::from_center_size(close_button_rect.center(), Vec2::splat(close_button_size));
 
-            let response = ui.interact(close_button_rect, id, Sense::click()).on_hover_cursor(CursorIcon::PointingHand);
+            let response = ui
+                .interact(close_button_rect, id, Sense::click())
+                .on_hover_cursor(CursorIcon::PointingHand);
 
             let color = if response.hovered() {
                 style.buttons.close_tab_active_color
@@ -782,13 +881,23 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 rounding.nw = 0.0;
                 rounding.sw = 0.0;
 
-                ui.painter().rect_filled(close_button_rect, rounding, style.buttons.add_tab_bg_fill);
+                ui.painter().rect_filled(
+                    close_button_rect,
+                    rounding,
+                    style.buttons.add_tab_bg_fill,
+                );
             }
 
             let mut x_rect = close_button_rect;
             rect_set_size_centered(&mut x_rect, Vec2::splat(Style::TAB_CLOSE_X_SIZE));
-            ui.painter().line_segment([x_rect.left_top(), x_rect.right_bottom()], Stroke::new(1.0, color));
-            ui.painter().line_segment([x_rect.right_top(), x_rect.left_bottom()], Stroke::new(1.0, color));
+            ui.painter().line_segment(
+                [x_rect.left_top(), x_rect.right_bottom()],
+                Stroke::new(1.0, color),
+            );
+            ui.painter().line_segment(
+                [x_rect.right_top(), x_rect.left_bottom()],
+                Stroke::new(1.0, color),
+            );
 
             response
         });
@@ -796,7 +905,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (response, close_response)
     }
 
-    fn tab_bar_scroll(&mut self, ui: &mut Ui, node_index: NodeIndex, actual_width: f32, available_width: f32, tabbar_response: &Response) {
+    fn tab_bar_scroll(
+        &mut self,
+        ui: &mut Ui,
+        node_index: NodeIndex,
+        actual_width: f32,
+        available_width: f32,
+        tabbar_response: &Response,
+    ) {
         let Node::Leaf { scroll, .. } = &mut self.tree[node_index] else {
             unreachable!()
         };
@@ -809,35 +925,57 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             if style.tab_bar.show_scroll_bar_on_overflow {
                 // Draw scroll bar
                 let bar_height = 7.5;
-                let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(vec2(ui.available_width(), bar_height), Sense::click_and_drag());
+                let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
+                    vec2(ui.available_width(), bar_height),
+                    Sense::click_and_drag(),
+                );
 
                 // Compute scroll bar handle position and size
                 let overflow_ratio = actual_width / available_width;
                 let scroll_ratio = -*scroll / overflow;
 
                 let scroll_bar_handle_size = overflow_ratio.recip() * scroll_bar_rect.width();
-                let scroll_bar_handle_start = lerp(scroll_bar_rect.left()..=scroll_bar_rect.right() - scroll_bar_handle_size, scroll_ratio);
-                let scroll_bar_handle_rect = Rect::from_min_size(pos2(scroll_bar_handle_start, scroll_bar_rect.min.y), vec2(scroll_bar_handle_size, bar_height));
+                let scroll_bar_handle_start = lerp(
+                    scroll_bar_rect.left()..=scroll_bar_rect.right() - scroll_bar_handle_size,
+                    scroll_ratio,
+                );
+                let scroll_bar_handle_rect = Rect::from_min_size(
+                    pos2(scroll_bar_handle_start, scroll_bar_rect.min.y),
+                    vec2(scroll_bar_handle_size, bar_height),
+                );
 
-                let scroll_bar_handle_response = ui.interact(scroll_bar_handle_rect, self.id.with((node_index, "node")), Sense::drag());
+                let scroll_bar_handle_response = ui.interact(
+                    scroll_bar_handle_rect,
+                    self.id.with((node_index, "node")),
+                    Sense::drag(),
+                );
 
                 // Coefficient to apply to input displacements so that we
                 // move the scroll by the correct amount.
-                let points_to_scroll_coefficient = overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
+                let points_to_scroll_coefficient =
+                    overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
 
                 *scroll -= scroll_bar_handle_response.drag_delta().x * points_to_scroll_coefficient;
 
                 if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
                     if scroll_bar_rect.contains(pos) {
-                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x) * points_to_scroll_coefficient;
+                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
+                            * points_to_scroll_coefficient;
                     }
                 }
 
                 // Draw the bar
-                ui.painter().rect_filled(scroll_bar_rect, 0.0, ui.visuals().extreme_bg_color);
-
                 ui.painter()
-                    .rect_filled(scroll_bar_handle_rect, bar_height / 2.0, ui.visuals().widgets.style(&scroll_bar_handle_response).bg_fill);
+                    .rect_filled(scroll_bar_rect, 0.0, ui.visuals().extreme_bg_color);
+
+                ui.painter().rect_filled(
+                    scroll_bar_handle_rect,
+                    bar_height / 2.0,
+                    ui.visuals()
+                        .widgets
+                        .style(&scroll_bar_handle_response)
+                        .bg_fill,
+                );
             }
 
             // Handle user input
@@ -849,8 +987,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         *scroll = scroll.clamp(-overflow, 0.0);
     }
 
-    fn tab_body(&mut self, ui: &mut Ui, state: &mut State, node_index: NodeIndex, tab_viewer: &mut impl TabViewer<Tab = Tab>, spacing: Vec2, tabbar_response: Response) {
-        let (body_rect, _body_response) = ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
+    fn tab_body(
+        &mut self,
+        ui: &mut Ui,
+        state: &mut State,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        spacing: Vec2,
+        tabbar_response: Response,
+    ) {
+        let (body_rect, _body_response) =
+            ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
 
         let Node::Leaf {
             rect,
@@ -878,7 +1025,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
             let tabs_style = tabs_styles.as_ref().unwrap_or(&style.tab);
             if tab_viewer.clear_background(tab) {
-                ui.painter().rect_filled(body_rect, 0.0, tabs_style.tab_body.bg_fill);
+                ui.painter()
+                    .rect_filled(body_rect, 0.0, tabs_style.tab_body.bg_fill);
             }
 
             // Construct a new ui with the correct tab id
@@ -888,7 +1036,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // from node to node.
             let id = self.id.with(tab_viewer.id(tab));
             ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
-            let ui = &mut Ui::new(ui.ctx().clone(), ui.layer_id(), id, body_rect, ui.clip_rect());
+            let ui = &mut Ui::new(
+                ui.ctx().clone(),
+                ui.layer_id(),
+                id,
+                body_rect,
+                ui.clip_rect(),
+            );
             ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 
             // Use initial spacing for ui
@@ -898,7 +1052,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // To avoid anti-aliasing lines when the stroke width is not divisible by two, we
             // need to calulate the effective anti aliased stroke width.
             let effective_stroke_width = (tabs_style.tab_body.stroke.width / 2.0).ceil() * 2.0;
-            let tab_body_rect = Rect::from_min_max(ui.clip_rect().min - vec2(0.0, effective_stroke_width), ui.clip_rect().max);
+            let tab_body_rect = Rect::from_min_max(
+                ui.clip_rect().min - vec2(0.0, effective_stroke_width),
+                ui.clip_rect().max,
+            );
             ui.painter().rect(
                 rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
                 tabs_style.tab_body.rounding,
@@ -908,16 +1065,20 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             if self.scroll_area_in_tabs && tab_viewer.tab_scroll(tab) {
                 ScrollArea::both().show(ui, |ui| {
-                    Frame::none().inner_margin(tabs_style.tab_body.inner_margin).show(ui, |ui| {
-                        let available_rect = ui.available_rect_before_wrap();
-                        ui.expand_to_include_rect(available_rect);
-                        tab_viewer.ui(ui, tab);
-                    });
+                    Frame::none()
+                        .inner_margin(tabs_style.tab_body.inner_margin)
+                        .show(ui, |ui| {
+                            let available_rect = ui.available_rect_before_wrap();
+                            ui.expand_to_include_rect(available_rect);
+                            tab_viewer.ui(ui, tab);
+                        });
                 });
             } else {
-                Frame::none().inner_margin(tabs_style.tab_body.inner_margin).show(ui, |ui| {
-                    tab_viewer.ui(ui, tab);
-                });
+                Frame::none()
+                    .inner_margin(tabs_style.tab_body.inner_margin)
+                    .show(ui, |ui| {
+                        tab_viewer.ui(ui, tab);
+                    });
             }
         }
 
