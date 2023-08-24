@@ -86,4 +86,9 @@ pub trait TabViewer {
     fn tab_scroll(&self, _tab: &Self::Tab) -> bool {
         false
     }
+    /// Is the tab's scrolling mode both, horizontal, or
+
+    fn scroll_both(&self, _tab: &Self::Tab) -> [bool; 2] {
+        [true, true]
+    }
 }
