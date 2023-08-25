@@ -218,7 +218,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             })
         };
 
-        for &surface_index in self.dock_state.valid_surface_indices().into_iter() {
+        for &surface_index in self.dock_state.valid_surface_indices().iter() {
             self.show_surface_inside(
                 surface_index,
                 ui,

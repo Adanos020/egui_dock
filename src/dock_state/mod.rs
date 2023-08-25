@@ -389,7 +389,7 @@ where
     ///
     /// See also: [`find_main_surface_tab`](DockState::find_main_surface_tab)
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
-        for &surface_index in self.valid_surface_indices().into_iter() {
+        for &surface_index in self.valid_surface_indices().iter() {
             if !self.surfaces[surface_index.0].is_empty() {
                 if let Some((node_index, tab_index)) = self[surface_index].find_tab(needle_tab) {
                     return Some((surface_index, node_index, tab_index));
