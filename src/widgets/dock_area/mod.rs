@@ -634,7 +634,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     Sense::click_and_drag()
                 };
 
-                let Node::Leaf { tabs, active, .. } = &mut self.tree[node_index] else {
+                let Node::Leaf { tabs, active, hide_label, .. } = &mut self.tree[node_index] else {
                     unreachable!()
                 };
                 let tab = &mut tabs[tab_index.0];
@@ -675,7 +675,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
                     // the underlying tab
-                    if state.drag_start.is_some() && response.rect.contains(pos) {
+                    if state.drag_start.is_some() && response.rect.contains(pos) && !*hide_label {
                         self.tab_hover_rect = Some((response.rect, tab_index));
                     }
                 }
