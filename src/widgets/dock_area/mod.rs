@@ -43,7 +43,6 @@ pub struct DockArea<'tree, Tab> {
     tab_context_menus: bool,
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
-    scroll_area_in_tabs: bool,
     allowed_splits: AllowedSplits,
 
     drag_data: Option<(NodeIndex, TabIndex)>,
@@ -68,7 +67,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tab_context_menus: true,
             draggable_tabs: true,
             show_tab_name_on_hover: false,
-            scroll_area_in_tabs: true,
             allowed_splits: AllowedSplits::default(),
             drag_data: None,
             hover_data: None,
@@ -131,13 +129,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// By default it's false.
     pub fn show_tab_name_on_hover(mut self, show_tab_name_on_hover: bool) -> Self {
         self.show_tab_name_on_hover = show_tab_name_on_hover;
-        self
-    }
-
-    /// Whether tabs have a [`ScrollArea`] out of the box.
-    /// By default it's true.
-    pub fn scroll_area_in_tabs(mut self, scroll_area_in_tabs: bool) -> Self {
-        self.scroll_area_in_tabs = scroll_area_in_tabs;
         self
     }
 
@@ -1063,23 +1054,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs_style.tab_body.stroke,
             );
 
-            if self.scroll_area_in_tabs && tab_viewer.tab_scroll(tab) {
-                ScrollArea::new(tab_viewer.scroll_both(tab)).show(ui, |ui| {
-                    Frame::none()
-                        .inner_margin(tabs_style.tab_body.inner_margin)
-                        .show(ui, |ui| {
-                            let available_rect = ui.available_rect_before_wrap();
-                            ui.expand_to_include_rect(available_rect);
-                            tab_viewer.ui(ui, tab);
-                        });
-                });
-            } else {
+            ScrollArea::new(tab_viewer.scroll_bars(tab)).show(ui, |ui| {
                 Frame::none()
                     .inner_margin(tabs_style.tab_body.inner_margin)
                     .show(ui, |ui| {
+                        let available_rect = ui.available_rect_before_wrap();
+                        ui.expand_to_include_rect(available_rect);
                         tab_viewer.ui(ui, tab);
                     });
-            }
+            });
         }
 
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
