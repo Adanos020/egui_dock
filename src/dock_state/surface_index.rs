@@ -17,7 +17,7 @@ impl SurfaceIndex {
         Self(0)
     }
 
-    /// Compares this surface index with `SurfaceIndex::root()`.
+    /// Returns if this index is `SurfaceIndex::main()`.
     #[inline(always)]
     pub const fn is_main(self) -> bool {
         self.0 == Self::main().0

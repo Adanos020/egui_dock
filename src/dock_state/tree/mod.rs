@@ -62,8 +62,10 @@ impl Split {
 pub enum TabInsert {
     /// Split the node in the given direction.
     Split(Split),
+
     /// Insert the tab at the given index.
     Insert(TabIndex),
+
     /// Append the tab to the node.
     Append,
 }
@@ -156,7 +158,7 @@ impl<Tab> IndexMut<NodeIndex> for Tree<Tab> {
 }
 
 impl<Tab> Tree<Tab> {
-    /// Creates a new `Tree` with given `Vec` of `Tab`s in its root node.
+    /// Creates a new [`Tree`] with given `Vec` of `Tab`s in its root node.
     #[inline(always)]
     pub fn new(tabs: Vec<Tab>) -> Self {
         let root = Node::leaf_with(tabs);
@@ -166,7 +168,8 @@ impl<Tab> Tree<Tab> {
         }
     }
 
-    /// Returns the viewport `Rect` and the `Tab` inside the first leaf node, or `None` of no leaf exists in the `Tree`.
+    /// Returns the viewport [`Rect`] and the `Tab` inside the first leaf node,
+    /// or `None` if no leaf exists in the [`Tree`].
     #[inline]
     pub fn find_active(&mut self) -> Option<(Rect, &mut Tab)> {
         self.tree.iter_mut().find_map(|node| match node {
@@ -182,7 +185,7 @@ impl<Tab> Tree<Tab> {
 
     /// Returns the number of nodes in the [`Tree`].
     ///
-    /// This includes [`Empty`](crate::Node::Empty) nodes.
+    /// This includes [`Empty`](Node::Empty) nodes.
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.tree.len()
@@ -196,7 +199,7 @@ impl<Tab> Tree<Tab> {
 
     /// Returns an `Iterator` of the underlying collection of nodes.
     ///
-    /// This includes [`Empty`](crate::Node::Empty) nodes.
+    /// This includes [`Empty`](Node::Empty) nodes.
     #[inline(always)]
     pub fn iter(&self) -> Iter<'_, Node<Tab>> {
         self.tree.iter()
@@ -204,13 +207,13 @@ impl<Tab> Tree<Tab> {
 
     /// Returns `IterMut` of the underlying collection of nodes.
     ///
-    /// This includes [`Empty`](crate::Node::Empty) nodes.
+    /// This includes [`Empty`](Node::Empty) nodes.
     #[inline(always)]
     pub fn iter_mut(&mut self) -> IterMut<'_, Node<Tab>> {
         self.tree.iter_mut()
     }
 
-    /// Returns an `Iterator` of [`NodeIndex`] ordered in a breadth first manner.
+    /// Returns an [`Iterator`] of [`NodeIndex`] ordered in a breadth first manner.
     #[inline(always)]
     pub(crate) fn breadth_first_index_iter(&self) -> impl Iterator<Item = NodeIndex> {
         (0..self.tree.len()).map(NodeIndex)
@@ -225,12 +228,13 @@ impl<Tab> Tree<Tab> {
     /// Counts and returns the number of tabs in the whole tree.
     ///
     /// # Examples
+    ///
     /// ```rust
     /// # use egui_dock::{DockState, NodeIndex, TabIndex};
     /// let mut dock_state = DockState::new(vec!["node 1", "node 2", "node 3"]);
     /// assert_eq!(dock_state.main_surface().num_tabs(), 3);
     ///
-    /// let [a,b] = dock_state.main_surface_mut().split_left(NodeIndex::root(), 0.5, vec!["tab 4", "tab 5"]);
+    /// let [a, b] = dock_state.main_surface_mut().split_left(NodeIndex::root(), 0.5, vec!["tab 4", "tab 5"]);
     /// assert_eq!(dock_state.main_surface().num_tabs(), 5);
     ///
     /// dock_state.main_surface_mut().remove_leaf(a);
@@ -247,10 +251,11 @@ impl<Tab> Tree<Tab> {
         count
     }
 
-    /// Aquire a immutable borrow to the [`Node`] at the root of the tree.
+    /// Acquire a immutable borrow to the [`Node`] at the root of the tree.
     /// Returns [`None`] if the tree is empty.
     ///
     /// # Examples
+    ///
     /// ```rust
     /// # use egui_dock::{DockState};
     /// let mut dock_state = DockState::new(vec!["single tab"]);
@@ -262,10 +267,11 @@ impl<Tab> Tree<Tab> {
         self.tree.get(0)
     }
 
-    /// Aquire a mutable borrow to the [`Node`] at the root of the tree.
+    /// Acquire a mutable borrow to the [`Node`] at the root of the tree.
     /// Returns [`None`] if the tree is empty.
     ///
     /// # Examples
+    ///
     /// ```rust
     /// # use egui_dock::{DockState, Node};
     /// let mut dock_state = DockState::new(vec!["single tab"]);
@@ -280,9 +286,9 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// inherits content of the `parent` from before the split, and the second (new) gets the `tabs`.
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
     /// split.
     ///
     /// The new node is placed relatively to the old node, in the direction specified by `split`.
@@ -297,14 +303,12 @@ impl<Tab> Tree<Tab> {
     ///
     /// ```rust
     /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split};
-    ///
-    ///
     /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
     ///
-    /// //at this point, the main surface and index contains the leaf with tab 1 and 2
+    /// // At this point, the main surface only contains the leaf with tab 1 and 2.
     /// assert!(dock_state.main_surface().root_node().unwrap().is_leaf());
     ///
-    /// //splits the node, giving 50% of the space to the new nodes and 50% to the old ones.
+    /// // Split the node, giving 50% of the space to the new nodes and 50% to the old ones.
     /// let [old, new] = dock_state.main_surface_mut()
     ///     .split_tabs(NodeIndex::root(), Split::Below, 0.5, vec!["tab 3"]);
     ///
@@ -324,14 +328,14 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// inherits content of the `parent` from before the split, and the second (new) gets the `tabs`.
     ///
-    /// This is a shorthand for using `split_tabs` with [`Split::Above`]
+    /// This is a shorthand for using `split_tabs` with [`Split::Above`].
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
     /// split.
     ///
-    /// The new node is placed above the old node.
+    /// The new node is placed *above* the old node.
     ///
     /// Returns the indices of the old node and the new node.
     ///
@@ -349,14 +353,14 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// inherits content of the `parent` from before the split, and the second (new) gets the `tabs`.
     ///
-    /// This is a shorthand for using `split_tabs` with [`Split::Below`]
+    /// This is a shorthand for using `split_tabs` with [`Split::Below`].
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
     /// split.
     ///
-    /// The new node is placed below the old node.
+    /// The new node is placed *below* the old node.
     ///
     /// Returns the indices of the old node and the new node.
     ///
@@ -374,14 +378,14 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// inherits content of the `parent` from before the split, and the second (new) gets the `tabs`.
     ///
-    /// This is a shorthand for using `split_tabs` with [`Split::Left`]
+    /// This is a shorthand for using `split_tabs` with [`Split::Left`].
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
     /// split.
     ///
-    /// The new node is placed to the left of the old node.
+    /// The new node is placed to the *left* of the old node.
     ///
     /// Returns the indices of the old node and the new node.
     ///
@@ -399,14 +403,14 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
-    /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
+    /// inherits content of the `parent` from before the split, and the second (new) gets the `tabs`.
     ///
-    /// This is a shorthand for using `split_tabs` with [`Split::Right`]
+    /// This is a shorthand for using `split_tabs` with [`Split::Right`].
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
     /// split.
     ///
-    /// The new node is placed to the right of the old node.
+    /// The new node is placed to the *right* of the old node.
     ///
     /// Returns the indices of the old node and the new node.
     ///
@@ -426,7 +430,7 @@ impl<Tab> Tree<Tab> {
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) uses `new`.
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node is will occupy after the
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
     /// split.
     ///
     /// The new node is placed relatively to the old node, in the direction specified by `split`.
@@ -437,8 +441,7 @@ impl<Tab> Tree<Tab> {
     ///
     /// If `fraction` isn't in range 0..=1.
     ///
-    /// If `new` is an [`Empty`](Node::Empty),
-    /// [`Horizontal`](Node::Horizontal) or [`Vertical`](Node::Vertical) node.
+    /// If `new` is an [`Empty`](Node::Empty), [`Horizontal`](Node::Horizontal) or [`Vertical`](Node::Vertical) node.
     ///
     /// If `new` is a [`Leaf`](Node::Leaf) node without any tabs.
     ///
@@ -448,14 +451,12 @@ impl<Tab> Tree<Tab> {
     ///
     /// ```rust
     /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split, Node};
-    ///
-    ///
     /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
     ///
-    /// //at this point, the main surface and index contains the leaf with tab 1 and 2
+    /// // At this point, the main surface only contains the leaf with tab 1 and 2.
     /// assert!(dock_state.main_surface().root_node().unwrap().is_leaf());
     ///
-    /// //splits the node, giving 50% of the space to the new nodes and 50% to the old ones.
+    /// // Splits the node, giving 50% of the space to the new nodes and 50% to the old ones.
     /// let [old, new] = dock_state.main_surface_mut()
     ///     .split(NodeIndex::root(), Split::Below, 0.5, Node::leaf_with(vec!["tab 3"]));
     ///
@@ -557,7 +558,7 @@ impl<Tab> Tree<Tab> {
         }
     }
 
-    /// Gets the node index of the currently focused leaf node, returns [`None`] when no leaf is focused.
+    /// Gets the node index of currently focused leaf node; returns [`None`] when no leaf is focused.
     #[inline]
     pub fn focused_leaf(&self) -> Option<NodeIndex> {
         self.focused_node
@@ -565,7 +566,7 @@ impl<Tab> Tree<Tab> {
 
     /// Sets the currently focused leaf to `node_index` if the node at `node_index` is a leaf.
     ///
-    /// This method will not never panic and instead "unfocuses" all nodes when given an invalid index.
+    /// This method will not never panic and instead removes focus from all nodes when given an invalid index.
     #[inline]
     pub fn set_focused_node(&mut self, node_index: NodeIndex) {
         self.focused_node = self
@@ -579,7 +580,7 @@ impl<Tab> Tree<Tab> {
     ///
     /// # Panics
     ///
-    /// if the node at index `node` is not a [`Leaf`](crate::Node::Leaf).
+    /// If the node at index `node` is not a [`Leaf`](Node::Leaf).
     pub fn remove_leaf(&mut self, node: NodeIndex) {
         assert!(self[node].is_leaf());
 
@@ -647,7 +648,7 @@ impl<Tab> Tree<Tab> {
         }
     }
 
-    /// Push a tab to the first leaf it finds or creates a leaf if an empty spot is encountered.
+    /// Pushes a tab to the first `Leaf` it finds or create a new leaf if an `Empty` node is encountered.
     pub fn push_to_first_leaf(&mut self, tab: Tab) {
         for (index, node) in &mut self.tree.iter_mut().enumerate() {
             match node {
@@ -738,7 +739,7 @@ where
 {
     /// Find the given tab.
     ///
-    /// Returns which node the tab is in, and where in that node the tab is in.
+    /// Returns in which node and where in that node the tab is.
     ///
     /// The returned [`NodeIndex`] will always point to a [`Node::Leaf`].
     ///

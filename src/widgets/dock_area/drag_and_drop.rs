@@ -14,8 +14,10 @@ use egui::{
 pub(super) struct HoverData {
     /// Rect of the hovered element.
     pub rect: Rect,
-    /// The "address" of the tab/node hovered.
+
+    /// The "address" of the tab/node being hovered over.
     pub dst: TreeComponent,
+
     /// If a tab title or the tab head is hovered, this is the rect of it.
     pub tab: Option<Rect>,
 }
@@ -133,13 +135,13 @@ const DASHED_LINE_ALPHAS: [f32; 8] = [
 
 #[derive(PartialEq, Eq)]
 enum LockState {
-    /// Lock is Unlocked.
+    /// Lock is unlocked.
     Unlocked,
 
-    /// Lock remains Locked, but can be unlocked/relocked.
+    /// Lock remains locked, but can be unlocked.
     SoftLock,
 
-    /// Lock is Locked, no questions asked.  
+    /// Lock is locked forever.  
     HardLock,
 }
 

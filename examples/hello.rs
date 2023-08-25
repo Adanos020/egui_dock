@@ -367,7 +367,7 @@ impl MyContext {
                 OverlayType::Widgets => "Widgets",
             };
             ui.label("Overlay Style:");
-            egui::ComboBox::new("overlay styles", "")
+            ComboBox::new("overlay styles", "")
                 .selected_text(selected_text)
                 .show_ui(ui, |ui| {
                     ui.selectable_value(

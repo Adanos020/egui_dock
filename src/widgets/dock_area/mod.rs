@@ -79,14 +79,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
-    /// Sets the [`DockArea`] id. Useful if you have more than one [`DockArea`].
+    /// Sets the [`DockArea`] ID. Useful if you have more than one [`DockArea`].
     #[inline(always)]
     pub fn id(mut self, id: Id) -> Self {
         self.id = id;
         self
     }
 
-    /// Sets the dock area style.
+    /// Sets the look and feel of the [`DockArea`].
     #[inline(always)]
     pub fn style(mut self, style: Style) -> Self {
         self.style = Some(style);
@@ -94,49 +94,49 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     }
 
     /// Shows or hides the add button popup.
-    /// By default it's false.
+    /// By default it's `false`.
     pub fn show_add_popup(mut self, show_add_popup: bool) -> Self {
         self.show_add_popup = show_add_popup;
         self
     }
 
     /// Shows or hides the tab add buttons.
-    /// By default it's false.
+    /// By default it's `false`.
     pub fn show_add_buttons(mut self, show_add_buttons: bool) -> Self {
         self.show_add_buttons = show_add_buttons;
         self
     }
 
     /// Shows or hides the tab close buttons.
-    /// By default it's true.
+    /// By default it's `true`.
     pub fn show_close_buttons(mut self, show_close_buttons: bool) -> Self {
         self.show_close_buttons = show_close_buttons;
         self
     }
 
-    /// Whether tabs show a context menu.
-    /// By default it's true.
+    /// Whether tabs show a context menu when right-clicked.
+    /// By default it's `true`.
     pub fn tab_context_menus(mut self, tab_context_menus: bool) -> Self {
         self.tab_context_menus = tab_context_menus;
         self
     }
 
     /// Whether tabs can be dragged between nodes and reordered on the tab bar.
-    /// By default it's true.
+    /// By default it's `true`.
     pub fn draggable_tabs(mut self, draggable_tabs: bool) -> Self {
         self.draggable_tabs = draggable_tabs;
         self
     }
 
     /// Whether tabs show their name when hovered over them.
-    /// By default it's false.
+    /// By default it's `false`.
     pub fn show_tab_name_on_hover(mut self, show_tab_name_on_hover: bool) -> Self {
         self.show_tab_name_on_hover = show_tab_name_on_hover;
         self
     }
 
     /// Whether tabs have a [`ScrollArea`] out of the box.
-    /// By default it's true.
+    /// By default it's `true`.
     pub fn scroll_area_in_tabs(mut self, scroll_area_in_tabs: bool) -> Self {
         self.scroll_area_in_tabs = scroll_area_in_tabs;
         self
@@ -162,6 +162,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// Show the `DockArea` at the top level.
     ///
     /// This is the same as doing:
+    ///
     /// ```
     /// # use egui_dock::{DockArea, DockState};
     /// # use egui::{CentralPanel, Frame};
@@ -181,6 +182,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ///     });
     /// # });
     /// ```
+    ///
     /// So you can't use the [`CentralPanel::show`] when using `DockArea`'s one.
     ///
     /// See also [`show_inside`](Self::show_inside).
@@ -205,11 +207,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .get_or_insert(Style::from_egui(ui.style().as_ref()));
         self.window_bounds.get_or_insert(ui.ctx().screen_rect());
         let mut state = State::load(ui.ctx(), self.id);
-        //if let Some(hover_data) = state.drag.take() {
-        //    if hover_data.locked.is_some() {
-        //        self.hover_data = Some(hover_data);
-        //    }
-        //}
         let style = self.style.as_ref().unwrap();
         let fade_surface =
             self.hovered_window_surface(&mut state, style.overlay.feel.fade_hold_time, ui.ctx());
@@ -221,7 +218,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             })
         };
 
-        for surface_index in self.dock_state.surface_index_iter() {
+        for &surface_index in self.dock_state.valid_surface_indices().into_iter() {
             self.show_surface_inside(
                 surface_index,
                 ui,
@@ -249,10 +246,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         for (surface_index, node_index, tab_index) in self.to_detach.drain(..).rev() {
             let mouse_pos = ui.input(|input| input.pointer.hover_pos());
-            let _new_surface = self.dock_state.detach_tab(
-                surface_index,
-                node_index,
-                tab_index,
+            self.dock_state.detach_tab(
+                (surface_index, node_index, tab_index),
                 Rect::from_min_size(
                     mouse_pos.unwrap_or(Pos2::ZERO),
                     self.dock_state[surface_index][node_index]
@@ -392,7 +387,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         };
 
         // This is our janky way of detecting drags on the window.
-        // Some indicates that we were dragged, with just started specifying if this is the first frame of drag.
+        // `Some` indicates that a window was dragged, with just started specifying if this is the first frame of drag.
         match self
             .dock_state
             .get_window_state_mut(surf_index)
@@ -1015,7 +1010,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             Stroke::new(1.0, color),
         );
 
-        // Draw button left border
+        // Draw button left border.
         ui.painter().vline(
             rect.left(),
             rect.y_range(),
@@ -1407,7 +1402,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         })
     }
 
-    /// Resolve where a dragged tab would land given it's dropped this frame, returns ``None`` when the resulting drop is an invalid move.
+    /// Resolve where a dragged tab would land given it's dropped this frame, returns `None` when the resulting drop is an invalid move.
     fn show_drag_drop_overlay(
         &mut self,
         ui: &Ui,

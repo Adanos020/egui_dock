@@ -5,14 +5,15 @@ use egui::Rect;
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Node<Tab> {
-    /// Empty node
+    /// Empty node.
     Empty,
-    /// Contains the actual tabs
+
+    /// Contains the actual tabs.
     Leaf {
-        /// The full rectangle - tab bar plus tab body
+        /// The full rectangle - tab bar plus tab body.
         rect: Rect,
 
-        /// The tab body rectangle
+        /// The tab body rectangle.
         viewport: Rect,
 
         /// All the tabs in this node.
@@ -24,7 +25,8 @@ pub enum Node<Tab> {
         /// Scroll amount of the tab bar.
         scroll: f32,
     },
-    /// Parent node in the vertical orientation
+
+    /// Parent node in the vertical orientation.
     Vertical {
         /// The rectangle in which all children of this node are drawn.
         rect: Rect,
@@ -32,7 +34,8 @@ pub enum Node<Tab> {
         /// The fraction taken by the top child of this node.
         fraction: f32,
     },
-    /// Parent node in the horizontal orientation
+
+    /// Parent node in the horizontal orientation.
     Horizontal {
         /// The rectangle in which all children of this node are drawn.
         rect: Rect,
@@ -56,7 +59,6 @@ impl<Tab> Node<Tab> {
     }
 
     /// Constructs a leaf node with a given list of `tabs`.
-    ///
     #[inline(always)]
     pub const fn leaf_with(tabs: Vec<Tab>) -> Self {
         Self::Leaf {
@@ -79,7 +81,7 @@ impl<Tab> Node<Tab> {
         }
     }
 
-    /// Get a [`Rect`] indicating the area occupied by the node, could be used to e.g draw a highlight rect around a node.
+    /// Get a [`Rect`] occupied by the node, could be used e.g. to draw a highlight rect around a node.
     ///
     /// Returns [`None`] if node is of the [`Empty`](Node::Empty) variant.
     #[inline]
@@ -92,37 +94,39 @@ impl<Tab> Node<Tab> {
         }
     }
 
-    /// Returns `true` if the node is a `Empty`, `false` otherwise.
+    /// Returns `true` if the node is a [`Empty`](Node::Empty), otherwise `false`.
     #[inline(always)]
     pub const fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
     }
 
-    /// Returns `true` if the node is a `Leaf`, `false` otherwise.
+    /// Returns `true` if the node is a [`Leaf`](Node::Leaf), otherwise `false`.
     #[inline(always)]
     pub const fn is_leaf(&self) -> bool {
         matches!(self, Self::Leaf { .. })
     }
 
-    /// Returns `true` if the node is a `Horizontal`, `false` otherwise.
+    /// Returns `true` if the node is a [`Horizontal`](Node::Horizontal), otherwise `false`.
     #[inline(always)]
     pub const fn is_horizontal(&self) -> bool {
         matches!(self, Self::Horizontal { .. })
     }
 
-    /// Returns `true` if the node is a `Vertical`, `false` otherwise.
+    /// Returns `true` if the node is a [`Vertical`](Node::Vertical), otherwise `false`.
     #[inline(always)]
     pub const fn is_vertical(&self) -> bool {
         matches!(self, Self::Vertical { .. })
     }
 
-    /// Returns `true` if the node is either `Horizontal` or `Vertical`, `false` otherwise.
+    /// Returns `true` if the node is either [`Horizontal`](Node::Horizontal) or [`Vertical`](Node::Vertical),
+    /// otherwise `false`.
     #[inline(always)]
     pub const fn is_parent(&self) -> bool {
         self.is_horizontal() || self.is_vertical()
     }
 
-    /// Replaces the node with a `Horizontal` or `Vertical` one (depending on `split`) and assigns it an empty rect.
+    /// Replaces the node with [`Horizontal`](Node::Horizontal) or [`Vertical`](Node::Vertical) (depending on `split`)
+    /// and assigns an empty rect to it.
     ///
     /// # Panics
     ///
@@ -138,16 +142,16 @@ impl<Tab> Node<Tab> {
         std::mem::replace(self, src)
     }
 
-    /// Provides an immutable slice over the tabs inside this node.
+    /// Provides an immutable slice of the tabs inside this node.
     ///
-    /// Returns [`None`] if the node is not a [`Leaf`](Node::Leaf)
+    /// Returns [`None`] if the node is not a [`Leaf`](Node::Leaf).
     ///
     /// # Examples
+    ///
     /// ```rust
     /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec![1, 2, 3, 4, 5, 6]);
     /// assert!(dock_state.main_surface().root_node().unwrap().tabs().unwrap().contains(&4));
-    ///
     /// ```
     #[inline]
     pub fn tabs(&self) -> Option<&[Tab]> {
@@ -157,12 +161,13 @@ impl<Tab> Node<Tab> {
         }
     }
 
-    /// Provides an mutable slice over the tabs inside this node.
+    /// Provides an mutable slice of the tabs inside this node.
     ///
-    /// Returns [`None`] if the node is not a [`Leaf`](Node::Leaf)
+    /// Returns [`None`] if the node is not a [`Leaf`](Node::Leaf).
     ///
     /// # Examples
-    /// modifying tabs inside a node:
+    ///
+    /// Modifying tabs inside a node:
     /// ```rust
     /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec![1, 2, 3, 4, 5, 6]);
@@ -188,7 +193,14 @@ impl<Tab> Node<Tab> {
 
     /// Adds `tab` to the node and sets it as the active tab.
     ///
+    /// # Panics
+    ///
+    /// If the new capacity of `tabs` exceeds `isize::MAX` bytes.
+    ///
+    /// If `self` is not a [`Leaf`](Node::Leaf) node.
+    ///
     /// # Examples
+    ///
     /// ```rust
     /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec!["a tab"]);
@@ -197,11 +209,6 @@ impl<Tab> Node<Tab> {
     /// dock_state.main_surface_mut().root_node_mut().unwrap().append_tab("another tab");
     /// assert_eq!(dock_state.main_surface().root_node().unwrap().tabs_count(), 2);
     /// ```
-    ///
-    /// # Panics
-    /// If the new capacity of `tabs` exceeds `isize::MAX` bytes.
-    ///
-    /// If `self` is not a [`Leaf`](Node::Leaf) node.
     #[track_caller]
     #[inline]
     pub fn append_tab(&mut self, tab: Tab) {
@@ -217,6 +224,7 @@ impl<Tab> Node<Tab> {
     /// Adds a `tab` to the node.
     ///
     /// # Panics
+    ///
     /// Panics if the new capacity of `tabs` exceeds `isize::MAX` bytes, or `index > tabs_count()`.
     #[track_caller]
     #[inline]
@@ -234,6 +242,7 @@ impl<Tab> Node<Tab> {
     /// Returns the removed tab if the node is a `Leaf`, or `None` otherwise.
     ///
     /// # Panics
+    ///
     /// Panics if `index` is out of bounds.
     #[inline]
     pub fn remove_tab(&mut self, tab_index: TabIndex) -> Option<Tab> {
