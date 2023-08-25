@@ -423,9 +423,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         
         if self.show_label_bar{
             let tabbar_response = self.tab_bar(ui, state, node_index, tab_viewer);
-            self.tab_body(ui, state, node_index, tab_viewer, spacing, tabbar_response);
+            self.tab_body_with_label(ui, state, node_index, tab_viewer, spacing, tabbar_response);
         }else{
-            self.tab_body_lpc(ui, state, node_index, tab_viewer, spacing);
+            self.tab_body_without_label(ui, state, node_index, tab_viewer, spacing);
         }
         //lpc ^ ----------------
 
@@ -1011,20 +1011,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         *scroll = scroll.clamp(-overflow, 0.0);
     }
 
-    fn tab_body_lpc(
+    fn tab_body_general(
         &mut self,
         ui: &mut Ui,
-        state: &mut State,
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         spacing: Vec2,
-        //tabbar_response: Response,
     ) {
         let (body_rect, _body_response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::click_and_drag());
 
         let Node::Leaf {
-            rect,
             tabs,
             active,
             viewport,
@@ -1105,21 +1102,53 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     });
             }
         }
+    }
 
-        // if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
-        //     // Use rect.contains instead of
-        //     // response.hovered as the dragged tab covers
-        //     // the underlying responses
-        //     if state.drag_start.is_some() && rect.contains(pointer) {
-        //         self.hover_data = Some(HoverData {
-        //             rect: *rect,
-        //             dst: node_index,
-        //             tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
-        //             tab: self.tab_hover_rect,
-        //             pointer,
-        //         });
-        //     }
-        // }
+    fn tab_body_without_label(
+        &mut self,
+        ui: &mut Ui,
+        state: &mut State,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        spacing: Vec2,
+        //tabbar_response: Response,
+    ) {
+        self.tab_body_general(ui, node_index, tab_viewer, spacing)
+    }
+
+    fn tab_body_with_label(
+        &mut self,
+        ui: &mut Ui,
+        state: &mut State,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        spacing: Vec2,
+        tabbar_response: Response,
+    ) {
+        self.tab_body_general(ui, node_index, tab_viewer, spacing);
+
+        let Node::Leaf {
+            rect,
+            ..
+        } = &mut self.tree[node_index]
+        else {
+            unreachable!();
+        };
+
+        if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+            // Use rect.contains instead of
+            // response.hovered as the dragged tab covers
+            // the underlying responses
+            if state.drag_start.is_some() && rect.contains(pointer) {
+                self.hover_data = Some(HoverData {
+                    rect: *rect,
+                    dst: node_index,
+                    tabs: tabbar_response.hovered().then_some(tabbar_response.rect),
+                    tab: self.tab_hover_rect,
+                    pointer,
+                });
+            }
+        }
     }
 
 
