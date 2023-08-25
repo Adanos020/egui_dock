@@ -76,7 +76,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             to_remove: Vec::new(),
             new_focused: None,
             tab_hover_rect: None,
-            show_label_bar: false,
+            show_label_bar: true,
         }
     }
 
