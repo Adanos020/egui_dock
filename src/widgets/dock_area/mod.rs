@@ -413,16 +413,23 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
         ui.set_clip_rect(rect);
 
-        if self.show_label_bar{
+        
+        let Node::Leaf { hide_label, .. } = &self.tree[node_index] else {
+            unreachable!()
+        };
+        
+        if self.show_label_bar && !hide_label{
             let tabbar_response = self.tab_bar(ui, state, node_index, tab_viewer);
             self.tab_body_with_label(ui, state, node_index, tab_viewer, spacing, tabbar_response);
         }else{
             self.tab_body_without_label(ui, node_index, tab_viewer, spacing);
         }
-        
+
         let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else {
             unreachable!()
         };
+        
+        
         for (tab_index, tab) in tabs.iter_mut().enumerate() {
             if tab_viewer.force_close(tab) {
                 self.to_remove.push((node_index, TabIndex(tab_index)));
