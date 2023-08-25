@@ -45,6 +45,7 @@ pub struct DockArea<'tree, Tab> {
     show_tab_name_on_hover: bool,
     scroll_area_in_tabs: bool,
     allowed_splits: AllowedSplits,
+    show_label_bar: bool, 
 
     drag_data: Option<(NodeIndex, TabIndex)>,
     hover_data: Option<HoverData>,
@@ -75,6 +76,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             to_remove: Vec::new(),
             new_focused: None,
             tab_hover_rect: None,
+            show_label_bar: false,
         }
     }
 
@@ -145,6 +147,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// By default it's all.
     pub fn allowed_splits(mut self, allowed_splits: AllowedSplits) -> Self {
         self.allowed_splits = allowed_splits;
+        self
+    }
+
+    /// should the label bar be shown for the tabs. 
+    pub fn show_label_bar(mut self, show_label_bar: bool) -> Self{
+        self.show_label_bar = show_label_bar;
         self
     }
 }
@@ -405,7 +413,20 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
         ui.set_clip_rect(rect);
 
-        let tabbar_response = self.tab_bar(ui, state, node_index, tab_viewer);
+        //lpc
+        let mut tabbar_response: Response;
+        let style = self.style.as_ref().unwrap();
+        
+        (_, tabbar_response) = ui.allocate_exact_size(
+            vec2(ui.available_width(), style.tab_bar.height),
+            Sense::hover(),
+        );
+        
+        if self.show_label_bar{
+            tabbar_response = self.tab_bar(ui, state, node_index, tab_viewer);
+        }
+        //lpc
+        //let tabbar_response = self.tab_bar(ui, state, node_index, tab_viewer);
         self.tab_body(ui, state, node_index, tab_viewer, spacing, tabbar_response);
 
         let Node::Leaf { tabs, .. } = &mut self.tree[node_index] else {
