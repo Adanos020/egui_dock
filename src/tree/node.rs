@@ -23,6 +23,9 @@ pub enum Node<Tab> {
 
         /// Scroll amount of the tab bar.
         scroll: f32,
+
+        /// Show the label on this leaf. 
+        hide_label: bool,
     },
     /// Parent node in the vertical orientation
     Vertical {
@@ -52,6 +55,7 @@ impl<Tab> Node<Tab> {
             tabs: vec![tab],
             active: TabIndex(0),
             scroll: 0.0,
+            hide_label: false,
         }
     }
 
@@ -64,6 +68,20 @@ impl<Tab> Node<Tab> {
             tabs,
             active: TabIndex(0),
             scroll: 0.0,
+            hide_label: false,
+        }
+    }
+
+    /// Constructs a leaf node with a given list of `tabs`.
+    #[inline(always)]
+    pub const fn leaf_with_single(tabs: Vec<Tab>) -> Self {
+        Self::Leaf {
+            rect: Rect::NOTHING,
+            viewport: Rect::NOTHING,
+            tabs,
+            active: TabIndex(0),
+            scroll: 0.0,
+            hide_label: true,
         }
     }
 

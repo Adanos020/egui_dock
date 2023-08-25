@@ -222,6 +222,19 @@ impl<Tab> Tree<Tab> {
         self.split(parent, split, fraction, Node::leaf_with(tabs))
     }
 
+    ///lpc - add comments
+    #[inline(always)]
+    pub fn split_tabs_single(
+        &mut self,
+        parent: NodeIndex,
+        split: Split,
+        fraction: f32,
+        tab: Tab,
+    ) -> [NodeIndex; 2] {
+        let tabs = vec![tab];
+        self.split(parent, split, fraction, Node::leaf_with_single(tabs))
+    }
+
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
@@ -239,6 +252,18 @@ impl<Tab> Tree<Tab> {
         tabs: Vec<Tab>,
     ) -> [NodeIndex; 2] {
         self.split(parent, Split::Above, fraction, Node::leaf_with(tabs))
+    }
+
+    ///lpc - add comments
+    #[inline(always)]
+    pub fn split_above_single(
+        &mut self,
+        parent: NodeIndex,
+        fraction: f32,
+        tab: Tab,
+    ) -> [NodeIndex; 2] {
+        let tabs = vec![tab];
+        self.split(parent, Split::Above, fraction, Node::leaf_with_single(tabs))
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
@@ -260,6 +285,18 @@ impl<Tab> Tree<Tab> {
         self.split(parent, Split::Below, fraction, Node::leaf_with(tabs))
     }
 
+    ///lpc - add comments
+    #[inline(always)]
+    pub fn split_below_single(
+        &mut self,
+        parent: NodeIndex,
+        fraction: f32,
+        tab: Tab,
+    ) -> [NodeIndex; 2] {
+        let tabs = vec![tab];
+        self.split(parent, Split::Below, fraction, Node::leaf_with_single(tabs))
+    }
+
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
@@ -279,6 +316,18 @@ impl<Tab> Tree<Tab> {
         self.split(parent, Split::Left, fraction, Node::leaf_with(tabs))
     }
 
+    ///lpc - add comments
+    #[inline(always)]
+    pub fn split_left_single(
+        &mut self,
+        parent: NodeIndex,
+        fraction: f32,
+        tab: Tab,
+    ) -> [NodeIndex; 2] {
+        let tabs = vec![tab];
+        self.split(parent, Split::Left, fraction, Node::leaf_with_single(tabs))
+    }
+
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
@@ -296,6 +345,18 @@ impl<Tab> Tree<Tab> {
         tabs: Vec<Tab>,
     ) -> [NodeIndex; 2] {
         self.split(parent, Split::Right, fraction, Node::leaf_with(tabs))
+    }
+
+    ///lpc - add comments
+    #[inline(always)]
+    pub fn split_right_single(
+        &mut self,
+        parent: NodeIndex,
+        fraction: f32,
+        tab: Tab,
+    ) -> [NodeIndex; 2] {
+        let tabs = vec![tab];
+        self.split(parent, Split::Right, fraction, Node::leaf_with_single(tabs))
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
