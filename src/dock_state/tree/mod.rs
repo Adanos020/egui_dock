@@ -197,7 +197,7 @@ impl<Tab> Tree<Tab> {
         self.tree.is_empty()
     }
 
-    /// Returns an `Iterator` of the underlying collection of nodes.
+    /// Returns an [`Iterator`] of the underlying collection of nodes.
     ///
     /// This includes [`Empty`](Node::Empty) nodes.
     #[inline(always)]
@@ -205,7 +205,7 @@ impl<Tab> Tree<Tab> {
         self.tree.iter()
     }
 
-    /// Returns `IterMut` of the underlying collection of nodes.
+    /// Returns [`IterMut`] of the underlying collection of nodes.
     ///
     /// This includes [`Empty`](Node::Empty) nodes.
     #[inline(always)]

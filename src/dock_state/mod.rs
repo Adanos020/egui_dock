@@ -63,12 +63,12 @@ impl<Tab> DockState<Tab> {
         }
     }
 
-    /// Get a mutable borrow to the tree at the main surface
+    /// Get a mutable borrow to the tree at the main surface.
     pub fn main_surface_mut(&mut self) -> &mut Tree<Tab> {
         &mut self[SurfaceIndex::main()]
     }
 
-    /// Get an immutable borrow to the tree at the main surface
+    /// Get an immutable borrow to the tree at the main surface.
     pub fn main_surface(&self) -> &Tree<Tab> {
         &self[SurfaceIndex::main()]
     }

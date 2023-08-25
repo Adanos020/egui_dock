@@ -268,7 +268,7 @@ pub enum OverlayType {
     Widgets,
 }
 
-/// Highlighting on the currently hovered lead.
+/// Highlighting on the currently hovered leaf.
 #[derive(Clone, Debug)]
 pub struct LeafHighlighting {
     /// Fill color.
@@ -385,6 +385,7 @@ impl Default for TabBodyStyle {
         }
     }
 }
+
 impl Default for OverlayStyle {
     fn default() -> Self {
         Self {
@@ -403,6 +404,7 @@ impl Default for OverlayStyle {
         }
     }
 }
+
 impl Default for OverlayFeel {
     fn default() -> Self {
         Self {
@@ -414,6 +416,7 @@ impl Default for OverlayFeel {
         }
     }
 }
+
 impl Default for LeafHighlighting {
     fn default() -> Self {
         Self {
@@ -555,6 +558,7 @@ impl TabInteractionStyle {
             },
         }
     }
+
     /// Derives relevant fields from `egui::Style` for an inactive tab and sets the remaining fields to their default values.
     ///
     /// Fields overwritten by [`egui::Style`] are:
