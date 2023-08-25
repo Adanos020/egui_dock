@@ -1,13 +1,13 @@
 use crate::{Tree, WindowState};
 
-/// A [`Surface`] is the highest level component in a [`DockState`]. [`Surface`]s represent an area in which nodes
-/// are placed. Typically, you're only using one surface, which is the main surface. However, if you drag a tab
-/// out in a way which creates a window, you also create a new surface in which nodes can appear.
+/// A [`Surface`] is the highest level component in a [`DockState`](crate::DockState). [`Surface`]s represent an area
+/// in which nodes are placed. Typically, you're only using one surface, which is the main surface. However, if you drag
+/// a tab out in a way which creates a window, you also create a new surface in which nodes can appear.
 pub enum Surface<Tab> {
     /// An empty surface, with nothing inside (practically, a null surface).
     Empty,
 
-    /// The main surface of a [`DockState`], only one should exist at surface index 0 at any one time.
+    /// The main surface of a [`DockState`](crate::DockState), only one should exist at surface index 0 at any one time.
     Main(Tree<Tab>),
 
     /// A windowed surface with a state.
