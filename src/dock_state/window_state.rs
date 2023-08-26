@@ -1,6 +1,6 @@
-use egui::{Pos2, Rect, Vec2};
+use egui::{Id, Pos2, Rect, Vec2};
 
-/// The state of a [`Surface::Window`](crate::Surface::Window) surface.
+/// The state of a [`Surface::Window`](crate::Surface::Window).
 ///
 /// Doubles as a handle for the surface, allowing the user to set its size and position.
 #[derive(Debug, Clone)]
@@ -58,27 +58,29 @@ impl WindowState {
         self.dragged
     }
 
+    #[inline(always)]
     pub(crate) fn next_position(&mut self) -> Option<Pos2> {
         self.next_position.take()
     }
 
+    #[inline(always)]
     pub(crate) fn next_size(&mut self) -> Option<Vec2> {
         self.next_size.take()
     }
 
-    /// Returns if window was dragged this frame, indicating with the inside bool if the drag was just started or not.
-    pub(crate) fn was_dragged(&mut self, ctx: &egui::Context, new_rect: Rect) -> Option<bool> {
-        // We need to make sure we check the size hasn't changed, since it indicates a resize rather than a drag.
-        ((new_rect != self.screen_rect && new_rect.size() == self.screen_rect.size())
-            || self.dragged)
-            .then(|| {
-                self.screen_rect = new_rect;
-                let something_dragged = ctx.memory(|mem| mem.is_anything_being_dragged());
+    //the 'static in this case means that the `open` field is always `None`
+    pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> egui::Window<'static> {
+        let mut window_constructor = egui::Window::new("")
+            .id(id)
+            .drag_bounds(bounds)
+            .title_bar(false);
 
-                // This enforces the drag start pattern which tabs follow, that is it's Some for the first frame of the drag, then none.
-                let did_drag_start = something_dragged && !self.dragged;
-                self.dragged = something_dragged;
-                did_drag_start
-            })
+        if let Some(position) = self.next_position() {
+            window_constructor = window_constructor.current_pos(position);
+        }
+        if let Some(size) = self.next_size() {
+            window_constructor = window_constructor.fixed_size(size);
+        }
+        window_constructor
     }
 }
