@@ -16,6 +16,10 @@ pub struct WindowState {
 
     /// The next size this window should be set to next frame.
     next_size: Option<Vec2>,
+
+    /// true the first frame this window is drawn.
+    /// handles opening collapsing header, etc.
+    new: bool,
 }
 
 impl Default for WindowState {
@@ -25,6 +29,7 @@ impl Default for WindowState {
             dragged: false,
             next_position: None,
             next_size: None,
+            new: true,
         }
     }
 }
@@ -69,7 +74,8 @@ impl WindowState {
     }
 
     //the 'static in this case means that the `open` field is always `None`
-    pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> egui::Window<'static> {
+    pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> (egui::Window<'static>, bool) {
+        let new = self.new;
         let mut window_constructor = egui::Window::new("")
             .id(id)
             .drag_bounds(bounds)
@@ -81,6 +87,7 @@ impl WindowState {
         if let Some(size) = self.next_size() {
             window_constructor = window_constructor.fixed_size(size);
         }
-        window_constructor
+        self.new = false;
+        (window_constructor, new)
     }
 }

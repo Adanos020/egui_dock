@@ -19,7 +19,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let id = format!("window {surf_index:?}").into();
         let bounds = self.window_bounds.unwrap();
         let mut open = true;
-        let window = self
+        let (window, new) = self
             .dock_state
             .get_window_state_mut(surf_index)
             .unwrap()
@@ -45,6 +45,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             frame.shadow.color = frame.shadow.color.linear_multiply(fade_factor);
         }
 
+        let collapser_id = id.with("collapser");
         window.frame(frame).show(ui.ctx(), |ui| {
             //fade inner ui (if neccesary)
             if fade_factor != 1.0 {
@@ -52,7 +53,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
             if self.show_window_heads {
                 let ch_response = CollapsingHeader::new("")
-                    .id_source(id.with("collapser"))
+                    .id_source(collapser_id)
+                    .open(new.then_some(true))
                     .show_unindented(ui, |ui| {
                         self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
                     });
@@ -67,13 +69,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         if !open {
             self.to_remove.push(TabRemoval::Window(surf_index));
+            ui.data_mut(|data| data.remove::<()>(collapser_id));
         }
     }
 }
 
 fn close_button_rect(spacing: &egui::style::Spacing, response: CollapsingResponse<()>) -> Rect {
-    let button_side_length = (spacing.indent).min(spacing.icon_width);
-    let button_size = Vec2::new(-button_side_length, button_side_length);
+    let button_size = Vec2::new(-spacing.indent, response.header_response.rect.height());
     let default_pos = response.header_response.rect.right_top();
     let pos = response.body_response.map_or(default_pos, |response| {
         Rect::from_two_pos(default_pos, response.rect.right_top()).right_top()
@@ -84,7 +86,8 @@ fn close_button_rect(spacing: &egui::style::Spacing, response: CollapsingRespons
 fn close_button(rect: Rect) -> impl Widget {
     move |ui: &mut Ui| -> Response {
         let res = ui.interact(rect, ui.next_auto_id(), Sense::click());
-        let rect = rect.shrink(rect.width() * 0.25);
+        let rect =
+            Rect::from_center_size(rect.center(), Vec2::splat(rect.width().min(rect.height()) * 0.5));
         let visuals = ui.style().interact(&res);
         let painter = ui.painter();
         painter.line_segment(

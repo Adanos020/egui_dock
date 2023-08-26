@@ -47,6 +47,7 @@ provide a guide of how to use the library.
   - `OverlayType` letting you choose if the overlay should be the new icon buttons or the old highlighted rectangles.
   - `LeafHighlighting` specifying how a currently hovered leaf should be highlighted.
   - `DockArea::window_bounds` setting the area which windows are constrained by.
+  - `DockArea::show_window_heads` setting determining if windows should have a collapse and close button or not.
   - `TabViewer::allowed_in_windows` specifying if a given tab can be shown in a window.
 
 ### Breaking changes

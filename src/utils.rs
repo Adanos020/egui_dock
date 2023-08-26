@@ -1,7 +1,9 @@
 use egui::emath::*;
 
-use egui::style::{WidgetVisuals, Widgets, Visuals};
-use crate::{ButtonsStyle, SeparatorStyle, Style, TabBarStyle, TabBodyStyle, TabInteractionStyle, TabStyle};
+use crate::{
+    ButtonsStyle, SeparatorStyle, Style, TabBarStyle, TabBodyStyle, TabInteractionStyle, TabStyle,
+};
+use egui::style::{Visuals, WidgetVisuals, Widgets};
 
 #[inline(always)]
 pub fn expand_to_pixel(mut rect: Rect, ppi: f32) -> Rect {
