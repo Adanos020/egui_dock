@@ -1,4 +1,4 @@
-﻿use crate::{Node, Tree};
+﻿use crate::Tree;
 
 /// Iterates over all tabs in a [`Tree`].
 pub struct TabIter<'a, Tab> {
@@ -22,8 +22,8 @@ impl<'a, Tab> Iterator for TabIter<'a, Tab> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            match self.tree.tree.get(self.node_idx)? {
-                Node::Leaf { tabs, .. } => match tabs.get(self.tab_idx) {
+            match self.tree.tree.get(self.node_idx)?.tabs() {
+                Some(tabs) => match tabs.get(self.tab_idx) {
                     Some(tab) => {
                         self.tab_idx += 1;
                         return Some(tab);
@@ -33,7 +33,7 @@ impl<'a, Tab> Iterator for TabIter<'a, Tab> {
                         self.tab_idx = 0;
                     }
                 },
-                _ => {
+                None => {
                     self.node_idx += 1;
                     self.tab_idx = 0;
                 }

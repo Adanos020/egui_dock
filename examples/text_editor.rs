@@ -37,7 +37,7 @@ impl egui_dock::TabViewer for Buffers {
 
 struct MyApp {
     buffers: Buffers,
-    tree: egui_dock::Tree<String>,
+    tree: egui_dock::DockState<String>,
 }
 
 impl Default for MyApp {
@@ -53,7 +53,8 @@ impl Default for MyApp {
             include_str!("../README.md").to_owned(),
         );
 
-        let tree = egui_dock::Tree::new(vec!["README.md".to_owned(), "CHANGELOG.md".to_owned()]);
+        let tree =
+            egui_dock::DockState::new(vec!["README.md".to_owned(), "CHANGELOG.md".to_owned()]);
 
         Self {
             buffers: Buffers { buffers },
@@ -69,8 +70,8 @@ impl eframe::App for MyApp {
                 let tab_location = self.tree.find_tab(title);
                 let is_open = tab_location.is_some();
                 if ui.selectable_label(is_open, title).clicked() {
-                    if let Some((node_index, tab_index)) = tab_location {
-                        self.tree.set_active_tab(node_index, tab_index);
+                    if let Some(tab_location) = tab_location {
+                        self.tree.set_active_tab(tab_location);
                     } else {
                         // Open the file for editing:
                         self.tree.push_to_focused_leaf(title.clone());

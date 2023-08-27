@@ -5,14 +5,52 @@ use std::collections::HashSet;
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
-    CentralPanel, ComboBox, Frame, Slider, TopBottomPanel, Ui, WidgetText,
+    CentralPanel, ComboBox, Frame, Rounding, Slider, TopBottomPanel, Ui, WidgetText,
 };
 
 use egui_dock::{
-    AllowedSplits, DockArea, Node, NodeIndex, Style, TabInteractionStyle, TabViewer, Tree,
+    AllowedSplits, DockArea, DockState, Node, NodeIndex, OverlayType, Style, SurfaceIndex,
+    TabInteractionStyle, TabViewer,
 };
 
+/// Adds a widget with a label next to it, can be given an extra parameter in order to show a hover text
+macro_rules! labeled_widget {
+    ($ui:expr, $x:expr, $l:expr) => {
+        $ui.horizontal(|ui| {
+            ui.add($x);
+            ui.label($l);
+        });
+    };
+    ($ui:expr, $x:expr, $l:expr, $d:expr) => {
+        $ui.horizontal(|ui| {
+            ui.add($x).on_hover_text($d);
+            ui.label($l).on_hover_text($d);
+        });
+    };
+}
+
+// Creates a slider which has a unit attached to it
+// When given an extra parameter it will be used as a multiplier (e.g 100.0 when working with precentages)
+macro_rules! unit_slider {
+    ($val:expr, $range:expr) => {
+        egui::Slider::new($val, $range)
+    };
+    ($val:expr, $range:expr, $unit:expr) => {
+        egui::Slider::new($val, $range).custom_formatter(|value, decimal_range| {
+            egui::emath::format_with_decimals_in_range(value, decimal_range) + $unit
+        })
+    };
+    ($val:expr, $range:expr, $unit:expr, $mul:expr) => {
+        egui::Slider::new($val, $range)
+            .custom_formatter(|value, decimal_range| {
+                egui::emath::format_with_decimals_in_range(value * $mul, decimal_range) + $unit
+            })
+            .custom_parser(|string| string.parse::<f64>().ok().map(|valid| valid / $mul))
+    };
+}
+
 fn main() -> eframe::Result<()> {
+    std::env::set_var("RUST_BACKTRACE", "1");
     let options = NativeOptions {
         initial_window_size: Some(egui::vec2(1024.0, 1024.0)),
         ..Default::default()
@@ -35,11 +73,13 @@ struct MyContext {
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
     allowed_splits: AllowedSplits,
+    show_window_close: bool,
+    show_window_collapse: bool,
 }
 
 struct MyApp {
     context: MyContext,
-    tree: Tree<String>,
+    tree: DockState<String>,
 }
 
 impl TabViewer for MyContext {
@@ -109,6 +149,11 @@ impl MyContext {
             ui.checkbox(&mut self.show_add_buttons, "Show add buttons");
             ui.checkbox(&mut self.draggable_tabs, "Draggable tabs");
             ui.checkbox(&mut self.show_tab_name_on_hover, "Show tab name on hover");
+            ui.checkbox(&mut self.show_window_close, "Show close button on windows");
+            ui.checkbox(
+                &mut self.show_window_collapse,
+                "Show collaspse button on windows",
+            );
             ComboBox::new("cbox:allowed_splits", "Split direction(s)")
                 .selected_text(format!("{:?}", self.allowed_splits))
                 .show_ui(ui, |ui| {
@@ -132,19 +177,18 @@ impl MyContext {
         ui.collapsing("Border", |ui| {
             egui::Grid::new("border").show(ui, |ui| {
                 ui.label("Width:");
-                ui.add(Slider::new(&mut style.border.width, 1.0..=50.0));
+                ui.add(Slider::new(
+                    &mut style.main_surface_border_stroke.width,
+                    1.0..=50.0,
+                ));
                 ui.end_row();
 
                 ui.label("Color:");
-                color_edit_button_srgba(ui, &mut style.border.color, Alpha::OnlyBlend);
-                ui.end_row();
-            });
-        });
-
-        ui.collapsing("Selection", |ui| {
-            egui::Grid::new("selection").show(ui, |ui| {
-                ui.label("Color:");
-                color_edit_button_srgba(ui, &mut style.selection_color, Alpha::OnlyBlend);
+                color_edit_button_srgba(
+                    ui,
+                    &mut style.main_surface_border_stroke.color,
+                    Alpha::OnlyBlend,
+                );
                 ui.end_row();
             });
         });
@@ -215,22 +259,26 @@ impl MyContext {
                 ui.separator();
 
                 ui.label("Rounding");
-                ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut tab_style.rounding.nw, 0.0..=15.0));
-                    ui.label("North-West");
-                });
-                ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut tab_style.rounding.ne, 0.0..=15.0));
-                    ui.label("North-East");
-                });
-                ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut tab_style.rounding.sw, 0.0..=15.0));
-                    ui.label("South-West");
-                });
-                ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut tab_style.rounding.se, 0.0..=15.0));
-                    ui.label("South-East");
-                });
+                labeled_widget!(
+                    ui,
+                    Slider::new(&mut tab_style.rounding.nw, 0.0..=15.0),
+                    "North-West"
+                );
+                labeled_widget!(
+                    ui,
+                    Slider::new(&mut tab_style.rounding.ne, 0.0..=15.0),
+                    "North-East"
+                );
+                labeled_widget!(
+                    ui,
+                    Slider::new(&mut tab_style.rounding.sw, 0.0..=15.0),
+                    "South-West"
+                );
+                labeled_widget!(
+                    ui,
+                    Slider::new(&mut tab_style.rounding.se, 0.0..=15.0),
+                    "South-East"
+                );
 
                 ui.separator();
 
@@ -301,22 +349,7 @@ impl MyContext {
             ui.separator();
 
             ui.label("Rounding");
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tab.tab_body.rounding.nw, 0.0..=15.0));
-                ui.label("North-West");
-            });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tab.tab_body.rounding.ne, 0.0..=15.0));
-                ui.label("North-East");
-            });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tab.tab_body.rounding.sw, 0.0..=15.0));
-                ui.label("South-West");
-            });
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut style.tab.tab_body.rounding.se, 0.0..=15.0));
-                ui.label("South-East");
-            });
+            rounding_ui(ui, &mut style.tab.tab_body.rounding);
 
             ui.label("Stroke width:");
             ui.add(Slider::new(
@@ -335,23 +368,152 @@ impl MyContext {
                 ui.end_row();
             });
         });
+        ui.collapsing("Overlay", |ui| {
+            let selected_text = match style.overlay.overlay_type {
+                OverlayType::HighlightedAreas => "Highlighted Areas",
+                OverlayType::Widgets => "Widgets",
+            };
+            ui.label("Overlay Style:");
+            ComboBox::new("overlay styles", "")
+                .selected_text(selected_text)
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(
+                        &mut style.overlay.overlay_type,
+                        OverlayType::HighlightedAreas,
+                        "Highlighted Areas",
+                    );
+                    ui.selectable_value(
+                        &mut style.overlay.overlay_type,
+                        OverlayType::Widgets,
+                        "Widgets",
+                    );
+                });
+            ui.collapsing("Feel", |ui|{
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.center_drop_coverage, 0.0..=1.0, "%", 100.0),
+                    "Center drop coverage",
+                    "how big the area where dropping a tab into the center of another should be."
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.fade_hold_time, 0.0..=4.0, "s"),
+                    "Fade hold time",
+                    "How long faded windows should hold their fade before unfading, in seconds."
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.max_preference_time, 0.0..=4.0, "s"),
+                    "Max preference time",
+                    "How long the overlay may prefer to stick to a surface despite hovering over another, in seconds."
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.window_drop_coverage, 0.0..=1.0, "%", 100.0),
+                    "Window drop coverage",
+                    "How big the area for undocking a window should be. [is overshadowed by center drop coverage]"
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.feel.interact_expansion, 1.0..=100.0, "ps"),
+                    "Interact expansion",
+                    "How much extra interaction area should be allocated for buttons on the overlay"
+                );
+            });
+
+            ui.collapsing("Visuals", |ui|{
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.max_button_size, 10.0..=500.0, "ps"),
+                    "Max button size",
+                    "The max length of a side on a overlay button in egui points"
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.button_spacing, 0.0..=50.0, "ps"),
+                    "Button spacing",
+                    "Spacing between buttons on the overlay, in egui units."
+                );
+                labeled_widget!(
+                    ui,
+                    unit_slider!(&mut style.overlay.surface_fade_opacity, 0.0..=1.0, "%", 100.0),
+                    "Window fade opacity",
+                    "how visible windows are when dragging a tab behind them."
+                );
+                labeled_widget!(
+                    ui,
+                    egui::Slider::new(&mut style.overlay.selection_storke_width, 0.0..=50.0),
+                    "Selection stroke width",
+                    "width of a selection which uses a outline stroke instead of filled rect."
+                );
+                egui::Grid::new("overlay style preferences").show(ui, |ui| {
+                    ui.label("Button color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.button_color, Alpha::OnlyBlend);
+                    ui.end_row();
+
+                    ui.label("Button border color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.button_border_stroke.color, Alpha::OnlyBlend);
+                    ui.end_row();
+
+                    ui.label("Selection color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.selection_color, Alpha::OnlyBlend);
+                    ui.end_row();
+
+                    ui.label("Button stroke color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.button_border_stroke.color, Alpha::OnlyBlend);
+                    ui.end_row();
+
+                    ui.label("Button stroke width:");
+                    ui.add(Slider::new(&mut style.overlay.button_border_stroke.width, 0.0..=50.0));
+                    ui.end_row();
+                });
+            });
+
+            ui.collapsing("Hover highlight", |ui|{
+                egui::Grid::new("leaf highlighting prefs").show(ui, |ui|{
+                    ui.label("Fill color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.hovered_leaf_highlight.color, Alpha::OnlyBlend);
+                    ui.end_row();
+
+                    ui.label("Stroke color:");
+                    color_edit_button_srgba(ui, &mut style.overlay.hovered_leaf_highlight.stroke.color, Alpha::OnlyBlend);
+                    ui.end_row();
+
+                    ui.label("Stroke width:");
+                    ui.add(Slider::new(&mut style.overlay.hovered_leaf_highlight.stroke.width, 0.0..=50.0));
+                    ui.end_row();
+
+                    ui.label("Expansion:");
+                    ui.add(Slider::new(&mut style.overlay.hovered_leaf_highlight.expansion, -50.0..=50.0));
+                    ui.end_row();
+                });
+                ui.label("Rounding:");
+                rounding_ui(ui, &mut style.overlay.hovered_leaf_highlight.rounding);
+            })
+        });
     }
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = Tree::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
-        let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec!["Inspector".to_owned()]);
-        let [_, _] = tree.split_below(
+        let mut tree = DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
+        let [a, b] = tree.main_surface_mut().split_left(
+            NodeIndex::root(),
+            0.3,
+            vec!["Inspector".to_owned()],
+        );
+        let [_, _] = tree.main_surface_mut().split_below(
             a,
             0.7,
             vec!["File Browser".to_owned(), "Asset Manager".to_owned()],
         );
-        let [_, _] = tree.split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
+        let [_, _] = tree
+            .main_surface_mut()
+            .split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
 
         let mut open_tabs = HashSet::new();
 
-        for node in tree.iter() {
+        for node in tree[SurfaceIndex::main()].iter() {
             if let Node::Leaf { tabs, .. } = node {
                 for tab in tabs {
                     open_tabs.insert(tab.clone());
@@ -364,6 +526,8 @@ impl Default for MyApp {
             style: None,
             open_tabs,
 
+            show_window_close: true,
+            show_window_collapse: true,
             show_close_buttons: true,
             show_add_buttons: false,
             draggable_tabs: true,
@@ -390,7 +554,8 @@ impl eframe::App for MyApp {
                                 self.tree.remove_tab(index);
                                 self.context.open_tabs.remove(*tab);
                             } else {
-                                self.tree.push_to_focused_leaf(tab.to_string());
+                                self.tree[SurfaceIndex::main()]
+                                    .push_to_focused_leaf(tab.to_string());
                             }
 
                             ui.close_menu();
@@ -399,7 +564,6 @@ impl eframe::App for MyApp {
                 });
             })
         });
-
         CentralPanel::default()
             // When displaying a DockArea in another UI, it looks better
             // to set inner margins to 0.
@@ -418,7 +582,16 @@ impl eframe::App for MyApp {
                     .draggable_tabs(self.context.draggable_tabs)
                     .show_tab_name_on_hover(self.context.show_tab_name_on_hover)
                     .allowed_splits(self.context.allowed_splits)
+                    .show_window_close_buttons(self.context.show_window_close)
+                    .show_window_collapse_buttons(self.context.show_window_collapse)
                     .show_inside(ui, &mut self.context);
             });
     }
+}
+
+fn rounding_ui(ui: &mut Ui, rounding: &mut Rounding) {
+    labeled_widget!(ui, Slider::new(&mut rounding.nw, 0.0..=15.0), "North-West");
+    labeled_widget!(ui, Slider::new(&mut rounding.ne, 0.0..=15.0), "North-East");
+    labeled_widget!(ui, Slider::new(&mut rounding.sw, 0.0..=15.0), "South-West");
+    labeled_widget!(ui, Slider::new(&mut rounding.se, 0.0..=15.0), "South-East");
 }
