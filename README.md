@@ -30,3 +30,15 @@ Once that's done, you can start using `egui_dock` – more details on that can b
 ## Demo
 
 ![demo](images/demo.gif "Demo")
+
+## Alternatives
+
+### [egui_tiles](https://https://github.com/rerun-io/egui_tiles) 
+
+It's a library aiming to achieve similar goals in addition to being more flexible and customizable.
+
+One feature it supports that `egui_dock` does not at the moment is the ability to divide nodes into more than two children,
+enabling horizontal, vertical, and grid layouts.
+
+> [!NOTE]
+> `egui_tiles` is much earlier in development than `egui_dock` and doesn't yet support a lot of features.
