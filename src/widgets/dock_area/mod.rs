@@ -126,7 +126,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self
     }
 
-    /// Whether tabs have a [`ScrollArea`] out of the box.
+    /// Whether tabs have a [`egui::ScrollArea`] out of the box.
     /// By default it's `true`.
     pub fn scroll_area_in_tabs(mut self, scroll_area_in_tabs: bool) -> Self {
         self.scroll_area_in_tabs = scroll_area_in_tabs;
@@ -141,7 +141,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     }
 
     /// The bounds for any windows inside the [`DockArea`]. Defaults to the screen rect.
-    /// By default it's set to [`Context::screen_rect`].
+    /// By default it's set to [`egui::Context::screen_rect`].
     #[inline(always)]
     pub fn window_bounds(mut self, bounds: Rect) -> Self {
         self.window_bounds = Some(bounds);
