@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use egui::{
-    CollapsingHeader, CollapsingResponse, FontId, Frame, Galley, Id, Layout, Rect, Response, Sense,
-    Ui, Vec2, Widget,
+    CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response, Sense,
+    TextStyle, Ui, Vec2, Widget,
 };
 
 use crate::{
@@ -76,7 +76,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tab_viewer
                 .title(&mut tabs[active.0])
                 .color(ui.visuals().widgets.noninteractive.fg_stroke.color)
-                .into_galley(ui, Some(false), 0.0, FontId::proportional(20.0))
+                .into_galley(ui, Some(false), 0.0, TextStyle::Button)
                 .galley
         };
 
