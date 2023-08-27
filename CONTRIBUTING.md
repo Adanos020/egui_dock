@@ -11,7 +11,7 @@ Bug reports should include how to reproduce said bug, if known.
 ## Pull requests
 
 1. Fork this repository.
-2. In your fork create a branch for your changes – do **not** submit directly to `main`.
+2. In your fork create a branch for your changes – do **not** submit directly to `main` or `release-0.x`.
 3. Make your changes and open a pull request.
     - If your changes are not complete but e.g. you want feedback on your idea before fully committing to it, open a draft PR.
     - Otherwise, feel free to open a regular PR.

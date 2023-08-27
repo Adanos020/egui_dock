@@ -30,7 +30,6 @@ provide a guide of how to use the library.
   - `TabStyle::minimum_width` to set the minimum width of the tab.
   - `TabInteractionStyle` to style the active/inactive/focused/hovered states of a tab.
 - `AllowedSplits` enum which lets you choose in which directions a `DockArea` can be split. ([#145](https://github.com/Adanos020/egui_dock/pull/145))
-- `TabViewer::closable` lets individual tabs be closable or not. ([#150](https://github.com/Adanos020/egui_dock/pull/150))
 - From [#149](https://github.com/Adanos020/egui_dock/pull/149):
   - `DockState<Tab>` containing the entire state of the tab hierarchies stored in a collection of `Surfaces`.
   - `Surface<Tab>` enum which represents an area (e.g. a window) with its own `Tree<Tab>`.
@@ -51,6 +50,8 @@ provide a guide of how to use the library.
   - `DockArea::show_window_close_buttons` setting determining if windows should have a close button or not.
   - `DockArea::show_window_collapse_buttons` setting determining if windows should have a collapse button or not.
   - `TabViewer::allowed_in_windows` specifying if a given tab can be shown in a window.
+- `TabViewer::closable` lets individual tabs be closable or not. ([#150](https://github.com/Adanos020/egui_dock/pull/150))
+- `TabViewer::scroll_bars` specifying if horizontal and vertical scrolling is enabled for given tab. ([#160](https://github.com/Adanos020/egui_dock/pull/160))
 
 ### Breaking changes
 
@@ -72,6 +73,7 @@ provide a guide of how to use the library.
   - Renamed `Style::border` to `Style::main_surface_border_stroke`.
   - Moved `Style::selection_color` to `OverlayStyle::selection_color`.
   - `DockArea::new` now takes in a `DockState` instead of a `Tree`.
+- Removed `DockArea::scroll_area_in_tabs`. (([#160](https://github.com/Adanos020/egui_dock/pull/160)))
 
 ## 0.6.3 - 2023-06-16
 
