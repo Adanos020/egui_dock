@@ -1,9 +1,14 @@
-use egui::{CollapsingHeader, CollapsingResponse, Frame, Rect, Response, Sense, Ui, Vec2, Widget};
+use std::sync::Arc;
+
+use egui::{
+    CollapsingHeader, CollapsingResponse, FontId, Frame, Galley, Id, Layout, Rect, Response, Sense,
+    Ui, Vec2, Widget,
+};
 
 use crate::{
     dock_area::{state::State, tab_removal::TabRemoval},
     utils::fade_visuals,
-    DockArea, Style, SurfaceIndex, TabViewer,
+    DockArea, Node, Style, SurfaceIndex, TabViewer,
 };
 
 impl<'tree, Tab> DockArea<'tree, Tab> {
@@ -37,6 +42,43 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             None => (1.0, None),
         };
 
+        // Finds out if theres a reason for the close button to be disabled
+        // by iterating over the tree and finding if theres any non-closable nodes.
+        let disabled = (!self.dock_state[surf_index]
+            .iter_mut()
+            .filter_map(|node| {
+                if let Node::Leaf { tabs, .. } = node {
+                    Some(
+                        tabs.iter_mut()
+                            .map(|tab| tab_viewer.closeable(tab))
+                            .fold(true, |a, i| a && i),
+                    )
+                } else {
+                    None
+                }
+            })
+            .fold(true, |a, i| a && i))
+        .then_some("This window contains non-closable tabs.");
+
+        let title = {
+            let node_id = self.dock_state[surf_index]
+                .focused_leaf()
+                .unwrap_or_else(|| {
+                    for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
+                        if self.dock_state[surf_index][node_index].is_leaf() {
+                            return node_index;
+                        }
+                    }
+                    unreachable!("a window surface should never be empty")
+                });
+            let Node::Leaf { tabs, active, .. } = &mut self.dock_state[surf_index][node_id] else { unreachable!()};
+            tab_viewer
+                .title(&mut tabs[active.0])
+                .color(ui.visuals().widgets.noninteractive.fg_stroke.color)
+                .into_galley(ui, Some(false), 0.0, FontId::proportional(20.0))
+                .galley
+        };
+
         //fade window frame (if neccesary)
         let mut frame = Frame::window(ui.style());
         if fade_factor != 1.0 {
@@ -46,64 +88,160 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         let collapser_id = id.with("collapser");
-        window.frame(frame).show(ui.ctx(), |ui| {
-            //fade inner ui (if neccesary)
-            if fade_factor != 1.0 {
-                fade_visuals(ui.visuals_mut(), fade_factor);
-            }
-            if self.show_window_heads {
-                let ch_response = CollapsingHeader::new("")
-                    .id_source(collapser_id)
-                    .open(new.then_some(true))
-                    .show_unindented(ui, |ui| {
-                        self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
-                    });
-                let rect = close_button_rect(ui.spacing(), ch_response);
-                if ui.add(close_button(rect)).clicked() {
-                    open = false;
+        window
+            .frame(frame)
+            .min_width(min_window_width(&title, ui.spacing().indent))
+            .show(ui.ctx(), |ui| {
+                //fade inner ui (if neccesary)
+                if fade_factor != 1.0 {
+                    fade_visuals(ui.visuals_mut(), fade_factor);
                 }
-            } else {
-                self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
-            }
-        });
+
+                // This is a side effect of trying to display something in the same 
+                // space as a "sometimes" CollapsingHeader. Because either the close 
+                // button allocates a head, or the collapsing header does.
+                if !self.show_window_collapse_buttons && self.show_close_buttons {
+                    self.show_close_button(ui, &mut open, None, disabled);
+                } 
+                let ch_res = self.show_window_body(
+                    ui,
+                    surf_index,
+                    tab_viewer,
+                    state,
+                    fade_style,
+                    new.then_some(true),
+                    collapser_id,
+                    title,
+                );
+                if self.show_window_collapse_buttons && self.show_close_buttons {
+                    self.show_close_button(ui, &mut open, ch_res, disabled);
+                }
+
+            });
 
         if !open {
             self.to_remove.push(TabRemoval::Window(surf_index));
             ui.data_mut(|data| data.remove::<()>(collapser_id));
         }
     }
-}
 
-fn close_button_rect(spacing: &egui::style::Spacing, response: CollapsingResponse<()>) -> Rect {
-    let button_size = Vec2::new(-spacing.indent, response.header_response.rect.height());
-    let default_pos = response.header_response.rect.right_top();
-    let pos = response.body_response.map_or(default_pos, |response| {
-        Rect::from_two_pos(default_pos, response.rect.right_top()).right_top()
-    });
-    Rect::from_two_pos(pos, pos + button_size)
-}
+    fn show_window_body(
+        &mut self,
+        ui: &mut Ui,
+        surf_index: SurfaceIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        state: &mut State,
+        fade_style: Option<(&Style, f32)>,
+        open: Option<bool>,
+        id: Id,
+        title: Arc<Galley>,
+    ) -> Option<CollapsingResponse<()>> {
+        if self.show_window_collapse_buttons {
+            let ch_response = CollapsingHeader::new("")
+                .id_source(id)
+                .open(open)
+                .show_unindented(ui, |ui| {
+                    ui.set_min_size(Vec2::splat(100.0));
+                    self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
+                });
+            ui.set_width(min_window_width(&title, ui.spacing().indent));
 
-fn close_button(rect: Rect) -> impl Widget {
+            if ch_response.fully_closed() {
+                let rect = Rect::from_min_size(
+                    ch_response.header_response.rect.left_top(),
+                    Vec2::new(
+                        ui.min_rect().size().x,
+                        ch_response.header_response.rect.height(),
+                    ),
+                );
+                ui.painter()
+                    .galley(rect.center() - (title.size() * 0.5), title);
+            }
+            Some(ch_response)
+        } else {
+            self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
+            None
+        }
+    }
+
+    fn show_close_button(
+        &mut self,
+        ui: &mut Ui,
+        open: &mut bool,
+        collapse_response: Option<CollapsingResponse<()>>,
+        disabled: Option<&'static str>,
+    ) {
+        if let Some(collapse) = collapse_response {
+            let rect = {
+                let top_right = 
+                    egui::Rect::from_two_pos(
+                        collapse.header_response.rect.right_top(),
+                        ui.max_rect().right_top(),
+                    )
+                    .right_top();
+                Rect::from_min_size(
+                    top_right,
+                    Vec2::new(0.0, collapse.header_response.rect.height()),
+                )
+            };
+            ui.allocate_ui_at_rect(rect, |ui| {
+                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.add(close_button(disabled)).clicked() {
+                        *open = false;
+                    }
+                });
+            });
+        } else {
+            ui.with_layout(Layout::right_to_left(egui::Align::Min), |ui| {
+                if ui.add(close_button(disabled)).clicked() {
+                    *open = false;
+                }
+            });
+        }
+    }
+}
+fn min_window_width(title: &Galley, button_width: f32) -> f32 {
+    (button_width * 2.) + title.size().x
+}
+fn close_button(disabled: Option<&'static str>) -> impl Widget {
     move |ui: &mut Ui| -> Response {
-        let res = ui.interact(rect, ui.next_auto_id(), Sense::click());
-        let rect =
-            Rect::from_center_size(rect.center(), Vec2::splat(rect.width().min(rect.height()) * 0.5));
+        let sense = disabled.map_or(Sense::click(), |_disabled| Sense::hover());
+
+        //this is how CollapsableHeader decides on space,
+        //don't know why it doesn't atually end up the same size.
+        let size = Vec2::new(ui.spacing().indent, ui.spacing().icon_width);
+        let (rect, res) = ui.allocate_exact_size(size, sense);
+
         let visuals = ui.style().interact(&res);
         let painter = ui.painter();
+
+        let rect = Rect::from_center_size(
+            rect.center(),
+            Vec2::splat(rect.width().min(rect.height()) * 0.5),
+        )
+        .expand(visuals.expansion);
+
+        let stroke = match disabled.is_some() {
+            true => visuals.bg_stroke,
+            false => visuals.fg_stroke,
+        };
         painter.line_segment(
             [
                 painter.round_pos_to_pixels(rect.left_top()),
                 painter.round_pos_to_pixels(rect.right_bottom()),
             ],
-            visuals.fg_stroke,
+            stroke,
         );
         painter.line_segment(
             [
                 painter.round_pos_to_pixels(rect.right_top()),
                 painter.round_pos_to_pixels(rect.left_bottom()),
             ],
-            visuals.fg_stroke,
+            stroke,
         );
-        res
+        match disabled {
+            Some(reason) => res.on_hover_text(reason),
+            None => res,
+        }
     }
 }

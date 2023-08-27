@@ -28,7 +28,8 @@ pub struct DockArea<'tree, Tab> {
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
     scroll_area_in_tabs: bool,
-    show_window_heads: bool,
+    show_window_close_buttons: bool,
+    show_window_collapse_buttons: bool,
     allowed_splits: AllowedSplits,
     window_bounds: Option<Rect>,
 
@@ -64,7 +65,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             new_focused: None,
             tab_hover_rect: None,
             window_bounds: None,
-            show_window_heads: true,
+            show_window_close_buttons: true,
+            show_window_collapse_buttons: true,
         }
     }
 
@@ -146,11 +148,19 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self
     }
 
-    /// Enables or disables the collapsing header and close button on windows.
+    /// Enables or disables the close button on windows.
     /// By default it's `true`.
     #[inline(always)]
-    pub fn show_window_heads(mut self, show_window_heads: bool) -> Self {
-        self.show_window_heads = show_window_heads;
+    pub fn show_window_close_buttons(mut self, show_window_close_buttons: bool) -> Self {
+        self.show_window_close_buttons = show_window_close_buttons;
+        self
+    }
+
+    /// Enables or disables the collapsing header  on windows.
+    /// By default it's `true`.
+    #[inline(always)]
+    pub fn show_window_collapse_buttons(mut self, show_window_collapse_buttons: bool) -> Self {
+        self.show_window_collapse_buttons = show_window_collapse_buttons;
         self
     }
 }

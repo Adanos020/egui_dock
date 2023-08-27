@@ -73,7 +73,8 @@ struct MyContext {
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
     allowed_splits: AllowedSplits,
-    show_window_heads: bool,
+    show_window_close: bool,
+    show_window_collapse: bool,
 }
 
 struct MyApp {
@@ -148,9 +149,10 @@ impl MyContext {
             ui.checkbox(&mut self.show_add_buttons, "Show add buttons");
             ui.checkbox(&mut self.draggable_tabs, "Draggable tabs");
             ui.checkbox(&mut self.show_tab_name_on_hover, "Show tab name on hover");
+            ui.checkbox(&mut self.show_window_close, "Show close button on windows");
             ui.checkbox(
-                &mut self.show_window_heads,
-                "Show collaspse and close button on windows",
+                &mut self.show_window_collapse,
+                "Show collaspse button on windows",
             );
             ComboBox::new("cbox:allowed_splits", "Split direction(s)")
                 .selected_text(format!("{:?}", self.allowed_splits))
@@ -519,12 +521,13 @@ impl Default for MyApp {
             }
         }
         let context = MyContext {
-            show_window_heads: true,
             title: "Hello".to_string(),
             age: 24,
             style: None,
             open_tabs,
 
+            show_window_close: true,
+            show_window_collapse: true,
             show_close_buttons: true,
             show_add_buttons: false,
             draggable_tabs: true,
@@ -579,7 +582,8 @@ impl eframe::App for MyApp {
                     .draggable_tabs(self.context.draggable_tabs)
                     .show_tab_name_on_hover(self.context.show_tab_name_on_hover)
                     .allowed_splits(self.context.allowed_splits)
-                    .show_window_heads(self.context.show_window_heads)
+                    .show_window_close_buttons(self.context.show_window_close)
+                    .show_window_collapse_buttons(self.context.show_window_collapse)
                     .show_inside(ui, &mut self.context);
             });
     }
