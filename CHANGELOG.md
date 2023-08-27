@@ -16,6 +16,7 @@ provide a guide of how to use the library.
 ### Fixed
 
 - Correctly draw a border around a dock area using the `Style::border` property. ([#139](https://github.com/Adanos020/egui_dock/pull/139))
+- Non-closable tabs now cannot be closed by clicking with the middle mouse button. ([9cdef8c](https://github.com/Adanos020/egui_dock/pull/149/commits/9cdef8cb77e73ef7a065d1313f7fb8feae0253b4))
 
 ### Added
 
