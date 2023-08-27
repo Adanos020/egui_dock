@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use egui::{
     CollapsingHeader, CollapsingResponse, FontId, Frame, Galley, Id, Layout, Rect, Response, Sense,
-    Ui, Vec2, Widget,
+    Ui, Vec2, Widget, Color32,
 };
 
 use crate::{
@@ -97,12 +97,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     fade_visuals(ui.visuals_mut(), fade_factor);
                 }
 
-                // This is a side effect of trying to display something in the same 
-                // space as a "sometimes" CollapsingHeader. Because either the close 
+                // This is a side effect of trying to display something in the same
+                // space as a "sometimes" CollapsingHeader. Because either the close
                 // button allocates a head, or the collapsing header does.
-                if !self.show_window_collapse_buttons && self.show_close_buttons {
-                    self.show_close_button(ui, &mut open, None, disabled);
-                } 
+
                 let ch_res = self.show_window_body(
                     ui,
                     surf_index,
@@ -113,10 +111,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     collapser_id,
                     title,
                 );
-                if self.show_window_collapse_buttons && self.show_close_buttons {
+                if self.show_window_close_buttons {
                     self.show_close_button(ui, &mut open, ch_res, disabled);
                 }
-
             });
 
         if !open {
@@ -159,6 +156,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
             Some(ch_response)
         } else {
+            if self.show_window_close_buttons {
+                ui.add_space(ui.spacing().icon_width + ui.spacing().item_spacing.y);
+            }
             self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
             None
         }
@@ -171,33 +171,29 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         collapse_response: Option<CollapsingResponse<()>>,
         disabled: Option<&'static str>,
     ) {
-        if let Some(collapse) = collapse_response {
-            let rect = {
-                let top_right = 
+        let rect = {
+            let (top_right, height) = match collapse_response {
+                Some(collapse) => (
                     egui::Rect::from_two_pos(
                         collapse.header_response.rect.right_top(),
                         ui.max_rect().right_top(),
                     )
-                    .right_top();
-                Rect::from_min_size(
-                    top_right,
-                    Vec2::new(0.0, collapse.header_response.rect.height()),
-                )
+                    .right_top(),
+                    collapse.header_response.rect.height(),
+                ),
+                None => (ui.max_rect().right_top(), ui.spacing().icon_width),
             };
-            ui.allocate_ui_at_rect(rect, |ui| {
-                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.add(close_button(disabled)).clicked() {
-                        *open = false;
-                    }
-                });
-            });
-        } else {
-            ui.with_layout(Layout::right_to_left(egui::Align::Min), |ui| {
+
+            Rect::from_min_size(top_right, Vec2::new(0.0, height))
+        };
+        ui.allocate_ui_at_rect(rect, |ui| {
+            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.set_height(rect.height());
                 if ui.add(close_button(disabled)).clicked() {
                     *open = false;
                 }
             });
-        }
+        });
     }
 }
 fn min_window_width(title: &Galley, button_width: f32) -> f32 {
