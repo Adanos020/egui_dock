@@ -380,7 +380,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 self.new_focused = Some((surface_index, node_index));
             }
 
-            if self.show_close_buttons && response.middle_clicked() {
+            if self.show_close_buttons && tab_viewer.closeable(tab) && response.middle_clicked() {
                 if tab_viewer.on_close(tab) {
                     self.to_remove
                         .push((surface_index, node_index, tab_index).into());
