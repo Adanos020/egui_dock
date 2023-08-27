@@ -11,7 +11,7 @@ struct State {
 //
 // All credit goes to https://github.com/zicklag.
 
-/// Like `egui::popup_under_widget`, but pops up to the left, so that the popup doesn't go off the screen
+/// Like `egui::popup_under_widget`, but pops up to the left, so that the popup doesn't go off the screen.
 pub(crate) fn popup_under_widget<R>(
     ui: &Ui,
     popup_id: Id,
