@@ -14,9 +14,16 @@ pub trait TabViewer {
 
     /// Content inside the context menu shown when the tab is right-clicked.
     ///
-    /// The `_node` specifies which [`Node`](crate::Node) or split of the tree that this particular context menu
-    /// belongs to.
-    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab, _node: NodeIndex) {}
+    /// `_surface` and `_node` specify which [`Surface`](crate::Surface) and [`Node`](crate::Node) that this particular
+    /// context menu belongs to.
+    fn context_menu(
+        &mut self,
+        _ui: &mut Ui,
+        _tab: &mut Self::Tab,
+        _surface: SurfaceIndex,
+        _node: NodeIndex,
+    ) {
+    }
 
     /// Unique ID for this tab.
     ///

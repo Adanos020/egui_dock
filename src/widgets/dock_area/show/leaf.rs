@@ -308,7 +308,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if self.tab_context_menus {
                     response = response.context_menu(|ui| {
-                        tab_viewer.context_menu(ui, tab, node_index);
+                        tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
                             && ui.button("Eject").clicked()
                         {
@@ -395,6 +395,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn tab_plus(
         &mut self,
         ui: &mut Ui,
