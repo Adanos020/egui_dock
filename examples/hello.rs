@@ -85,6 +85,10 @@ struct MyApp {
 impl TabViewer for MyContext {
     type Tab = String;
 
+    fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
+        tab.as_str().into()
+    }
+
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         match tab.as_str() {
             "Simple Demo" => self.simple_demo(ui),
@@ -95,7 +99,13 @@ impl TabViewer for MyContext {
         }
     }
 
-    fn context_menu(&mut self, ui: &mut Ui, tab: &mut Self::Tab, _node: NodeIndex) {
+    fn context_menu(
+        &mut self,
+        ui: &mut Ui,
+        tab: &mut Self::Tab,
+        _surface: SurfaceIndex,
+        _node: NodeIndex,
+    ) {
         match tab.as_str() {
             "Simple Demo" => self.simple_demo_menu(ui),
             _ => {
@@ -103,10 +113,6 @@ impl TabViewer for MyContext {
                 ui.label("This is a context menu");
             }
         }
-    }
-
-    fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
-        tab.as_str().into()
     }
 
     fn closeable(&mut self, tab: &mut Self::Tab) -> bool {

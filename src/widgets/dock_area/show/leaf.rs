@@ -153,6 +153,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 };
                 self.tab_plus(
                     ui,
+                    surface_index,
                     node_index,
                     tab_viewer,
                     tabbar_outer_rect,
@@ -307,7 +308,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if self.tab_context_menus {
                     response = response.context_menu(|ui| {
-                        tab_viewer.context_menu(ui, tab, node_index);
+                        tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
                             && ui.button("Eject").clicked()
                         {
@@ -394,9 +395,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn tab_plus(
         &mut self,
         ui: &mut Ui,
+        surface_index: SurfaceIndex,
         node_index: NodeIndex,
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         tabbar_outer_rect: Rect,
@@ -452,14 +455,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let popup_id = ui.id().with("tab_add_popup");
         popup_under_widget(ui, popup_id, &response, |ui| {
-            tab_viewer.add_popup(ui, node_index);
+            tab_viewer.add_popup(ui, surface_index, node_index);
         });
 
         if response.clicked() {
             if self.show_add_popup {
                 ui.memory_mut(|mem| mem.toggle_popup(popup_id));
             }
-            tab_viewer.on_add(node_index);
+            tab_viewer.on_add(surface_index, node_index);
         }
     }
 

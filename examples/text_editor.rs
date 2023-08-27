@@ -23,15 +23,15 @@ struct Buffers {
 impl egui_dock::TabViewer for Buffers {
     type Tab = Title;
 
+    fn title(&mut self, title: &mut Title) -> egui::WidgetText {
+        egui::WidgetText::from(&*title)
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, title: &mut Title) {
         let text = self.buffers.entry(title.clone()).or_default();
         egui::TextEdit::multiline(text)
             .desired_width(f32::INFINITY)
             .show(ui);
-    }
-
-    fn title(&mut self, title: &mut Title) -> egui::WidgetText {
-        egui::WidgetText::from(&*title)
     }
 }
 

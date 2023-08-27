@@ -1,4 +1,4 @@
-use crate::{NodeIndex, TabStyle};
+use crate::{NodeIndex, SurfaceIndex, TabStyle};
 use egui::{Id, Ui, WidgetText};
 
 /// Defines how to display a tab inside a [`Tree`](crate::Tree).
@@ -14,9 +14,16 @@ pub trait TabViewer {
 
     /// Content inside the context menu shown when the tab is right-clicked.
     ///
-    /// The `_node` specifies which [`Node`](crate::Node) or split of the tree that this particular context menu
-    /// belongs to.
-    fn context_menu(&mut self, _ui: &mut Ui, _tab: &mut Self::Tab, _node: NodeIndex) {}
+    /// `_surface` and `_node` specify which [`Surface`](crate::Surface) and [`Node`](crate::Node) that this particular
+    /// context menu belongs to.
+    fn context_menu(
+        &mut self,
+        _ui: &mut Ui,
+        _tab: &mut Self::Tab,
+        _surface: SurfaceIndex,
+        _node: NodeIndex,
+    ) {
+    }
 
     /// Unique ID for this tab.
     ///
@@ -47,14 +54,15 @@ pub trait TabViewer {
     /// This is called when the tabs add button is pressed and if the dock [`Style`](crate::Style)'s
     /// `show_add_buttons` is set to `true`.
     ///
-    /// `_node` specifies which [`Node`](crate::Node) or split of the tree this particular add button was pressed on.
-    fn on_add(&mut self, _node: NodeIndex) {}
+    /// `_surface` and `_node` specify which surface and which [`Node`](crate::Node) this particular add button was
+    /// pressed on.
+    fn on_add(&mut self, _surface: SurfaceIndex, _node: NodeIndex) {}
 
     /// Content of the popup under the add button. Useful for selecting what type of tab to add.
     ///
     /// This requires that [`DockArea::show_add_buttons`](crate::DockArea::show_add_buttons) and
     /// [`DockArea::show_add_popup`](crate::DockArea::show_add_popup) are set to `true`.
-    fn add_popup(&mut self, _ui: &mut Ui, _node: NodeIndex) {}
+    fn add_popup(&mut self, _ui: &mut Ui, _surface: SurfaceIndex, _node: NodeIndex) {}
 
     /// This is called every frame after [`ui`](Self::ui) is called, if the `_tab` is active.
     ///
