@@ -1,3 +1,4 @@
+use std::convert::identity;
 use std::sync::Arc;
 
 use egui::{
@@ -51,13 +52,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     Some(
                         tabs.iter_mut()
                             .map(|tab| tab_viewer.closeable(tab))
-                            .fold(true, |a, i| a && i),
+                            .all(identity),
                     )
                 } else {
                     None
                 }
             })
-            .fold(true, |a, i| a && i))
+            .all(identity))
         .then_some("This window contains non-closable tabs.");
 
         // Get galley of currently selected node as a window title
@@ -121,6 +122,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn show_window_body(
         &mut self,
         ui: &mut Ui,
