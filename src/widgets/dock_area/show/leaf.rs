@@ -761,29 +761,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabs_style.tab_body.stroke,
             );
 
-            if tab_viewer.tab_scroll(tab) {
-                ScrollArea::new(tab_viewer.scroll_bars(tab)).show(ui, |ui| {
-                    Frame::none()
-                        .inner_margin(tabs_style.tab_body.inner_margin)
-                        .show(ui, |ui| {
-                            if fade_factor != 1.0 {
-                                fade_visuals(ui.visuals_mut(), fade_factor);
-                            }
-                            let available_rect = ui.available_rect_before_wrap();
-                            ui.expand_to_include_rect(available_rect);
-                            tab_viewer.ui(ui, tab);
-                        });
-                });
-            } else {
+            ScrollArea::new(tab_viewer.scroll_bars(tab)).show(ui, |ui| {
                 Frame::none()
                     .inner_margin(tabs_style.tab_body.inner_margin)
                     .show(ui, |ui| {
                         if fade_factor != 1.0 {
                             fade_visuals(ui.visuals_mut(), fade_factor);
                         }
+                        let available_rect = ui.available_rect_before_wrap();
+                        ui.expand_to_include_rect(available_rect);
                         tab_viewer.ui(ui, tab);
                     });
-            }
+            });
         }
 
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {

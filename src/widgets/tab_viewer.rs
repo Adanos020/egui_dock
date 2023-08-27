@@ -82,7 +82,7 @@ pub trait TabViewer {
         true
     }
 
-    /// if the horizontal and vertical scroll bars are shown for `tab`.
+    /// If the horizontal and vertical scroll bars are shown for `tab`.
     /// By Default, both scroll bars are shown.
     fn scroll_bars(&self, _tab: &Self::Tab) -> [bool; 2] {
         [true, true]
