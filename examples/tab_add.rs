@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
-use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
@@ -14,22 +14,22 @@ fn main() -> eframe::Result<()> {
 }
 
 struct TabViewer<'a> {
-    added_nodes: &'a mut Vec<NodeIndex>,
+    added_nodes: &'a mut Vec<(SurfaceIndex, NodeIndex)>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_> {
     type Tab = usize;
 
-    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        ui.label(format!("Content of tab {tab}"));
-    }
-
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
         format!("Tab {tab}").into()
     }
 
-    fn on_add(&mut self, node: NodeIndex) {
-        self.added_nodes.push(node);
+    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+        ui.label(format!("Content of tab {tab}"));
+    }
+
+    fn on_add(&mut self, surface: SurfaceIndex, node: NodeIndex) {
+        self.added_nodes.push((surface, node));
     }
 }
 
@@ -70,8 +70,8 @@ impl eframe::App for MyApp {
                 },
             );
 
-        added_nodes.drain(..).for_each(|node| {
-            self.tree.main_surface_mut().set_focused_node(node);
+        added_nodes.drain(..).for_each(|(surface, node)| {
+            self.tree.set_focused_node_and_surface((surface, node));
             self.tree.push_to_focused_leaf(self.counter);
             self.counter += 1;
         });
