@@ -22,7 +22,7 @@ Add `egui` and `egui_dock` to your project's dependencies.
 egui = "0.22"
 egui_dock = "0.6"
 ```
-https://github.com/rerun-io/egui_tiles#comparison-with-egui_dock
+
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
 Once that's done, you can start using `egui_dock` – more details on that can be found in the
 [documentation](https://docs.rs/egui_dock/latest/egui_dock/).
