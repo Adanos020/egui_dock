@@ -24,6 +24,10 @@ struct OpinionatedTab {
 impl egui_dock::TabViewer for TabViewer {
     type Tab = OpinionatedTab;
 
+    fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
+        (&tab.title).into()
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         ui.label(&tab.content);
         match &mut tab.can_become_window {
@@ -41,10 +45,6 @@ impl egui_dock::TabViewer for TabViewer {
                 }
             }
         }
-    }
-
-    fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        (&tab.title).into()
     }
 
     fn allowed_in_windows(&self, tab: &mut Self::Tab) -> bool {
