@@ -146,7 +146,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.show_window_close_buttons = show_window_close_buttons;
         self
     }
-
+  
     /// Enables or disables the collapsing header  on windows.
     /// By default it's `true`.
     #[inline(always)]
