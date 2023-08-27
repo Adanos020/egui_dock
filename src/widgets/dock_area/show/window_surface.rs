@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use egui::{
     CollapsingHeader, CollapsingResponse, FontId, Frame, Galley, Id, Layout, Rect, Response, Sense,
-    Ui, Vec2, Widget, Color32,
+    Ui, Vec2, Widget,
 };
 
 use crate::{
@@ -60,6 +60,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .fold(true, |a, i| a && i))
         .then_some("This window contains non-closable tabs.");
 
+        // Get galley of currently selected node as a window title
         let title = {
             let node_id = self.dock_state[surf_index]
                 .focused_leaf()
@@ -79,7 +80,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .galley
         };
 
-        //fade window frame (if neccesary)
+        // Fade window frame (if neccesary)
         let mut frame = Frame::window(ui.style());
         if fade_factor != 1.0 {
             frame.fill = frame.fill.linear_multiply(fade_factor);
@@ -87,7 +88,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             frame.shadow.color = frame.shadow.color.linear_multiply(fade_factor);
         }
 
-        let collapser_id = id.with("collapser");
         window
             .frame(frame)
             .min_width(min_window_width(&title, ui.spacing().indent))
@@ -97,17 +97,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     fade_visuals(ui.visuals_mut(), fade_factor);
                 }
 
-                // This is a side effect of trying to display something in the same
-                // space as a "sometimes" CollapsingHeader. Because either the close
-                // button allocates a head, or the collapsing header does.
-
+                let collapser_id = id.with("collapser");
+                let collapser_state = new.then_some(true);
                 let ch_res = self.show_window_body(
                     ui,
                     surf_index,
                     tab_viewer,
                     state,
                     fade_style,
-                    new.then_some(true),
+                    collapser_state,
                     collapser_id,
                     title,
                 );
@@ -118,7 +116,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         if !open {
             self.to_remove.push(TabRemoval::Window(surf_index));
-            ui.data_mut(|data| data.remove::<()>(collapser_id));
         }
     }
 
@@ -156,6 +153,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
             Some(ch_response)
         } else {
+            // in case we don't render with a collapsing header we need to make a "blank"
+            // window head in preparation for adding the close button.
             if self.show_window_close_buttons {
                 ui.add_space(ui.spacing().icon_width + ui.spacing().item_spacing.y);
             }
