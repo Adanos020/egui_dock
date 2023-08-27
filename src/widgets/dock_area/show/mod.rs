@@ -215,8 +215,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let allowed_in_window = match drag_state.drag.src {
             TreeComponent::Tab(surface, node, tab) => {
                 let Node::Leaf { tabs, .. } = &mut self.dock_state[surface][node] else {
-                        unreachable!("tab drags can only come from leaf nodes")
-                    };
+                    unreachable!("tab drags can only come from leaf nodes")
+                };
                 tab_viewer.allowed_in_windows(&mut tabs[tab.0])
             }
             _ => todo!("collections of tabs, like nodes or surfaces, can't be dragged! (yet)"),
