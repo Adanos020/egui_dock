@@ -20,14 +20,16 @@ mod leaf;
 mod main_surface;
 mod window_surface;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 struct LineSeparator {
     surface_index: SurfaceIndex,
     node_index: NodeIndex,
     separator: Rect,
     interact_rect: Rect,
 }
-struct CrossSeparator {
+
+#[derive(Clone, Debug)]
+struct SeparatorJunction {
     related_line_seperators: Vec<LineSeparator>,
     interact_rect: Rect,
 }
@@ -43,8 +45,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// # struct TabViewer {}
     /// # impl egui_dock::TabViewer for TabViewer {
     /// #     type Tab = String;
-    /// #     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {}
     /// #     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText { (&*tab).into() }
+    /// #     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {}
     /// # }
     /// # let mut tree: DockState<String> = DockState::new(vec![]);
     /// # let mut tab_viewer = TabViewer {};
@@ -301,7 +303,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         // Finally, draw separators so that their "interaction zone" is above
         // bodies (see `SeparatorStyle::extra_interact_width`).
-        let mut separators: Vec<LineSeparator> = vec![];
+        let mut separators = vec![];
         let fade_style = fade_style.map(|(style, _)| style);
         for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
             if self.dock_state[surf_index][node_index].is_parent() {
@@ -313,8 +315,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
         }
 
-        // Finally draw cross section seperators
-        self.show_cross_section_separators(ui, separators);
+        // Finally draw cross section separators.
+        self.show_separator_junctions(ui, separators);
     }
 
     fn allocate_area_for_root_node(&mut self, ui: &mut Ui, surface: SurfaceIndex) -> Rect {
@@ -470,24 +472,24 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         separators
     }
 
-    fn show_cross_section_separators(&mut self, ui: &mut Ui, separators: Vec<LineSeparator>) {
+    fn show_separator_junctions(&mut self, ui: &mut Ui, separators: Vec<LineSeparator>) {
         let style = self.style.as_ref().unwrap();
-        let mut cross_section_seperators: Vec<CrossSeparator> = vec![];
+        let mut cross_separator_junctions = vec![];
 
         // detect overlapping line separators
         for (i, sep1) in separators.iter().enumerate() {
             for sep2 in separators[i + 1..].iter() {
                 let separator = sep1.interact_rect.intersect(sep2.interact_rect);
                 let interact_rect = separator.expand(style.separator.extra_interact_width / 2.0);
-                let cross_separator = CrossSeparator {
+                let cross_separator = SeparatorJunction {
                     related_line_seperators: vec![*sep1, *sep2],
                     interact_rect,
                 };
-                cross_section_seperators.push(cross_separator);
+                cross_separator_junctions.push(cross_separator);
             }
         }
 
-        for separator in cross_section_seperators {
+        for separator in cross_separator_junctions {
             let response = ui
                 .allocate_rect(separator.interact_rect, Sense::click_and_drag())
                 .on_hover_and_drag_cursor(CursorIcon::Move);
@@ -520,9 +522,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     {
                         let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
 
-                        // Update 'fraction' interaction after drawing seperator,
-                        // overwise it may overlap on other separator / bodies when
-                        // shrunk fast.
+                        // Update 'fraction' interaction after drawing separator,
+                        // otherwise it may overlap on other separator / bodies when shrunk fast.
                         if let Some(pos) = response.interact_pointer_pos() {
                             let dim_point = pos.dim_point;
                             let delta = response.drag_delta().dim_point;
