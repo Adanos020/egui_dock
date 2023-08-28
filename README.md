@@ -33,7 +33,7 @@ Once that's done, you can start using `egui_dock` – more details on that can b
 
 ## Alternatives
 
-### [egui_tiles](https://https://github.com/rerun-io/egui_tiles) 
+### [egui_tiles](https://github.com/rerun-io/egui_tiles) 
 
 It's a library aiming to achieve similar goals in addition to being more flexible and customizable.
 
