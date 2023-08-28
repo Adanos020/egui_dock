@@ -8,7 +8,7 @@ use egui::{
 
 use crate::{
     dock_area::{
-        drag_and_drop::{DragData, HoverData, TreeComponent},
+        drag_and_drop::{DragData, DragDropState, HoverData, TreeComponent},
         state::State,
     },
     utils::{fade_visuals, rect_set_size_centered, rect_stroke_box},
@@ -778,13 +778,34 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             });
         }
 
+        //change hover destination
         if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
             // Prevent borrow checker issues.
             let rect = rect.to_owned();
 
+            //if the dragged tab isn't allowed in a window,
+            //it's unneccesary to change the hover state
+            let is_dragged_valid = match &state.dnd {
+                Some(DragDropState {
+                    drag: DragData { src, .. },
+                    ..
+                }) => match *src {
+                    TreeComponent::Tab(d_surf, d_node, d_tab) => {
+                        if let Node::Leaf { tabs, .. } = &mut self.dock_state[d_surf][d_node] {
+                            tab_viewer.allowed_in_windows(&mut tabs[d_tab.0])
+                                || surface_index == SurfaceIndex::main()
+                        } else {
+                            true
+                        }
+                    }
+                    _ => unreachable!("collections of nodes can't be dragged (yet)"),
+                },
+                _ => true,
+            };
+
             // Use rect.contains instead of response.hovered as the dragged tab covers
             // the underlying responses.
-            if state.drag_start.is_some() && rect.contains(pointer) {
+            if state.drag_start.is_some() && rect.contains(pointer) && is_dragged_valid {
                 let on_title_bar = tabbar_response.rect.contains(pointer);
                 let (dst, tab) = {
                     match self.tab_hover_rect {
