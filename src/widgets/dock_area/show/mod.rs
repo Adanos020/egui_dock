@@ -183,13 +183,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let drag_state = state.dnd.as_mut().unwrap();
         let style = self.style.as_ref().unwrap();
 
-        // If were hovering over ourselves, we're not moving anywhere.
-        if drag_state.hover.dst.node_address() == drag_state.drag.src.node_address()
-            && drag_state.is_on_title_bar()
-        {
-            return None;
-        }
-
         let deserted_node = {
             match (
                 drag_state.drag.src.node_address(),
