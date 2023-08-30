@@ -73,8 +73,8 @@ provide a guide of how to use the library.
   - Renamed `Style::border` to `Style::main_surface_border_stroke`.
   - Moved `Style::selection_color` to `OverlayStyle::selection_color`.
   - `DockArea::new` now takes in a `DockState` instead of a `Tree`.
-- Removed `DockArea::scroll_area_in_tabs`. ([#160](https://github.com/Adanos020/egui_dock/pull/160))
-- `TabViewer::{context_menu,on_add,add_popup}` now take in an additional `SurfaceIndex` parameter. ([#167](https://github.com/Adanos020/egui_dock/pull/167))
+- Removed `DockArea::scroll_area_in_tabs` – override `TabViewer::scroll_bars` instead. ([#160](https://github.com/Adanos020/egui_dock/pull/160))
+- Methods `TabViewer::{context_menu,on_add,add_popup}` now take in an additional `SurfaceIndex` parameter. ([#167](https://github.com/Adanos020/egui_dock/pull/167))
 
 ## 0.6.3 - 2023-06-16
 

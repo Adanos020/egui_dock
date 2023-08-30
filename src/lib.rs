@@ -30,14 +30,14 @@
 //!     // This associated type is used to attach some data to each tab.
 //!     type Tab = Tab;
 //!
-//!     // Defines the contents of a given `tab`.
-//!     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
-//!         ui.label(format!("Content of {tab}"));
-//!     }
-//!
 //!     // Returns the current `tab`'s title.
 //!     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
 //!         tab.as_str().into()
+//!     }
+//!
+//!     // Defines the contents of a given `tab`.
+//!     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
+//!         ui.label(format!("Content of {tab}"));
 //!     }
 //! }
 //!
@@ -89,8 +89,8 @@
 //! # struct MyTabViewer;
 //! # impl TabViewer for MyTabViewer {
 //! #     type Tab = ();
-//! #     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {}
 //! #     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText { WidgetText::default() }
+//! #     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {}
 //! # }
 //! # egui::__run_test_ctx(|ctx| {
 //! # egui::CentralPanel::default().show(ctx, |ui| {
