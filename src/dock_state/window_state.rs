@@ -4,6 +4,7 @@ use egui::{Id, Pos2, Rect, Vec2};
 ///
 /// Doubles as a handle for the surface, allowing the user to set its size and position.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct WindowState {
     /// The [`Rect`] that this window was last taking up.
     screen_rect: Rect,
