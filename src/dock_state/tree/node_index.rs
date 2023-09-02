@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 /// Wrapper around indices to the collection of nodes inside a [`Tree`](crate::Tree).
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NodeIndex(pub usize);
 

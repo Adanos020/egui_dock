@@ -3,7 +3,7 @@ use egui::{Id, Pos2, Rect, Vec2};
 /// The state of a [`Surface::Window`](crate::Surface::Window).
 ///
 /// Doubles as a handle for the surface, allowing the user to set its size and position.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct WindowState {
     /// The [`Rect`] that this window was last taking up.
