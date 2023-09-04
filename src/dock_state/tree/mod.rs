@@ -230,7 +230,7 @@ impl<Tab> Tree<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, NodeIndex, TabIndex, Translations};
+    /// # use egui_dock::{DockState, NodeIndex, TabIndex};
     /// let mut dock_state = DockState::new(vec!["node 1", "node 2", "node 3"]);
     /// assert_eq!(dock_state.main_surface().num_tabs(), 3);
     ///
@@ -257,7 +257,7 @@ impl<Tab> Tree<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, Translations};
+    /// # use egui_dock::{DockState};
     /// let mut dock_state = DockState::new(vec!["single tab"]);
     /// let root_node = dock_state.main_surface().root_node().unwrap();
     ///
@@ -273,7 +273,7 @@ impl<Tab> Tree<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, Node, Translations};
+    /// # use egui_dock::{DockState, Node};
     /// let mut dock_state = DockState::new(vec!["single tab"]);
     /// let root_node = dock_state.main_surface_mut().root_node_mut().unwrap();
     /// if let Node::Leaf { tabs, ..} = root_node {
@@ -302,7 +302,7 @@ impl<Tab> Tree<Tab> {
     /// # Example
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split, Translations};
+    /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split};
     /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
     ///
     /// // At this point, the main surface only contains the leaf with tab 1 and 2.
@@ -450,7 +450,7 @@ impl<Tab> Tree<Tab> {
     /// # Example
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split, Node, Translations};
+    /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split, Node};
     /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
     ///
     /// // At this point, the main surface only contains the leaf with tab 1 and 2.

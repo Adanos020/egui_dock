@@ -24,7 +24,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// This is the same as doing:
     ///
     /// ```
-    /// # use egui_dock::{DockArea, DockState, Translations};
+    /// # use egui_dock::{DockArea, DockState};
     /// # use egui::{CentralPanel, Frame};
     /// # struct TabViewer {}
     /// # impl egui_dock::TabViewer for TabViewer {

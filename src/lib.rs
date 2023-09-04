@@ -14,7 +14,7 @@
 //! You show the tabs using [`DockArea`] and specify how they are shown by implementing [`TabViewer`].
 //!
 //! ```rust
-//! use egui_dock::{DockArea, DockState, NodeIndex, Style, TabViewer, Translations};
+//! use egui_dock::{DockArea, DockState, NodeIndex, Style, TabViewer};
 //! use egui::{Ui, WidgetText};
 //!
 //! // First, let's pick a type that we'll use to attach some data to each tab.
@@ -84,7 +84,7 @@
 //! Example:
 //!
 //! ```rust
-//! # use egui_dock::{DockArea, DockState, OverlayType, Style, TabAddAlign, TabViewer, Translations};
+//! # use egui_dock::{DockArea, DockState, OverlayType, Style, TabAddAlign, TabViewer};
 //! # use egui::{Ui, WidgetText};
 //! # struct MyTabViewer;
 //! # impl TabViewer for MyTabViewer {
@@ -130,7 +130,7 @@
 //! Example:
 //!
 //! ```rust
-//! # use egui_dock::{DockState, Translations};
+//! # use egui_dock::{DockState};
 //! # use egui::{Pos2, Vec2};
 //! # let mut dock_state = DockState::new(vec![]);
 //! // Create a new window `Surface` with one tab inside it.
@@ -154,7 +154,7 @@
 //! Example:
 //!
 //! ```rust
-//! # use egui_dock::{DockState, NodeIndex, Translations};
+//! # use egui_dock::{DockState, NodeIndex};
 //! // Create a `DockState` with an initial tab "tab1" in the main `Surface`'s root node.
 //! let mut dock_state = DockState::new(vec!["tab1".to_string()]);
 //!

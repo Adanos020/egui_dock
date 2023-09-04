@@ -149,7 +149,7 @@ impl<Tab> Node<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, NodeIndex, Translations};
+    /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec![1, 2, 3, 4, 5, 6]);
     /// assert!(dock_state.main_surface().root_node().unwrap().tabs().unwrap().contains(&4));
     /// ```
@@ -169,7 +169,7 @@ impl<Tab> Node<Tab> {
     ///
     /// Modifying tabs inside a node:
     /// ```rust
-    /// # use egui_dock::{DockState, NodeIndex, Translations};
+    /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec![1, 2, 3, 4, 5, 6]);
     /// let mut tabs = dock_state
     ///     .main_surface_mut()
@@ -202,7 +202,7 @@ impl<Tab> Node<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, NodeIndex, Translations};
+    /// # use egui_dock::{DockState, NodeIndex};
     /// let mut dock_state = DockState::new(vec!["a tab"]);
     /// assert_eq!(dock_state.main_surface().root_node().unwrap().tabs_count(), 1);
     ///
