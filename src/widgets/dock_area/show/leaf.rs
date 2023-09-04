@@ -2,8 +2,8 @@ use std::ops::RangeInclusive;
 
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, CursorIcon, Frame, Id, LayerId, Layout,
-    NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle, Ui, Vec2,
-    WidgetText,
+    NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
+    Ui, Vec2, WidgetText,
 };
 
 use crate::{
@@ -205,8 +205,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .with((node_index, "node"))
                 .with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
-            let is_being_dragged =
-                tabs_ui.memory(|mem| mem.is_being_dragged(id)) && self.draggable_tabs;
+            let is_being_dragged = tabs_ui.memory(|mem| mem.is_being_dragged(id))
+                && tabs_ui.input(|i| i.pointer.primary_down() || i.pointer.primary_released())
+                && self.draggable_tabs;
 
             if is_being_dragged {
                 tabs_ui.output_mut(|o| o.cursor_icon = CursorIcon::Grabbing);
@@ -338,7 +339,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
                 let response = tabs_ui.interact(response.rect, id, sense);
-                if response.drag_started() {
+                if response.drag_started_by(PointerButton::Primary) {
                     state.drag_start = response.hover_pos();
                 }
 

@@ -206,6 +206,7 @@ impl<Tab> DockState<Tab> {
         match dst_tab.into() {
             TabDestination::Window(position) => {
                 self.detach_tab((src_surface, src_node, src_tab), position);
+                return;
             }
             TabDestination::Node(dst_surface, dst_node, dst_tab) => {
                 // Moving a single tab inside its own node is a no-op
@@ -222,17 +223,9 @@ impl<Tab> DockState<Tab> {
                     TabInsert::Split(split) => {
                         self[dst_surface].split(dst_node, split, 0.5, Node::leaf(tab));
                     }
+
                     TabInsert::Insert(index) => self[dst_surface][dst_node].insert_tab(index, tab),
                     TabInsert::Append => self[dst_surface][dst_node].append_tab(tab),
-                }
-
-                if self[src_surface][src_node].is_leaf()
-                    && self[src_surface][src_node].tabs_count() == 0
-                {
-                    self[src_surface].remove_leaf(src_node);
-                }
-                if self[src_surface].is_empty() && !src_surface.is_main() {
-                    self.remove_surface(src_surface);
                 }
             }
             TabDestination::EmptySurface(dst_surface) => {
@@ -240,7 +233,13 @@ impl<Tab> DockState<Tab> {
                 let tab = self[src_surface][src_node].remove_tab(src_tab).unwrap();
                 self[dst_surface] = Tree::new(vec![tab])
             }
-        };
+        }
+        if self[src_surface][src_node].is_leaf() && self[src_surface][src_node].tabs_count() == 0 {
+            self[src_surface].remove_leaf(src_node);
+        }
+        if self[src_surface].is_empty() && !src_surface.is_main() {
+            self.remove_surface(src_surface);
+        }
     }
 
     /// Takes a tab out of its current surface and puts it in a new window.
