@@ -14,7 +14,7 @@
 //! You show the tabs using [`DockArea`] and specify how they are shown by implementing [`TabViewer`].
 //!
 //! ```rust
-//! use egui_dock::{DockArea, DockState, NodeIndex, Style, TabViewer};
+//! use egui_dock::{DockArea, DockState, NodeIndex, Style, TabViewer, Translations};
 //! use egui::{Ui, WidgetText};
 //!
 //! // First, let's pick a type that we'll use to attach some data to each tab.
@@ -50,7 +50,7 @@
 //!     pub fn new() -> Self {
 //!         // Create a `DockState` with an initial tab "tab1" in the main `Surface`'s root node.
 //!         let tabs = ["tab1", "tab2", "tab3"].map(str::to_string).into_iter().collect();
-//!         let dock_state = DockState::new(tabs);
+//!         let dock_state = DockState::new(tabs, Translations::default());
 //!         Self { dock_state }
 //!     }
 //!
@@ -84,7 +84,7 @@
 //! Example:
 //!
 //! ```rust
-//! # use egui_dock::{DockArea, DockState, OverlayType, Style, TabAddAlign, TabViewer};
+//! # use egui_dock::{DockArea, DockState, OverlayType, Style, TabAddAlign, TabViewer, Translations};
 //! # use egui::{Ui, WidgetText};
 //! # struct MyTabViewer;
 //! # impl TabViewer for MyTabViewer {
@@ -94,7 +94,7 @@
 //! # }
 //! # egui::__run_test_ctx(|ctx| {
 //! # egui::CentralPanel::default().show(ctx, |ui| {
-//! # let mut dock_state = DockState::new(vec![]);
+//! # let mut dock_state = DockState::new(vec![], Translations::default());
 //! // Inherit the look and feel from egui.
 //! let mut style = Style::from_egui(ui.style());
 //!
@@ -130,9 +130,9 @@
 //! Example:
 //!
 //! ```rust
-//! # use egui_dock::DockState;
+//! # use egui_dock::{DockState, Translations};
 //! # use egui::{Pos2, Vec2};
-//! # let mut dock_state = DockState::new(vec![]);
+//! # let mut dock_state = DockState::new(vec![], Translations::default());
 //! // Create a new window `Surface` with one tab inside it.
 //! let mut surface_index = dock_state.add_window(vec!["Window Tab".to_string()]);
 //!
@@ -154,9 +154,9 @@
 //! Example:
 //!
 //! ```rust
-//! # use egui_dock::{DockState, NodeIndex};
+//! # use egui_dock::{DockState, NodeIndex, Translations};
 //! // Create a `DockState` with an initial tab "tab1" in the main `Surface`'s root node.
-//! let mut dock_state = DockState::new(vec!["tab1".to_string()]);
+//! let mut dock_state = DockState::new(vec!["tab1".to_string()], Translations::default());
 //!
 //! // Currently, the `DockState` only has one `Surface`: the main one.
 //! // Let's get mutable access to add more nodes in it.
@@ -189,10 +189,11 @@
 pub use dock_state::*;
 pub use egui;
 pub use style::*;
+pub use translations::*;
 pub use tree::*;
 pub use widgets::*;
 
-/// The main Structure of the library.
+/// The main structure of the library.
 pub mod dock_state;
 
 /// Look and feel.

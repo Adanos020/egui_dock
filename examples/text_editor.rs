@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 
 use eframe::{egui, NativeOptions};
+use egui_dock::{DockArea, DockState, Style, TabViewer, Translations};
 
 /// We identify tabs by the title of the file we are editing.
 type Title = String;
@@ -20,7 +21,7 @@ struct Buffers {
     buffers: BTreeMap<Title, String>,
 }
 
-impl egui_dock::TabViewer for Buffers {
+impl TabViewer for Buffers {
     type Tab = Title;
 
     fn title(&mut self, title: &mut Title) -> egui::WidgetText {
@@ -37,7 +38,7 @@ impl egui_dock::TabViewer for Buffers {
 
 struct MyApp {
     buffers: Buffers,
-    tree: egui_dock::DockState<String>,
+    tree: DockState<String>,
 }
 
 impl Default for MyApp {
@@ -53,8 +54,10 @@ impl Default for MyApp {
             include_str!("../README.md").to_owned(),
         );
 
-        let tree =
-            egui_dock::DockState::new(vec!["README.md".to_owned(), "CHANGELOG.md".to_owned()]);
+        let tree = DockState::new(
+            vec!["README.md".to_owned(), "CHANGELOG.md".to_owned()],
+            Translations::default(),
+        );
 
         Self {
             buffers: Buffers { buffers },
@@ -80,8 +83,8 @@ impl eframe::App for MyApp {
             }
         });
 
-        egui_dock::DockArea::new(&mut self.tree)
-            .style(egui_dock::Style::from_egui(ctx.style().as_ref()))
+        DockArea::new(&mut self.tree)
+            .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut self.buffers);
     }
 }

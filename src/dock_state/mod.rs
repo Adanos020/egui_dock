@@ -5,6 +5,8 @@ pub mod tree;
 
 /// Represents an area in which a dock tree is rendered.
 pub mod surface;
+/// Specifies text displayed in different elements of the [`DockArea`](crate::DockArea).
+pub mod translations;
 /// Window states which tells floating tabs how to be displayed inside their window,
 pub mod window_state;
 
@@ -14,7 +16,7 @@ pub use window_state::WindowState;
 
 use egui::Rect;
 
-use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Tree};
+use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Translations, Tree};
 
 /// The heart of `egui_dock`.
 ///
@@ -27,6 +29,7 @@ use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Tree};
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct DockState<Tab> {
     surfaces: Vec<Surface<Tab>>,
+    pub(crate) translations: Translations,
     focused_surface: Option<SurfaceIndex>, // Part of the tree which is in focus.
 }
 
@@ -58,9 +61,10 @@ impl<Tab> std::ops::IndexMut<SurfaceIndex> for DockState<Tab> {
 
 impl<Tab> DockState<Tab> {
     /// Create a new tree with given tabs at the main surface's root node.
-    pub fn new(tabs: Vec<Tab>) -> Self {
+    pub fn new(tabs: Vec<Tab>, translations: Translations) -> Self {
         Self {
             surfaces: vec![Surface::Main(Tree::new(tabs))],
+            translations,
             focused_surface: None,
         }
     }
@@ -84,9 +88,9 @@ impl<Tab> DockState<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::DockState;
+    /// # use egui_dock::{DockState, Translations};
     /// # use egui::{Vec2, Pos2};
-    /// let mut dock_state = DockState::new(vec![]);
+    /// let mut dock_state = DockState::new(vec![], Translations::default());
     /// let mut surface_index = dock_state.add_window(vec!["Window Tab".to_string()]);
     /// let window_state = dock_state.get_window_state_mut(surface_index).unwrap();
     ///

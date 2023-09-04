@@ -19,17 +19,17 @@ pub enum TabAddAlign {
 /// Example:
 ///
 /// ```rust
-/// # use egui_dock::{DockArea, DockState, OverlayType, Style, TabAddAlign, TabViewer};
+/// # use egui_dock::{DockArea, DockState, OverlayType, Style, TabAddAlign, TabViewer, Translations};
 /// # use egui::{Ui, WidgetText};
 /// # struct MyTabViewer;
 /// # impl TabViewer for MyTabViewer {
 /// #     type Tab = ();
-/// #     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {}
 /// #     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText { WidgetText::default() }
+/// #     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {}
 /// # }
 /// # egui::__run_test_ctx(|ctx| {
 /// # egui::CentralPanel::default().show(ctx, |ui| {
-/// # let mut dock_state = DockState::new(vec![]);
+/// # let mut dock_state = DockState::new(vec![], Translations::default());
 /// // Inherit the look and feel from egui.
 /// let mut style = Style::from_egui(ui.style());
 ///

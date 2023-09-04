@@ -9,8 +9,8 @@ use egui::{
 };
 
 use egui_dock::{
-    AllowedSplits, DockArea, DockState, Node, NodeIndex, OverlayType, Style, SurfaceIndex,
-    TabInteractionStyle, TabViewer,
+    AllowedSplits, DockArea, DockState, NodeIndex, OverlayType, Style, SurfaceIndex,
+    TabContextMenuLabels, TabInteractionStyle, TabViewer, Translations,
 };
 
 /// Adds a widget with a label next to it, can be given an extra parameter in order to show a hover text
@@ -30,7 +30,7 @@ macro_rules! labeled_widget {
 }
 
 // Creates a slider which has a unit attached to it
-// When given an extra parameter it will be used as a multiplier (e.g 100.0 when working with precentages)
+// When given an extra parameter it will be used as a multiplier (e.g 100.0 when working with percentages)
 macro_rules! unit_slider {
     ($val:expr, $range:expr) => {
         egui::Slider::new($val, $range)
@@ -502,7 +502,15 @@ impl MyContext {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
+        let mut tree = DockState::new(
+            vec!["Simple Demo".to_owned(), "Style Editor".to_owned()],
+            Translations {
+                tab_context_menu: TabContextMenuLabels {
+                    eject_button: "Undock".to_owned(),
+                    ..TabContextMenuLabels::default()
+                },
+            },
+        );
         let [a, b] = tree.main_surface_mut().split_left(
             NodeIndex::root(),
             0.3,
@@ -520,7 +528,7 @@ impl Default for MyApp {
         let mut open_tabs = HashSet::new();
 
         for node in tree[SurfaceIndex::main()].iter() {
-            if let Node::Leaf { tabs, .. } = node {
+            if let Some(tabs) = node.tabs() {
                 for tab in tabs {
                     open_tabs.insert(tab.clone());
                 }

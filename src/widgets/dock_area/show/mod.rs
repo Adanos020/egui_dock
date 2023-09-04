@@ -24,15 +24,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// This is the same as doing:
     ///
     /// ```
-    /// # use egui_dock::{DockArea, DockState};
+    /// # use egui_dock::{DockArea, DockState, Translations};
     /// # use egui::{CentralPanel, Frame};
     /// # struct TabViewer {}
     /// # impl egui_dock::TabViewer for TabViewer {
     /// #     type Tab = String;
-    /// #     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {}
     /// #     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText { (&*tab).into() }
+    /// #     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {}
     /// # }
-    /// # let mut tree: DockState<String> = DockState::new(vec![]);
+    /// # let mut tree: DockState<String> = DockState::new(vec![], Translations::default());
     /// # let mut tab_viewer = TabViewer {};
     /// # egui::__run_test_ctx(|ctx| {
     /// CentralPanel::default()
