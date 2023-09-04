@@ -29,7 +29,7 @@ pub enum TabAddAlign {
 /// # }
 /// # egui::__run_test_ctx(|ctx| {
 /// # egui::CentralPanel::default().show(ctx, |ui| {
-/// # let mut dock_state = DockState::new(vec![], Translations::default());
+/// # let mut dock_state = DockState::new(vec![]);
 /// // Inherit the look and feel from egui.
 /// let mut style = Style::from_egui(ui.style());
 ///

@@ -32,7 +32,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// #     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText { (&*tab).into() }
     /// #     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {}
     /// # }
-    /// # let mut tree: DockState<String> = DockState::new(vec![], Translations::default());
+    /// # let mut tree: DockState<String> = DockState::new(vec![]);
     /// # let mut tab_viewer = TabViewer {};
     /// # egui::__run_test_ctx(|ctx| {
     /// CentralPanel::default()

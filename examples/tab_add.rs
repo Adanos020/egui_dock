@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
-use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex, Translations};
+use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
@@ -40,7 +40,7 @@ struct MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = DockState::new(vec![1, 2], Translations::default());
+        let mut tree = DockState::new(vec![1, 2]);
 
         // You can modify the tree before constructing the dock
         let [a, b] = tree

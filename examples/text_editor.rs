@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 
 use eframe::{egui, NativeOptions};
-use egui_dock::{DockArea, DockState, Style, TabViewer, Translations};
+use egui_dock::{DockArea, DockState, Style, TabViewer};
 
 /// We identify tabs by the title of the file we are editing.
 type Title = String;
@@ -54,10 +54,7 @@ impl Default for MyApp {
             include_str!("../README.md").to_owned(),
         );
 
-        let tree = DockState::new(
-            vec!["README.md".to_owned(), "CHANGELOG.md".to_owned()],
-            Translations::default(),
-        );
+        let tree = DockState::new(vec!["README.md".to_owned(), "CHANGELOG.md".to_owned()]);
 
         Self {
             buffers: Buffers { buffers },

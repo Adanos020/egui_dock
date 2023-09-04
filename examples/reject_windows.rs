@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
-use egui_dock::{DockArea, DockState, NodeIndex, Style, Translations};
+use egui_dock::{DockArea, DockState, NodeIndex, Style};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
@@ -60,21 +60,18 @@ struct MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = DockState::new(
-            vec![
-                OpinionatedTab {
-                    can_become_window: Ok(false),
-                    title: "old tab".to_owned(),
-                    content: "since when could tabs become windows?".to_string(),
-                },
-                OpinionatedTab {
-                    can_become_window: Err(false),
-                    title: "grumpy tab".to_owned(),
-                    content: "I don't want to be a window!".to_string(),
-                },
-            ],
-            Translations::default(),
-        );
+        let mut tree = DockState::new(vec![
+            OpinionatedTab {
+                can_become_window: Ok(false),
+                title: "old tab".to_owned(),
+                content: "since when could tabs become windows?".to_string(),
+            },
+            OpinionatedTab {
+                can_become_window: Err(false),
+                title: "grumpy tab".to_owned(),
+                content: "I don't want to be a window!".to_string(),
+            },
+        ]);
 
         // You can modify the tree before constructing the dock
         let [a, _] = tree.main_surface_mut().split_right(

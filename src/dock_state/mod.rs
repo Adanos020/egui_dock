@@ -29,8 +29,10 @@ use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Transla
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct DockState<Tab> {
     surfaces: Vec<Surface<Tab>>,
-    pub(crate) translations: Translations,
     focused_surface: Option<SurfaceIndex>, // Part of the tree which is in focus.
+
+    /// Contains translations of text shown in [`DockArea`](crate::DockArea).
+    pub translations: Translations,
 }
 
 impl<Tab> std::ops::Index<SurfaceIndex> for DockState<Tab> {
@@ -61,12 +63,18 @@ impl<Tab> std::ops::IndexMut<SurfaceIndex> for DockState<Tab> {
 
 impl<Tab> DockState<Tab> {
     /// Create a new tree with given tabs at the main surface's root node.
-    pub fn new(tabs: Vec<Tab>, translations: Translations) -> Self {
+    pub fn new(tabs: Vec<Tab>) -> Self {
         Self {
             surfaces: vec![Surface::Main(Tree::new(tabs))],
-            translations,
             focused_surface: None,
+            translations: Translations::default(),
         }
+    }
+
+    /// Sets translations of text later displayed in [`DockArea`](crate::DockArea).
+    pub fn with_translations(mut self, translations: Translations) -> Self {
+        self.translations = translations;
+        self
     }
 
     /// Get a mutable borrow to the tree at the main surface.
@@ -90,7 +98,7 @@ impl<Tab> DockState<Tab> {
     /// ```rust
     /// # use egui_dock::{DockState, Translations};
     /// # use egui::{Vec2, Pos2};
-    /// let mut dock_state = DockState::new(vec![], Translations::default());
+    /// let mut dock_state = DockState::new(vec![]);
     /// let mut surface_index = dock_state.add_window(vec!["Window Tab".to_string()]);
     /// let window_state = dock_state.get_window_state_mut(surface_index).unwrap();
     ///

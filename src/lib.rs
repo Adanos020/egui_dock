@@ -50,7 +50,7 @@
 //!     pub fn new() -> Self {
 //!         // Create a `DockState` with an initial tab "tab1" in the main `Surface`'s root node.
 //!         let tabs = ["tab1", "tab2", "tab3"].map(str::to_string).into_iter().collect();
-//!         let dock_state = DockState::new(tabs, Translations::default());
+//!         let dock_state = DockState::new(tabs);
 //!         Self { dock_state }
 //!     }
 //!
@@ -94,7 +94,7 @@
 //! # }
 //! # egui::__run_test_ctx(|ctx| {
 //! # egui::CentralPanel::default().show(ctx, |ui| {
-//! # let mut dock_state = DockState::new(vec![], Translations::default());
+//! # let mut dock_state = DockState::new(vec![]);
 //! // Inherit the look and feel from egui.
 //! let mut style = Style::from_egui(ui.style());
 //!
@@ -132,7 +132,7 @@
 //! ```rust
 //! # use egui_dock::{DockState, Translations};
 //! # use egui::{Pos2, Vec2};
-//! # let mut dock_state = DockState::new(vec![], Translations::default());
+//! # let mut dock_state = DockState::new(vec![]);
 //! // Create a new window `Surface` with one tab inside it.
 //! let mut surface_index = dock_state.add_window(vec!["Window Tab".to_string()]);
 //!
@@ -156,7 +156,7 @@
 //! ```rust
 //! # use egui_dock::{DockState, NodeIndex, Translations};
 //! // Create a `DockState` with an initial tab "tab1" in the main `Surface`'s root node.
-//! let mut dock_state = DockState::new(vec!["tab1".to_string()], Translations::default());
+//! let mut dock_state = DockState::new(vec!["tab1".to_string()]);
 //!
 //! // Currently, the `DockState` only has one `Surface`: the main one.
 //! // Let's get mutable access to add more nodes in it.

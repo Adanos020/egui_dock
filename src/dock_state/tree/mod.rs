@@ -231,7 +231,7 @@ impl<Tab> Tree<Tab> {
     ///
     /// ```rust
     /// # use egui_dock::{DockState, NodeIndex, TabIndex, Translations};
-    /// let mut dock_state = DockState::new(vec!["node 1", "node 2", "node 3"], Translations::default());
+    /// let mut dock_state = DockState::new(vec!["node 1", "node 2", "node 3"]);
     /// assert_eq!(dock_state.main_surface().num_tabs(), 3);
     ///
     /// let [a, b] = dock_state.main_surface_mut().split_left(NodeIndex::root(), 0.5, vec!["tab 4", "tab 5"]);
@@ -258,7 +258,7 @@ impl<Tab> Tree<Tab> {
     ///
     /// ```rust
     /// # use egui_dock::{DockState, Translations};
-    /// let mut dock_state = DockState::new(vec!["single tab"], Translations::default());
+    /// let mut dock_state = DockState::new(vec!["single tab"]);
     /// let root_node = dock_state.main_surface().root_node().unwrap();
     ///
     /// assert_eq!(root_node.tabs(), Some(["single tab"].as_slice()));
@@ -274,7 +274,7 @@ impl<Tab> Tree<Tab> {
     ///
     /// ```rust
     /// # use egui_dock::{DockState, Node, Translations};
-    /// let mut dock_state = DockState::new(vec!["single tab"], Translations::default());
+    /// let mut dock_state = DockState::new(vec!["single tab"]);
     /// let root_node = dock_state.main_surface_mut().root_node_mut().unwrap();
     /// if let Node::Leaf { tabs, ..} = root_node {
     ///     tabs.push("partner tab");
@@ -303,7 +303,7 @@ impl<Tab> Tree<Tab> {
     ///
     /// ```rust
     /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split, Translations};
-    /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"], Translations::default());
+    /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
     ///
     /// // At this point, the main surface only contains the leaf with tab 1 and 2.
     /// assert!(dock_state.main_surface().root_node().unwrap().is_leaf());
@@ -451,7 +451,7 @@ impl<Tab> Tree<Tab> {
     ///
     /// ```rust
     /// # use egui_dock::{DockState, SurfaceIndex, NodeIndex, Split, Node, Translations};
-    /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"], Translations::default());
+    /// let mut dock_state = DockState::new(vec!["tab 1", "tab 2"]);
     ///
     /// // At this point, the main surface only contains the leaf with tab 1 and 2.
     /// assert!(dock_state.main_surface().root_node().unwrap().is_leaf());
