@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use egui::{Context, Id, Pos2};
 
 use crate::{Style, SurfaceIndex};
@@ -10,7 +8,7 @@ use super::drag_and_drop::{DragData, DragDropState, HoverData};
 pub(super) struct State {
     pub drag_start: Option<Pos2>,
     pub dnd: Option<DragDropState>,
-    pub window_fade: Option<(Instant, SurfaceIndex)>,
+    pub window_fade: Option<(f64, SurfaceIndex)>,
 }
 
 impl State {

@@ -1,4 +1,4 @@
-use std::{ops::BitOrAssign, time::Duration};
+use std::ops::BitOrAssign;
 
 use crate::{
     AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex, TabInsert,
@@ -385,9 +385,7 @@ impl DragDropState {
         match self.locked.as_ref() {
             Some(lock_time) => {
                 let elapsed = (ctx.input(|i| i.time) - lock_time) as f32;
-                ctx.request_repaint_after(Duration::from_secs_f32(
-                    (style.overlay.feel.max_preference_time - elapsed).max(0.0),
-                ));
+                ctx.request_repaint();
                 elapsed < style.overlay.feel.max_preference_time
             }
             None => false,
