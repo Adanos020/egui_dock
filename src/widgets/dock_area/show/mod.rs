@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use egui::{
     CentralPanel, Color32, Context, CursorIcon, Frame, LayerId, Order, Pos2, Rect, Rounding, Sense,
     Ui, Vec2,
@@ -146,8 +144,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 };
                 if let Some(destination) = tab_dst {
                     self.dock_state.move_tab(source, destination);
-                    state.reset_drag();
                 }
+                state.reset_drag();
             }
         }
         state.store(ui.ctx(), self.id);
@@ -163,13 +161,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) -> Option<SurfaceIndex> {
         if let Some(dnd_state) = &state.dnd {
             if dnd_state.is_locked(self.style.as_ref().unwrap(), ctx) {
-                state.window_fade = Some((Instant::now(), dnd_state.hover.dst.surface_address()));
+                state.window_fade =
+                    Some((ctx.input(|i| i.time), dnd_state.hover.dst.surface_address()));
             }
         }
 
         state.window_fade.and_then(|(time, surface)| {
             ctx.request_repaint();
-            (time.elapsed().as_secs_f32() < hold_time).then_some(surface)
+            (hold_time > (ctx.input(|i| i.time) - time) as f32).then_some(surface)
         })
     }
 

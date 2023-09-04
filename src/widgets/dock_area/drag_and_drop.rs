@@ -1,7 +1,4 @@
-use std::{
-    ops::BitOrAssign,
-    time::{Duration, Instant},
-};
+use std::ops::BitOrAssign;
 
 use crate::{
     AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex, TabInsert,
@@ -150,8 +147,8 @@ pub(super) struct DragDropState {
     pub hover: HoverData,
     pub drag: DragData,
     pub pointer: Pos2,
-    /// Is some when the pointer is over rect, instant holds when the lock was last active.
-    pub locked: Option<Instant>,
+    /// Is some when the pointer is over rect, f64 holds the time when the lock was last active.
+    pub locked: Option<f64>,
 }
 
 impl DragDropState {
@@ -364,7 +361,7 @@ impl DragDropState {
         match self.locked.as_mut() {
             Some(lock_time) => {
                 if target_state == LockState::HardLock {
-                    *lock_time = Instant::now();
+                    *lock_time = ctx.input(|i| i.time);
                 }
                 let window_hold = if !self.hover.dst.surface_address().is_main() {
                     ctx.request_repaint();
@@ -378,7 +375,7 @@ impl DragDropState {
             }
             None => {
                 if target_state != LockState::Unlocked {
-                    self.locked = Some(Instant::now());
+                    self.locked = Some(ctx.input(|i| i.time));
                 }
             }
         }
@@ -387,10 +384,8 @@ impl DragDropState {
     pub(super) fn is_locked(&self, style: &Style, ctx: &Context) -> bool {
         match self.locked.as_ref() {
             Some(lock_time) => {
-                let elapsed = lock_time.elapsed().as_secs_f32();
-                ctx.request_repaint_after(Duration::from_secs_f32(
-                    (style.overlay.feel.max_preference_time - elapsed).max(0.0),
-                ));
+                let elapsed = (ctx.input(|i| i.time) - lock_time) as f32;
+                ctx.request_repaint();
                 elapsed < style.overlay.feel.max_preference_time
             }
             None => false,
