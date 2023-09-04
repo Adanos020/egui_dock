@@ -131,7 +131,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 })
                 .inner
             };
-            if ui.input(|i| i.pointer.any_released()) {
+            if ui.input(|i| i.pointer.primary_released()) {
                 let source = {
                     match state.dnd.as_ref().unwrap().drag.src {
                         TreeComponent::Tab(src_surf, src_node, src_tab) => {
