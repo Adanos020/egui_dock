@@ -130,7 +130,7 @@
 //! Example:
 //!
 //! ```rust
-//! # use egui_dock::{DockState};
+//! # use egui_dock::DockState;
 //! # use egui::{Pos2, Vec2};
 //! # let mut dock_state = DockState::new(vec![]);
 //! // Create a new window `Surface` with one tab inside it.

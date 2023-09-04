@@ -96,7 +96,7 @@ impl<Tab> DockState<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState};
+    /// # use egui_dock::DockState;
     /// # use egui::{Vec2, Pos2};
     /// let mut dock_state = DockState::new(vec![]);
     /// let mut surface_index = dock_state.add_window(vec!["Window Tab".to_string()]);

@@ -257,7 +257,7 @@ impl<Tab> Tree<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState};
+    /// # use egui_dock::DockState;
     /// let mut dock_state = DockState::new(vec!["single tab"]);
     /// let root_node = dock_state.main_surface().root_node().unwrap();
     ///
