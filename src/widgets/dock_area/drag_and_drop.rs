@@ -1,7 +1,4 @@
-use std::{
-    ops::BitOrAssign,
-    time::Duration,
-};
+use std::{ops::BitOrAssign, time::Duration};
 
 use crate::{
     AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex, TabInsert,
@@ -364,7 +361,7 @@ impl DragDropState {
         match self.locked.as_mut() {
             Some(lock_time) => {
                 if target_state == LockState::HardLock {
-                    *lock_time = ctx.input(|i| i.time );
+                    *lock_time = ctx.input(|i| i.time);
                 }
                 let window_hold = if !self.hover.dst.surface_address().is_main() {
                     ctx.request_repaint();
@@ -378,7 +375,7 @@ impl DragDropState {
             }
             None => {
                 if target_state != LockState::Unlocked {
-                    self.locked = Some(ctx.input(|i| i.time ));
+                    self.locked = Some(ctx.input(|i| i.time));
                 }
             }
         }
@@ -387,7 +384,7 @@ impl DragDropState {
     pub(super) fn is_locked(&self, style: &Style, ctx: &Context) -> bool {
         match self.locked.as_ref() {
             Some(lock_time) => {
-                let elapsed = (ctx.input(|i| i.time ) - lock_time) as f32;
+                let elapsed = (ctx.input(|i| i.time) - lock_time) as f32;
                 ctx.request_repaint_after(Duration::from_secs_f32(
                     (style.overlay.feel.max_preference_time - elapsed).max(0.0),
                 ));
