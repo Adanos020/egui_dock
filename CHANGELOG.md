@@ -12,6 +12,7 @@ provide a guide of how to use the library.
 
 - Adjusted the styling of tabs to closer follow the egui default styling. ([#139](https://github.com/Adanos020/egui_dock/pull/139))
 - Double-clicking on a separator resets the size of both adjacent nodes. ([#146](https://github.com/Adanos020/egui_dock/pull/146))
+- Tabs can now only be dragged with the primary pointer button (e.g. left mouse button). ([#177](https://github.com/Adanos020/egui_dock/pull/177))
 
 ### Fixed
 
@@ -51,7 +52,8 @@ provide a guide of how to use the library.
   - `DockArea::show_window_collapse_buttons` setting determining if windows should have a collapse button or not.
   - `TabViewer::allowed_in_windows` specifying if a given tab can be shown in a window.
 - `TabViewer::closable` lets individual tabs be closable or not. ([#150](https://github.com/Adanos020/egui_dock/pull/150))
-- `TabViewer::scroll_bars` specifying if horizontal and vertical scrolling is enabled for given tab. ([#160](https://github.com/Adanos020/egui_dock/pull/160))
+- `TabViewer::scroll_bars` specifying if horizontal and vertical scrolling is enabled for given tab – replaces `DockArea::scroll_area_in_tabs` (see breaking changes). ([#160](https://github.com/Adanos020/egui_dock/pull/160))
+- `Translations` specifying what text will be displayed in some parts of the `DockingArea`, e.g. the tab context menus (defined in `TabContextMenuTranslations`). ([#178](https://github.com/Adanos020/egui_dock/pull/178)) 
 
 ### Breaking changes
 
