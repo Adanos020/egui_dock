@@ -181,6 +181,32 @@
 //! // |        |                                |
 //! // +--------+--------------------------------+
 //! ```
+//!
+//! ## Translations
+//!
+//! Some parts of the [`DockArea`] contain text that has nothing to do with tab content (currently it's just the
+//! tab context menus, but that might change in the future). The [`translations`] module provides an API for defining
+//! an alternative for each text element. This is especially useful when your application's interface is in any
+//! language other than English, but can also be used in any other way, e.g. to add icons.
+//!
+//! Example usage:
+//!
+//! ```rust
+//! # use egui_dock::{DockState, TabContextMenuTranslations, Translations};
+//! # type Tab = ();
+//! let translations_pl = Translations {
+//!     tab_context_menu: TabContextMenuTranslations {
+//!         close_button: "Zamknij zakładkę".to_string(),
+//!         eject_button: "Przenieś zakładkę do nowego okna".to_string(),
+//!     },
+//! };
+//! let dock_state = DockState::<Tab>::new(vec![]).with_translations(translations_pl);
+//!
+//! // Alternatively:
+//! let mut dock_state = DockState::<Tab>::new(vec![]);
+//! dock_state.translations.tab_context_menu.close_button = "タブを閉じる".to_string();
+//! dock_state.translations.tab_context_menu.eject_button = "タブを新しいウィンドウへ移動".to_string();
+//! ```
 
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
