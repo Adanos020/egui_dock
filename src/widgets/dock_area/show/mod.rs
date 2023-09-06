@@ -489,17 +489,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
     fn show_separator_junctions(&mut self, ui: &mut Ui, separators: Vec<LineSeparator>) {
         let style = self.style.as_ref().unwrap();
-        let mut separator_junctions = vec![];
 
         // Detect overlapping line separators
-        let mut horizontal_separators = Vec::with_capacity(separator_junctions.capacity() / 2);
-        let mut vertical_separators = Vec::with_capacity(separator_junctions.capacity() / 2);
+        let mut horizontal_separators = Vec::with_capacity(separators.capacity() / 2);
+        let mut vertical_separators = Vec::with_capacity(separators.capacity() / 2);
         for separator in separators.iter() {
             match separator.line_orientation {
                 LineOrientation::Horizontal => horizontal_separators.push(*separator),
                 LineOrientation::Vertical => vertical_separators.push(*separator),
             }
         }
+
+        let mut separator_junctions = vec![];
         for sep1 in horizontal_separators.iter() {
             for sep2 in vertical_separators.iter() {
                 if !sep1.interact_rect.intersects(sep2.interact_rect) {
