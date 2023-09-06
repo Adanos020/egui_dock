@@ -20,12 +20,19 @@ mod leaf;
 mod main_surface;
 mod window_surface;
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum LineOrientation {
+    Horizontal,
+    Vertical,
+}
+
 #[derive(Copy, Clone, Debug)]
 struct LineSeparator {
     surface_index: SurfaceIndex,
     node_index: NodeIndex,
     separator: Rect,
     interact_rect: Rect,
+    line_orientation: LineOrientation,
 }
 
 #[derive(Clone, Debug)]
@@ -418,7 +425,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 expand.dim_point += style.separator.extra_interact_width / 2.0;
                 let interact_rect = separator.expand2(expand);
 
-                separators.push(LineSeparator { surface_index,node_index, separator, interact_rect });
+                let line_orientation = LineOrientation::orientation;
+
+                separators.push(LineSeparator {
+                    surface_index,
+                    node_index,
+                    separator,
+                    interact_rect,
+                    line_orientation,
+                });
 
                 let response = ui.allocate_rect(interact_rect, Sense::click_and_drag())
                     .on_hover_and_drag_cursor(paste!{ CursorIcon::[<Resize orientation>]});
@@ -474,27 +489,38 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
     fn show_separator_junctions(&mut self, ui: &mut Ui, separators: Vec<LineSeparator>) {
         let style = self.style.as_ref().unwrap();
-        let mut cross_separator_junctions = vec![];
+        let mut separator_junctions = vec![];
 
-        // detect overlapping line separators
-        for (i, sep1) in separators.iter().enumerate() {
-            for sep2 in separators[i + 1..].iter() {
-                let separator = sep1.interact_rect.intersect(sep2.interact_rect);
-                let interact_rect = separator.expand(style.separator.extra_interact_width / 2.0);
-                let cross_separator = SeparatorJunction {
+        // Detect overlapping line separators
+        let mut horizontal_separators = Vec::with_capacity(separator_junctions.capacity() / 2);
+        let mut vertical_separators = Vec::with_capacity(separator_junctions.capacity() / 2);
+        for separator in separators.iter() {
+            match separator.line_orientation {
+                LineOrientation::Horizontal => horizontal_separators.push(*separator),
+                LineOrientation::Vertical => vertical_separators.push(*separator),
+            }
+        }
+        for sep1 in horizontal_separators.iter() {
+            for sep2 in vertical_separators.iter() {
+                if !sep1.interact_rect.intersects(sep2.interact_rect) {
+                    continue;
+                }
+                let intersection = sep1.interact_rect.intersect(sep2.interact_rect);
+                let interact_rect = intersection.expand(style.separator.extra_interact_width / 2.0);
+                let t_junction = SeparatorJunction {
                     related_line_seperators: vec![*sep1, *sep2],
                     interact_rect,
                 };
-                cross_separator_junctions.push(cross_separator);
+                separator_junctions.push(t_junction);
             }
         }
 
-        for separator in cross_separator_junctions {
+        for junction in separator_junctions {
             let response = ui
-                .allocate_rect(separator.interact_rect, Sense::click_and_drag())
+                .allocate_rect(junction.interact_rect, Sense::click_and_drag())
                 .on_hover_and_drag_cursor(CursorIcon::Move);
 
-            // highlight all affected line separators
+            // Highlight all affected line separators
             if response.dragged() || response.hovered() {
                 let color = if response.dragged() {
                     style.separator.color_dragged
@@ -504,13 +530,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     style.separator.color_idle
                 };
 
-                for line_separator in separator.related_line_seperators.iter() {
+                for line_separator in junction.related_line_seperators.iter() {
                     ui.painter()
                         .rect_filled(line_separator.separator, Rounding::none(), color);
                 }
             }
 
-            for line_separator in separator.related_line_seperators.iter() {
+            for line_separator in junction.related_line_seperators.iter() {
                 duplicate! {
                     [
                         orientation   dim_point  dim_size;
