@@ -5,6 +5,8 @@ pub mod tree;
 
 /// Represents an area in which a dock tree is rendered.
 pub mod surface;
+/// Specifies text displayed in different elements of the [`DockArea`](crate::DockArea).
+pub mod translations;
 /// Window states which tells floating tabs how to be displayed inside their window,
 pub mod window_state;
 
@@ -14,7 +16,7 @@ pub use window_state::WindowState;
 
 use egui::Rect;
 
-use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Tree};
+use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Translations, Tree};
 
 /// The heart of `egui_dock`.
 ///
@@ -28,6 +30,9 @@ use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Tree};
 pub struct DockState<Tab> {
     surfaces: Vec<Surface<Tab>>,
     focused_surface: Option<SurfaceIndex>, // Part of the tree which is in focus.
+
+    /// Contains translations of text shown in [`DockArea`](crate::DockArea).
+    pub translations: Translations,
 }
 
 impl<Tab> std::ops::Index<SurfaceIndex> for DockState<Tab> {
@@ -62,7 +67,14 @@ impl<Tab> DockState<Tab> {
         Self {
             surfaces: vec![Surface::Main(Tree::new(tabs))],
             focused_surface: None,
+            translations: Translations::default(),
         }
+    }
+
+    /// Sets translations of text later displayed in [`DockArea`](crate::DockArea).
+    pub fn with_translations(mut self, translations: Translations) -> Self {
+        self.translations = translations;
+        self
     }
 
     /// Get a mutable borrow to the tree at the main surface.

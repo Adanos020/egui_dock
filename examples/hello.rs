@@ -9,7 +9,7 @@ use egui::{
 };
 
 use egui_dock::{
-    AllowedSplits, DockArea, DockState, Node, NodeIndex, OverlayType, Style, SurfaceIndex,
+    AllowedSplits, DockArea, DockState, NodeIndex, OverlayType, Style, SurfaceIndex,
     TabInteractionStyle, TabViewer,
 };
 
@@ -30,7 +30,7 @@ macro_rules! labeled_widget {
 }
 
 // Creates a slider which has a unit attached to it
-// When given an extra parameter it will be used as a multiplier (e.g 100.0 when working with precentages)
+// When given an extra parameter it will be used as a multiplier (e.g 100.0 when working with percentages)
 macro_rules! unit_slider {
     ($val:expr, $range:expr) => {
         egui::Slider::new($val, $range)
@@ -502,25 +502,28 @@ impl MyContext {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
-        let [a, b] = tree.main_surface_mut().split_left(
+        let mut dock_state =
+            DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
+        dock_state.translations.tab_context_menu.eject_button = "Undock".to_owned();
+        let [a, b] = dock_state.main_surface_mut().split_left(
             NodeIndex::root(),
             0.3,
             vec!["Inspector".to_owned()],
         );
-        let [_, _] = tree.main_surface_mut().split_below(
+        let [_, _] = dock_state.main_surface_mut().split_below(
             a,
             0.7,
             vec!["File Browser".to_owned(), "Asset Manager".to_owned()],
         );
-        let [_, _] = tree
-            .main_surface_mut()
-            .split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
+        let [_, _] =
+            dock_state
+                .main_surface_mut()
+                .split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
 
         let mut open_tabs = HashSet::new();
 
-        for node in tree[SurfaceIndex::main()].iter() {
-            if let Node::Leaf { tabs, .. } = node {
+        for node in dock_state[SurfaceIndex::main()].iter() {
+            if let Some(tabs) = node.tabs() {
                 for tab in tabs {
                     open_tabs.insert(tab.clone());
                 }
@@ -541,7 +544,10 @@ impl Default for MyApp {
             allowed_splits: AllowedSplits::default(),
         };
 
-        Self { context, tree }
+        Self {
+            context,
+            tree: dock_state,
+        }
     }
 }
 

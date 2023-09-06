@@ -1,9 +1,9 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    epaint::TextShape, lerp, pos2, vec2, Align, Align2, CursorIcon, Frame, Id, LayerId, Layout,
-    NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
-    Ui, Vec2, WidgetText,
+    epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, LayerId,
+    Layout, NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense, Stroke,
+    TextStyle, Ui, Vec2, WidgetText,
 };
 
 use crate::{
@@ -295,28 +295,38 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 let is_lonely_tab = self.dock_state[surface_index].num_tabs() == 1;
 
-                let Node::Leaf { tabs, active, .. } =
-                    &mut self.dock_state[surface_index][node_index]
-                else {
-                    unreachable!()
-                };
-                let tab = &mut tabs[tab_index.0];
                 if self.show_tab_name_on_hover {
+                    let tabs = self.dock_state[surface_index][node_index]
+                        .tabs_mut()
+                        .expect("This node must be a leaf");
+                    let tab = &mut tabs[tab_index.0];
                     response = response.on_hover_ui(|ui| {
                         ui.label(tab_viewer.title(tab));
                     });
                 }
 
                 if self.tab_context_menus {
+                    let eject_button =
+                        Button::new(&self.dock_state.translations.tab_context_menu.eject_button);
+                    let close_button =
+                        Button::new(&self.dock_state.translations.tab_context_menu.close_button);
+
+                    let Node::Leaf { tabs, active, .. } =
+                        &mut self.dock_state[surface_index][node_index]
+                    else {
+                        unreachable!()
+                    };
+                    let tab = &mut tabs[tab_index.0];
+
                     response = response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
-                            && ui.button("Eject").clicked()
+                            && ui.add(eject_button).clicked()
                         {
                             self.to_detach.push((surface_index, node_index, tab_index));
                             ui.close_menu();
                         }
-                        if show_close_button && ui.button("Close").clicked() {
+                        if show_close_button && ui.add(close_button).clicked() {
                             if tab_viewer.on_close(tab) {
                                 self.to_remove
                                     .push((surface_index, node_index, tab_index).into());
@@ -330,6 +340,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 }
 
                 if close_clicked {
+                    let Node::Leaf { tabs, active, .. } =
+                        &mut self.dock_state[surface_index][node_index]
+                    else {
+                        unreachable!()
+                    };
+                    let tab = &mut tabs[tab_index.0];
+
                     if tab_viewer.on_close(tab) {
                         self.to_remove
                             .push((surface_index, node_index, tab_index).into());
