@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.7.0 - (to be determined)
+## 0.7.0 - 2023-09-18
 
 This is the biggest update so far, introducing the long awaited undocking feature: tabs can now be dragged out into
 new egui windows. Massive thanks to [Vickerinox](https://github.com/Vickerinox) for implementing it!
@@ -18,6 +18,7 @@ provide a guide of how to use the library.
 
 - Correctly draw a border around a dock area using the `Style::border` property. ([#139](https://github.com/Adanos020/egui_dock/pull/139))
 - Non-closable tabs now cannot be closed by clicking with the middle mouse button. ([9cdef8c](https://github.com/Adanos020/egui_dock/pull/149/commits/9cdef8cb77e73ef7a065d1313f7fb8feae0253b4))
+- Dragging tabs around now works on touchscreens. ([#180](https://github.com/Adanos020/egui_dock/pull/180))
 
 ### Added
 
