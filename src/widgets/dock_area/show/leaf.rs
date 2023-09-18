@@ -40,6 +40,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.spacing_mut().item_spacing = Vec2::ZERO;
         ui.set_clip_rect(rect);
 
+        // Delay hover position one frame. On touch screens hover_pos() is None when any_released()
+        if !ui.input(|i| i.pointer.any_released()) {
+            state.hover_pos = ui.input(|i| i.pointer.hover_pos());
+        }
+
         let tabbar_response = self.tab_bar(
             ui,
             state,
@@ -797,7 +802,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         //change hover destination
-        if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+        if let Some(pointer) = state.hover_pos {
             // Prevent borrow checker issues.
             let rect = rect.to_owned();
 
