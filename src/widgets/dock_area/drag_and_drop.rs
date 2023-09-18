@@ -429,7 +429,7 @@ fn draw_window_rect(rect: Rect, ui: &Ui, style: &Style) {
         rect,
         0.0,
         Stroke::new(
-            style.overlay.selection_storke_width,
+            style.overlay.selection_stroke_width,
             style.overlay.selection_color,
         ),
     );
