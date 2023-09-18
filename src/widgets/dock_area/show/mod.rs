@@ -67,6 +67,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .get_or_insert(Style::from_egui(ui.style().as_ref()));
         self.window_bounds.get_or_insert(ui.ctx().screen_rect());
         let mut state = State::load(ui.ctx(), self.id);
+        // Delay hover position one frame. On touch screens hover_pos() is None when any_released()
+        if !ui.input(|i| i.pointer.any_released()) {
+            state.last_hover_pos = ui.input(|i| i.pointer.hover_pos());
+        }
+
         let style = self.style.as_ref().unwrap();
         let fade_surface =
             self.hovered_window_surface(&mut state, style.overlay.feel.fade_hold_time, ui.ctx());
@@ -105,7 +110,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         for (surface_index, node_index, tab_index) in self.to_detach.drain(..).rev() {
-            let mouse_pos = ui.input(|input| input.pointer.hover_pos());
+            let mouse_pos = state.last_hover_pos;
             self.dock_state.detach_tab(
                 (surface_index, node_index, tab_index),
                 Rect::from_min_size(
@@ -214,7 +219,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             _ => todo!("collections of tabs, like nodes or surfaces, can't be dragged! (yet)"),
         };
 
-        if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
+        if let Some(pointer) = state.last_hover_pos {
             drag_state.pointer = pointer;
         }
 
