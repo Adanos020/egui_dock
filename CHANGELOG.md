@@ -1,5 +1,11 @@
 # egui_dock changelog
 
+## 0.7.1 - 2023-09-18
+
+### Fixed
+
+- (Breaking) Renamed `OverlayStyle::selection_storke_width` to `OverlayStyle::selection_stroke_width`.
+
 ## 0.7.0 - 2023-09-18
 
 This is the biggest update so far, introducing the long awaited undocking feature: tabs can now be dragged out into
