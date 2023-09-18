@@ -448,7 +448,7 @@ impl MyContext {
                 );
                 labeled_widget!(
                     ui,
-                    egui::Slider::new(&mut style.overlay.selection_storke_width, 0.0..=50.0),
+                    egui::Slider::new(&mut style.overlay.selection_stroke_width, 0.0..=50.0),
                     "Selection stroke width",
                     "width of a selection which uses a outline stroke instead of filled rect."
                 );
