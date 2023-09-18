@@ -67,13 +67,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .get_or_insert(Style::from_egui(ui.style().as_ref()));
         self.window_bounds.get_or_insert(ui.ctx().screen_rect());
         let mut state = State::load(ui.ctx(), self.id);
-        let style = self.style.as_ref().unwrap();
-
         // Delay hover position one frame. On touch screens hover_pos() is None when any_released()
         if !ui.input(|i| i.pointer.any_released()) {
             state.last_hover_pos = ui.input(|i| i.pointer.hover_pos());
         }
 
+        let style = self.style.as_ref().unwrap();
         let fade_surface =
             self.hovered_window_surface(&mut state, style.overlay.feel.fade_hold_time, ui.ctx());
         let fade_style = {
