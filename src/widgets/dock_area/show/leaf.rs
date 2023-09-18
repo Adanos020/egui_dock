@@ -40,11 +40,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.spacing_mut().item_spacing = Vec2::ZERO;
         ui.set_clip_rect(rect);
 
-        // Delay hover position one frame. On touch screens hover_pos() is None when any_released()
-        if !ui.input(|i| i.pointer.any_released()) {
-            state.hover_pos = ui.input(|i| i.pointer.hover_pos());
-        }
-
         let tabbar_response = self.tab_bar(
             ui,
             state,
@@ -172,6 +167,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         self.tab_bar_scroll(
             ui,
+            state,
             (surface_index, node_index),
             actual_width,
             available_width,
@@ -365,7 +361,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     state.drag_start = response.hover_pos();
                 }
 
-                if let Some(pos) = tabs_ui.input(|i| i.pointer.hover_pos()) {
+                if let Some(pos) = state.last_hover_pos {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
                     // the underlying tab
@@ -625,9 +621,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (response, close_response)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn tab_bar_scroll(
         &mut self,
         ui: &mut Ui,
+        state: &mut State,
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         actual_width: f32,
         available_width: f32,
@@ -677,7 +675,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 *scroll -= scroll_bar_handle_response.drag_delta().x * points_to_scroll_coefficient;
 
-                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+                if let Some(pos) = state.last_hover_pos {
                     if scroll_bar_rect.contains(pos) {
                         *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
                             * points_to_scroll_coefficient;
@@ -736,7 +734,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             *viewport = body_rect;
 
             if ui.input(|i| i.pointer.any_click()) {
-                if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+                if let Some(pos) = state.last_hover_pos {
                     if body_rect.contains(pos) && Some(ui.layer_id()) == ui.ctx().layer_id_at(pos) {
                         self.new_focused = Some((surface_index, node_index));
                     }
@@ -802,7 +800,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         //change hover destination
-        if let Some(pointer) = state.hover_pos {
+        if let Some(pointer) = state.last_hover_pos {
             // Prevent borrow checker issues.
             let rect = rect.to_owned();
 
