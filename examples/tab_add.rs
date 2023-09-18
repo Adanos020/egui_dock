@@ -2,7 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
-use egui_dock::{DockArea, NodeIndex, Style, Tree};
+use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions::default();
@@ -14,38 +14,40 @@ fn main() -> eframe::Result<()> {
 }
 
 struct TabViewer<'a> {
-    added_nodes: &'a mut Vec<NodeIndex>,
+    added_nodes: &'a mut Vec<(SurfaceIndex, NodeIndex)>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_> {
     type Tab = usize;
 
-    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        ui.label(format!("Content of tab {tab}"));
-    }
-
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
         format!("Tab {tab}").into()
     }
 
-    fn on_add(&mut self, node: NodeIndex) {
-        self.added_nodes.push(node);
+    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+        ui.label(format!("Content of tab {tab}"));
+    }
+
+    fn on_add(&mut self, surface: SurfaceIndex, node: NodeIndex) {
+        self.added_nodes.push((surface, node));
     }
 }
 
 struct MyApp {
-    tree: Tree<usize>,
+    tree: DockState<usize>,
     counter: usize,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut tree = Tree::new(vec![1, 2]);
+        let mut tree = DockState::new(vec![1, 2]);
 
         // You can modify the tree before constructing the dock
-        let [a, b] = tree.split_left(NodeIndex::root(), 0.3, vec![3]);
-        let [_, _] = tree.split_below(a, 0.7, vec![4]);
-        let [_, _] = tree.split_below(b, 0.5, vec![5]);
+        let [a, b] = tree
+            .main_surface_mut()
+            .split_left(NodeIndex::root(), 0.3, vec![3]);
+        let [_, _] = tree.main_surface_mut().split_below(a, 0.7, vec![4]);
+        let [_, _] = tree.main_surface_mut().split_below(b, 0.5, vec![5]);
 
         Self { tree, counter: 6 }
     }
@@ -58,7 +60,7 @@ impl eframe::App for MyApp {
             .show_add_buttons(true)
             .style({
                 let mut style = Style::from_egui(ctx.style().as_ref());
-                style.tabs.fill_tab_bar = true;
+                style.tab_bar.fill_tab_bar = true;
                 style
             })
             .show(
@@ -68,8 +70,8 @@ impl eframe::App for MyApp {
                 },
             );
 
-        added_nodes.drain(..).for_each(|node| {
-            self.tree.set_focused_node(node);
+        added_nodes.drain(..).for_each(|(surface, node)| {
+            self.tree.set_focused_node_and_surface((surface, node));
             self.tree.push_to_focused_leaf(self.counter);
             self.counter += 1;
         });

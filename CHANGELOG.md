@@ -1,5 +1,84 @@
 # egui_dock changelog
 
+## 0.7.0 - 2023-09-18
+
+This is the biggest update so far, introducing the long awaited undocking feature: tabs can now be dragged out into
+new egui windows. Massive thanks to [Vickerinox](https://github.com/Vickerinox) for implementing it!
+
+This update also includes an overhaul of the documentation, aiming to not only be more readable and correct, but also
+provide a guide of how to use the library.
+
+### Changed
+
+- Adjusted the styling of tabs to closer follow the egui default styling. ([#139](https://github.com/Adanos020/egui_dock/pull/139))
+- Double-clicking on a separator resets the size of both adjacent nodes. ([#146](https://github.com/Adanos020/egui_dock/pull/146))
+- Tabs can now only be dragged with the primary pointer button (e.g. left mouse button). ([#177](https://github.com/Adanos020/egui_dock/pull/177))
+
+### Fixed
+
+- Correctly draw a border around a dock area using the `Style::border` property. ([#139](https://github.com/Adanos020/egui_dock/pull/139))
+- Non-closable tabs now cannot be closed by clicking with the middle mouse button. ([9cdef8c](https://github.com/Adanos020/egui_dock/pull/149/commits/9cdef8cb77e73ef7a065d1313f7fb8feae0253b4))
+- Dragging tabs around now works on touchscreens. ([#180](https://github.com/Adanos020/egui_dock/pull/180))
+
+### Added
+
+- From [#139](https://github.com/Adanos020/egui_dock/pull/139):
+  - `Style::main_surface_border_rounding` for the rounding of the dock area border.
+  - `TabStyle::active` for the active style of a tab.
+  - `TabStyle::inactive` for the inactive style of a tab.
+  - `TabStyle::focused` for the focused style of a tab.
+  - `TabStyle::hovered` for the hovered style of a tab.
+  - `TabStyle::tab_body` for styling the body of the tab including background color, stroke color, rounding and inner margin.
+  - `TabStyle::minimum_width` to set the minimum width of the tab.
+  - `TabInteractionStyle` to style the active/inactive/focused/hovered states of a tab.
+- `AllowedSplits` enum which lets you choose in which directions a `DockArea` can be split. ([#145](https://github.com/Adanos020/egui_dock/pull/145))
+- From [#149](https://github.com/Adanos020/egui_dock/pull/149):
+  - `DockState<Tab>` containing the entire state of the tab hierarchies stored in a collection of `Surfaces`.
+  - `Surface<Tab>` enum which represents an area (e.g. a window) with its own `Tree<Tab>`.
+  - `SurfaceIndex` to identify a `Surface` stored in the `DockState`.
+  - `Split::is_tob_bottom` and `Split::is_left_right`.
+  - `TabInsert` which replaces current `TabDestination` (see breaking changes).
+  - `impl From<(SurfaceIndex, NodeIndex, TabInsert)> for TabDestination`.
+  - `impl From<SurfaceIndex> for TabDestination`.
+  - `TabDestination::is_window` (see breaking changes).
+  - `Tree::root_node` and `Tree::root_node_mut`.
+  - `Node::rect` returning the `Rect` occupied by the node.
+  - `Node::tabs` and `Node::tabs_mut` returning an optional slice of tabs if the node is a leaf.
+  - `WindowState` representing the current state of a `Surface::Window` and allowing you to manipulate the window.
+  - `OverlayStyle` (stored as `Style::overlay`) and `OverlayFeel`: they specify the look and feel of the drag-and-drop overlay.
+  - `OverlayType` letting you choose if the overlay should be the new icon buttons or the old highlighted rectangles.
+  - `LeafHighlighting` specifying how a currently hovered leaf should be highlighted.
+  - `DockArea::window_bounds` setting the area which windows are constrained by.
+  - `DockArea::show_window_close_buttons` setting determining if windows should have a close button or not.
+  - `DockArea::show_window_collapse_buttons` setting determining if windows should have a collapse button or not.
+  - `TabViewer::allowed_in_windows` specifying if a given tab can be shown in a window.
+- `TabViewer::closable` lets individual tabs be closable or not. ([#150](https://github.com/Adanos020/egui_dock/pull/150))
+- `TabViewer::scroll_bars` specifying if horizontal and vertical scrolling is enabled for given tab – replaces `DockArea::scroll_area_in_tabs` (see breaking changes). ([#160](https://github.com/Adanos020/egui_dock/pull/160))
+- `Translations` specifying what text will be displayed in some parts of the `DockingArea`, e.g. the tab context menus (defined in `TabContextMenuTranslations`). ([#178](https://github.com/Adanos020/egui_dock/pull/178)) 
+
+### Breaking changes
+
+- From [#139](https://github.com/Adanos020/egui_dock/pull/139):
+  - Moved `TabStyle::inner_margin` to `TabBodyStyle::inner_margin`.
+  - Moved `TabStyle::fill_tab_bar` to `TabBarStyle::fill_tab_bar`.
+  - Moved `TabStyle::outline_color` to `TabInteractionStyle::outline_color`.
+  - Moved `TabStyle::rounding` to `TabInteractionStyle::rounding`.
+  - Moved `TabStyle::bg_fill` to `TabInteractionStyle::bg_fill`.
+  - Moved `TabStyle::text_color_unfocused` to `TabStyle::inactive.text_color`.
+  - Moved `TabStyle::text_color_active_focused` to `TabStyle::focused.text_color`.
+  - Moved `TabStyle::text_color_active_unfocused` to `TabStyle::active.text_color`.
+  - Renamed `Style::tabs` to `Style::tab`.
+  - Removed `TabStyle::text_color_focused`. This style was practically never reachable.
+- From [#149](https://github.com/Adanos020/egui_dock/pull/149):
+  - `TabDestination` now specifies if a tab will be moved to a `Window`, a `Node`, or an `EmptySurface`. Its original purpose is now served by `TabInsert`. 
+  - `Tree::split` now panics if supplied `fraction` is not in range 0..=1.
+  - Moved `Tree::move_tab` to `DockState::move_tab`.
+  - Renamed `Style::border` to `Style::main_surface_border_stroke`.
+  - Moved `Style::selection_color` to `OverlayStyle::selection_color`.
+  - `DockArea::new` now takes in a `DockState` instead of a `Tree`.
+- Removed `DockArea::scroll_area_in_tabs` – override `TabViewer::scroll_bars` instead. ([#160](https://github.com/Adanos020/egui_dock/pull/160))
+- Methods `TabViewer::{context_menu,on_add,add_popup}` now take in an additional `SurfaceIndex` parameter. ([#167](https://github.com/Adanos020/egui_dock/pull/167))
+
 ## 0.6.3 - 2023-06-16
 
 ### Fixed

@@ -5,13 +5,25 @@
 [![docs.rs](https://img.shields.io/docsrs/egui_dock)](https://docs.rs/egui_dock/)
 
 Originally created by [@lain-dono](https://github.com/lain-dono), this library provides docking support for `egui`.
-It lets you open and close tabs, freely move them around, insert them in selected parts of the `DockArea`, and resize them.
 
-## How to contribute
-
-Feel free to open new issues and pull requests.
+## Contributing
 
 Before contributing, please read [the contribution guide](CONTRIBUTING.md).
+
+This library is a collaborative project developed with direct involvement of its users.
+
+Please feel free to open new issues and pull requests, and participate in discussions!
+A lot of our discussions take place on [`egui`'s official Discord server](https://discord.gg/JFcEma9bJq),
+in the `#egui_dock` channel.
+
+## Features
+
+- Opening and closing tabs.
+- Moving tabs between nodes and resizing.
+- Dragging tabs out into new `egui` windows.
+- Highly customizable look and feel.
+- High degree of control over behaviour of the whole dock area and of individual tabs.
+- Manipulating tabs and dock layout from code.
 
 ## Quick start
 
@@ -20,7 +32,7 @@ Add `egui` and `egui_dock` to your project's dependencies.
 ```toml
 [dependencies]
 egui = "0.22"
-egui_dock = "0.6"
+egui_dock = "0.7"
 ```
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
