@@ -1,9 +1,9 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, LayerId,
-    Layout, NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense, Stroke,
-    TextStyle, Ui, Vec2, WidgetText,
+    epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, Color32, CursorIcon, Frame, Id,
+    LayerId, Layout, NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense,
+    Stroke, TextStyle, Ui, Vec2, WidgetText,
 };
 
 use crate::{
@@ -781,7 +781,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             ui.painter().rect(
                 rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
                 tabs_style.tab_body.rounding,
-                tabs_style.tab_body.bg_fill,
+                Color32::TRANSPARENT,
                 tabs_style.tab_body.stroke,
             );
 
