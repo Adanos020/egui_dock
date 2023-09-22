@@ -1,5 +1,11 @@
 # egui_dock changelog
 
+## 0.7.3 - 2023-09-22
+
+### Fixed
+
+- The "Eject" button is not available on tabs which are disallowed in windows. ([#188](https://github.com/Adanos020/egui_dock/pull/188))
+
 ## 0.7.2 - 2023-09-20
 
 ### Fixed

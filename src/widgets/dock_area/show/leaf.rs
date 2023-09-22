@@ -322,6 +322,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     response = response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
+                            && tab_viewer.allowed_in_windows(tab)
                             && ui.add(eject_button).clicked()
                         {
                             self.to_detach.push((surface_index, node_index, tab_index));
