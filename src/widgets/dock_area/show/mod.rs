@@ -415,7 +415,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     style.separator.color_idle
                 };
 
-                ui.painter().rect_filled(separator, Rounding::none(), color);
+                ui.painter().rect_filled(separator, Rounding::ZERO, color);
 
                 // Update 'fraction' interaction after drawing separator,
                 // otherwise it may overlap on other separator / bodies when

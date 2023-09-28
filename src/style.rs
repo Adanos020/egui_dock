@@ -446,7 +446,7 @@ impl Style {
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             main_surface_border_stroke: Stroke::NONE,
-            main_surface_border_rounding: Rounding::none(),
+            main_surface_border_rounding: Rounding::ZERO,
             buttons: ButtonsStyle::from_egui(style),
             separator: SeparatorStyle::from_egui(style),
             tab_bar: TabBarStyle::from_egui(style),

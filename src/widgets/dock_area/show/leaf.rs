@@ -444,7 +444,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let color = if response.hovered() {
             ui.painter()
-                .rect_filled(rect, Rounding::none(), style.buttons.add_tab_bg_fill);
+                .rect_filled(rect, Rounding::ZERO, style.buttons.add_tab_bg_fill);
             style.buttons.add_tab_active_color
         } else {
             style.buttons.add_tab_color
