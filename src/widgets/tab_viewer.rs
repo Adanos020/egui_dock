@@ -1,7 +1,7 @@
 use crate::{NodeIndex, SurfaceIndex, TabStyle};
 use egui::{Id, Ui, WidgetText};
 
-/// Defines how to display a tab inside a [`Tree`](crate::Tree).
+/// Defines how a tab should behave and be rendered inside a [`Tree`](crate::Tree).
 pub trait TabViewer {
     /// The type of tab in which you can store state to be drawn in your tabs.
     type Tab;
@@ -14,8 +14,8 @@ pub trait TabViewer {
 
     /// Content inside the context menu shown when the tab is right-clicked.
     ///
-    /// `_surface` and `_node` specify which [`Surface`](crate::Surface) and [`Node`](crate::Node) that this particular
-    /// context menu belongs to.
+    /// `_surface` and `_node` specify which [`Surface`](crate::Surface) and [`Node`](crate::Node)
+    /// that this particular context menu belongs to.
     fn context_menu(
         &mut self,
         _ui: &mut Ui,
@@ -27,7 +27,7 @@ pub trait TabViewer {
 
     /// Unique ID for this tab.
     ///
-    /// If not implemented, uses tab title text as an id source.
+    /// If not implemented, uses tab title text as an ID source.
     fn id(&mut self, tab: &mut Self::Tab) -> Id {
         Id::new(self.title(tab).text())
     }
@@ -35,27 +35,27 @@ pub trait TabViewer {
     /// Called after each tab button is shown, so you can add a tooltip, check for clicks, etc.
     fn on_tab_button(&mut self, _tab: &mut Self::Tab, _response: &egui::Response) {}
 
-    /// Called before showing the close button.
+    /// Returns `true` if the user of your app should be able to close a given `_tab`.
     ///
-    /// Return `false` if the close buttons should not be shown.
+    /// By default `true` is always returned.
     fn closeable(&mut self, _tab: &mut Self::Tab) -> bool {
         true
     }
 
-    /// This is called when the tabs close button is pressed.
+    /// This is called when the `_tab` gets closed by the user.
     ///
     /// Returns `true` if the tab should close immediately, otherwise `false`.
     ///
-    /// **Note**: if `false` is returned, [`ui`](Self::ui) will still be called once more if this tab is active.
+    /// **Note**: if `false` is returned, [`ui`](Self::ui) will still be called once more if this
+    /// tab is active.
     fn on_close(&mut self, _tab: &mut Self::Tab) -> bool {
         true
     }
 
-    /// This is called when the tabs add button is pressed and if the dock [`Style`](crate::Style)'s
-    /// `show_add_buttons` is set to `true`.
+    /// This is called when the add button is pressed.
     ///
-    /// `_surface` and `_node` specify which surface and which [`Node`](crate::Node) this particular add button was
-    /// pressed on.
+    /// `_surface` and `_node` specify which [`Surface`](crate::Surface) and on which
+    /// [`Node`](crate::Node) this particular add button was pressed.
     fn on_add(&mut self, _surface: SurfaceIndex, _node: NodeIndex) {}
 
     /// Content of the popup under the add button. Useful for selecting what type of tab to add.
@@ -80,18 +80,20 @@ pub trait TabViewer {
 
     /// Specifies a tab's ability to be shown in a window.
     ///
-    /// Return `false` if you don't want this tab to be turned into a window.
+    /// Returns `false` if this tab should never be turned into a window.
     fn allowed_in_windows(&self, _tab: &mut Self::Tab) -> bool {
         true
     }
 
-    /// Whether the tab will be cleared with the color specified in [`TabBarStyle::bg_fill`](crate::TabBarStyle::bg_fill).
+    /// Whether the tab body will be cleared with the color specified in
+    /// [`TabBarStyle::bg_fill`](crate::TabBarStyle::bg_fill).
     fn clear_background(&self, _tab: &Self::Tab) -> bool {
         true
     }
 
-    /// If the horizontal and vertical scroll bars are shown for `tab`.
-    /// By Default, both scroll bars are shown.
+    /// Returns `true` if the horizontal and vertical scroll bars will be shown for `tab`.
+    ///
+    /// By default, both scroll bars are shown.
     fn scroll_bars(&self, _tab: &Self::Tab) -> [bool; 2] {
         [true, true]
     }
