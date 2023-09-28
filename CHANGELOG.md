@@ -3,8 +3,11 @@
 ## 0.8.0 - 2023-09-28
 
 ### Breaking changes
-- Upgraded `egui` to version 0.23
-- Updated MSRV to Rust 1.70
+- Upgraded `egui` to version 0.23.
+- Updated MSRV to Rust 1.70.
+
+### Improvements
+- Revised documentation for `TabViewer`.
 
 ## 0.7.3 - 2023-09-22
 
