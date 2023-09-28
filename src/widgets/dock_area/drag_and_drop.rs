@@ -272,8 +272,8 @@ impl DragDropState {
             // A reverse lerp of the pointers position relative to the hovered leaf rect.
             // Range is (-0.5, -0.5) to (0.5, 0.5)
             let a_pos = (Pos2::new(
-                inverse_lerp(hover_rect.x_range(), pointer.x).unwrap(),
-                inverse_lerp(hover_rect.y_range(), pointer.y).unwrap(),
+                inverse_lerp(hover_rect.x_range().into(), pointer.x).unwrap(),
+                inverse_lerp(hover_rect.y_range().into(), pointer.y).unwrap(),
             ) - Pos2::new(0.5, 0.5))
             .to_pos2();
 
