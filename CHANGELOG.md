@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.8.1 - 2023-10-04
+
+### Fixed
+- The tab bar no longer remains empty after it ends up having 0 width in any way. ([#191](https://github.com/Adanos020/egui_dock/pull/191))
+
 ## 0.8.0 - 2023-09-28
 
 ### Breaking changes
