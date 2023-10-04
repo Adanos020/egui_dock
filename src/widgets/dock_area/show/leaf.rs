@@ -40,7 +40,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.spacing_mut().item_spacing = Vec2::ZERO;
         ui.set_clip_rect(rect);
 
-        let tabbar_response = self.tab_bar(
+        let tabbar_rect = self.tab_bar(
             ui,
             state,
             (surface_index, node_index),
@@ -53,7 +53,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             (surface_index, node_index),
             tab_viewer,
             spacing,
-            tabbar_response,
+            tabbar_rect,
             fade_style,
         );
 
@@ -75,7 +75,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         fade_style: Option<&Style>,
-    ) -> Response {
+    ) -> Rect {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
@@ -90,6 +90,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
 
         let mut available_width = tabbar_outer_rect.width();
+        if available_width == 0.0 {
+            return tabbar_outer_rect;
+        }
 
         // Reserve space for the add button at the end of the tab bar.
         if self.show_add_buttons {
@@ -175,7 +178,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             fade_style,
         );
 
-        tabbar_response
+        tabbar_outer_rect
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -633,6 +636,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tabbar_response: &Response,
         fade_style: Option<&Style>,
     ) {
+        assert_ne!(available_width, 0.0);
+
         let Node::Leaf { scroll, .. } = &mut self.dock_state[surface_index][node_index] else {
             unreachable!()
         };
@@ -646,7 +651,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 // Draw scroll bar
                 let bar_height = 7.5;
                 let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
-                    vec2(ui.available_width(), bar_height),
+                    vec2(available_width, bar_height),
                     Sense::click_and_drag(),
                 );
 
@@ -714,7 +719,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         spacing: Vec2,
-        tabbar_response: Response,
+        tabbar_rect: Rect,
         fade: Option<(&Style, f32)>,
     ) {
         let (body_rect, _body_response) =
@@ -827,7 +832,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // Use rect.contains instead of response.hovered as the dragged tab covers
             // the underlying responses.
             if state.drag_start.is_some() && rect.contains(pointer) && is_dragged_valid {
-                let on_title_bar = tabbar_response.rect.contains(pointer);
+                let on_title_bar = tabbar_rect.contains(pointer);
                 let (dst, tab) = {
                     match self.tab_hover_rect {
                         Some((rect, tab_index)) => (
@@ -836,7 +841,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         ),
                         None => (
                             TreeComponent::Node(surface_index, node_index),
-                            on_title_bar.then_some(tabbar_response.rect),
+                            on_title_bar.then_some(tabbar_rect),
                         ),
                     }
                 };
