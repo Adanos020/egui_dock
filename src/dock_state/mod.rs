@@ -379,6 +379,11 @@ impl<Tab> DockState<Tab> {
         self[SurfaceIndex::main()].iter()
     }
 
+    /// Returns a mutable `Iterator` of the underlying collection of nodes on the main surface.
+    pub fn iter_main_surface_nodes_mut(&mut self) -> std::slice::IterMut<'_, Node<Tab>> {
+      self[SurfaceIndex::main()].iter_mut()
+  }
+
     /// Returns an `Iterator` of **all** underlying nodes in the dock state and all subsequent trees.
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self.surfaces
@@ -387,13 +392,13 @@ impl<Tab> DockState<Tab> {
             .flat_map(|nodes| nodes.iter())
     }
 
-    /// Returns an `IteratorMut` of **all** underlying nodes in the dock state and all subsequent trees.
+    /// Returns a mutable `Iterator` of **all** underlying nodes in the dock state and all subsequent trees.
     pub fn iter_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
-      self.surfaces
-          .iter_mut()
-          .filter_map(|tree| tree.node_tree_mut())
-          .flat_map(|nodes| nodes.iter_mut())
-  }
+        self.surfaces
+            .iter_mut()
+            .filter_map(|tree| tree.node_tree_mut())
+            .flat_map(|nodes| nodes.iter_mut())
+    }
 }
 
 impl<Tab> DockState<Tab>
