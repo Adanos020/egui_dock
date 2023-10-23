@@ -388,11 +388,11 @@ impl<Tab> DockState<Tab> {
     }
 
     /// Returns an `IteratorMut` of **all** underlying nodes in the dock state and all subsequent trees.
-    pub fn iter_nodes_mut(&mut self) -> impl Iterator<Item = &Node<Tab>> {
+    pub fn iter_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
       self.surfaces
           .iter_mut()
-          .filter_map(|tree| tree.node_tree())
-          .flat_map(|nodes| nodes.iter())
+          .filter_map(|tree| tree.node_tree_mut())
+          .flat_map(|nodes| nodes.iter_mut())
   }
 }
 
