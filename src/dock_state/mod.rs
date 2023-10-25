@@ -381,8 +381,8 @@ impl<Tab> DockState<Tab> {
 
     /// Returns a mutable `Iterator` of the underlying collection of nodes on the main surface.
     pub fn iter_main_surface_nodes_mut(&mut self) -> std::slice::IterMut<'_, Node<Tab>> {
-      self[SurfaceIndex::main()].iter_mut()
-  }
+        self[SurfaceIndex::main()].iter_mut()
+    }
 
     /// Returns an `Iterator` of **all** underlying nodes in the dock state and all subsequent trees.
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
