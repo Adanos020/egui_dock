@@ -2,13 +2,17 @@
 
 ## 0.9.0 - undetermined
 
+### Added
+- `DockArea::iter_surfaces[_mut]`
+- `DockArea::iter_all_tabs[_mut]`
+- `DockArea::iter_all_nodes[_mut]`
+
 ### Breaking changes
 - Removed the deprecated `DockState::iter`
 
 ### Deprecated
-- `DockState::iter_main_surface_nodes`
-- `DockState::iter_main_surface_nodes_mut`
-- `DockState::iter_nodes`
+- `DockState::iter_nodes` - use `iter_all_nodes` instead.
+- `DockState::iter_main_surface_nodes[_mut]` - use `dock_state.main_surface[_mut]().iter[_mut]()` instead.
 
 ## 0.8.1 - 2023-10-04
 
