@@ -15,8 +15,8 @@
 - Removed the deprecated `DockState::iter`
 
 ### Deprecated
-- `DockState::iter_nodes` - use `iter_all_nodes` instead.
-- `DockState::iter_main_surface_nodes[_mut]` - use `dock_state.main_surface[_mut]().iter[_mut]()` instead.
+- `DockState::iter_nodes` – use `iter_all_nodes` instead.
+- `DockState::iter_main_surface_nodes[_mut]` – use `dock_state.main_surface().iter()` (and corresponding `mut` versions) instead.
 
 ## 0.8.1 - 2023-10-04
 
