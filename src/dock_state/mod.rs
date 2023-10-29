@@ -384,13 +384,13 @@ impl<Tab> DockState<Tab> {
     }
 
     /// Returns an `Iterator` of the underlying collection of nodes on the main surface.
-    #[deprecated("Use `dock_state.main_surface().iter()` instead")]
+    #[deprecated = "Use `dock_state.main_surface().iter()` instead"]
     pub fn iter_main_surface_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self[SurfaceIndex::main()].iter()
     }
 
     /// Returns a mutable `Iterator` of the underlying collection of nodes on the main surface.
-    #[deprecated("Use `dock_state.main_surface_mut().iter_mut()` instead")]
+    #[deprecated = "Use `dock_state.main_surface_mut().iter_mut()` instead"]
     pub fn iter_main_surface_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
         self[SurfaceIndex::main()].iter_mut()
     }
@@ -404,11 +404,10 @@ impl<Tab> DockState<Tab> {
             .flat_map(|nodes| nodes.iter())
     }
 
-    /// Returns an `Iterator` of **all** underlying nodes in the dock state
+    /// Returns an `Iterator` of **all** underlying nodes in the dock state,
     /// and the indices of containing surfaces.
     pub fn iter_all_nodes(&self) -> impl Iterator<Item = (SurfaceIndex, &Node<Tab>)> {
-        self.surfaces
-            .iter()
+        self.iter_surfaces()
             .enumerate()
             .filter_map(|(index, surface)| {
                 surface
@@ -418,11 +417,10 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, tree)| tree.iter().map(move |node| (surface_index, node)))
     }
 
-    /// Returns a mutable `Iterator` of **all** underlying nodes in the dock state
+    /// Returns a mutable `Iterator` of **all** underlying nodes in the dock state,
     /// and the indices of containing surfaces.
     pub fn iter_all_nodes_mut(&mut self) -> impl Iterator<Item = (SurfaceIndex, &mut Node<Tab>)> {
-        self.surfaces
-            .iter_mut()
+        self.iter_surfaces_mut()
             .enumerate()
             .filter_map(|(index, surface)| {
                 surface
@@ -432,6 +430,32 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, tree)| {
                 tree.iter_mut().map(move |node| (surface_index, node))
             })
+    }
+
+    /// Returns an `Iterator` of **all** tabs in the dock state,
+    /// and the indices of containing surfaces and nodes.
+    pub fn iter_all_tabs(&self) -> impl Iterator<Item = ((SurfaceIndex, NodeIndex), &Tab)> {
+        self.iter_all_nodes()
+            .enumerate()
+            .filter_map(|(node_index, (surface_index, node))| {
+                node.tabs()
+                    .map(move |tabs| ((surface_index, NodeIndex(node_index)), tabs))
+            })
+            .flat_map(|(indices, tabs)| tabs.iter().map(move |tab| (indices, tab)))
+    }
+
+    /// Returns an `Iterator` of **all** tabs in the dock state,
+    /// and the indices of containing surfaces and nodes.
+    pub fn iter_all_tabs_mut(
+        &mut self,
+    ) -> impl Iterator<Item = ((SurfaceIndex, NodeIndex), &mut Tab)> {
+        self.iter_all_nodes_mut()
+            .enumerate()
+            .filter_map(|(node_index, (surface_index, node))| {
+                node.tabs_mut()
+                    .map(move |tabs| ((surface_index, NodeIndex(node_index)), tabs))
+            })
+            .flat_map(|(indices, tabs)| tabs.iter_mut().map(move |tab| (indices, tab)))
     }
 }
 
