@@ -368,6 +368,21 @@ impl<Tab> DockState<Tab> {
         self[SurfaceIndex::main()].push_to_first_leaf(tab);
     }
 
+    /// Returns the current number of surfaces.
+    pub fn num_surfaces(&self) -> usize {
+        self.surfaces.len()
+    }
+
+    /// Returns an `Iterator` over all surfaces.
+    pub fn iter_surfaces(&self) -> impl Iterator<Item = &Surface<Tab>> {
+        self.surfaces.iter()
+    }
+
+    /// Returns a mutable `Iterator` over all surfaces.
+    pub fn iter_surfaces_mut(&mut self) -> impl Iterator<Item = &mut Surface<Tab>> {
+        self.surfaces.iter_mut()
+    }
+
     /// Returns an `Iterator` of the underlying collection of nodes on the main surface.
     pub fn iter_main_surface_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self[SurfaceIndex::main()].iter()
