@@ -3,9 +3,12 @@
 ## 0.9.0 - undetermined
 
 ### Added
+- `DockArea::surfaces_count`
 - `DockArea::iter_surfaces[_mut]`
 - `DockArea::iter_all_tabs[_mut]`
 - `DockArea::iter_all_nodes[_mut]`
+- `Surface::iter_nodes[_mut]`
+- `Surface::iter_all_tabs[_mut]`
 
 ### Breaking changes
 - Removed the deprecated `DockState::iter`

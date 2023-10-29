@@ -22,7 +22,7 @@ impl<'a, Tab> Iterator for TabIter<'a, Tab> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            match self.tree.tree.get(self.node_idx)?.tabs() {
+            match self.tree.nodes.get(self.node_idx)?.tabs() {
                 Some(tabs) => match tabs.get(self.tab_idx) {
                     Some(tab) => {
                         self.tab_idx += 1;
