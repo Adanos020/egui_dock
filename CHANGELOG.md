@@ -7,6 +7,7 @@
 - `DockArea::iter_surfaces[_mut]`
 - `DockArea::iter_all_tabs[_mut]`
 - `DockArea::iter_all_nodes[_mut]`
+- `Node::iter_tabs[_mut]`
 - `Surface::iter_nodes[_mut]`
 - `Surface::iter_all_tabs[_mut]`
 
