@@ -40,7 +40,9 @@ impl<Tab> Surface<Tab> {
         }
     }
 
-    /// Returns an `Iterator` of nodes in this surface's tree.
+    /// Returns an [`Iterator`] of nodes in this surface's tree.
+    ///
+    /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         match self.node_tree() {
             Some(tree) => tree.iter(),
@@ -48,7 +50,9 @@ impl<Tab> Surface<Tab> {
         }
     }
 
-    /// Returns a mutable `Iterator` of nodes in this surface's tree.
+    /// Returns a mutable [`Iterator`] of nodes in this surface's tree.
+    ///
+    /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
     pub fn iter_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
         match self.node_tree_mut() {
             Some(tree) => tree.iter_mut(),
@@ -56,27 +60,19 @@ impl<Tab> Surface<Tab> {
         }
     }
 
-    /// Returns an `Iterator` of **all** tabs in this surface's tree,
+    /// Returns an [`Iterator`] of **all** tabs in this surface's tree,
     /// and indices of containing nodes.
     pub fn iter_all_tabs(&self) -> impl Iterator<Item = (NodeIndex, &Tab)> {
         self.iter_nodes()
             .enumerate()
-            .filter_map(|(index, node)| {
-                node.tabs()
-                    .map(|tabs| tabs.iter().map(move |tab| (NodeIndex(index), tab)))
-            })
-            .flatten()
+            .flat_map(|(index, node)| node.iter_tabs().map(move |tab| (NodeIndex(index), tab)))
     }
 
-    /// Returns a mutable `Iterator` of **all** tabs in this surface's tree,
+    /// Returns a mutable [`Iterator`] of **all** tabs in this surface's tree,
     /// and indices of containing nodes.
     pub fn iter_all_tabs_mut(&mut self) -> impl Iterator<Item = (NodeIndex, &mut Tab)> {
         self.iter_nodes_mut()
             .enumerate()
-            .filter_map(|(index, node)| {
-                node.tabs_mut()
-                    .map(|tabs| tabs.iter_mut().map(move |tab| (NodeIndex(index), tab)))
-            })
-            .flatten()
+            .flat_map(|(index, node)| node.iter_tabs_mut().map(move |tab| (NodeIndex(index), tab)))
     }
 }
