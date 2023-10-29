@@ -384,11 +384,13 @@ impl<Tab> DockState<Tab> {
     }
 
     /// Returns an `Iterator` of the underlying collection of nodes on the main surface.
+    #[deprecated("Use `dock_state.main_surface().iter()` instead")]
     pub fn iter_main_surface_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self[SurfaceIndex::main()].iter()
     }
 
     /// Returns a mutable `Iterator` of the underlying collection of nodes on the main surface.
+    #[deprecated("Use `dock_state.main_surface_mut().iter_mut()` instead")]
     pub fn iter_main_surface_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
         self[SurfaceIndex::main()].iter_mut()
     }

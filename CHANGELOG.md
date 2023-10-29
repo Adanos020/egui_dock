@@ -5,6 +5,9 @@
 ### Breaking changes
 - Removed the deprecated `DockState::iter`
 
+### Deprecated
+- `DockState::iter_main_surface_nodes` and `DockState::iter_main_surface_nodes_mut`.
+
 ## 0.8.1 - 2023-10-04
 
 ### Fixed
