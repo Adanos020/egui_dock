@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.9.0 - undetermined
+
+### Breaking changes
+- Removed the deprecated `DockState::iter`
+
 ## 0.8.1 - 2023-10-04
 
 ### Fixed

@@ -368,12 +368,6 @@ impl<Tab> DockState<Tab> {
         self[SurfaceIndex::main()].push_to_first_leaf(tab);
     }
 
-    /// Returns an `Iterator` of the underlying collection of nodes on the **main surface**.
-    #[deprecated = "Use `iter_main_surface_nodes` or `iter_nodes` instead"]
-    pub fn iter(&self) -> std::slice::Iter<'_, Node<Tab>> {
-        self.iter_main_surface_nodes()
-    }
-
     /// Returns an `Iterator` of the underlying collection of nodes on the main surface.
     pub fn iter_main_surface_nodes(&self) -> std::slice::Iter<'_, Node<Tab>> {
         self[SurfaceIndex::main()].iter()
