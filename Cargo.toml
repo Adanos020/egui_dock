@@ -2,7 +2,7 @@
 name = "egui_dock"
 description = "Docking system for `egui` - an immediate-mode GUI library for Rust"
 authors = ["lain-dono", "Adam Gąsior (Adanos020)"]
-version = "0.8.1"
+version = "0.9.0"
 edition = "2021"
 rust-version = "1.70"
 license = "MIT"
