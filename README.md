@@ -5,7 +5,7 @@
 [![docs.rs](https://img.shields.io/docsrs/egui_dock)](https://docs.rs/egui_dock/)
 [![egui_version](https://img.shields.io/badge/egui-0.23-blue)](https://github.com/emilk/egui)
 
-Originally created by [@lain-dono](https://github.com/lain-dono), this library provides docking support for `egui`.
+Originally created by [@lain-dono](https://github.com/lain-dono), this library provides a docking system for `egui`.
 
 ## Contributing
 
@@ -33,7 +33,7 @@ Add `egui` and `egui_dock` to your project's dependencies.
 ```toml
 [dependencies]
 egui = "0.23"
-egui_dock = "0.8"
+egui_dock = "0.9"
 ```
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
