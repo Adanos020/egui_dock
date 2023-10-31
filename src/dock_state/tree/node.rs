@@ -191,6 +191,28 @@ impl<Tab> Node<Tab> {
         }
     }
 
+    /// Returns an [`Iterator`] of tabs in this node.
+    ///
+    /// If this node is not a [`Leaf`](Self::Leaf), then the returned [`Iterator`] will be empty.
+    #[inline]
+    pub fn iter_tabs(&self) -> impl Iterator<Item = &Tab> {
+        match self.tabs() {
+            Some(tabs) => tabs.iter(),
+            None => core::slice::Iter::default(),
+        }
+    }
+
+    /// Returns a mutable [`Iterator`] of tabs in this node.
+    ///
+    /// If this node is not a [`Leaf`](Self::Leaf), then the returned [`Iterator`] will be empty.
+    #[inline]
+    pub fn iter_tabs_mut(&mut self) -> impl Iterator<Item = &mut Tab> {
+        match self.tabs_mut() {
+            Some(tabs) => tabs.iter_mut(),
+            None => core::slice::IterMut::default(),
+        }
+    }
+
     /// Adds `tab` to the node and sets it as the active tab.
     ///
     /// # Panics

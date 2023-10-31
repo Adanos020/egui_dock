@@ -1,4 +1,4 @@
-use crate::{Tree, WindowState};
+use crate::{Node, NodeIndex, Tree, WindowState};
 
 /// A [`Surface`] is the highest level component in a [`DockState`](crate::DockState). [`Surface`]s represent an area
 /// in which nodes are placed. Typically, you're only using one surface, which is the main surface. However, if you drag
@@ -22,6 +22,15 @@ impl<Tab> Surface<Tab> {
         matches!(self, Self::Empty)
     }
 
+    /// Get access to the node tree of this surface.
+    pub fn node_tree(&self) -> Option<&Tree<Tab>> {
+        match self {
+            Surface::Empty => None,
+            Surface::Main(tree) => Some(tree),
+            Surface::Window(tree, _) => Some(tree),
+        }
+    }
+
     /// Get mutable access to the node tree of this surface.
     pub fn node_tree_mut(&mut self) -> Option<&mut Tree<Tab>> {
         match self {
@@ -31,12 +40,39 @@ impl<Tab> Surface<Tab> {
         }
     }
 
-    /// Get access to the node tree of this surface.
-    pub fn node_tree(&self) -> Option<&Tree<Tab>> {
-        match self {
-            Surface::Empty => None,
-            Surface::Main(tree) => Some(tree),
-            Surface::Window(tree, _) => Some(tree),
+    /// Returns an [`Iterator`] of nodes in this surface's tree.
+    ///
+    /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
+    pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
+        match self.node_tree() {
+            Some(tree) => tree.iter(),
+            None => core::slice::Iter::default(),
         }
+    }
+
+    /// Returns a mutable [`Iterator`] of nodes in this surface's tree.
+    ///
+    /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
+    pub fn iter_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
+        match self.node_tree_mut() {
+            Some(tree) => tree.iter_mut(),
+            None => core::slice::IterMut::default(),
+        }
+    }
+
+    /// Returns an [`Iterator`] of **all** tabs in this surface's tree,
+    /// and indices of containing nodes.
+    pub fn iter_all_tabs(&self) -> impl Iterator<Item = (NodeIndex, &Tab)> {
+        self.iter_nodes()
+            .enumerate()
+            .flat_map(|(index, node)| node.iter_tabs().map(move |tab| (NodeIndex(index), tab)))
+    }
+
+    /// Returns a mutable [`Iterator`] of **all** tabs in this surface's tree,
+    /// and indices of containing nodes.
+    pub fn iter_all_tabs_mut(&mut self) -> impl Iterator<Item = (NodeIndex, &mut Tab)> {
+        self.iter_nodes_mut()
+            .enumerate()
+            .flat_map(|(index, node)| node.iter_tabs_mut().map(move |tab| (NodeIndex(index), tab)))
     }
 }
