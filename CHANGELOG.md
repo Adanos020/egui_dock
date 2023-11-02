@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.8.2 - 2023-11-02
+
+### Fixed
+- Deserializing `WindowState` no longer crashes when `screen_rect` contains any `f32::INFINITY` values. Make sure to fix your last serialized app state by setting `screen_rect: null`. ([#198](https://github.com/Adanos020/egui_dock/pull/198))
+
 ## 0.8.1 - 2023-10-04
 
 ### Fixed

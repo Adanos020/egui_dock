@@ -264,7 +264,7 @@ impl<Tab> Tree<Tab> {
     /// assert_eq!(root_node.tabs(), Some(["single tab"].as_slice()));
     /// ```
     pub fn root_node(&self) -> Option<&Node<Tab>> {
-        self.tree.get(0)
+        self.tree.first()
     }
 
     /// Acquire a mutable borrow to the [`Node`] at the root of the tree.
@@ -282,7 +282,7 @@ impl<Tab> Tree<Tab> {
     /// assert_eq!(root_node.tabs(), Some(["single tab", "partner tab"].as_slice()));
     /// ```
     pub fn root_node_mut(&mut self) -> Option<&mut Node<Tab>> {
-        self.tree.get_mut(0)
+        self.tree.first_mut()
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
