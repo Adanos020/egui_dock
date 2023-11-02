@@ -7,7 +7,7 @@ use egui::{Id, Pos2, Rect, Vec2};
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct WindowState {
     /// The [`Rect`] that this window was last taking up.
-    screen_rect: Rect,
+    screen_rect: Option<Rect>,
 
     /// Was this window dragged in the last frame?
     dragged: bool,
@@ -26,7 +26,7 @@ pub struct WindowState {
 impl Default for WindowState {
     fn default() -> Self {
         Self {
-            screen_rect: Rect::NOTHING,
+            screen_rect: None,
             dragged: false,
             next_position: None,
             next_size: None,
@@ -56,7 +56,7 @@ impl WindowState {
     /// Get the [`Rect`] which this window occupies.
     /// If this window hasn't been shown before, this will be [`Rect::NOTHING`].
     pub fn rect(&self) -> Rect {
-        self.screen_rect
+        self.screen_rect.unwrap_or(Rect::NOTHING)
     }
 
     /// Returns if this window is currently being dragged or not.
