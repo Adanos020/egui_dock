@@ -56,6 +56,9 @@ impl WindowState {
     /// Get the [`Rect`] which this window occupies.
     /// If this window hasn't been shown before, this will be [`Rect::NOTHING`].
     pub fn rect(&self) -> Rect {
+        // The reason why we're unwrapping an Option with a default value instead of
+        // just storing Rect::NOTHING for the None variant is that deserializing Rect::NOTHING
+        // with serde_json causes a panic, because f32::INFINITY serializes into null in JSON.
         self.screen_rect.unwrap_or(Rect::NOTHING)
     }
 
