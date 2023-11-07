@@ -39,7 +39,7 @@ impl<Tab> Surface<Tab> {
             Surface::Window(tree, _) => Some(tree),
         }
     }
-  
+
     /// Returns an [`Iterator`] of nodes in this surface's tree.
     ///
     /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
