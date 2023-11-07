@@ -737,13 +737,16 @@ impl<Tab> Tree<Tab> {
     where
         F: FnMut(&Tab) -> NewTab + Clone,
     {
-        let Tree { focused_node, tree } = self;
-        let tree = tree
+        let Tree {
+            focused_node,
+            nodes,
+        } = self;
+        let nodes = nodes
             .iter()
             .map(|node| node.map_tabs(function.clone()))
             .collect();
         Tree {
-            tree,
+            nodes,
             focused_node: *focused_node,
         }
     }
