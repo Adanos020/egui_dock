@@ -453,6 +453,27 @@ impl<Tab> DockState<Tab> {
             .filter_map(|surface| surface.node_tree())
             .flat_map(|nodes| nodes.iter())
     }
+
+    /// Returns a new DockState while mapping the tab type
+    pub fn map_tabs<F, NewTab>(&self, function: F) -> DockState<NewTab>
+    where
+        F: FnMut(&Tab) -> NewTab + Clone,
+    {
+        let DockState {
+            surfaces,
+            focused_surface,
+            translations,
+        } = self;
+        let surfaces = surfaces
+            .iter()
+            .map(|surface| surface.map_tabs(function.clone()))
+            .collect();
+        DockState {
+            surfaces,
+            focused_surface: *focused_surface,
+            translations: translations.clone(),
+        }
+    }
 }
 
 impl<Tab> DockState<Tab>

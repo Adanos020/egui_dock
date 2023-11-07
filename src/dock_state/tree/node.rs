@@ -288,4 +288,35 @@ impl<Tab> Node<Tab> {
             _ => Default::default(),
         }
     }
+
+    /// Returns a new Node while mapping the tab type
+    pub fn map_tabs<F, NewTab>(&self, function: F) -> Node<NewTab>
+    where
+        F: FnMut(&Tab) -> NewTab,
+    {
+        match self {
+            Node::Leaf {
+                rect,
+                viewport,
+                tabs,
+                active,
+                scroll,
+            } => Node::Leaf {
+                rect: *rect,
+                viewport: *viewport,
+                tabs: tabs.iter().map(function).collect(),
+                active: *active,
+                scroll: *scroll,
+            },
+            Node::Empty => Node::Empty,
+            Node::Vertical { rect, fraction } => Node::Vertical {
+                rect: *rect,
+                fraction: *fraction,
+            },
+            Node::Horizontal { rect, fraction } => Node::Horizontal {
+                rect: *rect,
+                fraction: *fraction,
+            },
+        }
+    }
 }

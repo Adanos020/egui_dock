@@ -75,4 +75,18 @@ impl<Tab> Surface<Tab> {
             .enumerate()
             .flat_map(|(index, node)| node.iter_tabs_mut().map(move |tab| (NodeIndex(index), tab)))
     }
+
+    /// Returns a new Surface while mapping the tab type
+    pub fn map_tabs<F, NewTab>(&self, function: F) -> Surface<NewTab>
+    where
+        F: FnMut(&Tab) -> NewTab + Clone,
+    {
+        match self {
+            Surface::Empty => Surface::Empty,
+            Surface::Main(tree) => Surface::Main(tree.map_tabs(function)),
+            Surface::Window(tree, window_state) => {
+                Surface::Window(tree.map_tabs(function), window_state.clone())
+            }
+        }
+    }
 }
