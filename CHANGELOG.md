@@ -12,7 +12,8 @@
 - `Surface::iter_all_tabs[_mut]`
 
 ### Breaking changes
-- Removed the deprecated `DockState::iter`
+- Upgraded to egui 0.24.
+- Removed the deprecated `DockState::iter`.
 
 ### Deprecated
 - `DockState::iter_nodes` – use `iter_all_nodes` instead.
