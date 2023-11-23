@@ -5,7 +5,8 @@ use std::collections::HashSet;
 use eframe::{egui, NativeOptions};
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
-    CentralPanel, ComboBox, Frame, Rounding, Slider, TopBottomPanel, Ui, WidgetText,
+    vec2, CentralPanel, ComboBox, Frame, Rounding, Slider, TopBottomPanel, Ui, ViewportBuilder,
+    WidgetText,
 };
 
 use egui_dock::{
@@ -52,7 +53,7 @@ macro_rules! unit_slider {
 fn main() -> eframe::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     let options = NativeOptions {
-        initial_window_size: Some(egui::vec2(1024.0, 1024.0)),
+        viewport: ViewportBuilder::default().with_inner_size(vec2(1024.0, 1024.0)),
         ..Default::default()
     };
     eframe::run_native(

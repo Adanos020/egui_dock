@@ -82,7 +82,7 @@ impl WindowState {
         let new = self.new;
         let mut window_constructor = egui::Window::new("")
             .id(id)
-            .constraint_to(bounds)
+            .constrain_to(bounds)
             .title_bar(false);
 
         if let Some(position) = self.next_position() {

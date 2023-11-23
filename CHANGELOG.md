@@ -1,5 +1,24 @@
 # egui_dock changelog
 
+## 0.9.0 - 2023-11-23
+
+### Added
+- `DockArea::surfaces_count`
+- `DockArea::iter_surfaces[_mut]`
+- `DockArea::iter_all_tabs[_mut]`
+- `DockArea::iter_all_nodes[_mut]`
+- `Node::iter_tabs[_mut]`
+- `Surface::iter_nodes[_mut]`
+- `Surface::iter_all_tabs[_mut]`
+
+### Breaking changes
+- Upgraded to egui 0.24.
+- Removed the deprecated `DockState::iter`.
+
+### Deprecated
+- `DockState::iter_nodes` – use `iter_all_nodes` instead.
+- `DockState::iter_main_surface_nodes[_mut]` – use `dock_state.main_surface().iter()` (and corresponding `mut` versions) instead.
+
 ## 0.8.2 - 2023-11-02
 
 ### Fixed

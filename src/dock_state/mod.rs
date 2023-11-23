@@ -77,14 +77,14 @@ impl<Tab> DockState<Tab> {
         self
     }
 
-    /// Get a mutable borrow to the tree at the main surface.
-    pub fn main_surface_mut(&mut self) -> &mut Tree<Tab> {
-        &mut self[SurfaceIndex::main()]
-    }
-
     /// Get an immutable borrow to the tree at the main surface.
     pub fn main_surface(&self) -> &Tree<Tab> {
         &self[SurfaceIndex::main()]
+    }
+
+    /// Get a mutable borrow to the tree at the main surface.
+    pub fn main_surface_mut(&mut self) -> &mut Tree<Tab> {
+        &mut self[SurfaceIndex::main()]
     }
 
     /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`].
@@ -186,7 +186,7 @@ impl<Tab> DockState<Tab> {
         &mut self,
         (surface_index, node_index, tab_index): (SurfaceIndex, NodeIndex, TabIndex),
     ) {
-        if let Some(Node::Leaf { active, .. }) = self[surface_index].tree.get_mut(node_index.0) {
+        if let Some(Node::Leaf { active, .. }) = self[surface_index].nodes.get_mut(node_index.0) {
             *active = tab_index;
         }
     }
@@ -368,23 +368,111 @@ impl<Tab> DockState<Tab> {
         self[SurfaceIndex::main()].push_to_first_leaf(tab);
     }
 
-    /// Returns an `Iterator` of the underlying collection of nodes on the **main surface**.
-    #[deprecated = "Use `iter_main_surface_nodes` or `iter_nodes` instead"]
-    pub fn iter(&self) -> std::slice::Iter<'_, Node<Tab>> {
-        self.iter_main_surface_nodes()
+    /// Returns the current number of surfaces.
+    pub fn surfaces_count(&self) -> usize {
+        self.surfaces.len()
     }
 
-    /// Returns an `Iterator` of the underlying collection of nodes on the main surface.
-    pub fn iter_main_surface_nodes(&self) -> std::slice::Iter<'_, Node<Tab>> {
+    /// Returns an [`Iterator`] over all surfaces.
+    pub fn iter_surfaces(&self) -> impl Iterator<Item = &Surface<Tab>> {
+        self.surfaces.iter()
+    }
+
+    /// Returns a mutable [`Iterator`] over all surfaces.
+    pub fn iter_surfaces_mut(&mut self) -> impl Iterator<Item = &mut Surface<Tab>> {
+        self.surfaces.iter_mut()
+    }
+
+    /// Returns an [`Iterator`] of **all** underlying nodes in the dock state,
+    /// and the indices of containing surfaces.
+    pub fn iter_all_nodes(&self) -> impl Iterator<Item = (SurfaceIndex, &Node<Tab>)> {
+        self.iter_surfaces()
+            .enumerate()
+            .flat_map(|(surface_index, surface)| {
+                surface
+                    .iter_nodes()
+                    .map(move |node| (SurfaceIndex(surface_index), node))
+            })
+    }
+
+    /// Returns a mutable [`Iterator`] of **all** underlying nodes in the dock state,
+    /// and the indices of containing surfaces.
+    pub fn iter_all_nodes_mut(&mut self) -> impl Iterator<Item = (SurfaceIndex, &mut Node<Tab>)> {
+        self.iter_surfaces_mut()
+            .enumerate()
+            .flat_map(|(surface_index, surface)| {
+                surface
+                    .iter_nodes_mut()
+                    .map(move |node| (SurfaceIndex(surface_index), node))
+            })
+    }
+
+    /// Returns an [`Iterator`] of **all** tabs in the dock state,
+    /// and the indices of containing surfaces and nodes.
+    pub fn iter_all_tabs(&self) -> impl Iterator<Item = ((SurfaceIndex, NodeIndex), &Tab)> {
+        self.iter_surfaces()
+            .enumerate()
+            .flat_map(|(surface_index, surface)| {
+                surface
+                    .iter_all_tabs()
+                    .map(move |(node_index, tab)| ((SurfaceIndex(surface_index), node_index), tab))
+            })
+    }
+
+    /// Returns a mutable [`Iterator`] of **all** tabs in the dock state,
+    /// and the indices of containing surfaces and nodes.
+    pub fn iter_all_tabs_mut(
+        &mut self,
+    ) -> impl Iterator<Item = ((SurfaceIndex, NodeIndex), &mut Tab)> {
+        self.iter_surfaces_mut()
+            .enumerate()
+            .flat_map(|(surface_index, surface)| {
+                surface
+                    .iter_all_tabs_mut()
+                    .map(move |(node_index, tab)| ((SurfaceIndex(surface_index), node_index), tab))
+            })
+    }
+
+    /// Returns an [`Iterator`] of the underlying collection of nodes on the main surface.
+    #[deprecated = "Use `dock_state.main_surface().iter()` instead"]
+    pub fn iter_main_surface_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self[SurfaceIndex::main()].iter()
     }
 
-    /// Returns an `Iterator` of **all** underlying nodes in the dock state and all subsequent trees.
+    /// Returns a mutable [`Iterator`] of the underlying collection of nodes on the main surface.
+    #[deprecated = "Use `dock_state.main_surface_mut().iter_mut()` instead"]
+    pub fn iter_main_surface_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
+        self[SurfaceIndex::main()].iter_mut()
+    }
+
+    /// Returns an [`Iterator`] of **all** underlying nodes in the dock state and all subsequent trees.
+    #[deprecated = "Use `iter_all_nodes` instead"]
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self.surfaces
             .iter()
-            .filter_map(|tree| tree.node_tree())
+            .filter_map(|surface| surface.node_tree())
             .flat_map(|nodes| nodes.iter())
+    }
+
+    /// Returns a new DockState while mapping the tab type
+    pub fn map_tabs<F, NewTab>(&self, function: F) -> DockState<NewTab>
+    where
+        F: FnMut(&Tab) -> NewTab + Clone,
+    {
+        let DockState {
+            surfaces,
+            focused_surface,
+            translations,
+        } = self;
+        let surfaces = surfaces
+            .iter()
+            .map(|surface| surface.map_tabs(function.clone()))
+            .collect();
+        DockState {
+            surfaces,
+            focused_surface: *focused_surface,
+            translations: translations.clone(),
+        }
     }
 }
 

@@ -191,6 +191,28 @@ impl<Tab> Node<Tab> {
         }
     }
 
+    /// Returns an [`Iterator`] of tabs in this node.
+    ///
+    /// If this node is not a [`Leaf`](Self::Leaf), then the returned [`Iterator`] will be empty.
+    #[inline]
+    pub fn iter_tabs(&self) -> impl Iterator<Item = &Tab> {
+        match self.tabs() {
+            Some(tabs) => tabs.iter(),
+            None => core::slice::Iter::default(),
+        }
+    }
+
+    /// Returns a mutable [`Iterator`] of tabs in this node.
+    ///
+    /// If this node is not a [`Leaf`](Self::Leaf), then the returned [`Iterator`] will be empty.
+    #[inline]
+    pub fn iter_tabs_mut(&mut self) -> impl Iterator<Item = &mut Tab> {
+        match self.tabs_mut() {
+            Some(tabs) => tabs.iter_mut(),
+            None => core::slice::IterMut::default(),
+        }
+    }
+
     /// Adds `tab` to the node and sets it as the active tab.
     ///
     /// # Panics
@@ -264,6 +286,37 @@ impl<Tab> Node<Tab> {
         match self {
             Node::Leaf { tabs, .. } => tabs.len(),
             _ => Default::default(),
+        }
+    }
+
+    /// Returns a new Node while mapping the tab type
+    pub fn map_tabs<F, NewTab>(&self, function: F) -> Node<NewTab>
+    where
+        F: FnMut(&Tab) -> NewTab,
+    {
+        match self {
+            Node::Leaf {
+                rect,
+                viewport,
+                tabs,
+                active,
+                scroll,
+            } => Node::Leaf {
+                rect: *rect,
+                viewport: *viewport,
+                tabs: tabs.iter().map(function).collect(),
+                active: *active,
+                scroll: *scroll,
+            },
+            Node::Empty => Node::Empty,
+            Node::Vertical { rect, fraction } => Node::Vertical {
+                rect: *rect,
+                fraction: *fraction,
+            },
+            Node::Horizontal { rect, fraction } => Node::Horizontal {
+                rect: *rect,
+                fraction: *fraction,
+            },
         }
     }
 }
