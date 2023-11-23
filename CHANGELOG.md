@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.9.0 - undetermined
+## 0.9.0 - 2023-11-23
 
 ### Added
 - `DockArea::surfaces_count`
