@@ -83,7 +83,7 @@ impl WindowState {
         self.next_size.take()
     }
 
-    #[cfg(feature = "multi-viewport")]
+    #[cfg(feature = "viewports")]
     pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> (ViewportBuilder, bool) {
         let new = self.new;
         let mut viewport_builder = ViewportBuilder::default()
@@ -103,7 +103,7 @@ impl WindowState {
     }
 
     // The 'static in this case means that the `open` field is always `None`
-    #[cfg(not(feature = "multi-viewport"))]
+    #[cfg(not(feature = "viewports"))]
     pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> (Window<'static>, bool) {
         let new = self.new;
         let mut window_constructor = Window::new("").id(id).constrain_to(bounds).title_bar(false);

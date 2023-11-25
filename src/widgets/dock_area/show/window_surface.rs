@@ -2,9 +2,12 @@ use std::convert::identity;
 use std::sync::Arc;
 
 use egui::{
-    CentralPanel, CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response,
-    Sense, TextStyle, Ui, Vec2, ViewportId, Widget,
+    CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response, Sense,
+    TextStyle, Ui, Vec2, Widget,
 };
+
+#[cfg(feature = "viewports")]
+use egui::{CentralPanel, ViewportId};
 
 use crate::{
     dock_area::{state::State, tab_removal::TabRemoval},
@@ -25,7 +28,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let id = format!("window {surf_index:?}").into();
         let bounds = self.window_bounds.unwrap();
         let mut open = true;
-        let (mut window, new) = self
+        let (window, new) = self
             .dock_state
             .get_window_state_mut(surf_index)
             .unwrap()
@@ -91,9 +94,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             frame.shadow.color = frame.shadow.color.linear_multiply(fade_factor);
         }
 
-        #[cfg(feature = "multi-viewport")]
+        #[cfg(feature = "viewports")]
         {
-            window = window
+            let window = window
                 .with_close_button(self.show_window_close_buttons && disabled.is_none())
                 .with_title(title.text());
             ui.ctx().show_viewport_immediate(
@@ -124,7 +127,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 },
             )
         }
-        #[cfg(not(feature = "multi-viewport"))]
+        #[cfg(not(feature = "viewports"))]
         {
             window
                 .frame(frame)
