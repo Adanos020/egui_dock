@@ -2,8 +2,8 @@ use std::convert::identity;
 use std::sync::Arc;
 
 use egui::{
-    CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response, Sense,
-    TextStyle, Ui, Vec2, Widget,
+    CentralPanel, CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response,
+    Sense, TextStyle, Ui, Vec2, ViewportId, Widget,
 };
 
 use crate::{
@@ -25,7 +25,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let id = format!("window {surf_index:?}").into();
         let bounds = self.window_bounds.unwrap();
         let mut open = true;
-        let (window, new) = self
+        let (mut window, new) = self
             .dock_state
             .get_window_state_mut(surf_index)
             .unwrap()
@@ -91,31 +91,67 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             frame.shadow.color = frame.shadow.color.linear_multiply(fade_factor);
         }
 
-        window
-            .frame(frame)
-            .min_width(min_window_width(&title, ui.spacing().indent))
-            .show(ui.ctx(), |ui| {
-                //fade inner ui (if neccesary)
-                if fade_factor != 1.0 {
-                    fade_visuals(ui.visuals_mut(), fade_factor);
-                }
+        #[cfg(feature = "multi-viewport")]
+        {
+            window = window
+                .with_close_button(self.show_window_close_buttons && disabled.is_none())
+                .with_title(title.text());
+            ui.ctx().show_viewport_immediate(
+                ViewportId::from_hash_of(id),
+                window,
+                |ctx, viewport_class| {
+                    CentralPanel::default().show(ctx, |ui| {
+                        if fade_factor != 1.0 {
+                            fade_visuals(ui.visuals_mut(), fade_factor);
+                        }
 
-                let collapser_id = id.with("collapser");
-                let collapser_state = new.then_some(true);
-                let ch_res = self.show_window_body(
-                    ui,
-                    surf_index,
-                    tab_viewer,
-                    state,
-                    fade_style,
-                    collapser_state,
-                    collapser_id,
-                    title,
-                );
-                if self.show_window_close_buttons {
-                    self.show_close_button(ui, &mut open, ch_res, disabled);
-                }
-            });
+                        let collapser_id = id.with("collapser");
+                        let collapser_state = new.then_some(true);
+                        let ch_res = self.show_window_body(
+                            ui,
+                            surf_index,
+                            tab_viewer,
+                            state,
+                            fade_style,
+                            collapser_state,
+                            collapser_id,
+                            title,
+                        );
+                        if self.show_window_close_buttons {
+                            self.show_close_button(ui, &mut open, ch_res, disabled);
+                        }
+                    });
+                },
+            )
+        }
+        #[cfg(not(feature = "multi-viewport"))]
+        {
+            window
+                .frame(frame)
+                .min_width(min_window_width(&title, ui.spacing().indent))
+                .show(ui.ctx(), |ui| {
+                    //fade inner ui (if neccesary)
+                    if fade_factor != 1.0 {
+                        fade_visuals(ui.visuals_mut(), fade_factor);
+                    }
+
+                    let collapser_id = id.with("collapser");
+                    let collapser_state = new.then_some(true);
+                    let ch_res = self.show_window_body(
+                        ui,
+                        surf_index,
+                        tab_viewer,
+                        state,
+                        fade_style,
+                        collapser_state,
+                        collapser_id,
+                        title,
+                    );
+                    if self.show_window_close_buttons {
+                        self.show_close_button(ui, &mut open, ch_res, disabled);
+                    }
+                });
+        }
 
         if !open {
             self.to_remove.push(TabRemoval::Window(surf_index));

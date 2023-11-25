@@ -13,6 +13,7 @@ include = ["src/**/*.rs", "Cargo.toml", "LICENSE"]
 
 [features]
 default = []
+multi-viewport = []
 
 # Enable serialization of `Tree`.
 serde = ["dep:serde", "egui/serde"]
