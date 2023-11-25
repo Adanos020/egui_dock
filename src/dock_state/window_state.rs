@@ -1,9 +1,9 @@
 use egui::{Id, Pos2, Rect, Vec2};
 
-#[cfg(feature = "multi-viewport")]
+#[cfg(feature = "viewports")]
 use egui::ViewportBuilder;
 
-#[cfg(not(feature = "multi-viewport"))]
+#[cfg(not(feature = "viewports"))]
 use egui::Window;
 
 /// The state of a [`Surface::Window`](crate::Surface::Window).
