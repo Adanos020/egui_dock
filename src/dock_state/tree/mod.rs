@@ -580,8 +580,10 @@ impl<Tab> Tree<Tab> {
     ///
     /// # Panics
     ///
-    /// If the node at index `node` is not a [`Leaf`](Node::Leaf).
+    /// - If the tree is empty.
+    /// - If the node at index `node` is not a [`Leaf`](Node::Leaf).
     pub fn remove_leaf(&mut self, node: NodeIndex) {
+        assert!(!self.is_empty());
         assert!(self[node].is_leaf());
 
         let Some(parent) = node.parent() else {
