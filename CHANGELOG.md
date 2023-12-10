@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.9.1 - 2023-12-10
+
+### Fixed
+- Fix crash after calling `DockState::remove_tab`. ([#208](https://github.com/Adanos020/egui_dock/pull/208))
+
 ## 0.9.0 - 2023-11-23
 
 ### Added
