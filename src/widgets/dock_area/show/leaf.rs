@@ -322,7 +322,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     };
                     let tab = &mut tabs[tab_index.0];
 
-                    response = response.context_menu(|ui| {
+                    let response = tabs_ui.interact(response.rect, id, Sense::click());
+                    response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
                             && tab_viewer.allowed_in_windows(tab)
