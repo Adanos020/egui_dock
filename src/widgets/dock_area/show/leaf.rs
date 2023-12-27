@@ -446,7 +446,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         response = response.on_hover_cursor(CursorIcon::PointingHand);
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
-        let color = if response.hovered() {
+        let color = if response.hovered() || response.has_focus() {
             ui.painter()
                 .rect_filled(rect, Rounding::ZERO, style.buttons.add_tab_bg_fill);
             style.buttons.add_tab_active_color
@@ -535,7 +535,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             &tab_style.focused
         } else if active {
             &tab_style.active
-        } else if response.hovered() {
+        } else if response.hovered() || response.has_focus() {
             &tab_style.hovered
         } else {
             &tab_style.inactive
@@ -591,13 +591,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .interact(close_button_rect, id, Sense::click())
                 .on_hover_cursor(CursorIcon::PointingHand);
 
-            let color = if response.hovered() {
+            let color = if response.hovered() || response.has_focus() {
                 style.buttons.close_tab_active_color
             } else {
                 style.buttons.close_tab_color
             };
 
-            if response.hovered() {
+            if response.hovered() || response.has_focus() {
                 let mut rounding = tab_style.rounding;
                 rounding.nw = 0.0;
                 rounding.sw = 0.0;
