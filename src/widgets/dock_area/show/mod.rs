@@ -1,6 +1,6 @@
 use egui::{
-    CentralPanel, Color32, Context, CursorIcon, Frame, LayerId, Order, Pos2, Rect, Rounding, Sense,
-    Ui, Vec2,
+    CentralPanel, Color32, Context, CursorIcon, EventFilter, Frame, Key, LayerId, Order, Pos2,
+    Rect, Rounding, Sense, Ui, Vec2,
 };
 
 use duplicate::duplicate;
@@ -395,6 +395,24 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let response = ui.allocate_rect(interact_rect, Sense::click_and_drag())
                     .on_hover_and_drag_cursor(paste!{ CursorIcon::[<Resize orientation>]});
 
+                let arrow_key_offset = response.has_focus().then(|| {
+                    // Prevent the default behaviour of removing focus from the separators when the
+                    // arrow keys are pressed
+                    ui.memory_mut(|m| m.set_focus_lock_filter(response.id, EventFilter { arrows: true, tab: false, escape: false }));
+
+                    if ui.input(|i| i.key_pressed(Key::ArrowUp)) {
+                        Some(egui::vec2(0., -16.))
+                    } else if ui.input(|i| i.key_pressed(Key::ArrowDown)) {
+                        Some(egui::vec2(0., 16.))
+                    } else if ui.input(|i| i.key_pressed(Key::ArrowLeft)) {
+                        Some(egui::vec2(-16., 0.))
+                    } else if ui.input(|i| i.key_pressed(Key::ArrowRight)) {
+                        Some(egui::vec2(16., 0.))
+                    } else {
+                        None
+                    }
+                }).flatten();
+
                 let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
                 separator.min.dim_point = map_to_pixel(
                     midpoint - style.separator.width * 0.5,
@@ -420,9 +438,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 // Update 'fraction' interaction after drawing separator,
                 // otherwise it may overlap on other separator / bodies when
                 // shrunk fast.
-                if let Some(pos) = response.interact_pointer_pos() {
+                if let Some(pos) = response.interact_pointer_pos().or(arrow_key_offset.map(|v| separator.center() + v)) {
                     let dim_point = pos.dim_point;
-                    let delta = response.drag_delta().dim_point;
+                    let delta = arrow_key_offset.unwrap_or(response.drag_delta()).dim_point;
 
                     if (delta > 0. && dim_point > midpoint && dim_point < rect.max.dim_point)
                         || (delta < 0. && dim_point < midpoint && dim_point > rect.min.dim_point)
