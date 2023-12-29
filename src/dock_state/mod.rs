@@ -186,9 +186,7 @@ impl<Tab> DockState<Tab> {
         &mut self,
         (surface_index, node_index, tab_index): (SurfaceIndex, NodeIndex, TabIndex),
     ) {
-        if let Some(Node::Leaf { active, .. }) = self[surface_index].nodes.get_mut(node_index.0) {
-            *active = tab_index;
-        }
+        self[surface_index].set_active_tab(node_index, tab_index);
     }
 
     /// Sets the currently focused leaf to `node_index` if the node at `node_index` is a leaf.

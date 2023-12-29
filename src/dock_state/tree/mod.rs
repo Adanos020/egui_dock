@@ -122,7 +122,7 @@ impl TabDestination {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree<Tab> {
     // Binary tree vector
-    pub(super) nodes: Vec<Node<Tab>>,
+    nodes: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
 }
 
