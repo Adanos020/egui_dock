@@ -311,7 +311,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if surface == SurfaceIndex::main() {
             rect = rect.expand(-style.main_surface_border_stroke.width / 2.0);
         }
-        ui.allocate_rect(rect, Sense::click());
+        ui.allocate_rect(rect, Sense::hover());
 
         if self.dock_state[surface].is_empty() {
             return rect;
@@ -409,7 +409,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 let color = if response.dragged() {
                     style.separator.color_dragged
-                } else if response.hovered() {
+                } else if response.hovered() || response.has_focus() {
                     style.separator.color_hovered
                 } else {
                     style.separator.color_idle

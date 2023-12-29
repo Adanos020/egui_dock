@@ -81,7 +81,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
             vec2(ui.available_width(), style.tab_bar.height),
-            Sense::click(),
+            Sense::hover(),
         );
         ui.painter().rect_filled(
             tabbar_outer_rect,
