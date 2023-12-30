@@ -3,8 +3,10 @@
 ## 0.10.0 - TBD
 
 ### Added
-- Tabs, the close tab buttons and the add tab buttons are now focusable with the keyboard and interactable with the enter key and space bar. ([#211](https://github.com/Adanos020/egui_dock/pull/211))
-- Separators are now focusable with the keyboard and movable using the arrow keys. ([#211](https://github.com/Adanos020/egui_dock/pull/211))
+From ([#211](https://github.com/Adanos020/egui_dock/pull/211)):
+  - Tabs, the close tab buttons and the add tab buttons are now focusable with the keyboard and interactable with the enter key and space bar.
+  - Separators are now focusable with the keyboard and movable using the arrow keys.
+  - `TabStyle::active_with_kb_focus`, `TabStyle::inactive_with_kb_focus` and `TabStyle::focused_with_kb_focus` for style of tabs that are focused with the keyboard.
 
 ### Fixed
 - Widgets inside tabs are now focusable with the tab key on the keyboard. ([#211](https://github.com/Adanos020/egui_dock/pull/211))

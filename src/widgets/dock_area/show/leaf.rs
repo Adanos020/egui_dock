@@ -538,14 +538,26 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
 
-        let tab_style = if focused || is_being_dragged || (active && response.has_focus()) {
-            &tab_style.focused
+        let tab_style = if focused || is_being_dragged {
+            if response.has_focus() {
+                &tab_style.focused_with_kb_focus
+            } else {
+                &tab_style.focused
+            }
         } else if active {
-            &tab_style.active
-        } else if response.hovered() || response.has_focus() {
+            if response.has_focus() {
+                &tab_style.active_with_kb_focus
+            } else {
+                &tab_style.active
+            }
+        } else if response.hovered() {
             &tab_style.hovered
         } else {
-            &tab_style.inactive
+            if response.has_focus() {
+                &tab_style.inactive_with_kb_focus
+            } else {
+                &tab_style.inactive
+            }
         };
 
         // Draw the full tab first and then the stroke on top to avoid the stroke
