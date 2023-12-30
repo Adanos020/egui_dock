@@ -1,4 +1,4 @@
-use crate::{Split, TabIndex};
+use crate::{NodeIndex, Split, TabIndex};
 use egui::Rect;
 
 /// Represents an abstract node of a [`Tree`](crate::Tree).
@@ -33,6 +33,12 @@ pub enum Node<Tab> {
 
         /// The fraction taken by the top child of this node.
         fraction: f32,
+
+        /// The index of the node above the split.
+        above: NodeIndex,
+
+        /// The index of the node below the split.
+        below: NodeIndex,
     },
 
     /// Parent node in the horizontal orientation.
@@ -42,6 +48,12 @@ pub enum Node<Tab> {
 
         /// The fraction taken by the left child of this node.
         fraction: f32,
+
+        /// The index of the node left of the split.
+        left: NodeIndex,
+
+        /// The index of the node right of the split.
+        right: NodeIndex,
     },
 }
 
@@ -133,11 +145,22 @@ impl<Tab> Node<Tab> {
     /// If `fraction` isn't in range 0..=1.
     #[inline]
     pub fn split(&mut self, split: Split, fraction: f32) -> Self {
+        // TODO: The new node should be given the correct node indexes directly.
         assert!((0.0..=1.0).contains(&fraction));
         let rect = Rect::NOTHING;
         let src = match split {
-            Split::Left | Split::Right => Node::Horizontal { fraction, rect },
-            Split::Above | Split::Below => Node::Vertical { fraction, rect },
+            Split::Left | Split::Right => Node::Horizontal {
+                fraction,
+                rect,
+                left: NodeIndex(0),
+                right: NodeIndex(0),
+            },
+            Split::Above | Split::Below => Node::Vertical {
+                fraction,
+                rect,
+                above: NodeIndex(0),
+                below: NodeIndex(0),
+            },
         };
         std::mem::replace(self, src)
     }
@@ -309,13 +332,27 @@ impl<Tab> Node<Tab> {
                 scroll: *scroll,
             },
             Node::Empty => Node::Empty,
-            Node::Vertical { rect, fraction } => Node::Vertical {
+            Node::Vertical {
+                rect,
+                fraction,
+                above,
+                below,
+            } => Node::Vertical {
                 rect: *rect,
                 fraction: *fraction,
+                above: *above,
+                below: *below,
             },
-            Node::Horizontal { rect, fraction } => Node::Horizontal {
+            Node::Horizontal {
+                rect,
+                fraction,
+                left,
+                right,
+            } => Node::Horizontal {
                 rect: *rect,
                 fraction: *fraction,
+                left: *left,
+                right: *right,
             },
         }
     }

@@ -337,7 +337,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 [Horizontal]  [x]        [width]   [left_of]     [right_of];
                 [Vertical]    [y]        [height]  [above]       [below];
             ]
-            if let Node::orientation { fraction, rect } = &mut self.dock_state[surface_index][node_index] {
+            if let Node::orientation { fraction, rect, .. } = &mut self.dock_state[surface_index][node_index] {
                 debug_assert!(!rect.any_nan() && rect.is_finite());
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
@@ -383,7 +383,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 [Horizontal]  [x]        [width];
                 [Vertical]    [y]        [height];
             ]
-            if let Node::orientation { fraction, ref rect } = &mut self.dock_state[surface_index][node_index] {
+            if let Node::orientation { fraction, ref rect, .. } = &mut self.dock_state[surface_index][node_index] {
                 let mut separator = *rect;
 
                 let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
