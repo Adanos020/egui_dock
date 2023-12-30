@@ -1,5 +1,18 @@
 # egui_dock changelog
 
+## unreleased
+
+### Improvements
+- Replace the internal implementation for a `Tree` with one that allows for more than two splits per node.
+
+### Deprecated
+- `NodeIndex::left` - use `Tree::left_of` instead.
+- `NodeIndex::right` - use `Tree::right_of` instead.
+- `NodeIndex::parent` - use `Tree::parent` instead.
+- `NodeIndex::level` - removed.
+- `NodeIndex::is_left` - removed.
+- `NodeIndex::is_right` - removed.
+
 ## 0.9.0 - 2023-11-23
 
 ### Added

@@ -494,6 +494,7 @@ impl<Tab> Tree<Tab> {
     ) -> [NodeIndex; 2] {
         assert!(self[parent].is_leaf() || self[parent].is_parent());
         assert_ne!(new.tabs_count(), 0);
+        assert!((0.0..=1.0).contains(&fraction));
 
         let mut insert = |node: Node<Tab>| {
             if let Some(empty_node_index) = self.nodes.iter().position(|n| matches!(n, Node::Empty))
@@ -588,7 +589,7 @@ impl<Tab> Tree<Tab> {
 
         self[node] = Node::Empty;
 
-        if self.focused_node == Some(node) {
+        if Some(node) == self.focused_node {
             self.focused_node = None;
         }
 
