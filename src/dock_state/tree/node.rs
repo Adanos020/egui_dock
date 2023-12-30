@@ -1,4 +1,4 @@
-use crate::{NodeIndex, Split, TabIndex};
+use crate::{NodeIndex, TabIndex};
 use egui::Rect;
 
 /// Represents an abstract node of a [`Tree`](crate::Tree).
@@ -135,34 +135,6 @@ impl<Tab> Node<Tab> {
     #[inline(always)]
     pub const fn is_parent(&self) -> bool {
         self.is_horizontal() || self.is_vertical()
-    }
-
-    /// Replaces the node with [`Horizontal`](Node::Horizontal) or [`Vertical`](Node::Vertical) (depending on `split`)
-    /// and assigns an empty rect to it.
-    ///
-    /// # Panics
-    ///
-    /// If `fraction` isn't in range 0..=1.
-    #[inline]
-    pub fn split(&mut self, split: Split, fraction: f32) -> Self {
-        // TODO: The new node should be given the correct node indexes directly.
-        assert!((0.0..=1.0).contains(&fraction));
-        let rect = Rect::NOTHING;
-        let src = match split {
-            Split::Left | Split::Right => Node::Horizontal {
-                fraction,
-                rect,
-                left: NodeIndex(0),
-                right: NodeIndex(0),
-            },
-            Split::Above | Split::Below => Node::Vertical {
-                fraction,
-                rect,
-                above: NodeIndex(0),
-                below: NodeIndex(0),
-            },
-        };
-        std::mem::replace(self, src)
     }
 
     /// Provides an immutable slice of the tabs inside this node.

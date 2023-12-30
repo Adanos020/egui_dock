@@ -358,10 +358,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let right = rect.intersect(Rect::[<everything_ right_child>](right_separator_border)).intersect(max_rect);
                 }
 
-                let left_node = self.dock_state[surface_index].left_of(node_index);
-                let right_node = self.dock_state[surface_index].right_of(node_index);
-                self.dock_state[surface_index][left_node].set_rect(left);
-                self.dock_state[surface_index][right_node].set_rect(right);
+                self.dock_state[surface_index].left_of(node_index)
+                    .map(|left_node| {
+                        self.dock_state[surface_index][left_node].set_rect(left);
+                    });
+                self.dock_state[surface_index].right_of(node_index)
+                    .map(|right_node| {
+                        self.dock_state[surface_index][right_node].set_rect(right);
+                    });
             }
         }
     }
