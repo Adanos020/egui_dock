@@ -213,6 +213,10 @@ impl<Tab> Tree<Tab> {
     /// Returns an [`Iterator`] of [`NodeIndex`] ordered in a breadth first manner.
     #[inline(always)]
     pub(crate) fn breadth_first_index_iter(&self) -> impl Iterator<Item = NodeIndex> {
+        if self.nodes.is_empty() {
+            return Vec::new().into_iter();
+        }
+
         let mut breadth_first = Vec::new();
         let mut next_level = vec![NodeIndex::root()];
         while !next_level.is_empty() {
