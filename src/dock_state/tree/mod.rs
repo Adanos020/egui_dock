@@ -584,6 +584,10 @@ impl<Tab> Tree<Tab> {
 
         self[node] = Node::Empty;
 
+        if self.focused_node == Some(node) {
+            self.focused_node = None;
+        }
+
         let Some(parent) = self.parent(node) else {
             return;
         };
