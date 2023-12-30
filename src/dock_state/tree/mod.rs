@@ -589,6 +589,7 @@ impl<Tab> Tree<Tab> {
         }
 
         let Some(parent) = self.parent(node) else {
+            self.nodes.clear();
             return;
         };
         let sibling = match self[parent] {
