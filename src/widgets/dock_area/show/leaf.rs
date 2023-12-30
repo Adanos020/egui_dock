@@ -538,7 +538,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
 
-        let tab_style = if focused || is_being_dragged {
+        let tab_style = if focused || is_being_dragged || (active && response.has_focus()) {
             &tab_style.focused
         } else if active {
             &tab_style.active
