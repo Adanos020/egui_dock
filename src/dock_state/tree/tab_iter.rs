@@ -1,6 +1,7 @@
 ﻿use crate::Tree;
 
 /// Iterates over all tabs in a [`Tree`].
+// TODO: This approach guarantees a breadth first iteration for binary trees only.
 pub struct TabIter<'a, Tab> {
     tree: &'a Tree<Tab>,
     node_idx: usize,

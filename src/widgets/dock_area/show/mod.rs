@@ -333,9 +333,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         duplicate! {
             [
-                orientation   dim_point  dim_size  left_of    right_of;
-                [Horizontal]  [x]        [width]   [left_of]  [right_of];
-                [Vertical]    [y]        [height]  [above]    [below];
+                orientation   dim_point  dim_size  left_child    right_child;
+                [Horizontal]  [x]        [width]   [left_of]     [right_of];
+                [Vertical]    [y]        [height]  [above]       [below];
             ]
             if let Node::orientation { fraction, rect } = &mut self.dock_state[surface_index][node_index] {
                 debug_assert!(!rect.any_nan() && rect.is_finite());
@@ -354,12 +354,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 );
 
                 paste! {
-                    let left = rect.intersect(Rect::[<everything_ left_of>](left_separator_border)).intersect(max_rect);
-                    let right = rect.intersect(Rect::[<everything_ right_of>](right_separator_border)).intersect(max_rect);
+                    let left = rect.intersect(Rect::[<everything_ left_child>](left_separator_border)).intersect(max_rect);
+                    let right = rect.intersect(Rect::[<everything_ right_child>](right_separator_border)).intersect(max_rect);
                 }
 
-                self.dock_state[surface_index][node_index.left()].set_rect(left);
-                self.dock_state[surface_index][node_index.right()].set_rect(right);
+                let left_node = self.dock_state[surface_index].left_of(node_index);
+                let right_node = self.dock_state[surface_index].right_of(node_index);
+                self.dock_state[surface_index][left_node].set_rect(left);
+                self.dock_state[surface_index][right_node].set_rect(right);
             }
         }
     }

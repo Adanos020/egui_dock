@@ -28,7 +28,7 @@ pub use tab_iter::TabIter;
 use egui::Rect;
 use std::{
     fmt,
-    ops::{Index, IndexMut},
+    ops::{Index, IndexMut, Range},
     slice::{Iter, IterMut},
 };
 
@@ -216,6 +216,7 @@ impl<Tab> Tree<Tab> {
     /// Returns an [`Iterator`] of [`NodeIndex`] ordered in a breadth first manner.
     #[inline(always)]
     pub(crate) fn breadth_first_index_iter(&self) -> impl Iterator<Item = NodeIndex> {
+        // TODO: This relies a binary tree
         (0..self.nodes.len()).map(NodeIndex)
     }
 
@@ -471,32 +472,33 @@ impl<Tab> Tree<Tab> {
         fraction: f32,
         new: Node<Tab>,
     ) -> [NodeIndex; 2] {
+        // TODO: this relies on a binary tree.
         let old = self[parent].split(split, fraction);
         assert!(old.is_leaf() || old.is_parent());
         assert_ne!(new.tabs_count(), 0);
         // Resize vector to fit the new size of the binary tree.
         {
             let index = self.nodes.iter().rposition(|n| !n.is_empty()).unwrap_or(0);
-            let level = NodeIndex(index).level();
+            let level = self.level(&NodeIndex(index));
             self.nodes
                 .resize_with((1 << (level + 1)) - 1, || Node::Empty);
         }
 
         let index = match split {
-            Split::Left | Split::Above => [parent.right(), parent.left()],
-            Split::Right | Split::Below => [parent.left(), parent.right()],
+            Split::Left | Split::Above => [self.right_of(parent), self.left_of(parent)],
+            Split::Right | Split::Below => [self.left_of(parent), self.right_of(parent)],
         };
 
         // If the node were splitting is a parent, all it's children need to be moved.
         if old.is_parent() {
-            let levels_to_move = NodeIndex(self.nodes.len()).level() - index[0].level();
+            let levels_to_move = self.level(&NodeIndex(self.nodes.len())) - self.level(&index[0]);
 
             // Level 0 is ourself, which is done when we assign self[index[0]] = old, so start at 1.
             for level in (1..levels_to_move).rev() {
                 // Old child indices for this level
-                let old_start = parent.children_at(level).start;
+                let old_start = self.children_at(parent, level).start;
                 // New child indices for this level
-                let new_start = index[0].children_at(level).start;
+                let new_start = self.children_at(index[0], level).start;
 
                 // Children to be moved this level change
                 let len = 1 << level;
@@ -524,8 +526,8 @@ impl<Tab> Tree<Tab> {
     }
 
     fn first_leaf(&self, top: NodeIndex) -> Option<NodeIndex> {
-        let left = top.left();
-        let right = top.right();
+        let left = self.left_of(top);
+        let right = self.right_of(top);
         match (self.nodes.get(left.0), self.nodes.get(right.0)) {
             (Some(&Node::Leaf { .. }), _) => Some(left),
             (_, Some(&Node::Leaf { .. })) => Some(right),
@@ -584,7 +586,7 @@ impl<Tab> Tree<Tab> {
     pub fn remove_leaf(&mut self, node: NodeIndex) {
         assert!(self[node].is_leaf());
 
-        let Some(parent) = node.parent() else {
+        let Some(parent) = self.parent(node) else {
             self.nodes.clear();
             return;
         };
@@ -592,11 +594,12 @@ impl<Tab> Tree<Tab> {
         if Some(node) == self.focused_node {
             self.focused_node = None;
             let mut node = node;
-            while let Some(parent) = node.parent() {
-                let next = if node.is_left() {
-                    parent.right()
+            while let Some(parent) = self.parent(parent) {
+                // TODO: This relies on a binary tree.
+                let next = if self.is_left(node) {
+                    self.right_of(parent)
                 } else {
-                    parent.left()
+                    self.left_of(parent)
                 };
                 if self.nodes.get(next.0).is_some_and(|node| node.is_leaf()) {
                     self.focused_node = Some(next);
@@ -615,10 +618,11 @@ impl<Tab> Tree<Tab> {
 
         let mut level = 0;
 
-        if node.is_left() {
+        // TODO: This relies on a binary tree.
+        if self.is_left(node) {
             'left_end: loop {
-                let dst = parent.children_at(level);
-                let src = parent.children_right(level + 1);
+                let dst = self.children_at(parent, level);
+                let src = self.children_right(parent, level + 1);
                 for (dst, src) in dst.zip(src) {
                     if src >= self.nodes.len() {
                         break 'left_end;
@@ -632,8 +636,8 @@ impl<Tab> Tree<Tab> {
             }
         } else {
             'right_end: loop {
-                let dst = parent.children_at(level);
-                let src = parent.children_left(level + 1);
+                let dst = self.children_at(parent, level);
+                let src = self.children_left(parent, level + 1);
                 for (dst, src) in dst.zip(src) {
                     if src >= self.nodes.len() {
                         break 'right_end;
@@ -650,6 +654,7 @@ impl<Tab> Tree<Tab> {
 
     /// Pushes a tab to the first `Leaf` it finds or create a new leaf if an `Empty` node is encountered.
     pub fn push_to_first_leaf(&mut self, tab: Tab) {
+        // TODO: This implicitly relies on a breadth first search
         for (index, node) in &mut self.nodes.iter_mut().enumerate() {
             match node {
                 Node::Leaf { tabs, active, .. } => {
@@ -749,6 +754,79 @@ impl<Tab> Tree<Tab> {
             nodes,
             focused_node: *focused_node,
         }
+    }
+
+    /// Returns the index of the node to the left of the given one.
+    #[inline(always)]
+    pub const fn left_of(&self, node: NodeIndex) -> NodeIndex {
+        // TODO: This relies on a binary tree.
+        NodeIndex(node.0 * 2 + 1)
+    }
+
+    /// Returns the index of the node to the right of the given one.
+    #[inline(always)]
+    pub const fn right_of(&self, node: NodeIndex) -> NodeIndex {
+        // TODO: This relies on a binary tree.
+        NodeIndex(node.0 * 2 + 2)
+    }
+
+    /// Returns the index of the parent node or `None` if given node is the root.
+    #[inline]
+    pub const fn parent(&self, node: NodeIndex) -> Option<NodeIndex> {
+        // TODO: This relies on a binary tree.
+        if node.0 > 0 {
+            Some(NodeIndex((node.0 - 1) / 2))
+        } else {
+            None
+        }
+    }
+
+    /// Returns the number of nodes leading from the root to the given node, including it self.
+    #[inline(always)]
+    pub const fn level(&self, node: &NodeIndex) -> usize {
+        // TODO: This relies on a binary tree.
+        (usize::BITS - (node.0 + 1).leading_zeros()) as usize
+    }
+
+    /// Returns `true` if given node is the left child of its parent, otherwise `false`.
+    #[inline(always)]
+    pub const fn is_left(&self, node: NodeIndex) -> bool {
+        // TODO: This relies on a binary tree.
+        node.0 % 2 != 0
+    }
+
+    /// Returns `true` if current node is the right child of its parent, otherwise `false`.
+    #[inline(always)]
+    pub const fn is_right(&self, node: NodeIndex) -> bool {
+        // TODO: This relies on a binary tree.
+        node.0 % 2 == 0
+    }
+
+    #[inline]
+    const fn children_at(&self, node: NodeIndex, level: usize) -> Range<usize> {
+        // TODO: This relies on a binary tree.
+        let base = 1 << level;
+        let s = (node.0 + 1) * base - 1;
+        let e = (node.0 + 2) * base - 1;
+        s..e
+    }
+
+    #[inline]
+    const fn children_left(&self, node: NodeIndex, level: usize) -> Range<usize> {
+        // TODO: This relies on a binary tree.
+        let base = 1 << level;
+        let s = (node.0 + 1) * base - 1;
+        let e = (node.0 + 1) * base + (base / 2) - 1;
+        s..e
+    }
+
+    #[inline]
+    const fn children_right(&self, node: NodeIndex, level: usize) -> Range<usize> {
+        // TODO: This relies on a binary tree.
+        let base = 1 << level;
+        let s = (node.0 + 1) * base + (base / 2) - 1;
+        let e = (node.0 + 2) * base - 1;
+        s..e
     }
 }
 
