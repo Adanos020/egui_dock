@@ -1,10 +1,10 @@
-﻿use crate::Tree;
+﻿use crate::{NodeIndex, Tree};
 
 /// Iterates over all tabs in a [`Tree`].
-// TODO: This approach guarantees a breadth first iteration for binary trees only.
 pub struct TabIter<'a, Tab> {
     tree: &'a Tree<Tab>,
-    node_idx: usize,
+    node_order: Vec<NodeIndex>,
+    node_position: usize,
     tab_idx: usize,
 }
 
@@ -12,7 +12,8 @@ impl<'a, Tab> TabIter<'a, Tab> {
     pub(super) fn new(tree: &'a Tree<Tab>) -> Self {
         Self {
             tree,
-            node_idx: 0,
+            node_order: tree.breadth_first_index_iter().collect(),
+            node_position: 0,
             tab_idx: 0,
         }
     }
@@ -23,19 +24,17 @@ impl<'a, Tab> Iterator for TabIter<'a, Tab> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            match self.tree.nodes.get(self.node_idx)?.tabs() {
-                Some(tabs) => match tabs.get(self.tab_idx) {
-                    Some(tab) => {
-                        self.tab_idx += 1;
-                        return Some(tab);
-                    }
-                    None => {
-                        self.node_idx += 1;
-                        self.tab_idx = 0;
-                    }
-                },
+            let node_idx = self.node_order.get(self.node_position)?;
+            match self.tree[*node_idx]
+                .tabs()
+                .and_then(|tabs| tabs.get(self.tab_idx))
+            {
+                Some(tab) => {
+                    self.tab_idx += 1;
+                    return Some(tab);
+                }
                 None => {
-                    self.node_idx += 1;
+                    self.node_position += 1;
                     self.tab_idx = 0;
                 }
             }
