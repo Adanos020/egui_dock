@@ -395,11 +395,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let response = ui.allocate_rect(interact_rect, Sense::click_and_drag())
                     .on_hover_and_drag_cursor(paste!{ CursorIcon::[<Resize orientation>]});
 
-                let arrow_key_offset = response.has_focus().then(|| {
+                let should_respond_to_arrow_keys = ui.input(|i| i.modifiers.command || i.modifiers.shift);
+
+                if response.has_focus() {
                     // Prevent the default behaviour of removing focus from the separators when the
                     // arrow keys are pressed
-                    ui.memory_mut(|m| m.set_focus_lock_filter(response.id, EventFilter { arrows: true, tab: false, escape: false }));
+                    ui.memory_mut(|m| m.set_focus_lock_filter(response.id, EventFilter { arrows: should_respond_to_arrow_keys, tab: false, escape: false }));
+                }
 
+                let arrow_key_offset = if response.has_focus() && should_respond_to_arrow_keys {
                     if ui.input(|i| i.key_pressed(Key::ArrowUp)) {
                         Some(egui::vec2(0., -16.))
                     } else if ui.input(|i| i.key_pressed(Key::ArrowDown)) {
@@ -411,7 +415,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     } else {
                         None
                     }
-                }).flatten();
+                } else {
+                    None
+                };
 
                 let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
                 separator.min.dim_point = map_to_pixel(
