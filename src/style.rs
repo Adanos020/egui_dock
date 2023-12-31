@@ -151,6 +151,15 @@ pub struct TabStyle {
     /// Style of the tab when it is hovered.
     pub hovered: TabInteractionStyle,
 
+    /// Style of the tab when it is inactive and has keyboard focus.
+    pub inactive_with_kb_focus: TabInteractionStyle,
+
+    /// Style of the tab when it is active and has keyboard focus.
+    pub active_with_kb_focus: TabInteractionStyle,
+
+    /// Style of the tab when it is focused and has keyboard focus.
+    pub focused_with_kb_focus: TabInteractionStyle,
+
     /// Style for the tab body.
     pub tab_body: TabBodyStyle,
 
@@ -357,6 +366,15 @@ impl Default for TabStyle {
                 text_color: Color32::BLACK,
                 ..Default::default()
             },
+            active_with_kb_focus: TabInteractionStyle::default(),
+            inactive_with_kb_focus: TabInteractionStyle {
+                text_color: Color32::DARK_GRAY,
+                ..Default::default()
+            },
+            focused_with_kb_focus: TabInteractionStyle {
+                text_color: Color32::BLACK,
+                ..Default::default()
+            },
             tab_body: TabBodyStyle::default(),
             hline_below_active_tab_name: false,
             minimum_width: None,
@@ -532,6 +550,9 @@ impl TabStyle {
             inactive: TabInteractionStyle::from_egui_inactive(style),
             focused: TabInteractionStyle::from_egui_focused(style),
             hovered: TabInteractionStyle::from_egui_hovered(style),
+            active_with_kb_focus: TabInteractionStyle::from_egui_active_with_kb_focus(style),
+            inactive_with_kb_focus: TabInteractionStyle::from_egui_inactive_with_kb_focus(style),
+            focused_with_kb_focus: TabInteractionStyle::from_egui_focused_with_kb_focus(style),
             tab_body: TabBodyStyle::from_egui(style),
             ..Default::default()
         }
@@ -607,6 +628,51 @@ impl TabInteractionStyle {
             text_color: style.visuals.strong_text_color(),
             outline_color: style.visuals.widgets.hovered.bg_stroke.color,
             ..TabInteractionStyle::from_egui_inactive(style)
+        }
+    }
+
+    /// Derives relevant fields from `egui::Style` for an active tab with keyboard focus and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
+    /// - [`TabInteractionStyle::outline_color`]
+    /// - [`TabInteractionStyle::bg_fill`]
+    /// - [`TabInteractionStyle::text_color`]
+    /// - [`TabInteractionStyle::rounding`]
+    pub fn from_egui_active_with_kb_focus(style: &egui::Style) -> Self {
+        Self {
+            text_color: style.visuals.strong_text_color(),
+            outline_color: style.visuals.widgets.hovered.bg_stroke.color,
+            ..TabInteractionStyle::from_egui_active(style)
+        }
+    }
+
+    /// Derives relevant fields from `egui::Style` for an inactive tab with keyboard focus and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
+    /// - [`TabInteractionStyle::outline_color`]
+    /// - [`TabInteractionStyle::bg_fill`]
+    /// - [`TabInteractionStyle::text_color`]
+    /// - [`TabInteractionStyle::rounding`]
+    pub fn from_egui_inactive_with_kb_focus(style: &egui::Style) -> Self {
+        Self {
+            text_color: style.visuals.strong_text_color(),
+            outline_color: style.visuals.widgets.hovered.bg_stroke.color,
+            ..TabInteractionStyle::from_egui_inactive(style)
+        }
+    }
+
+    /// Derives relevant fields from `egui::Style` for a focused tab with keyboard focus and sets the remaining fields to their default values.
+    ///
+    /// Fields overwritten by [`egui::Style`] are:
+    /// - [`TabInteractionStyle::outline_color`]
+    /// - [`TabInteractionStyle::bg_fill`]
+    /// - [`TabInteractionStyle::text_color`]
+    /// - [`TabInteractionStyle::rounding`]
+    pub fn from_egui_focused_with_kb_focus(style: &egui::Style) -> Self {
+        Self {
+            text_color: style.visuals.strong_text_color(),
+            outline_color: style.visuals.widgets.hovered.bg_stroke.color,
+            ..TabInteractionStyle::from_egui_focused(style)
         }
     }
 }
