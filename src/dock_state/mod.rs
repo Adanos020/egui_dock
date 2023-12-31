@@ -295,7 +295,11 @@ impl<Tab> DockState<Tab> {
         &mut self,
         (surface_index, node_index, tab_index): (SurfaceIndex, NodeIndex, TabIndex),
     ) -> Option<Tab> {
-        self[surface_index].remove_tab((node_index, tab_index))
+        let removed_tab = self[surface_index].remove_tab((node_index, tab_index));
+        if !surface_index.is_main() && self[surface_index].is_empty() {
+            self.remove_surface(surface_index);
+        }
+        removed_tab
     }
 
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
