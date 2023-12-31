@@ -552,12 +552,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
         } else if response.hovered() {
             &tab_style.hovered
+        } else if response.has_focus() {
+            &tab_style.inactive_with_kb_focus
         } else {
-            if response.has_focus() {
-                &tab_style.inactive_with_kb_focus
-            } else {
-                &tab_style.inactive
-            }
+            &tab_style.inactive
         };
 
         // Draw the full tab first and then the stroke on top to avoid the stroke
