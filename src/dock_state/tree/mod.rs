@@ -199,9 +199,10 @@ impl<Tab> Tree<Tab> {
 
     /// Returns an [`Iterator`] of the underlying collection of nodes.
     ///
-    /// This includes [`Empty`](Node::Empty) nodes.
-    ///
-    /// This does not guarentee any particular traversal order.
+    /// This includes stale nodes that have been removed from the tree and does not
+    /// guarantee any particular traversal order.
+    /// To iterate over valid nodes in a breadth first order use the
+    /// [`breadth_first_index_iter`](Tree::breadth_first_index_iter()) method.
     #[inline(always)]
     pub fn iter(&self) -> Iter<'_, Node<Tab>> {
         self.nodes.iter()
@@ -209,9 +210,10 @@ impl<Tab> Tree<Tab> {
 
     /// Returns [`IterMut`] of the underlying collection of nodes.
     ///
-    /// This includes [`Empty`](Node::Empty) nodes.
-    ///
-    /// This does not guarentee any particular traversal order.
+    /// This includes stale nodes that have been removed from the tree and does not
+    /// guarantee any particular traversal order.
+    /// To iterate over valid nodes in a breadth first order use the
+    /// [`breadth_first_index_iter`](Tree::breadth_first_index_iter()) method.
     #[inline(always)]
     pub fn iter_mut(&mut self) -> IterMut<'_, Node<Tab>> {
         self.nodes.iter_mut()
