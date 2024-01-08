@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.10.0 - TBD
+## 0.10.0 - 2024-01-08
 
 ### Added
 From ([#211](https://github.com/Adanos020/egui_dock/pull/211)):
@@ -10,6 +10,9 @@ From ([#211](https://github.com/Adanos020/egui_dock/pull/211)):
 
 ### Fixed
 - Widgets inside tabs are now focusable with the tab key on the keyboard. ([#211](https://github.com/Adanos020/egui_dock/pull/211))
+
+### Breaking changes
+- Upgraded to egui 0.25
 
 ## 0.9.1 - 2023-12-10
 
