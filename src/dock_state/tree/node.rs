@@ -5,9 +5,6 @@ use egui::Rect;
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Node<Tab> {
-    /// Empty node.
-    Empty,
-
     /// Contains the actual tabs.
     Leaf {
         /// The full rectangle - tab bar plus tab body.
@@ -86,7 +83,6 @@ impl<Tab> Node<Tab> {
     #[inline]
     pub fn set_rect(&mut self, new_rect: Rect) {
         match self {
-            Self::Empty => (),
             Self::Leaf { rect, .. }
             | Self::Vertical { rect, .. }
             | Self::Horizontal { rect, .. } => *rect = new_rect,
@@ -99,17 +95,10 @@ impl<Tab> Node<Tab> {
     #[inline]
     pub fn rect(&self) -> Option<Rect> {
         match self {
-            Node::Empty => None,
             Node::Leaf { rect, .. }
             | Node::Vertical { rect, .. }
             | Node::Horizontal { rect, .. } => Some(*rect),
         }
-    }
-
-    /// Returns `true` if the node is a [`Empty`](Node::Empty), otherwise `false`.
-    #[inline(always)]
-    pub const fn is_empty(&self) -> bool {
-        matches!(self, Self::Empty)
     }
 
     /// Returns `true` if the node is a [`Leaf`](Node::Leaf), otherwise `false`.
@@ -303,7 +292,6 @@ impl<Tab> Node<Tab> {
                 active: *active,
                 scroll: *scroll,
             },
-            Node::Empty => Node::Empty,
             Node::Vertical {
                 rect,
                 fraction,
