@@ -634,6 +634,9 @@ impl<Tab> Tree<Tab> {
             _ => unreachable!("The parent of a node must be a split node"),
         };
         self.nodes.swap(parent.0, sibling.0);
+        if self.focused_node == Some(sibling) {
+            self.focused_node = Some(parent);
+        }
         self.empty_node_indices.push_back(sibling);
     }
 
