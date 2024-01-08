@@ -1,9 +1,11 @@
 /// Groups together labels from different elements of the [`DockArea`](crate::DockArea).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Translations {
     /// Text overrides for buttons in tab context menus.
     pub tab_context_menu: TabContextMenuTranslations,
+    /// Text overrides for buttons in windows.
+    pub window: WindowTranslations,
 }
 
 /// Specifies text in buttons displayed in the context menu displayed upon right-clicking on a tab.
@@ -16,13 +18,13 @@ pub struct TabContextMenuTranslations {
     pub eject_button: String,
 }
 
-impl Default for Translations {
-    /// Default English translations.
-    fn default() -> Self {
-        Self {
-            tab_context_menu: TabContextMenuTranslations::default(),
-        }
-    }
+/// Specifies text in buttons displayed in the context menu displayed upon right-clicking on a tab.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+pub struct WindowTranslations {
+    /// Message in the tooltip shown while hovering over a grayed out X button of a window
+    /// containing non-closable tabs.
+    pub close_button_tooltip: String,
 }
 
 impl Default for TabContextMenuTranslations {
@@ -31,6 +33,15 @@ impl Default for TabContextMenuTranslations {
         Self {
             close_button: String::from("Close"),
             eject_button: String::from("Eject"),
+        }
+    }
+}
+
+impl Default for WindowTranslations {
+    /// Default English translations.
+    fn default() -> Self {
+        Self {
+            close_button_tooltip: String::from("This window contains non-closable tabs."),
         }
     }
 }
