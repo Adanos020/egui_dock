@@ -80,7 +80,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .title(&mut tabs[active.0])
                 .color(ui.visuals().widgets.noninteractive.fg_stroke.color)
                 .into_galley(ui, Some(false), 0.0, TextStyle::Button)
-                .galley
         };
 
         // Fade window frame (if neccesary)
@@ -152,8 +151,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         ch_response.header_response.rect.height(),
                     ),
                 );
-                ui.painter()
-                    .galley(rect.center() - (title.size() * 0.5), title);
+                ui.painter().galley(
+                    rect.center() - (title.size() * 0.5),
+                    title,
+                    ui.visuals().widgets.noninteractive.fg_stroke.color,
+                );
             }
             Some(ch_response)
         } else {
@@ -177,7 +179,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let rect = {
             let (top_right, height) = match collapse_response {
                 Some(collapse) => (
-                    egui::Rect::from_two_pos(
+                    Rect::from_two_pos(
                         collapse.header_response.rect.right_top(),
                         ui.max_rect().right_top(),
                     )
@@ -199,9 +201,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         });
     }
 }
+
 fn min_window_width(title: &Galley, button_width: f32) -> f32 {
     (button_width * 2.) + title.size().x
 }
+
 fn close_button(disabled: Option<&'static str>) -> impl Widget {
     move |ui: &mut Ui| -> Response {
         let sense = disabled.map_or(Sense::click(), |_disabled| Sense::hover());

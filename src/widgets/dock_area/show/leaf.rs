@@ -588,15 +588,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             pos - galley.size() / 2.0
         };
 
-        let override_text_color = (!galley.galley_has_color).then_some(tab_style.text_color);
-
-        ui.painter().add(TextShape {
-            pos: text_pos,
-            galley: galley.galley,
-            underline: Stroke::NONE,
-            override_text_color,
-            angle: 0.0,
-        });
+        ui.painter()
+            .add(TextShape::new(text_pos, galley, tab_style.text_color));
 
         let close_response = show_close_button.then(|| {
             let mut close_button_rect = rect;
