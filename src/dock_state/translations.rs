@@ -1,5 +1,5 @@
 /// Groups together labels from different elements of the [`DockArea`](crate::DockArea).
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Translations {
     /// Text overrides for buttons in tab context menus.
@@ -27,9 +27,19 @@ pub struct WindowTranslations {
     pub close_button_tooltip: String,
 }
 
-impl Default for TabContextMenuTranslations {
+impl Translations {
     /// Default English translations.
-    fn default() -> Self {
+    pub fn english() -> Self {
+        Self {
+            tab_context_menu: TabContextMenuTranslations::english(),
+            window: WindowTranslations::english(),
+        }
+    }
+}
+
+impl TabContextMenuTranslations {
+    /// Default English translations.
+    pub fn english() -> Self {
         Self {
             close_button: String::from("Close"),
             eject_button: String::from("Eject"),
@@ -37,9 +47,9 @@ impl Default for TabContextMenuTranslations {
     }
 }
 
-impl Default for WindowTranslations {
+impl WindowTranslations {
     /// Default English translations.
-    fn default() -> Self {
+    pub fn english() -> Self {
         Self {
             close_button_tooltip: String::from("This window contains non-closable tabs."),
         }
