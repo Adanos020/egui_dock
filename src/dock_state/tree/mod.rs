@@ -272,13 +272,13 @@ impl<Tab> Tree<Tab> {
     /// ```
     #[inline]
     pub fn num_tabs(&self) -> usize {
-        let mut count = 0;
-        for node in self.nodes.iter() {
-            if let Node::Leaf { tabs, .. } = node {
-                count += tabs.len();
+        self.breadth_first_index_iter().fold(0, |acc, index| {
+            if let Node::Leaf { tabs, .. } = &self[index] {
+                acc + tabs.len()
+            } else {
+                acc
             }
-        }
-        count
+        })
     }
 
     /// Acquire a immutable borrow to the [`Node`] at the root of the tree.
@@ -555,7 +555,7 @@ impl<Tab> Tree<Tab> {
     fn get_free_node_index(&mut self) -> NodeIndex {
         self.empty_node_indices
             .pop_front()
-            .unwrap_or_else(|| NodeIndex(self.nodes.len()))
+            .unwrap_or(NodeIndex(self.nodes.len()))
     }
 
     /// Insert the node at the given index.
@@ -563,16 +563,18 @@ impl<Tab> Tree<Tab> {
     /// to the list.
     /// Inserting at an index greater than the capacity will panic.
     fn insert_at_index(&mut self, index: NodeIndex, value: Node<Tab>) {
-        if self.nodes.len() == index.0 {
-            self.nodes.push(value);
-        } else if self.nodes.len() > index.0 {
-            self.nodes[index.0] = value;
-        } else {
-            panic!(
-                "Trying to insert a node at an index that is to high: {}, max_index: {}",
-                index.0,
-                self.nodes.len()
-            )
+        match index.0.cmp(&self.nodes.len()) {
+            std::cmp::Ordering::Less => {
+                self.nodes[index.0] = value;
+            }
+            std::cmp::Ordering::Equal => self.nodes.push(value),
+            std::cmp::Ordering::Greater => {
+                panic!(
+                    "Trying to insert a node at an index that is to high: {}, max_index: {}",
+                    index.0,
+                    self.nodes.len()
+                )
+            }
         }
     }
 
