@@ -3,7 +3,7 @@
 ## 0.10.0 - TBD
 
 ### Added
-- From ([#211](https://github.com/Adanos020/egui_dock/pull/211)):
+From ([#211](https://github.com/Adanos020/egui_dock/pull/211)):
   - Tabs, the close tab buttons and the add tab buttons are now focusable with the keyboard and interactable with the enter key and space bar.
   - Separators are now focusable with the keyboard and movable using the arrow keys while control or shift is held.
   - `TabStyle::active_with_kb_focus`, `TabStyle::inactive_with_kb_focus` and `TabStyle::focused_with_kb_focus` for style of tabs that are focused with the keyboard.
@@ -21,7 +21,6 @@
 - `NodeIndex::level` - removed.
 - `NodeIndex::is_left` - removed.
 - `NodeIndex::is_right` - removed.
-
 ## 0.9.1 - 2023-12-10
 
 ### Fixed
