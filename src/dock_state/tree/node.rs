@@ -90,14 +90,12 @@ impl<Tab> Node<Tab> {
     }
 
     /// Get a [`Rect`] occupied by the node, could be used e.g. to draw a highlight rect around a node.
-    ///
-    /// Returns [`None`] if node is of the [`Empty`](Node::Empty) variant.
     #[inline]
-    pub fn rect(&self) -> Option<Rect> {
+    pub fn rect(&self) -> Rect {
         match self {
             Node::Leaf { rect, .. }
             | Node::Vertical { rect, .. }
-            | Node::Horizontal { rect, .. } => Some(*rect),
+            | Node::Horizontal { rect, .. } => *rect,
         }
     }
 

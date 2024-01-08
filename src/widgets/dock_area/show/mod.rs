@@ -115,9 +115,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 (surface_index, node_index, tab_index),
                 Rect::from_min_size(
                     mouse_pos.unwrap_or(Pos2::ZERO),
-                    self.dock_state[surface_index][node_index]
-                        .rect()
-                        .map_or(Vec2::new(100., 150.), |rect| rect.size()),
+                    self.dock_state[surface_index][node_index].rect().size(),
                 ),
             );
         }

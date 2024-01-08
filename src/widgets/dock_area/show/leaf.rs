@@ -28,9 +28,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
-        let rect = self.dock_state[surface_index][node_index]
-            .rect()
-            .expect("This node must be a leaf");
+        let rect = self.dock_state[surface_index][node_index].rect();
         let ui = &mut ui.child_ui_with_id_source(
             rect,
             Layout::top_down_justified(Align::Min),
@@ -268,7 +266,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                         self.drag_data = Some(DragData {
                             src: TreeComponent::Tab(surface_index, node_index, tab_index),
-                            rect: self.dock_state[surface_index][node_index].rect().unwrap(),
+                            rect: self.dock_state[surface_index][node_index].rect(),
                         });
                     }
                 }
