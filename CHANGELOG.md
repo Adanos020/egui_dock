@@ -1,5 +1,21 @@
 # egui_dock changelog
 
+## 0.10.0 - 2024-01-08
+
+### Added
+- From ([#211](https://github.com/Adanos020/egui_dock/pull/211)):
+  - Tabs, the close tab buttons and the add tab buttons are now focusable with the keyboard and interactable with the enter key and space bar.
+  - Separators are now focusable with the keyboard and movable using the arrow keys while control or shift is held.
+  - `TabStyle::active_with_kb_focus`, `TabStyle::inactive_with_kb_focus` and `TabStyle::focused_with_kb_focus` for style of tabs that are focused with the keyboard.
+- Missing translation for the tooltip showing when you hover on a grayed out window close button. ([#216](https://github.com/Adanos020/egui_dock/pull/216))
+
+### Fixed
+- Widgets inside tabs are now focusable with the tab key on the keyboard. ([#211](https://github.com/Adanos020/egui_dock/pull/211))
+
+### Breaking changes
+- Upgraded to egui 0.25
+- Replaced `Default` implementations for `{TabContextMenu,Window,}Translations` with associated functions called `english`. ([#216](https://github.com/Adanos020/egui_dock/pull/216))
+
 ## 0.9.1 - 2023-12-10
 
 ### Fixed
