@@ -32,13 +32,20 @@ Add `egui` and `egui_dock` to your project's dependencies.
 
 ```toml
 [dependencies]
-egui = "0.24"
-egui_dock = "0.10"
+egui = "0.25"
+egui_dock = "0.11"
 ```
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
 Once that's done, you can start using `egui_dock` – more details on that can be found in the
 [documentation](https://docs.rs/egui_dock/latest/egui_dock/).
+
+## Examples
+
+The Git repository of this crate contains some example applications demonstrating how to achieve certain effects.
+You can find all of them in the [`examples`](examples) folder.
+
+You can run them with Cargo from the crate's root directory, for example: `cargo run --example hello`.
 
 ## Demo
 

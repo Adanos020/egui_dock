@@ -1,9 +1,9 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, LayerId,
-    Layout, NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense, Stroke,
-    TextStyle, Ui, Vec2, WidgetText,
+    epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
+    LayerId, Layout, NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense,
+    Stroke, TextStyle, Ui, Vec2, WidgetText,
 };
 
 use crate::{
@@ -81,7 +81,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let (tabbar_outer_rect, tabbar_response) = ui.allocate_exact_size(
             vec2(ui.available_width(), style.tab_bar.height),
-            Sense::click(),
+            Sense::hover(),
         );
         ui.painter().rect_filled(
             tabbar_outer_rect,
@@ -235,7 +235,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             let show_close_button = self.show_close_buttons && closeable;
 
-            let response = if is_being_dragged {
+            let (response, title_id) = if is_being_dragged {
                 let layer_id = LayerId::new(Order::Tooltip, id);
                 let response = tabs_ui
                     .with_layer_id(layer_id, |ui| {
@@ -253,6 +253,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         )
                     })
                     .response;
+                let title_id = response.id;
 
                 let sense = Sense::click_and_drag();
                 let response = tabs_ui.interact(response.rect, id, sense);
@@ -272,7 +273,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
 
-                response
+                (response, title_id)
             } else {
                 let (mut response, close_response) = self.tab_title(
                     tabs_ui,
@@ -286,6 +287,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     show_close_button,
                     fade,
                 );
+                let title_id = response.id;
 
                 let (close_hovered, close_clicked) = close_response
                     .map(|res| (res.hovered(), res.clicked()))
@@ -322,7 +324,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     };
                     let tab = &mut tabs[tab_index.0];
 
-                    response = response.context_menu(|ui| {
+                    let response = tabs_ui.interact(response.rect, id, Sense::click());
+                    response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
                             && tab_viewer.allowed_in_windows(tab)
@@ -374,7 +377,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
 
-                response
+                (response, title_id)
             };
 
             // Paint hline below each tab unless its active (or option says otherwise).
@@ -383,10 +386,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 unreachable!()
             };
             let tab = &mut tabs[tab_index.0];
-            let style = match fade {
-                Some(fade) => fade,
-                None => self.style.as_ref().unwrap(),
-            };
+            let style = fade.unwrap_or_else(|| self.style.as_ref().unwrap());
             let tab_style = tab_viewer.tab_style_override(tab, &style.tab);
             let tab_style = tab_style.as_ref().unwrap_or(&style.tab);
 
@@ -399,7 +399,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 );
             }
 
-            if response.clicked() {
+            if response.clicked()
+                || (tabs_ui.memory(|m| m.has_focus(title_id))
+                    && tabs_ui.input(|i| i.key_pressed(Key::Enter) || i.key_pressed(Key::Space)))
+            {
                 *active = tab_index;
                 self.new_focused = Some((surface_index, node_index));
             }
@@ -445,7 +448,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         response = response.on_hover_cursor(CursorIcon::PointingHand);
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
-        let color = if response.hovered() {
+        let color = if response.hovered() || response.has_focus() {
             ui.painter()
                 .rect_filled(rect, Rounding::ZERO, style.buttons.add_tab_bg_fill);
             style.buttons.add_tab_active_color
@@ -524,18 +527,30 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .at_least(text_width + close_button_size);
         let tab_width = prefered_width.unwrap_or(0.0).at_least(minimum_width);
 
-        let (rect, mut response) =
-            ui.allocate_exact_size(vec2(tab_width, ui.available_height()), Sense::hover());
+        let (rect, mut response) = ui.allocate_exact_size(
+            vec2(tab_width, ui.available_height()),
+            Sense::focusable_noninteractive(),
+        );
         if !ui.memory(|mem| mem.is_anything_being_dragged()) && self.draggable_tabs {
             response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
 
         let tab_style = if focused || is_being_dragged {
-            &tab_style.focused
+            if response.has_focus() {
+                &tab_style.focused_with_kb_focus
+            } else {
+                &tab_style.focused
+            }
         } else if active {
-            &tab_style.active
+            if response.has_focus() {
+                &tab_style.active_with_kb_focus
+            } else {
+                &tab_style.active
+            }
         } else if response.hovered() {
             &tab_style.hovered
+        } else if response.has_focus() {
+            &tab_style.inactive_with_kb_focus
         } else {
             &tab_style.inactive
         };
@@ -570,15 +585,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             pos - galley.size() / 2.0
         };
 
-        let override_text_color = (!galley.galley_has_color).then_some(tab_style.text_color);
-
-        ui.painter().add(TextShape {
-            pos: text_pos,
-            galley: galley.galley,
-            underline: Stroke::NONE,
-            override_text_color,
-            angle: 0.0,
-        });
+        ui.painter()
+            .add(TextShape::new(text_pos, galley, tab_style.text_color));
 
         let close_response = show_close_button.then(|| {
             let mut close_button_rect = rect;
@@ -590,13 +598,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .interact(close_button_rect, id, Sense::click())
                 .on_hover_cursor(CursorIcon::PointingHand);
 
-            let color = if response.hovered() {
+            let color = if response.hovered() || response.has_focus() {
                 style.buttons.close_tab_active_color
             } else {
                 style.buttons.close_tab_color
             };
 
-            if response.hovered() {
+            if response.hovered() || response.has_focus() {
                 let mut rounding = tab_style.rounding;
                 rounding.nw = 0.0;
                 rounding.sw = 0.0;
@@ -804,13 +812,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             });
         }
 
-        //change hover destination
+        // change hover destination
         if let Some(pointer) = state.last_hover_pos {
             // Prevent borrow checker issues.
             let rect = rect.to_owned();
 
-            //if the dragged tab isn't allowed in a window,
-            //it's unneccesary to change the hover state
+            // if the dragged tab isn't allowed in a window,
+            // it's unnecessary to change the hover state
             let is_dragged_valid = match &state.dnd {
                 Some(DragDropState {
                     drag: DragData { src, .. },
