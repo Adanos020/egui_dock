@@ -402,7 +402,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 if response.has_focus() {
                     // Prevent the default behaviour of removing focus from the separators when the
                     // arrow keys are pressed
-                    ui.memory_mut(|m| m.set_focus_lock_filter(response.id, EventFilter { arrows: should_respond_to_arrow_keys, tab: false, escape: false }));
+                    ui.memory_mut(|m| m.set_focus_lock_filter(response.id, EventFilter {
+                        horizontal_arrows: should_respond_to_arrow_keys,
+                        vertical_arrows: should_respond_to_arrow_keys,
+                        tab: false,
+                        escape: false
+                    }));
                 }
 
                 let arrow_key_offset = if response.has_focus() && should_respond_to_arrow_keys {

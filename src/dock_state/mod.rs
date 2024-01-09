@@ -67,7 +67,7 @@ impl<Tab> DockState<Tab> {
         Self {
             surfaces: vec![Surface::Main(Tree::new(tabs))],
             focused_surface: None,
-            translations: Translations::default(),
+            translations: Translations::english(),
         }
     }
 

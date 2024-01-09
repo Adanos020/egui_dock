@@ -384,10 +384,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 unreachable!()
             };
             let tab = &mut tabs[tab_index.0];
-            let style = match fade {
-                Some(fade) => fade,
-                None => self.style.as_ref().unwrap(),
-            };
+            let style = fade.unwrap_or_else(|| self.style.as_ref().unwrap());
             let tab_style = tab_viewer.tab_style_override(tab, &style.tab);
             let tab_style = tab_style.as_ref().unwrap_or(&style.tab);
 
@@ -586,15 +583,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             pos - galley.size() / 2.0
         };
 
-        let override_text_color = (!galley.galley_has_color).then_some(tab_style.text_color);
-
-        ui.painter().add(TextShape {
-            pos: text_pos,
-            galley: galley.galley,
-            underline: Stroke::NONE,
-            override_text_color,
-            angle: 0.0,
-        });
+        ui.painter()
+            .add(TextShape::new(text_pos, galley, tab_style.text_color));
 
         let close_response = show_close_button.then(|| {
             let mut close_button_rect = rect;
@@ -820,13 +810,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             });
         }
 
-        //change hover destination
+        // change hover destination
         if let Some(pointer) = state.last_hover_pos {
             // Prevent borrow checker issues.
             let rect = rect.to_owned();
 
-            //if the dragged tab isn't allowed in a window,
-            //it's unneccesary to change the hover state
+            // if the dragged tab isn't allowed in a window,
+            // it's unnecessary to change the hover state
             let is_dragged_valid = match &state.dnd {
                 Some(DragDropState {
                     drag: DragData { src, .. },
