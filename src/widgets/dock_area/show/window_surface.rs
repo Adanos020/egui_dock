@@ -10,9 +10,7 @@ use egui::{
 use egui::{CentralPanel, ViewportId};
 
 use crate::{
-    dock_area::{state::State, tab_removal::TabRemoval},
-    utils::fade_visuals,
-    DockArea, Node, Style, SurfaceIndex, TabViewer,
+    dock_area::state::State, utils::fade_visuals, DockArea, Node, Style, SurfaceIndex, TabViewer,
 };
 
 impl<'tree, Tab> DockArea<'tree, Tab> {
@@ -95,7 +93,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         #[cfg(feature = "viewports")]
         {
             let window = window
-                .with_close_button(self.show_window_close_buttons && disabled.is_none())
+                .with_close_button(self.show_window_close_buttons && disabled)
                 .with_title(title.text());
             ui.ctx().show_viewport_immediate(
                 ViewportId::from_hash_of(id),
