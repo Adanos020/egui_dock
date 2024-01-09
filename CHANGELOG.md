@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.10.0 - 2024-01-08
+## 0.10.0 - 2024-01-09
 
 ### Added
 - From ([#211](https://github.com/Adanos020/egui_dock/pull/211)):
