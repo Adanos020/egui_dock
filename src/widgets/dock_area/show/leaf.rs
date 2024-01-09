@@ -386,10 +386,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 unreachable!()
             };
             let tab = &mut tabs[tab_index.0];
-            let style = match fade {
-                Some(fade) => fade,
-                None => self.style.as_ref().unwrap(),
-            };
+            let style = fade.unwrap_or_else(|| self.style.as_ref().unwrap());
             let tab_style = tab_viewer.tab_style_override(tab, &style.tab);
             let tab_style = tab_style.as_ref().unwrap_or(&style.tab);
 
@@ -815,13 +812,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             });
         }
 
-        //change hover destination
+        // change hover destination
         if let Some(pointer) = state.last_hover_pos {
             // Prevent borrow checker issues.
             let rect = rect.to_owned();
 
-            //if the dragged tab isn't allowed in a window,
-            //it's unneccesary to change the hover state
+            // if the dragged tab isn't allowed in a window,
+            // it's unnecessary to change the hover state
             let is_dragged_valid = match &state.dnd {
                 Some(DragDropState {
                     drag: DragData { src, .. },

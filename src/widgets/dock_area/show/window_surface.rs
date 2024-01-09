@@ -43,24 +43,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             None => (1.0, None),
         };
 
-        // Finds out if theres a reason for the close button to be disabled
-        // by iterating over the tree and finding if theres any non-closable nodes.
-        let disabled = (!self.dock_state[surf_index]
-            .iter_mut()
-            .filter_map(|node| {
-                if let Node::Leaf { tabs, .. } = node {
-                    Some(
-                        tabs.iter_mut()
-                            .map(|tab| tab_viewer.closeable(tab))
-                            .all(identity),
-                    )
-                } else {
-                    None
-                }
-            })
-            .all(identity))
-        .then_some("This window contains non-closable tabs.");
-
         // Get galley of currently selected node as a window title
         let title = {
             let node_id = self.dock_state[surf_index]
@@ -82,7 +64,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .into_galley(ui, Some(false), 0.0, TextStyle::Button)
         };
 
-        // Fade window frame (if neccesary)
+        // Fade window frame (if necessary)
         let mut frame = Frame::window(ui.style());
         if fade_factor != 1.0 {
             frame.fill = frame.fill.linear_multiply(fade_factor);
@@ -94,7 +76,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .frame(frame)
             .min_width(min_window_width(&title, ui.spacing().indent))
             .show(ui.ctx(), |ui| {
-                //fade inner ui (if neccesary)
+                //fade inner ui (if necessary)
                 if fade_factor != 1.0 {
                     fade_visuals(ui.visuals_mut(), fade_factor);
                 }
@@ -112,6 +94,23 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     title,
                 );
                 if self.show_window_close_buttons {
+                    // Finds out if theres a reason for the close button to be disabled
+                    // by iterating over the tree and finding if theres any non-closable nodes.
+                    let disabled = !self.dock_state[surf_index]
+                        .iter_mut()
+                        .filter_map(|node| {
+                            if let Node::Leaf { tabs, .. } = node {
+                                Some(
+                                    tabs.iter_mut()
+                                        .map(|tab| tab_viewer.closeable(tab))
+                                        .all(identity),
+                                )
+                            } else {
+                                None
+                            }
+                        })
+                        .all(identity);
+
                     self.show_close_button(ui, &mut open, ch_res, disabled);
                 }
             });
@@ -174,7 +173,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui: &mut Ui,
         open: &mut bool,
         collapse_response: Option<CollapsingResponse<()>>,
-        disabled: Option<&'static str>,
+        disabled: bool,
     ) {
         let rect = {
             let (top_right, height) = match collapse_response {
@@ -191,10 +190,19 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             Rect::from_min_size(top_right, Vec2::new(0.0, height))
         };
+        let close_button = close_button(
+            disabled.then_some(
+                self.dock_state
+                    .translations
+                    .window
+                    .close_button_tooltip
+                    .as_str(),
+            ),
+        );
         ui.allocate_ui_at_rect(rect, |ui| {
             ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.set_height(rect.height());
-                if ui.add(close_button(disabled)).clicked() {
+                if ui.add(close_button).clicked() {
                     *open = false;
                 }
             });
@@ -206,7 +214,7 @@ fn min_window_width(title: &Galley, button_width: f32) -> f32 {
     (button_width * 2.) + title.size().x
 }
 
-fn close_button(disabled: Option<&'static str>) -> impl Widget {
+fn close_button(disabled: Option<&str>) -> impl Widget + '_ {
     move |ui: &mut Ui| -> Response {
         let sense = disabled.map_or(Sense::click(), |_disabled| Sense::hover());
 
