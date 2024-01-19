@@ -460,6 +460,15 @@ impl<Tab> DockState<Tab> {
 
     /// Returns a new [`DockState`] while mapping and filtering the tab type.
     /// Any remaining empty [`Node`]s and [`Surface`]s are removed.
+    ///
+    /// ```
+    /// # use egui_dock::{DockState, Node};
+    /// let dock_state = DockState::new(vec![1, 2, 3]);
+    /// let mapped_dock_state = dock_state.filter_map_tabs(|tab| (tab % 2 == 1).then(|| tab.to_string()));
+    ///
+    /// let tabs: Vec<_> = mapped_dock_state.iter_all_tabs().map(|(_, tab)| tab.to_owned()).collect();
+    /// assert_eq!(tabs, vec!["1".to_string(), "3".to_string()]);
+    /// ```
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> DockState<NewTab>
     where
         F: Clone + FnMut(&Tab) -> Option<NewTab>,
@@ -484,6 +493,15 @@ impl<Tab> DockState<Tab> {
     }
 
     /// Returns a new [`DockState`] while mapping the tab type.
+    ///
+    /// ```
+    /// # use egui_dock::{DockState, Node};
+    /// let dock_state = DockState::new(vec![1, 2, 3]);
+    /// let mapped_dock_state = dock_state.map_tabs(|tab| tab.to_string());
+    ///
+    /// let tabs: Vec<_> = mapped_dock_state.iter_all_tabs().map(|(_, tab)| tab.to_owned()).collect();
+    /// assert_eq!(tabs, vec!["1".to_string(), "2".to_string(), "3".to_string()]);
+    /// ```
     pub fn map_tabs<F, NewTab>(&self, mut function: F) -> DockState<NewTab>
     where
         F: Clone + FnMut(&Tab) -> NewTab,
@@ -493,6 +511,15 @@ impl<Tab> DockState<Tab> {
 
     /// Returns a new [`DockState`] while filtering the tab type.
     /// Any remaining empty [`Node`]s and [`Surface`]s are removed.
+    ///
+    /// ```
+    /// # use egui_dock::{DockState, Node};
+    /// let dock_state = DockState::new(["tab1", "tab2", "outlier"].map(str::to_string).to_vec());
+    /// let filtered_dock_state = dock_state.filter_tabs(|tab| tab.starts_with("tab"));
+    ///
+    /// let tabs: Vec<_> = filtered_dock_state.iter_all_tabs().map(|(_, tab)| tab.to_owned()).collect();
+    /// assert_eq!(tabs, vec!["tab1".to_string(), "tab2".to_string()]);
+    /// ```
     pub fn filter_tabs<F>(&self, mut predicate: F) -> DockState<Tab>
     where
         F: Clone + FnMut(&Tab) -> bool,
@@ -503,6 +530,15 @@ impl<Tab> DockState<Tab> {
 
     /// Removes all tabs for which `predicate` returns `false`.
     /// Any remaining empty [`Node`]s and [`Surface`]s are also removed.
+    ///
+    /// ```
+    /// # use egui_dock::{DockState, Node};
+    /// let mut dock_state = DockState::new(["tab1", "tab2", "outlier"].map(str::to_string).to_vec());
+    /// dock_state.retain_tabs(|tab| tab.starts_with("tab"));
+    ///
+    /// let tabs: Vec<_> = dock_state.iter_all_tabs().map(|(_, tab)| tab.to_owned()).collect();
+    /// assert_eq!(tabs, vec!["tab1".to_string(), "tab2".to_string()]);
+    /// ```
     pub fn retain_tabs<F>(&mut self, predicate: F)
     where
         F: Clone + FnMut(&mut Tab) -> bool,
