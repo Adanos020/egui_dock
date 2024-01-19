@@ -735,6 +735,7 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Returns a new [`Tree`] while mapping and filtering the tab type.
+    /// Any remaining empty [`Node`]s are removed.
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Tree<NewTab>
     where
         F: Clone + FnMut(&Tab) -> Option<NewTab>,
@@ -768,12 +769,25 @@ impl<Tab> Tree<Tab> {
     }
 
     /// Returns a new [`Tree`] while filtering the tab type.
+    /// Any remaining empty [`Node`]s are removed.
     pub fn filter_tabs<F>(&self, mut predicate: F) -> Tree<Tab>
     where
         F: Clone + FnMut(&Tab) -> bool,
         Tab: Clone,
     {
         self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
+    }
+
+    /// Removes all tabs for which `predicate` returns `false`.
+    /// Any remaining empty [`Node`]s are also removed.
+    pub fn retain_tabs<F>(&mut self, predicate: F)
+    where
+        F: Clone + FnMut(&mut Tab) -> bool,
+    {
+        self.nodes.retain_mut(|node| {
+            node.retain_tabs(predicate.clone());
+            !node.is_empty()
+        });
     }
 }
 

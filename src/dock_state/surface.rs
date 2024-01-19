@@ -77,6 +77,8 @@ impl<Tab> Surface<Tab> {
     }
 
     /// Returns a new [`Surface`] while mapping and filtering the tab type.
+    /// Any remaining empty [`Node`]s and are removed, and if this [`Surface`] remains empty,
+    /// it'll change to [`Surface::Empty`].
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Surface<NewTab>
     where
         F: Clone + FnMut(&Tab) -> Option<NewTab>,
@@ -104,11 +106,28 @@ impl<Tab> Surface<Tab> {
     }
 
     /// Returns a new [`Surface`] while filtering the tab type.
+    /// Any remaining empty [`Node`]s and are removed, and if this [`Surface`] remains empty,
+    /// it'll change to [`Surface::Empty`].
     pub fn filter_tabs<F>(&self, mut predicate: F) -> Surface<Tab>
     where
         F: Clone + FnMut(&Tab) -> bool,
         Tab: Clone,
     {
         self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
+    }
+
+    /// Removes all tabs for which `predicate` returns `false`.
+    /// Any remaining empty [`Node`]s and are also removed, and if this [`Surface`] remains empty,
+    /// it'll change to [`Surface::Empty`].
+    pub fn retain_tabs<F>(&mut self, predicate: F)
+    where
+        F: Clone + FnMut(&mut Tab) -> bool,
+    {
+        if let Surface::Main(tree) | Surface::Window(tree, _) = self {
+            tree.retain_tabs(predicate);
+            if tree.is_empty() {
+                *self = Surface::Empty;
+            }
+        }
     }
 }

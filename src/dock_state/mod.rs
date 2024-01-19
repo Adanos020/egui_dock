@@ -459,6 +459,7 @@ impl<Tab> DockState<Tab> {
     }
 
     /// Returns a new [`DockState`] while mapping and filtering the tab type.
+    /// Any remaining empty [`Node`]s and [`Surface`]s are removed.
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> DockState<NewTab>
     where
         F: Clone + FnMut(&Tab) -> Option<NewTab>,
@@ -491,12 +492,25 @@ impl<Tab> DockState<Tab> {
     }
 
     /// Returns a new [`DockState`] while filtering the tab type.
+    /// Any remaining empty [`Node`]s and [`Surface`]s are removed.
     pub fn filter_tabs<F>(&self, mut predicate: F) -> DockState<Tab>
     where
         F: Clone + FnMut(&Tab) -> bool,
         Tab: Clone,
     {
         self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
+    }
+
+    /// Removes all tabs for which `predicate` returns `false`.
+    /// Any remaining empty [`Node`]s and [`Surface`]s are also removed.
+    pub fn retain_tabs<F>(&mut self, predicate: F)
+    where
+        F: Clone + FnMut(&mut Tab) -> bool,
+    {
+        self.surfaces.retain_mut(|surface| {
+            surface.retain_tabs(predicate.clone());
+            !surface.is_empty()
+        });
     }
 }
 
