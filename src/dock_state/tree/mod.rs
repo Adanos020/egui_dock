@@ -734,10 +734,10 @@ impl<Tab> Tree<Tab> {
         tab
     }
 
-    /// Returns a new Tree while mapping the tab type
-    pub fn map_tabs<F, NewTab>(&self, function: F) -> Tree<NewTab>
+    /// Returns a new [`Tree`] while mapping and filtering the tab type.
+    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Tree<NewTab>
     where
-        F: FnMut(&Tab) -> NewTab + Clone,
+        F: Clone + FnMut(&Tab) -> Option<NewTab>,
     {
         let Tree {
             focused_node,
@@ -745,12 +745,35 @@ impl<Tab> Tree<Tab> {
         } = self;
         let nodes = nodes
             .iter()
-            .map(|node| node.map_tabs(function.clone()))
+            .filter_map(|node| {
+                let node = node.filter_map_tabs(function.clone());
+                match node {
+                    Node::Leaf { ref tabs, .. } => (!tabs.is_empty()).then_some(node),
+                    _ => Some(node),
+                }
+            })
             .collect();
         Tree {
             nodes,
             focused_node: *focused_node,
         }
+    }
+
+    /// Returns a new [`Tree`] while mapping the tab type.
+    pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Tree<NewTab>
+    where
+        F: Clone + FnMut(&Tab) -> NewTab,
+    {
+        self.filter_map_tabs(move |tab| Some(function(tab)))
+    }
+
+    /// Returns a new [`Tree`] while filtering the tab type.
+    pub fn filter_tabs<F>(&self, mut predicate: F) -> Tree<Tab>
+    where
+        F: Clone + FnMut(&Tab) -> bool,
+        Tab: Clone,
+    {
+        self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
     }
 }
 

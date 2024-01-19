@@ -76,17 +76,39 @@ impl<Tab> Surface<Tab> {
             .flat_map(|(index, node)| node.iter_tabs_mut().map(move |tab| (NodeIndex(index), tab)))
     }
 
-    /// Returns a new Surface while mapping the tab type
-    pub fn map_tabs<F, NewTab>(&self, function: F) -> Surface<NewTab>
+    /// Returns a new [`Surface`] while mapping and filtering the tab type.
+    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Surface<NewTab>
     where
-        F: FnMut(&Tab) -> NewTab + Clone,
+        F: Clone + FnMut(&Tab) -> Option<NewTab>,
     {
         match self {
             Surface::Empty => Surface::Empty,
-            Surface::Main(tree) => Surface::Main(tree.map_tabs(function)),
+            Surface::Main(tree) => Surface::Main(tree.filter_map_tabs(function)),
             Surface::Window(tree, window_state) => {
-                Surface::Window(tree.map_tabs(function), window_state.clone())
+                let tree = tree.filter_map_tabs(function);
+                if tree.is_empty() {
+                    Surface::Empty
+                } else {
+                    Surface::Window(tree, window_state.clone())
+                }
             }
         }
+    }
+
+    /// Returns a new [`Surface`] while mapping the tab type.
+    pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Surface<NewTab>
+    where
+        F: Clone + FnMut(&Tab) -> NewTab,
+    {
+        self.filter_map_tabs(move |tab| Some(function(tab)))
+    }
+
+    /// Returns a new [`Surface`] while filtering the tab type.
+    pub fn filter_tabs<F>(&self, mut predicate: F) -> Surface<Tab>
+    where
+        F: Clone + FnMut(&Tab) -> bool,
+        Tab: Clone,
+    {
+        self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
     }
 }

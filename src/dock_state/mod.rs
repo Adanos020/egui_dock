@@ -458,10 +458,10 @@ impl<Tab> DockState<Tab> {
             .flat_map(|nodes| nodes.iter())
     }
 
-    /// Returns a new DockState while mapping the tab type
-    pub fn map_tabs<F, NewTab>(&self, function: F) -> DockState<NewTab>
+    /// Returns a new [`DockState`] while mapping and filtering the tab type.
+    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> DockState<NewTab>
     where
-        F: FnMut(&Tab) -> NewTab + Clone,
+        F: Clone + FnMut(&Tab) -> Option<NewTab>,
     {
         let DockState {
             surfaces,
@@ -470,13 +470,33 @@ impl<Tab> DockState<Tab> {
         } = self;
         let surfaces = surfaces
             .iter()
-            .map(|surface| surface.map_tabs(function.clone()))
+            .filter_map(|surface| {
+                let surface = surface.filter_map_tabs(function.clone());
+                (!surface.is_empty()).then_some(surface)
+            })
             .collect();
         DockState {
             surfaces,
             focused_surface: *focused_surface,
             translations: translations.clone(),
         }
+    }
+
+    /// Returns a new [`DockState`] while mapping the tab type.
+    pub fn map_tabs<F, NewTab>(&self, mut function: F) -> DockState<NewTab>
+    where
+        F: Clone + FnMut(&Tab) -> NewTab,
+    {
+        self.filter_map_tabs(move |tab| Some(function(tab)))
+    }
+
+    /// Returns a new [`DockState`] while filtering the tab type.
+    pub fn filter_tabs<F>(&self, mut predicate: F) -> DockState<Tab>
+    where
+        F: Clone + FnMut(&Tab) -> bool,
+        Tab: Clone,
+    {
+        self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
     }
 }
 

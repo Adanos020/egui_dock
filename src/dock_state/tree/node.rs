@@ -289,10 +289,10 @@ impl<Tab> Node<Tab> {
         }
     }
 
-    /// Returns a new Node while mapping the tab type
-    pub fn map_tabs<F, NewTab>(&self, function: F) -> Node<NewTab>
+    /// Returns a new [`Node`] while mapping and filtering the tab type.
+    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Node<NewTab>
     where
-        F: FnMut(&Tab) -> NewTab,
+        F: FnMut(&Tab) -> Option<NewTab>,
     {
         match self {
             Node::Leaf {
@@ -304,7 +304,7 @@ impl<Tab> Node<Tab> {
             } => Node::Leaf {
                 rect: *rect,
                 viewport: *viewport,
-                tabs: tabs.iter().map(function).collect(),
+                tabs: tabs.iter().filter_map(function).collect(),
                 active: *active,
                 scroll: *scroll,
             },
@@ -318,5 +318,22 @@ impl<Tab> Node<Tab> {
                 fraction: *fraction,
             },
         }
+    }
+
+    /// Returns a new [`Node`] while mapping the tab type.
+    pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Node<NewTab>
+    where
+        F: FnMut(&Tab) -> NewTab,
+    {
+        self.filter_map_tabs(move |tab| Some(function(tab)))
+    }
+
+    /// Returns a new [`Node`] while filtering the tab type.
+    pub fn filter_tabs<F>(&self, mut predicate: F) -> Node<Tab>
+    where
+        F: Clone + FnMut(&Tab) -> bool,
+        Tab: Clone,
+    {
+        self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
     }
 }
