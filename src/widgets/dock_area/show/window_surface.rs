@@ -1,4 +1,3 @@
-use std::convert::identity;
 use std::sync::Arc;
 
 use egui::{
@@ -96,20 +95,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 if self.show_window_close_buttons {
                     // Finds out if theres a reason for the close button to be disabled
                     // by iterating over the tree and finding if theres any non-closable nodes.
-                    let disabled = !self.dock_state[surf_index]
-                        .iter_mut()
-                        .filter_map(|node| {
-                            if let Node::Leaf { tabs, .. } = node {
-                                Some(
-                                    tabs.iter_mut()
-                                        .map(|tab| tab_viewer.closeable(tab))
-                                        .all(identity),
-                                )
-                            } else {
-                                None
-                            }
-                        })
-                        .all(identity);
+                    let disabled = self.dock_state[surf_index]
+                        .iter()
+                        .flat_map(|node| node.iter_tabs())
+                        .any(|tab| !tab_viewer.closeable(tab));
 
                     self.show_close_button(ui, &mut open, ch_res, disabled);
                 }

@@ -227,7 +227,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     *active == tab_index || is_being_dragged,
                     tab_viewer.title(&mut tabs[tab_index.0]),
                     tab_style.unwrap_or(style.tab.clone()),
-                    tab_viewer.closeable(&mut tabs[tab_index.0]),
+                    tab_viewer.closeable(&tabs[tab_index.0]),
                 )
             };
 

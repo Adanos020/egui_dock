@@ -116,7 +116,7 @@ impl TabViewer for MyContext {
         }
     }
 
-    fn closeable(&mut self, tab: &mut Self::Tab) -> bool {
+    fn closeable(&mut self, tab: &Self::Tab) -> bool {
         ["Inspector", "Style Editor"].contains(&tab.as_str())
     }
 
