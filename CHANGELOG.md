@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.11.0 - TBD
+
+### Added
+- `filter_map_tabs`, `filter_tabs`, and `retain_tabs` ([#217](https://github.com/Adanos020/egui_dock/pull/217))
+
 ## 0.10.0 - 2024-01-09
 
 ### Added
