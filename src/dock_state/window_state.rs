@@ -1,5 +1,11 @@
 use egui::{Id, Pos2, Rect, Vec2};
 
+#[cfg(feature = "viewports")]
+use egui::ViewportBuilder;
+
+#[cfg(not(feature = "viewports"))]
+use egui::Window;
+
 /// The state of a [`Surface::Window`](crate::Surface::Window).
 ///
 /// Doubles as a handle for the surface, allowing the user to set its size and position.
@@ -77,13 +83,30 @@ impl WindowState {
         self.next_size.take()
     }
 
-    //the 'static in this case means that the `open` field is always `None`
-    pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> (egui::Window<'static>, bool) {
+    #[cfg(feature = "viewports")]
+    pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> (ViewportBuilder, bool) {
         let new = self.new;
-        let mut window_constructor = egui::Window::new("")
-            .id(id)
-            .constrain_to(bounds)
-            .title_bar(false);
+        let mut viewport_builder = ViewportBuilder::default()
+            .with_decorations(false)
+            .with_resizable(true)
+            .with_drag_and_drop(true);
+
+        if let Some(position) = self.next_position() {
+            viewport_builder = viewport_builder.with_position(position);
+        }
+        if let Some(size) = self.next_size() {
+            viewport_builder = viewport_builder.with_inner_size(size);
+        }
+
+        self.new = false;
+        (viewport_builder, new)
+    }
+
+    // The 'static in this case means that the `open` field is always `None`
+    #[cfg(not(feature = "viewports"))]
+    pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> (Window<'static>, bool) {
+        let new = self.new;
+        let mut window_constructor = Window::new("").id(id).constrain_to(bounds).title_bar(false);
 
         if let Some(position) = self.next_position() {
             window_constructor = window_constructor.current_pos(position);

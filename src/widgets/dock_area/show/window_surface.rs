@@ -6,10 +6,11 @@ use egui::{
     TextStyle, Ui, Vec2, Widget,
 };
 
+#[cfg(feature = "viewports")]
+use egui::{CentralPanel, ViewportId};
+
 use crate::{
-    dock_area::{state::State, tab_removal::TabRemoval},
-    utils::fade_visuals,
-    DockArea, Node, Style, SurfaceIndex, TabViewer,
+    dock_area::state::State, utils::fade_visuals, DockArea, Node, Style, SurfaceIndex, TabViewer,
 };
 
 impl<'tree, Tab> DockArea<'tree, Tab> {
@@ -72,51 +73,87 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             frame.shadow.color = frame.shadow.color.linear_multiply(fade_factor);
         }
 
-        window
-            .frame(frame)
-            .min_width(min_window_width(&title, ui.spacing().indent))
-            .show(ui.ctx(), |ui| {
-                //fade inner ui (if necessary)
-                if fade_factor != 1.0 {
-                    fade_visuals(ui.visuals_mut(), fade_factor);
+        // Finds out if theres a reason for the close button to be disabled
+        // by iterating over the tree and finding if theres any non-closable nodes.
+        let disabled = !self.dock_state[surf_index]
+            .iter_mut()
+            .filter_map(|node| {
+                if let Node::Leaf { tabs, .. } = node {
+                    Some(
+                        tabs.iter_mut()
+                            .map(|tab| tab_viewer.closeable(tab))
+                            .all(identity),
+                    )
+                } else {
+                    None
                 }
+            })
+            .all(identity);
 
-                let collapser_id = id.with("collapser");
-                let collapser_state = new.then_some(true);
-                let ch_res = self.show_window_body(
-                    ui,
-                    surf_index,
-                    tab_viewer,
-                    state,
-                    fade_style,
-                    collapser_state,
-                    collapser_id,
-                    title,
-                );
-                if self.show_window_close_buttons {
-                    // Finds out if theres a reason for the close button to be disabled
-                    // by iterating over the tree and finding if theres any non-closable nodes.
-                    let disabled = !self.dock_state[surf_index]
-                        .iter_mut()
-                        .filter_map(|node| {
-                            if let Node::Leaf { tabs, .. } = node {
-                                Some(
-                                    tabs.iter_mut()
-                                        .map(|tab| tab_viewer.closeable(tab))
-                                        .all(identity),
-                                )
-                            } else {
-                                None
-                            }
-                        })
-                        .all(identity);
+        #[cfg(feature = "viewports")]
+        {
+            let window = window
+                .with_close_button(self.show_window_close_buttons && disabled)
+                .with_title(title.text());
+            ui.ctx().show_viewport_immediate(
+                ViewportId::from_hash_of(id),
+                window,
+                |ctx, viewport_class| {
+                    CentralPanel::default().show(ctx, |ui| {
+                        if fade_factor != 1.0 {
+                            fade_visuals(ui.visuals_mut(), fade_factor);
+                        }
 
-                    self.show_close_button(ui, &mut open, ch_res, disabled);
-                }
-            });
+                        let collapser_id = id.with("collapser");
+                        let collapser_state = new.then_some(true);
+                        let ch_res = self.show_window_body(
+                            ui,
+                            surf_index,
+                            tab_viewer,
+                            state,
+                            fade_style,
+                            collapser_state,
+                            collapser_id,
+                            title,
+                        );
+                        if self.show_window_close_buttons {
+                            self.show_close_button(ui, &mut open, ch_res, disabled);
+                        }
+                    });
+                },
+            )
+        }
+        #[cfg(not(feature = "viewports"))]
+        {
+            window
+                .frame(frame)
+                .min_width(min_window_width(&title, ui.spacing().indent))
+                .show(ui.ctx(), |ui| {
+                    //fade inner ui (if neccesary)
+                    if fade_factor != 1.0 {
+                        fade_visuals(ui.visuals_mut(), fade_factor);
+                    }
 
-        if !open {
-            self.to_remove.push(TabRemoval::Window(surf_index));
+                    let collapser_id = id.with("collapser");
+                    let collapser_state = new.then_some(true);
+                    let ch_res = self.show_window_body(
+                        ui,
+                        surf_index,
+                        tab_viewer,
+                        state,
+                        fade_style,
+                        collapser_state,
+                        collapser_id,
+                        title,
+                    );
+                    if self.show_window_close_buttons {
+                        self.show_close_button(ui, &mut open, ch_res, disabled);
+                    }
+                });
+
+            if !open {
+                self.to_remove.push(TabRemoval::Window(surf_index));
+            }
         }
     }
 
