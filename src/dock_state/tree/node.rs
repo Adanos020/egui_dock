@@ -289,10 +289,11 @@ impl<Tab> Node<Tab> {
         }
     }
 
-    /// Returns a new Node while mapping the tab type
-    pub fn map_tabs<F, NewTab>(&self, function: F) -> Node<NewTab>
+    /// Returns a new [`Node`] while mapping and filtering the tab type.
+    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
+    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Node<NewTab>
     where
-        F: FnMut(&Tab) -> NewTab,
+        F: FnMut(&Tab) -> Option<NewTab>,
     {
         match self {
             Node::Leaf {
@@ -301,13 +302,20 @@ impl<Tab> Node<Tab> {
                 tabs,
                 active,
                 scroll,
-            } => Node::Leaf {
-                rect: *rect,
-                viewport: *viewport,
-                tabs: tabs.iter().map(function).collect(),
-                active: *active,
-                scroll: *scroll,
-            },
+            } => {
+                let tabs: Vec<_> = tabs.iter().filter_map(function).collect();
+                if tabs.is_empty() {
+                    Node::Empty
+                } else {
+                    Node::Leaf {
+                        rect: *rect,
+                        viewport: *viewport,
+                        tabs,
+                        active: *active,
+                        scroll: *scroll,
+                    }
+                }
+            }
             Node::Empty => Node::Empty,
             Node::Vertical { rect, fraction } => Node::Vertical {
                 rect: *rect,
@@ -317,6 +325,38 @@ impl<Tab> Node<Tab> {
                 rect: *rect,
                 fraction: *fraction,
             },
+        }
+    }
+
+    /// Returns a new [`Node`] while mapping the tab type.
+    pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Node<NewTab>
+    where
+        F: FnMut(&Tab) -> NewTab,
+    {
+        self.filter_map_tabs(move |tab| Some(function(tab)))
+    }
+
+    /// Returns a new [`Node`] while filtering the tab type.
+    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
+    pub fn filter_tabs<F>(&self, mut predicate: F) -> Node<Tab>
+    where
+        F: Clone + FnMut(&Tab) -> bool,
+        Tab: Clone,
+    {
+        self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
+    }
+
+    /// Removes all tabs for which `predicate` returns `false`.
+    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
+    pub fn retain_tabs<F>(&mut self, predicate: F)
+    where
+        F: Clone + FnMut(&mut Tab) -> bool,
+    {
+        if let Node::Leaf { tabs, .. } = self {
+            tabs.retain_mut(predicate);
+            if tabs.is_empty() {
+                *self = Node::Empty;
+            }
         }
     }
 }
