@@ -2,8 +2,8 @@ use std::ops::RangeInclusive;
 
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
-    LayerId, Layout, NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense,
-    Stroke, TextStyle, Ui, Vec2, WidgetText,
+    LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
+    Ui, Vec2, WidgetText,
 };
 
 use crate::{
