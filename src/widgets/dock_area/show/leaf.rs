@@ -691,7 +691,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if let Some(pos) = state.last_hover_pos {
                     if scroll_bar_rect.contains(pos) {
-                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
+                        *scroll += ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x)
                             * points_to_scroll_coefficient;
                     }
                 }
@@ -712,7 +712,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             // Handle user input.
             if tabbar_response.hovered() {
-                *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
+                *scroll += ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x);
             }
         }
 
