@@ -259,9 +259,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let response = tabs_ui.interact(response.rect, id, sense);
 
                 if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
-                    let center = response.rect.center();
-                    let start = state.drag_start.unwrap_or(center);
-
+                    let start = *state.drag_start.get_or_insert(pointer_pos);
                     let delta = pointer_pos - start;
                     if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
                         tabs_ui.ctx().translate_layer(layer_id, delta);
@@ -363,11 +361,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         self.new_focused = Some((surface_index, node_index));
                     }
                 }
-                let response = tabs_ui.interact(response.rect, id, sense);
-                if response.drag_started_by(PointerButton::Primary) {
-                    state.drag_start = response.hover_pos();
-                }
 
+                let response = tabs_ui.interact(response.rect, id, sense);
                 if let Some(pos) = state.last_hover_pos {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
