@@ -73,7 +73,7 @@ fn draw_highlight_rect(rect: Rect, ui: &Ui, style: &Style) {
         style.overlay.hovered_leaf_highlight.rounding,
         style.overlay.hovered_leaf_highlight.color,
         style.overlay.hovered_leaf_highlight.stroke,
-    )
+    );
 }
 
 // Draws one of the Tab drop destination icons inside `rect`, which one you get is specified by `is_top_bottom`.
