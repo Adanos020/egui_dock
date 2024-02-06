@@ -31,6 +31,7 @@ impl State {
     pub(super) fn reset_drag(&mut self) {
         self.dnd = None;
         self.window_fade = None;
+        self.drag_start = None;
     }
 
     pub(super) fn set_drag_and_drop(

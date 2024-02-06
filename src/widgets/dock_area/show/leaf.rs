@@ -2,8 +2,8 @@ use std::ops::RangeInclusive;
 
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
-    LayerId, Layout, NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense,
-    Stroke, TextStyle, Ui, Vec2, WidgetText,
+    LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
+    Ui, Vec2, WidgetText,
 };
 
 use crate::{
@@ -259,9 +259,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let response = tabs_ui.interact(response.rect, id, sense);
 
                 if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
-                    let center = response.rect.center();
-                    let start = state.drag_start.unwrap_or(center);
-
+                    let start = *state.drag_start.get_or_insert(pointer_pos);
                     let delta = pointer_pos - start;
                     if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
                         tabs_ui.ctx().translate_layer(layer_id, delta);
@@ -363,11 +361,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         self.new_focused = Some((surface_index, node_index));
                     }
                 }
-                let response = tabs_ui.interact(response.rect, id, sense);
-                if response.drag_started_by(PointerButton::Primary) {
-                    state.drag_start = response.hover_pos();
-                }
 
+                let response = tabs_ui.interact(response.rect, id, sense);
                 if let Some(pos) = state.last_hover_pos {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
@@ -691,7 +686,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if let Some(pos) = state.last_hover_pos {
                     if scroll_bar_rect.contains(pos) {
-                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
+                        *scroll += ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x)
                             * points_to_scroll_coefficient;
                     }
                 }
@@ -712,7 +707,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             // Handle user input.
             if tabbar_response.hovered() {
-                *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
+                *scroll += ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x);
             }
         }
 
