@@ -20,7 +20,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if self.dock_state.main_surface().is_empty() {
             let rect = ui.available_rect_before_wrap();
             let response = ui.allocate_rect(rect, Sense::hover());
-            if response.hovered() {
+            if response.contains_pointer() {
                 self.hover_data = Some(HoverData {
                     rect,
                     dst: TreeComponent::Surface(surf_index),
