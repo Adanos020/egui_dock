@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.11.1 - 2024-02-09
+
+### Fixed
+- Bug where tabs couldn't be re-docked onto the main surface if it's empty ([#222](https://github.com/Adanos020/egui_dock/pull/222))
+
 ## 0.11.0 - 2024-02-06
 
 ### Added
