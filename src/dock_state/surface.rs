@@ -46,7 +46,7 @@ impl<Tab> Surface<Tab> {
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         match self.node_tree() {
             Some(tree) => tree.iter(),
-            None => core::slice::Iter::default(),
+            None => todo!(),
         }
     }
 
@@ -56,7 +56,7 @@ impl<Tab> Surface<Tab> {
     pub fn iter_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
         match self.node_tree_mut() {
             Some(tree) => tree.iter_mut(),
-            None => core::slice::IterMut::default(),
+            None => todo!(),
         }
     }
 

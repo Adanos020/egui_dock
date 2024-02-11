@@ -10,6 +10,8 @@ pub mod translations;
 /// Window states which tells floating tabs how to be displayed inside their window,
 pub mod window_state;
 
+use std::collections::HashMap;
+
 pub use surface::Surface;
 pub use surface_index::SurfaceIndex;
 pub use window_state::WindowState;
@@ -28,7 +30,8 @@ use crate::{Node, NodeIndex, Split, TabDestination, TabIndex, TabInsert, Transla
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct DockState<Tab> {
-    surfaces: Vec<Surface<Tab>>,
+    surfaces: HashMap<SurfaceIndex, Surface<Tab>>,
+    next_surface_index: SurfaceIndex,
     focused_surface: Option<SurfaceIndex>, // Part of the tree which is in focus.
 
     /// Contains translations of text shown in [`DockArea`](crate::DockArea).
@@ -40,32 +43,45 @@ impl<Tab> std::ops::Index<SurfaceIndex> for DockState<Tab> {
 
     #[inline(always)]
     fn index(&self, index: SurfaceIndex) -> &Self::Output {
-        match self.surfaces[index.0].node_tree() {
-            Some(tree) => tree,
-            None => {
-                panic!("There did not exist a tree at surface index {}", index.0);
-            }
-        }
+        let Some(tree) = self
+            .surfaces
+            .get(&index)
+            .and_then(|surface| surface.node_tree())
+        else {
+            panic!("There did not exist a tree at surface index {}", index.0);
+        };
+        tree
     }
 }
 
 impl<Tab> std::ops::IndexMut<SurfaceIndex> for DockState<Tab> {
     #[inline(always)]
     fn index_mut(&mut self, index: SurfaceIndex) -> &mut Self::Output {
-        match self.surfaces[index.0].node_tree_mut() {
-            Some(tree) => tree,
-            None => {
-                panic!("There did not exist a tree at surface index {}", index.0);
-            }
-        }
+        let Some(tree) = self
+            .surfaces
+            .get_mut(&index)
+            .and_then(|surface| surface.node_tree_mut())
+        else {
+            panic!("There did not exist a tree at surface index {}", index.0);
+        };
+        tree
+        // match self.surfaces[index.0].node_tree_mut() {
+        //     Some(tree) => tree,
+        //     None => {
+        //         panic!("There did not exist a tree at surface index {}", index.0);
+        //     }
+        // }
     }
 }
 
 impl<Tab> DockState<Tab> {
     /// Create a new tree with given tabs at the main surface's root node.
     pub fn new(tabs: Vec<Tab>) -> Self {
+        let mut surfaces = HashMap::new();
+        surfaces.insert(SurfaceIndex::main(), Surface::Main(Tree::new(tabs)));
         Self {
-            surfaces: vec![Surface::Main(Tree::new(tabs))],
+            surfaces,
+            next_surface_index: SurfaceIndex(1),
             focused_surface: None,
             translations: Translations::english(),
         }
@@ -106,17 +122,19 @@ impl<Tab> DockState<Tab> {
     /// window_state.set_size(Vec2::splat(100.0));
     /// ```
     pub fn get_window_state_mut(&mut self, surface: SurfaceIndex) -> Option<&mut WindowState> {
-        match &mut self.surfaces[surface.0] {
-            Surface::Window(_, state) => Some(state),
-            _ => None,
-        }
+        self.surfaces
+            .get_mut(&surface)
+            .and_then(|surface| match surface {
+                Surface::Window(_, state) => Some(state),
+                _ => None,
+            })
     }
 
     /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`].
     ///
     /// Returns `None` if the surface is an [`Empty`](Surface::Empty), [`Main`](Surface::Main), or doesn't exist.
     pub fn get_window_state(&mut self, surface: SurfaceIndex) -> Option<&WindowState> {
-        match &self.surfaces[surface.0] {
+        match &self.surfaces[&surface] {
             Surface::Window(_, state) => Some(state),
             _ => None,
         }
@@ -132,32 +150,27 @@ impl<Tab> DockState<Tab> {
     /// Get a mutable borrow to the raw surface from a surface index.
     #[inline]
     pub fn get_surface_mut(&mut self, surface: SurfaceIndex) -> Option<&mut Surface<Tab>> {
-        self.surfaces.get_mut(surface.0)
+        self.surfaces.get_mut(&surface)
     }
 
     /// Get an immutable borrow to the raw surface from a surface index.
     #[inline]
     pub fn get_surface(&self, surface: SurfaceIndex) -> Option<&Surface<Tab>> {
-        self.surfaces.get(surface.0)
+        self.surfaces.get(&surface)
     }
 
     /// Returns true if the specified surface exists and isn't [`Empty`](Surface::Empty).
     #[inline]
     pub fn is_surface_valid(&self, surface_index: SurfaceIndex) -> bool {
         self.surfaces
-            .get(surface_index.0)
+            .get(&surface_index)
             .map_or(false, |surface| !surface.is_empty())
     }
 
     /// Returns a list of all valid [`SurfaceIndex`]es.
     #[inline]
     pub(crate) fn valid_surface_indices(&self) -> Box<[SurfaceIndex]> {
-        (0..self.surfaces.len())
-            .filter_map(|index| {
-                let index = SurfaceIndex(index);
-                self.is_surface_valid(index).then_some(index)
-            })
-            .collect()
+        self.surfaces.keys().map(|key| *key).collect()
     }
 
     /// Remove a surface based on its [`SurfaceIndex`]
@@ -169,15 +182,10 @@ impl<Tab> DockState<Tab> {
     /// Panics if you try to remove the main surface: `SurfaceIndex::main()`.
     pub fn remove_surface(&mut self, surface_index: SurfaceIndex) -> Option<Surface<Tab>> {
         assert!(!surface_index.is_main());
-        (surface_index.0 < self.surfaces.len()).then(|| {
+        if self.focused_surface == Some(surface_index) {
             self.focused_surface = Some(SurfaceIndex::main());
-            if surface_index.0 == self.surfaces.len() - 1 {
-                self.surfaces.pop().unwrap()
-            } else {
-                let dest = &mut self.surfaces[surface_index.0];
-                std::mem::replace(dest, Surface::Empty)
-            }
-        })
+        }
+        self.surfaces.remove(&surface_index)
     }
 
     /// Sets which is the active tab within a specific node on a given surface.
@@ -328,28 +336,15 @@ impl<Tab> DockState<Tab> {
     /// Returns the [`SurfaceIndex`] of the new window, which will remain constant through the windows lifetime.
     pub fn add_window(&mut self, tabs: Vec<Tab>) -> SurfaceIndex {
         let surface = Surface::Window(Tree::new(tabs), WindowState::new());
-        let index = self.find_empty_surface_index();
-        if index.0 < self.surfaces.len() {
-            self.surfaces[index.0] = surface;
-        } else {
-            self.surfaces.push(surface);
-        }
-        index
+        let surface_index = self.get_next_surface_index();
+        self.surfaces.insert(surface_index, surface);
+        surface_index
     }
 
-    /// Finds the first empty surface index which may be used.
-    ///
-    /// **WARNING**: in cases where one isn't found, `SurfaceIndex(self.surfaces.len())` is used.
-    /// therefore it's not inherently safe to index the [`DockState`] with this index, as it may panic.
-    fn find_empty_surface_index(&self) -> SurfaceIndex {
-        // Find the first possible empty surface to insert our window into.
-        // Starts at 1 as 0 is always the main surface.
-        for i in 1..self.surfaces.len() {
-            if self.surfaces[i].is_empty() {
-                return SurfaceIndex(i);
-            }
-        }
-        SurfaceIndex(self.surfaces.len())
+    fn get_next_surface_index(&mut self) -> SurfaceIndex {
+        let ret = self.next_surface_index;
+        self.next_surface_index = SurfaceIndex(ret.0 + 1);
+        ret
     }
 
     /// Pushes `tab` to the currently focused leaf.
@@ -377,12 +372,12 @@ impl<Tab> DockState<Tab> {
 
     /// Returns an [`Iterator`] over all surfaces.
     pub fn iter_surfaces(&self) -> impl Iterator<Item = &Surface<Tab>> {
-        self.surfaces.iter()
+        self.surfaces.values()
     }
 
     /// Returns a mutable [`Iterator`] over all surfaces.
     pub fn iter_surfaces_mut(&mut self) -> impl Iterator<Item = &mut Surface<Tab>> {
-        self.surfaces.iter_mut()
+        self.surfaces.values_mut()
     }
 
     /// Returns an [`Iterator`] of **all** underlying nodes in the dock state,
@@ -451,7 +446,7 @@ impl<Tab> DockState<Tab> {
     #[deprecated = "Use `iter_all_nodes` instead"]
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self.surfaces
-            .iter()
+            .values()
             .filter_map(|surface| surface.node_tree())
             .flat_map(|nodes| nodes.iter())
     }
@@ -473,18 +468,20 @@ impl<Tab> DockState<Tab> {
     {
         let DockState {
             surfaces,
+            next_surface_index,
             focused_surface,
             translations,
         } = self;
         let surfaces = surfaces
             .iter()
-            .filter_map(|surface| {
+            .filter_map(|(idx, surface)| {
                 let surface = surface.filter_map_tabs(function.clone());
-                (!surface.is_empty()).then_some(surface)
+                (!surface.is_empty()).then_some((*idx, surface))
             })
             .collect();
         DockState {
             surfaces,
+            next_surface_index: *next_surface_index,
             focused_surface: *focused_surface,
             translations: translations.clone(),
         }
@@ -541,10 +538,11 @@ impl<Tab> DockState<Tab> {
     where
         F: Clone + FnMut(&mut Tab) -> bool,
     {
-        self.surfaces.retain_mut(|surface| {
-            surface.retain_tabs(predicate.clone());
-            !surface.is_empty()
-        });
+        self.surfaces
+            .values_mut()
+            .for_each(|surface| surface.retain_tabs(predicate.clone()));
+        self.surfaces
+            .retain(|idx, surface| idx.is_main() || !surface.is_empty());
     }
 }
 
@@ -563,7 +561,7 @@ where
     /// See also: [`find_main_surface_tab`](DockState::find_main_surface_tab)
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
         for &surface_index in self.valid_surface_indices().iter() {
-            if !self.surfaces[surface_index.0].is_empty() {
+            if !self.surfaces[&surface_index].is_empty() {
                 if let Some((node_index, tab_index)) = self[surface_index].find_tab(needle_tab) {
                     return Some((surface_index, node_index, tab_index));
                 }
