@@ -755,7 +755,8 @@ impl<Tab> Tree<Tab> {
     {
         self.nodes.retain_mut(|node| {
             node.retain_tabs(predicate.clone());
-            !node.is_empty()
+            // TODO(LennyLounge): Fix this
+            node.iter_tabs().count() > 0
         });
     }
 
