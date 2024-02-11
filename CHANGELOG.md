@@ -1,19 +1,12 @@
 # egui_dock changelog
 
-## 0.11.0 - TBD
+## 0.11.0 - 2024-02-06
 
-### Changed
-- Replace the internal implementation for a `Tree` with one that allows for more than two splits per node.
+### Added
+- `filter_map_tabs`, `filter_tabs`, and `retain_tabs` ([#217](https://github.com/Adanos020/egui_dock/pull/217))
 
 ### Breaking changes
-- `NodeIndex::level` - removed.
-- `NodeIndex::is_left` - removed.
-- `NodeIndex::is_right` - removed.
-
-### Deprecated
-- `NodeIndex::left` - use `Tree::left_of` instead.
-- `NodeIndex::right` - use `Tree::right_of` instead.
-- `NodeIndex::parent` - use `Tree::parent` instead.
+- Upgraded to egui 0.26
 
 ## 0.10.0 - 2024-01-09
 
