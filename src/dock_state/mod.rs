@@ -43,11 +43,7 @@ impl<Tab> std::ops::Index<SurfaceIndex> for DockState<Tab> {
 
     #[inline(always)]
     fn index(&self, index: SurfaceIndex) -> &Self::Output {
-        let Some(tree) = self
-            .surfaces
-            .get(&index)
-            .and_then(|surface| surface.node_tree())
-        else {
+        let Some(tree) = self.surfaces.get(&index).map(|surface| surface.node_tree()) else {
             panic!("There did not exist a tree at surface index {}", index.0);
         };
         tree
@@ -60,7 +56,7 @@ impl<Tab> std::ops::IndexMut<SurfaceIndex> for DockState<Tab> {
         let Some(tree) = self
             .surfaces
             .get_mut(&index)
-            .and_then(|surface| surface.node_tree_mut())
+            .map(|surface| surface.node_tree_mut())
         else {
             panic!("There did not exist a tree at surface index {}", index.0);
         };
@@ -162,9 +158,7 @@ impl<Tab> DockState<Tab> {
     /// Returns true if the specified surface exists and isn't [`Empty`](Surface::Empty).
     #[inline]
     pub fn is_surface_valid(&self, surface_index: SurfaceIndex) -> bool {
-        self.surfaces
-            .get(&surface_index)
-            .map_or(false, |surface| !surface.is_empty())
+        self.surfaces.get(&surface_index).is_some()
     }
 
     /// Returns a list of all valid [`SurfaceIndex`]es.
@@ -447,8 +441,7 @@ impl<Tab> DockState<Tab> {
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self.surfaces
             .values()
-            .filter_map(|surface| surface.node_tree())
-            .flat_map(|nodes| nodes.iter())
+            .flat_map(|surface| surface.node_tree().iter())
     }
 
     /// Returns a new [`DockState`] while mapping and filtering the tab type.
@@ -476,7 +469,7 @@ impl<Tab> DockState<Tab> {
             .iter()
             .filter_map(|(idx, surface)| {
                 let surface = surface.filter_map_tabs(function.clone());
-                (!surface.is_empty()).then_some((*idx, surface))
+                (!surface.node_tree().is_empty()).then_some((*idx, surface))
             })
             .collect();
         DockState {
@@ -542,7 +535,7 @@ impl<Tab> DockState<Tab> {
             .values_mut()
             .for_each(|surface| surface.retain_tabs(predicate.clone()));
         self.surfaces
-            .retain(|idx, surface| idx.is_main() || !surface.is_empty());
+            .retain(|idx, surface| idx.is_main() || !surface.node_tree().is_empty());
     }
 }
 
@@ -560,11 +553,9 @@ where
     ///
     /// See also: [`find_main_surface_tab`](DockState::find_main_surface_tab)
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
-        for &surface_index in self.valid_surface_indices().iter() {
-            if !self.surfaces[&surface_index].is_empty() {
-                if let Some((node_index, tab_index)) = self[surface_index].find_tab(needle_tab) {
-                    return Some((surface_index, node_index, tab_index));
-                }
+        for (surface_index, surface) in self.surfaces.iter() {
+            if let Some((node_index, tab_index)) = surface.node_tree().find_tab(needle_tab) {
+                return Some((*surface_index, node_index, tab_index));
             }
         }
         None

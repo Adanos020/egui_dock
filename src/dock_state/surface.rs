@@ -6,9 +6,6 @@ use crate::{Node, NodeIndex, Tree, WindowState};
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Surface<Tab> {
-    /// An empty surface, with nothing inside (practically, a null surface).
-    Empty,
-
     /// The main surface of a [`DockState`](crate::DockState), only one should exist at surface index 0 at any one time.
     Main(Tree<Tab>),
 
@@ -17,26 +14,19 @@ pub enum Surface<Tab> {
 }
 
 impl<Tab> Surface<Tab> {
-    /// Is this surface [`Empty`](Self::Empty) (in practice null)?
-    pub const fn is_empty(&self) -> bool {
-        matches!(self, Self::Empty)
-    }
-
     /// Get access to the node tree of this surface.
-    pub fn node_tree(&self) -> Option<&Tree<Tab>> {
+    pub fn node_tree(&self) -> &Tree<Tab> {
         match self {
-            Surface::Empty => None,
-            Surface::Main(tree) => Some(tree),
-            Surface::Window(tree, _) => Some(tree),
+            Surface::Main(tree) => tree,
+            Surface::Window(tree, _) => tree,
         }
     }
 
     /// Get mutable access to the node tree of this surface.
-    pub fn node_tree_mut(&mut self) -> Option<&mut Tree<Tab>> {
+    pub fn node_tree_mut(&mut self) -> &mut Tree<Tab> {
         match self {
-            Surface::Empty => None,
-            Surface::Main(tree) => Some(tree),
-            Surface::Window(tree, _) => Some(tree),
+            Surface::Main(tree) => tree,
+            Surface::Window(tree, _) => tree,
         }
     }
 
@@ -44,20 +34,14 @@ impl<Tab> Surface<Tab> {
     ///
     /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
-        match self.node_tree() {
-            Some(tree) => tree.iter(),
-            None => todo!(),
-        }
+        self.node_tree().iter()
     }
 
     /// Returns a mutable [`Iterator`] of nodes in this surface's tree.
     ///
     /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
     pub fn iter_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
-        match self.node_tree_mut() {
-            Some(tree) => tree.iter_mut(),
-            None => todo!(),
-        }
+        self.node_tree_mut().iter_mut()
     }
 
     /// Returns an [`Iterator`] of **all** tabs in this surface's tree,
@@ -84,15 +68,9 @@ impl<Tab> Surface<Tab> {
         F: Clone + FnMut(&Tab) -> Option<NewTab>,
     {
         match self {
-            Surface::Empty => Surface::Empty,
             Surface::Main(tree) => Surface::Main(tree.filter_map_tabs(function)),
             Surface::Window(tree, window_state) => {
-                let tree = tree.filter_map_tabs(function);
-                if tree.is_empty() {
-                    Surface::Empty
-                } else {
-                    Surface::Window(tree, window_state.clone())
-                }
+                Surface::Window(tree.filter_map_tabs(function), window_state.clone())
             }
         }
     }
@@ -123,11 +101,7 @@ impl<Tab> Surface<Tab> {
     where
         F: Clone + FnMut(&mut Tab) -> bool,
     {
-        if let Surface::Main(tree) | Surface::Window(tree, _) = self {
-            tree.retain_tabs(predicate);
-            if tree.is_empty() {
-                *self = Surface::Empty;
-            }
-        }
+        let (Surface::Main(tree) | Surface::Window(tree, _)) = self;
+        tree.retain_tabs(predicate);
     }
 }
