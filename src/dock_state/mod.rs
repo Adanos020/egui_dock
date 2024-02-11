@@ -61,12 +61,6 @@ impl<Tab> std::ops::IndexMut<SurfaceIndex> for DockState<Tab> {
             panic!("There did not exist a tree at surface index {}", index.0);
         };
         tree
-        // match self.surfaces[index.0].node_tree_mut() {
-        //     Some(tree) => tree,
-        //     None => {
-        //         panic!("There did not exist a tree at surface index {}", index.0);
-        //     }
-        // }
     }
 }
 
@@ -101,7 +95,7 @@ impl<Tab> DockState<Tab> {
 
     /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`].
     ///
-    /// Returns `None` if the surface is [`Empty`](Surface::Empty), [`Main`](Surface::Main), or doesn't exist.
+    /// Returns `None` if the surface is a [`Main`](Surface::Main) or doesn't exist.
     ///
     /// This can be used to modify properties of a window, e.g. size and position.
     ///
@@ -128,7 +122,7 @@ impl<Tab> DockState<Tab> {
 
     /// Get the [`WindowState`] which corresponds to a [`SurfaceIndex`].
     ///
-    /// Returns `None` if the surface is an [`Empty`](Surface::Empty), [`Main`](Surface::Main), or doesn't exist.
+    /// Returns `None` if the surface is a [`Main`](Surface::Main) or doesn't exist.
     pub fn get_window_state(&mut self, surface: SurfaceIndex) -> Option<&WindowState> {
         match &self.surfaces[&surface] {
             Surface::Window(_, state) => Some(state),
@@ -155,7 +149,7 @@ impl<Tab> DockState<Tab> {
         self.surfaces.get(&surface)
     }
 
-    /// Returns true if the specified surface exists and isn't [`Empty`](Surface::Empty).
+    /// Returns true if the specified surface exists.
     #[inline]
     pub fn is_surface_valid(&self, surface_index: SurfaceIndex) -> bool {
         self.surfaces.get(&surface_index).is_some()

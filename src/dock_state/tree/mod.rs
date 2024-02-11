@@ -205,8 +205,7 @@ impl<Tab> Tree<Tab> {
 
     /// Returns an [`Iterator`] of the underlying collection of nodes.
     ///
-    /// This includes stale nodes that have been removed from the tree and does not
-    /// guarantee any particular traversal order.
+    /// Nodes are not guaranteed to be iterated over in any particular order.
     /// To iterate over valid nodes in a breadth first order use the
     /// [`breadth_first_index_iter`](Tree::breadth_first_index_iter()) method.
     #[inline(always)]
@@ -214,10 +213,9 @@ impl<Tab> Tree<Tab> {
         self.nodes.values()
     }
 
-    /// Returns [`IterMut`] of the underlying collection of nodes.
+    /// Returns an [`Iterator`] of the underlying collection of nodes.
     ///
-    /// This includes stale nodes that have been removed from the tree and does not
-    /// guarantee any particular traversal order.
+    /// Nodes are not guaranteed to be iterated over in any particular order.
     /// To iterate over valid nodes in a breadth first order use the
     /// [`breadth_first_index_iter`](Tree::breadth_first_index_iter()) method.
     #[inline(always)]

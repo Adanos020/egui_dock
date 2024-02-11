@@ -31,15 +31,11 @@ impl<Tab> Surface<Tab> {
     }
 
     /// Returns an [`Iterator`] of nodes in this surface's tree.
-    ///
-    /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
     pub fn iter_nodes(&self) -> impl Iterator<Item = &Node<Tab>> {
         self.node_tree().iter()
     }
 
     /// Returns a mutable [`Iterator`] of nodes in this surface's tree.
-    ///
-    /// If the surface is [`Empty`](Self::Empty), then the returned [`Iterator`] will be empty.
     pub fn iter_nodes_mut(&mut self) -> impl Iterator<Item = &mut Node<Tab>> {
         self.node_tree_mut().iter_mut()
     }
@@ -61,8 +57,7 @@ impl<Tab> Surface<Tab> {
     }
 
     /// Returns a new [`Surface`] while mapping and filtering the tab type.
-    /// Any remaining empty [`Node`]s and are removed, and if this [`Surface`] remains empty,
-    /// it'll change to [`Surface::Empty`].
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Surface<NewTab>
     where
         F: Clone + FnMut(&Tab) -> Option<NewTab>,
@@ -84,8 +79,7 @@ impl<Tab> Surface<Tab> {
     }
 
     /// Returns a new [`Surface`] while filtering the tab type.
-    /// Any remaining empty [`Node`]s and are removed, and if this [`Surface`] remains empty,
-    /// it'll change to [`Surface::Empty`].
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn filter_tabs<F>(&self, mut predicate: F) -> Surface<Tab>
     where
         F: Clone + FnMut(&Tab) -> bool,
@@ -95,8 +89,7 @@ impl<Tab> Surface<Tab> {
     }
 
     /// Removes all tabs for which `predicate` returns `false`.
-    /// Any remaining empty [`Node`]s and are also removed, and if this [`Surface`] remains empty,
-    /// it'll change to [`Surface::Empty`].
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn retain_tabs<F>(&mut self, predicate: F)
     where
         F: Clone + FnMut(&mut Tab) -> bool,

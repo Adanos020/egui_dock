@@ -272,7 +272,6 @@ impl<Tab> Node<Tab> {
     }
 
     /// Returns a new [`Node`] while mapping and filtering the tab type.
-    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Node<NewTab>
     where
         F: FnMut(&Tab) -> Option<NewTab>,
@@ -317,6 +316,7 @@ impl<Tab> Node<Tab> {
     }
 
     /// Returns a new [`Node`] while mapping the tab type.
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Node<NewTab>
     where
         F: FnMut(&Tab) -> NewTab,
@@ -325,7 +325,7 @@ impl<Tab> Node<Tab> {
     }
 
     /// Returns a new [`Node`] while filtering the tab type.
-    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn filter_tabs<F>(&self, mut predicate: F) -> Node<Tab>
     where
         F: Clone + FnMut(&Tab) -> bool,
@@ -335,7 +335,7 @@ impl<Tab> Node<Tab> {
     }
 
     /// Removes all tabs for which `predicate` returns `false`.
-    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn retain_tabs<F>(&mut self, predicate: F)
     where
         F: Clone + FnMut(&mut Tab) -> bool,
