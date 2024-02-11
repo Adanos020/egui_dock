@@ -1,13 +1,10 @@
-use crate::{Split, TabIndex};
+use crate::{NodeIndex, TabIndex};
 use egui::Rect;
 
 /// Represents an abstract node of a [`Tree`](crate::Tree).
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Node<Tab> {
-    /// Empty node.
-    Empty,
-
     /// Contains the actual tabs.
     Leaf {
         /// The full rectangle - tab bar plus tab body.
@@ -33,6 +30,12 @@ pub enum Node<Tab> {
 
         /// The fraction taken by the top child of this node.
         fraction: f32,
+
+        /// The index of the node above the split.
+        above: NodeIndex,
+
+        /// The index of the node below the split.
+        below: NodeIndex,
     },
 
     /// Parent node in the horizontal orientation.
@@ -42,6 +45,12 @@ pub enum Node<Tab> {
 
         /// The fraction taken by the left child of this node.
         fraction: f32,
+
+        /// The index of the node left of the split.
+        left: NodeIndex,
+
+        /// The index of the node right of the split.
+        right: NodeIndex,
     },
 }
 
@@ -74,7 +83,6 @@ impl<Tab> Node<Tab> {
     #[inline]
     pub fn set_rect(&mut self, new_rect: Rect) {
         match self {
-            Self::Empty => (),
             Self::Leaf { rect, .. }
             | Self::Vertical { rect, .. }
             | Self::Horizontal { rect, .. } => *rect = new_rect,
@@ -82,22 +90,13 @@ impl<Tab> Node<Tab> {
     }
 
     /// Get a [`Rect`] occupied by the node, could be used e.g. to draw a highlight rect around a node.
-    ///
-    /// Returns [`None`] if node is of the [`Empty`](Node::Empty) variant.
     #[inline]
-    pub fn rect(&self) -> Option<Rect> {
+    pub fn rect(&self) -> Rect {
         match self {
-            Node::Empty => None,
             Node::Leaf { rect, .. }
             | Node::Vertical { rect, .. }
-            | Node::Horizontal { rect, .. } => Some(*rect),
+            | Node::Horizontal { rect, .. } => *rect,
         }
-    }
-
-    /// Returns `true` if the node is a [`Empty`](Node::Empty), otherwise `false`.
-    #[inline(always)]
-    pub const fn is_empty(&self) -> bool {
-        matches!(self, Self::Empty)
     }
 
     /// Returns `true` if the node is a [`Leaf`](Node::Leaf), otherwise `false`.
@@ -123,23 +122,6 @@ impl<Tab> Node<Tab> {
     #[inline(always)]
     pub const fn is_parent(&self) -> bool {
         self.is_horizontal() || self.is_vertical()
-    }
-
-    /// Replaces the node with [`Horizontal`](Node::Horizontal) or [`Vertical`](Node::Vertical) (depending on `split`)
-    /// and assigns an empty rect to it.
-    ///
-    /// # Panics
-    ///
-    /// If `fraction` isn't in range 0..=1.
-    #[inline]
-    pub fn split(&mut self, split: Split, fraction: f32) -> Self {
-        assert!((0.0..=1.0).contains(&fraction));
-        let rect = Rect::NOTHING;
-        let src = match split {
-            Split::Left | Split::Right => Node::Horizontal { fraction, rect },
-            Split::Above | Split::Below => Node::Vertical { fraction, rect },
-        };
-        std::mem::replace(self, src)
     }
 
     /// Provides an immutable slice of the tabs inside this node.
@@ -290,7 +272,6 @@ impl<Tab> Node<Tab> {
     }
 
     /// Returns a new [`Node`] while mapping and filtering the tab type.
-    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Node<NewTab>
     where
         F: FnMut(&Tab) -> Option<NewTab>,
@@ -302,33 +283,40 @@ impl<Tab> Node<Tab> {
                 tabs,
                 active,
                 scroll,
-            } => {
-                let tabs: Vec<_> = tabs.iter().filter_map(function).collect();
-                if tabs.is_empty() {
-                    Node::Empty
-                } else {
-                    Node::Leaf {
-                        rect: *rect,
-                        viewport: *viewport,
-                        tabs,
-                        active: *active,
-                        scroll: *scroll,
-                    }
-                }
-            }
-            Node::Empty => Node::Empty,
-            Node::Vertical { rect, fraction } => Node::Vertical {
+            } => Node::Leaf {
                 rect: *rect,
-                fraction: *fraction,
+                viewport: *viewport,
+                tabs: tabs.iter().filter_map(function).collect(),
+                active: *active,
+                scroll: *scroll,
             },
-            Node::Horizontal { rect, fraction } => Node::Horizontal {
+            Node::Vertical {
+                rect,
+                fraction,
+                above,
+                below,
+            } => Node::Vertical {
                 rect: *rect,
                 fraction: *fraction,
+                above: *above,
+                below: *below,
+            },
+            Node::Horizontal {
+                rect,
+                fraction,
+                left,
+                right,
+            } => Node::Horizontal {
+                rect: *rect,
+                fraction: *fraction,
+                left: *left,
+                right: *right,
             },
         }
     }
 
     /// Returns a new [`Node`] while mapping the tab type.
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Node<NewTab>
     where
         F: FnMut(&Tab) -> NewTab,
@@ -337,7 +325,7 @@ impl<Tab> Node<Tab> {
     }
 
     /// Returns a new [`Node`] while filtering the tab type.
-    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn filter_tabs<F>(&self, mut predicate: F) -> Node<Tab>
     where
         F: Clone + FnMut(&Tab) -> bool,
@@ -347,16 +335,13 @@ impl<Tab> Node<Tab> {
     }
 
     /// Removes all tabs for which `predicate` returns `false`.
-    /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
+    /// TODO(LennysLounge): correct this doc comment.
     pub fn retain_tabs<F>(&mut self, predicate: F)
     where
         F: Clone + FnMut(&mut Tab) -> bool,
     {
         if let Node::Leaf { tabs, .. } = self {
             tabs.retain_mut(predicate);
-            if tabs.is_empty() {
-                *self = Node::Empty;
-            }
         }
     }
 }
