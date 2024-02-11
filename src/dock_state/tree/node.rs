@@ -284,22 +284,13 @@ impl<Tab> Node<Tab> {
                 tabs,
                 active,
                 scroll,
-            } => {
-                // TODO(LennysLounge): Fix this
-                todo!()
-                // let tabs: Vec<_> = tabs.iter().filter_map(function).collect();
-                // if tabs.is_empty() {
-                //     Node::Empty
-                // } else {
-                //     Node::Leaf {
-                //         rect: *rect,
-                //         viewport: *viewport,
-                //         tabs,
-                //         active: *active,
-                //         scroll: *scroll,
-                //     }
-                // }
-            }
+            } => Node::Leaf {
+                rect: *rect,
+                viewport: *viewport,
+                tabs: tabs.iter().filter_map(function).collect(),
+                active: *active,
+                scroll: *scroll,
+            },
             Node::Vertical {
                 rect,
                 fraction,
@@ -352,8 +343,5 @@ impl<Tab> Node<Tab> {
         if let Node::Leaf { tabs, .. } = self {
             tabs.retain_mut(predicate);
         }
-
-        // TODO(LennyLounge): Fix this
-        todo!();
     }
 }

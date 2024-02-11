@@ -753,11 +753,9 @@ impl<Tab> Tree<Tab> {
     where
         F: Clone + FnMut(&mut Tab) -> bool,
     {
-        self.nodes.retain_mut(|node| {
-            node.retain_tabs(predicate.clone());
-            // TODO(LennyLounge): Fix this
-            node.iter_tabs().count() > 0
-        });
+        self.nodes
+            .iter_mut()
+            .for_each(|n| n.retain_tabs(predicate.clone()));
     }
 
     /// Returns the index of the node to the left of the given one.
