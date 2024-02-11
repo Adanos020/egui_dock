@@ -170,7 +170,7 @@ impl<Tab> DockState<Tab> {
     /// Returns a list of all valid [`SurfaceIndex`]es.
     #[inline]
     pub(crate) fn valid_surface_indices(&self) -> Box<[SurfaceIndex]> {
-        self.surfaces.keys().map(|key| *key).collect()
+        self.surfaces.keys().copied().collect()
     }
 
     /// Remove a surface based on its [`SurfaceIndex`]
