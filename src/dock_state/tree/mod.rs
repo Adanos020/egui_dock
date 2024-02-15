@@ -745,20 +745,24 @@ impl<Tab> Tree<Tab> {
             focused_node,
             nodes,
         } = self;
+        let mut emptied_nodes = HashSet::default();
         let nodes = nodes
             .iter()
-            .filter_map(|node| {
+            .enumerate()
+            .map(|(index, node)| {
                 let node = node.filter_map_tabs(function.clone());
-                match node {
-                    Node::Leaf { ref tabs, .. } => (!tabs.is_empty()).then_some(node),
-                    _ => Some(node),
+                if node.is_empty() {
+                    emptied_nodes.insert(NodeIndex(index));
                 }
+                node
             })
             .collect();
-        Tree {
+        let mut new_tree = Tree {
             nodes,
             focused_node: *focused_node,
-        }
+        };
+        new_tree.balance(emptied_nodes);
+        new_tree
     }
 
     /// Returns a new [`Tree`] while mapping the tab type.
