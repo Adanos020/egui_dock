@@ -25,6 +25,7 @@ pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
 
+use egui::ahash::HashSet;
 use egui::Rect;
 use std::{
     fmt,
@@ -784,10 +785,33 @@ impl<Tab> Tree<Tab> {
     where
         F: Clone + FnMut(&mut Tab) -> bool,
     {
-        self.nodes.retain_mut(|node| {
+        let mut emptied_nodes = HashSet::default();
+        for (index, node) in self.nodes.iter_mut().enumerate() {
             node.retain_tabs(predicate.clone());
-            !node.is_empty()
-        });
+            if node.is_empty() {
+                emptied_nodes.insert(NodeIndex(index));
+            }
+        }
+        self.balance(emptied_nodes);
+    }
+
+    fn balance(&mut self, emptied_nodes: HashSet<NodeIndex>) {
+        let mut emptied_parents = HashSet::default();
+        for parent_index in emptied_nodes.into_iter().filter_map(|ni| ni.parent()) {
+            if self[parent_index.left()].is_empty() && self[parent_index.right()].is_empty() {
+                self[parent_index] = Node::Empty;
+                emptied_parents.insert(parent_index);
+            } else if self[parent_index.left()].is_empty() {
+                self.nodes.swap(parent_index.0, parent_index.right().0);
+                self[parent_index.right()] = Node::Empty;
+            } else if self[parent_index.right()].is_empty() {
+                self.nodes.swap(parent_index.0, parent_index.left().0);
+                self[parent_index.left()] = Node::Empty;
+            }
+        }
+        if !emptied_parents.is_empty() {
+            self.balance(emptied_parents);
+        }
     }
 }
 

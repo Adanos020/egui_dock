@@ -3,7 +3,8 @@
 ## 0.11.2 - TBD
 
 ### Fixed
-- Tabs now always appear at the pointer position while being dragged. 
+- Tabs now always appear at the pointer position while being dragged.
+- Retaining tabs no longer breaks the binary tree leading to a panic.
 
 ## 0.11.1 - 2024-02-09
 
