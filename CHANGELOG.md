@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.11.2 - TBD
+
+### Fixed
+- Tabs now always appear at the pointer position while being dragged. 
+
 ## 0.11.1 - 2024-02-09
 
 ### Fixed

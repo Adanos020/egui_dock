@@ -210,7 +210,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
             let is_being_dragged = tabs_ui.memory(|mem| mem.is_being_dragged(id))
-                && tabs_ui.input(|i| i.pointer.primary_down() || i.pointer.primary_released())
+                && tabs_ui.input(|i| i.pointer.is_decidedly_dragging())
                 && self.draggable_tabs;
 
             if is_being_dragged {
@@ -255,8 +255,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .response;
                 let title_id = response.id;
 
-                let sense = Sense::click_and_drag();
-                let response = tabs_ui.interact(response.rect, id, sense);
+                let response = tabs_ui.interact(response.rect, id, Sense::click_and_drag());
 
                 if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
                     let start = *state.drag_start.get_or_insert(pointer_pos);
@@ -369,6 +368,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     // the underlying tab
                     if state.drag_start.is_some() && response.rect.contains(pos) {
                         self.tab_hover_rect = Some((response.rect, tab_index));
+                        state.drag_start = None;
                     }
                 }
 
