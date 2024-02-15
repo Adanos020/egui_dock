@@ -6,6 +6,7 @@
 From [#225](https://github.com/Adanos020/egui_dock/pull/225):
 - Tabs now always appear at the pointer position while being dragged.
 - Retaining tabs no longer breaks the binary tree leading to a panic.
+- Filtering tabs no longer leaves some leaves empty and now correctly rearranges the tree.
 
 ## 0.11.1 - 2024-02-09
 
