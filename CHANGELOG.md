@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.11.2 - TBD
+## 0.11.2 - 2024-02-16
 
 ### Fixed
 From [#225](https://github.com/Adanos020/egui_dock/pull/225):
