@@ -750,11 +750,11 @@ impl<Tab> Tree<Tab> {
             .iter()
             .enumerate()
             .map(|(index, node)| {
-                let node = node.filter_map_tabs(function.clone());
-                if node.is_empty() {
+                let filtered_node = node.filter_map_tabs(function.clone());
+                if filtered_node.is_empty() && !node.is_empty() {
                     emptied_nodes.insert(NodeIndex(index));
                 }
-                node
+                filtered_node
             })
             .collect();
         let mut new_tree = Tree {

@@ -1,5 +1,10 @@
 # egui_dock changelog
 
+## 0.11.3 - 2024-03-06
+
+### Fixed
+- `filter_map_tabs` sometimes deleting nodes when it shouldn't.
+
 ## 0.11.2 - 2024-02-16
 
 ### Fixed
