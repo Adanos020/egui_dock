@@ -3,7 +3,7 @@
 ## 0.11.3 - 2024-03-06
 
 ### Fixed
-- `filter_map_tabs` sometimes deleting nodes when it shouldn't.
+- `filter_map_tabs` sometimes deleting nodes when it shouldn't. ([#230](https://github.com/Adanos020/egui_dock/pull/230))
 
 ## 0.11.2 - 2024-02-16
 
