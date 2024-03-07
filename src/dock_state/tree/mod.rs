@@ -589,6 +589,8 @@ impl<Tab> Tree<Tab> {
 
         let Some(parent) = node.parent() else {
             self.nodes.clear();
+            let root = Node::leaf_with(vec![]);
+            self.nodes.push(root);
             return;
         };
 
