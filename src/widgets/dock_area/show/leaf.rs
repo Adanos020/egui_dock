@@ -756,8 +756,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let tabs_style = tabs_styles.as_ref().unwrap_or(&style.tab);
 
             if tab_viewer.clear_background(tab) {
-                ui.painter()
-                    .rect_filled(body_rect, 0.0, tabs_style.tab_body.bg_fill);
+                ui.painter().rect_filled(
+                    body_rect,
+                    tabs_style.tab_body.rounding,
+                    tabs_style.tab_body.bg_fill,
+                );
             }
 
             // Construct a new ui with the correct tab id.
