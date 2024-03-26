@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use eframe::{egui, NativeOptions};
+use eframe::NativeOptions;
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
     vec2, CentralPanel, ComboBox, Frame, Rounding, Slider, TopBottomPanel, Ui, ViewportBuilder,

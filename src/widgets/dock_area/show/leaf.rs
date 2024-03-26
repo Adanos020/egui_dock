@@ -1,5 +1,6 @@
 use std::ops::RangeInclusive;
 
+use egui::emath::TSTransform;
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
     LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
@@ -209,7 +210,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .with((node_index, "node"))
                 .with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
-            let is_being_dragged = tabs_ui.memory(|mem| mem.is_being_dragged(id))
+            let is_being_dragged = tabs_ui.ctx().is_being_dragged(id)
                 && tabs_ui.input(|i| i.pointer.is_decidedly_dragging())
                 && self.draggable_tabs;
 
@@ -261,7 +262,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let start = *state.drag_start.get_or_insert(pointer_pos);
                     let delta = pointer_pos - start;
                     if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
-                        tabs_ui.ctx().translate_layer(layer_id, delta);
+                        tabs_ui
+                            .ctx()
+                            .transform_layer_shapes(layer_id, TSTransform::new(delta, 1.0));
 
                         self.drag_data = Some(DragData {
                             src: TreeComponent::Tab(surface_index, node_index, tab_index),
@@ -526,7 +529,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             vec2(tab_width, ui.available_height()),
             Sense::focusable_noninteractive(),
         );
-        if !ui.memory(|mem| mem.is_anything_being_dragged()) && self.draggable_tabs {
+        if ui.ctx().dragged_id().is_none() && self.draggable_tabs {
             response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
 
@@ -592,6 +595,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let response = ui
                 .interact(close_button_rect, id, Sense::click())
                 .on_hover_cursor(CursorIcon::PointingHand);
+
+            ui.painter()
+                .debug_rect(close_button_rect, egui::Color32::RED, "close button rect");
 
             let color = if response.hovered() || response.has_focus() {
                 style.buttons.close_tab_active_color
