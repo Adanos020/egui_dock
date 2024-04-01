@@ -11,7 +11,6 @@ mod tab_removal;
 
 use crate::{dock_state::DockState, NodeIndex, Style, SurfaceIndex, TabIndex};
 pub use allowed_splits::AllowedSplits;
-use drag_and_drop::{DragData, HoverData};
 use tab_removal::TabRemoval;
 
 use egui::{emath::*, Id};
@@ -32,8 +31,6 @@ pub struct DockArea<'tree, Tab> {
     allowed_splits: AllowedSplits,
     window_bounds: Option<Rect>,
 
-    drag_data: Option<DragData>,
-    hover_data: Option<HoverData>,
     to_remove: Vec<TabRemoval>,
     to_detach: Vec<(SurfaceIndex, NodeIndex, TabIndex)>,
     new_focused: Option<(SurfaceIndex, NodeIndex)>,
@@ -56,8 +53,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             draggable_tabs: true,
             show_tab_name_on_hover: false,
             allowed_splits: AllowedSplits::default(),
-            drag_data: None,
-            hover_data: None,
             to_remove: Vec::new(),
             to_detach: Vec::new(),
             new_focused: None,

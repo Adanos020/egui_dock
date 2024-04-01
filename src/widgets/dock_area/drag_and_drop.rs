@@ -177,13 +177,8 @@ impl DragDropState {
             .min(style.overlay.max_button_size);
         let mut offset_vector = vec2(0.0, shortest_side + style.overlay.button_spacing);
 
-        let mut destination: Option<TabDestination> = match windows_allowed {
-            true => Some(TabDestination::Window(Rect::from_min_size(
-                pointer,
-                self.drag.rect.size(),
-            ))),
-            false => None,
-        };
+        let mut destination: Option<TabDestination> = windows_allowed
+            .then(|| TabDestination::Window(Rect::from_min_size(pointer, self.drag.rect.size())));
 
         let center = rect.center();
         let rect = Rect::from_center_size(center, Vec2::splat(shortest_side));
@@ -384,7 +379,7 @@ impl DragDropState {
     pub(super) fn is_locked(&self, style: &Style, ctx: &Context) -> bool {
         match self.locked.as_ref() {
             Some(lock_time) => {
-                let elapsed = (ctx.input(|i| i.time) - lock_time) as f32;
+                let elapsed = ctx.input(|i| (i.time - lock_time) as f32);
                 ctx.request_repaint();
                 elapsed < style.overlay.feel.max_preference_time
             }

@@ -266,9 +266,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             .ctx()
                             .transform_layer_shapes(layer_id, TSTransform::new(delta, 1.0));
 
-                        self.drag_data = Some(DragData {
-                            src: TreeComponent::Tab(surface_index, node_index, tab_index),
-                            rect: self.dock_state[surface_index][node_index].rect().unwrap(),
+                        tabs_ui.memory_mut(|mem| {
+                            let drag_data_mut =
+                                mem.data.get_temp_mut_or(self.id.with("drag_data"), None);
+                            *drag_data_mut = Some(DragData {
+                                src: TreeComponent::Tab(surface_index, node_index, tab_index),
+                                rect: self.dock_state[surface_index][node_index].rect().unwrap(),
+                            });
                         });
                     }
                 }
@@ -289,9 +293,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 );
                 let title_id = response.id;
 
-                let (close_hovered, close_clicked) = close_response
-                    .map(|res| (res.hovered(), res.clicked()))
-                    .unwrap_or_default();
+                let (close_hovered, close_clicked, close_rect) = close_response
+                    .map(|res| (res.hovered(), res.clicked(), res.rect))
+                    .unwrap_or((false, false, Rect::ZERO));
 
                 let sense = if close_hovered {
                     Sense::click()
@@ -364,7 +368,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
 
-                let response = tabs_ui.interact(response.rect, id, sense);
+                let response = tabs_ui.interact(response.rect.union(close_rect), id, sense);
                 if let Some(pos) = state.last_hover_pos {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
@@ -854,7 +858,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 };
 
-                self.hover_data = Some(HoverData { rect, dst, tab });
+                ui.memory_mut(|mem| {
+                    let hover_data_mut = mem.data.get_temp_mut_or(self.id.with("hover_data"), None);
+                    *hover_data_mut = Some(HoverData { rect, dst, tab });
+                });
             }
         }
     }

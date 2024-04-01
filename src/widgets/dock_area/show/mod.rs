@@ -66,10 +66,47 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self.style
             .get_or_insert(Style::from_egui(ui.style().as_ref()));
         self.window_bounds.get_or_insert(ui.ctx().screen_rect());
+
         let mut state = State::load(ui.ctx(), self.id);
+
         // Delay hover position one frame. On touch screens hover_pos() is None when any_released()
         if !ui.input(|i| i.pointer.any_released()) {
             state.last_hover_pos = ui.input(|i| i.pointer.hover_pos());
+        }
+
+        let (drag_data, hover_data) = ui.memory_mut(|mem| {
+            (
+                mem.data.remove_temp(self.id.with("drag_data")).flatten(),
+                mem.data.remove_temp(self.id.with("hover_data")).flatten(),
+            )
+        });
+
+        if let (Some(source), Some(hover)) = (drag_data, hover_data) {
+            let style = self.style.as_ref().unwrap();
+            state.set_drag_and_drop(source, hover, ui.ctx(), style);
+            if ui.input(|i| i.pointer.primary_released()) {
+                let tab_dst = {
+                    let layer_id = LayerId::new(Order::Foreground, "foreground".into());
+                    ui.with_layer_id(layer_id, |ui| {
+                        self.show_drag_drop_overlay(ui, &mut state, tab_viewer)
+                    })
+                    .inner
+                };
+                if let Some(destination) = tab_dst {
+                    let source = {
+                        match state.dnd.as_ref().unwrap().drag.src {
+                            TreeComponent::Tab(src_surf, src_node, src_tab) => {
+                                (src_surf, src_node, src_tab)
+                            }
+                            _ => todo!(
+                                "collections of tabs, like nodes and surfaces can't be docked (yet)"
+                            ),
+                        }
+                    };
+                    self.dock_state.move_tab(source, destination);
+                }
+                state.reset_drag();
+            }
         }
 
         let style = self.style.as_ref().unwrap();
@@ -126,33 +163,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             self.dock_state.set_focused_node_and_surface(focused);
         }
 
-        if let (Some(source), Some(hover)) = (self.drag_data.take(), self.hover_data.take()) {
-            let style = self.style.as_ref().unwrap();
-            state.set_drag_and_drop(source, hover, ui.ctx(), style);
-            let tab_dst = {
-                let layer_id = LayerId::new(Order::Foreground, "foreground".into());
-                ui.with_layer_id(layer_id, |ui| {
-                    self.show_drag_drop_overlay(ui, &mut state, tab_viewer)
-                })
-                .inner
-            };
-            if ui.input(|i| i.pointer.primary_released()) {
-                let source = {
-                    match state.dnd.as_ref().unwrap().drag.src {
-                        TreeComponent::Tab(src_surf, src_node, src_tab) => {
-                            (src_surf, src_node, src_tab)
-                        }
-                        _ => todo!(
-                            "collections of tabs, like nodes and surfaces can't be docked (yet)"
-                        ),
-                    }
-                };
-                if let Some(destination) = tab_dst {
-                    self.dock_state.move_tab(source, destination);
-                }
-                state.reset_drag();
-            }
-        }
         state.store(ui.ctx(), self.id);
     }
 
@@ -224,24 +234,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         let window_bounds = self.window_bounds.unwrap();
-        if drag_state.is_on_title_bar()
-            || style.overlay.overlay_type == OverlayType::HighlightedAreas
-        {
-            drag_state.resolve_traditional(
+        match (style.overlay.overlay_type, drag_state.is_on_title_bar()) {
+            (OverlayType::HighlightedAreas, _) | (_, true) => drag_state.resolve_traditional(
                 ui,
                 style,
                 allowed_splits,
                 allowed_in_window,
                 window_bounds,
-            )
-        } else {
-            drag_state.resolve_icon_based(
+            ),
+            (OverlayType::Widgets, false) => drag_state.resolve_icon_based(
                 ui,
                 style,
                 allowed_splits,
                 allowed_in_window,
                 window_bounds,
-            )
+            ),
         }
     }
 

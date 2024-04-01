@@ -273,7 +273,7 @@ pub struct OverlayFeel {
 }
 
 /// Specifies the type of overlay used.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum OverlayType {
     /// Shows highlighted areas predicting where a dropped tab would land were it to be dropped this frame.
