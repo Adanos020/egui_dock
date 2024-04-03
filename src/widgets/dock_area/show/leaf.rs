@@ -297,12 +297,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .map(|res| (res.hovered(), res.clicked(), res.rect))
                     .unwrap_or((false, false, Rect::ZERO));
 
-                let sense = if close_hovered {
-                    Sense::click()
-                } else {
-                    Sense::click_and_drag()
-                };
-
                 let is_lonely_tab = self.dock_state[surface_index].num_tabs() == 1;
 
                 if self.show_tab_name_on_hover {
@@ -328,7 +322,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     };
                     let tab = &mut tabs[tab_index.0];
 
-                    let response = tabs_ui.interact(response.rect, id, Sense::click());
                     response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
@@ -368,14 +361,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
 
-                let response = {
-                    let rect = if close_rect == Rect::ZERO {
-                        response.rect
-                    } else {
-                        response.rect.union(close_rect)
-                    };
-                    tabs_ui.interact(rect, id, sense)
-                };
                 if let Some(pos) = state.last_hover_pos {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
@@ -535,10 +520,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .at_least(text_width + close_button_size);
         let tab_width = preferred_width.unwrap_or(0.0).at_least(minimum_width);
 
-        let (text_rect, mut response) = ui.allocate_exact_size(
-            vec2(tab_width - close_button_size, ui.available_height()),
-            Sense::focusable_noninteractive(),
-        );
+        let (_, tab_rect) = ui.allocate_space(vec2(tab_width, ui.available_height()));
+        let mut response = ui.interact(tab_rect, id, Sense::click_and_drag());
         if ui.ctx().dragged_id().is_none() && self.draggable_tabs {
             response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
@@ -565,8 +548,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         // Draw the full tab first and then the stroke on top to avoid the stroke
         // mixing with the background color.
-        let mut tab_rect = text_rect;
-        tab_rect.set_width(tab_width);
         ui.painter()
             .rect_filled(tab_rect, tab_style.rounding, tab_style.bg_fill);
         let stroke_rect = rect_stroke_box(tab_rect, 1.0);
@@ -587,6 +568,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             );
         }
 
+        let mut text_rect = tab_rect;
+        text_rect.set_width(text_rect.width() - close_button_size);
         let text_pos = {
             let pos = Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
             pos - galley.size() / 2.0
