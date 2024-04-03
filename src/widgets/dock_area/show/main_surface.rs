@@ -22,12 +22,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let response = ui.allocate_rect(rect, Sense::hover());
             if response.contains_pointer() {
                 ui.memory_mut(|mem| {
-                    let hover_data_mut = mem.data.get_temp_mut_or(self.id.with("hover_data"), None);
-                    *hover_data_mut = Some(HoverData {
-                        rect,
-                        dst: TreeComponent::Surface(surf_index),
-                        tab: None,
-                    });
+                    mem.data.insert_temp(
+                        self.id.with("hover_data"),
+                        Some(HoverData {
+                            rect,
+                            dst: TreeComponent::Surface(surf_index),
+                            tab: None,
+                        }),
+                    );
                 });
             }
             return;

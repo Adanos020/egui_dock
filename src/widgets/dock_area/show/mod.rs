@@ -105,8 +105,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     };
                     self.dock_state.move_tab(source, destination);
                 }
-                state.reset_drag();
             }
+        }
+
+        if ui.input(|i| i.pointer.primary_released()) {
+            state.reset_drag();
         }
 
         let style = self.style.as_ref().unwrap();

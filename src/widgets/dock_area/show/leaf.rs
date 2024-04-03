@@ -267,12 +267,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             .transform_layer_shapes(layer_id, TSTransform::new(delta, 1.0));
 
                         tabs_ui.memory_mut(|mem| {
-                            let drag_data_mut =
-                                mem.data.get_temp_mut_or(self.id.with("drag_data"), None);
-                            *drag_data_mut = Some(DragData {
-                                src: TreeComponent::Tab(surface_index, node_index, tab_index),
-                                rect: self.dock_state[surface_index][node_index].rect().unwrap(),
-                            });
+                            mem.data.insert_temp(
+                                self.id.with("drag_data"),
+                                Some(DragData {
+                                    src: TreeComponent::Tab(surface_index, node_index, tab_index),
+                                    rect: self.dock_state[surface_index][node_index]
+                                        .rect()
+                                        .unwrap(),
+                                }),
+                            );
                         });
                     }
                 }
@@ -848,8 +851,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 };
 
                 ui.memory_mut(|mem| {
-                    let hover_data_mut = mem.data.get_temp_mut_or(self.id.with("hover_data"), None);
-                    *hover_data_mut = Some(HoverData { rect, dst, tab });
+                    mem.data.insert_temp(
+                        self.id.with("hover_data"),
+                        Some(HoverData { rect, dst, tab }),
+                    );
                 });
             }
         }
