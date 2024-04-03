@@ -1,6 +1,6 @@
 use egui::{
-    CentralPanel, Color32, Context, CursorIcon, EventFilter, Frame, Key, LayerId, Order, Pos2,
-    Rect, Rounding, Sense, Ui, Vec2,
+    CentralPanel, Color32, Context, CursorIcon, EventFilter, Frame, Key, Pos2, Rect, Rounding,
+    Sense, Ui, Vec2,
 };
 
 use duplicate::duplicate;

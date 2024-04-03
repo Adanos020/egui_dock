@@ -295,11 +295,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     fade,
                 );
                 let title_id = response.id;
-
-                let (close_hovered, close_clicked, close_rect) = close_response
-                    .map(|res| (res.hovered(), res.clicked(), res.rect))
-                    .unwrap_or((false, false, Rect::ZERO));
-
+                let close_clicked = close_response.is_some_and(|res| res.clicked());
                 let is_lonely_tab = self.dock_state[surface_index].num_tabs() == 1;
 
                 if self.show_tab_name_on_hover {
