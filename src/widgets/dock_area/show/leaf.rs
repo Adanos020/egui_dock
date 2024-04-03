@@ -368,7 +368,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
 
-                let response = tabs_ui.interact(response.rect.union(close_rect), id, sense);
+                let response = {
+                    let rect = if close_rect == Rect::ZERO {
+                        response.rect
+                    } else {
+                        response.rect.union(close_rect)
+                    };
+                    tabs_ui.interact(rect, id, sense)
+                };
                 if let Some(pos) = state.last_hover_pos {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
