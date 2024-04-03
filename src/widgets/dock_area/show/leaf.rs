@@ -382,7 +382,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     // the underlying tab
                     if state.drag_start.is_some() && response.rect.contains(pos) {
                         self.tab_hover_rect = Some((response.rect, tab_index));
-                        state.drag_start = None;
                     }
                 }
 
