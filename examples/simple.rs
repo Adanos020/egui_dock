@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use eframe::{egui, NativeOptions};
+use egui::Window;
 
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 
@@ -52,8 +53,10 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        DockArea::new(&mut self.tree)
-            .style(Style::from_egui(ctx.style().as_ref()))
-            .show(ctx, &mut TabViewer {});
+        Window::new("test").show(ctx, |ui| {
+            DockArea::new(&mut self.tree)
+                .style(Style::from_egui(ui.style().as_ref()))
+                .show_inside(ui, &mut TabViewer {});
+        });
     }
 }

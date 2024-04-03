@@ -84,13 +84,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if let (Some(source), Some(hover)) = (drag_data, hover_data) {
             let style = self.style.as_ref().unwrap();
             state.set_drag_and_drop(source, hover, ui.ctx(), style);
-            let tab_dst = {
-                let layer_id = LayerId::new(Order::Foreground, "foreground".into());
-                ui.with_layer_id(layer_id, |ui| {
-                    self.show_drag_drop_overlay(ui, &mut state, tab_viewer)
-                })
-                .inner
-            };
+            let tab_dst = self.show_drag_drop_overlay(ui, &mut state, tab_viewer);
             if ui.input(|i| i.pointer.primary_released()) {
                 if let Some(destination) = tab_dst {
                     let source = {
