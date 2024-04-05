@@ -183,7 +183,6 @@ impl DragDropState {
         let shortest_side = ((rect.width() - total_button_spacing) / 3.0)
             .min((rect.height() - total_button_spacing) / 3.0)
             .min(style.overlay.max_button_size);
-        let mut offset_vector = vec2(0.0, shortest_side + style.overlay.button_spacing);
 
         let mut destination: Option<TabDestination> = windows_allowed
             .then(|| TabDestination::Window(Rect::from_min_size(pointer, self.drag.rect.size())));
@@ -205,10 +204,17 @@ impl DragDropState {
 
         for split in [Split::Below, Split::Right, Split::Above, Split::Left] {
             match allowed_splits {
-                AllowedSplits::TopBottomOnly if split.is_top_bottom() => continue,
-                AllowedSplits::LeftRightOnly if split.is_left_right() => continue,
+                AllowedSplits::TopBottomOnly if !split.is_top_bottom() => continue,
+                AllowedSplits::LeftRightOnly if !split.is_left_right() => continue,
                 AllowedSplits::None => continue,
                 _ => {
+                    let offset_value = shortest_side + style.overlay.button_spacing;
+                    let offset_vector = match split {
+                        Split::Above => vec2(0.0, -offset_value),
+                        Split::Below => vec2(0.0, offset_value),
+                        Split::Left => vec2(-offset_value, 0.0),
+                        Split::Right => vec2(offset_value, 0.0),
+                    };
                     if button_ui(
                         Rect::from_center_size(center + offset_vector, Vec2::splat(shortest_side)),
                         ui,
@@ -222,7 +228,6 @@ impl DragDropState {
                                 Some(TabDestination::Node(surface, node, TabInsert::Split(split)))
                         }
                     }
-                    offset_vector = offset_vector.rot90();
                 }
             }
         }
