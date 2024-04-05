@@ -14,6 +14,7 @@
 
 - Dragging tabs around should no longer cause the `DockArea` to resize a tiny bit on every frame.
 - Dragged tabs should now always follow the mouse exactly.
+- Button overlay now correctly renders split buttons when allowed splits are either `LeftRightOnly` or `TopBottomOnly`.
 
 ## 0.11.4 - 2024-03-11
 
