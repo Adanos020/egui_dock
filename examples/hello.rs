@@ -197,6 +197,10 @@ impl MyContext {
                     Alpha::OnlyBlend,
                 );
                 ui.end_row();
+
+                ui.label("Rounding:");
+                rounding_ui(ui, &mut style.main_surface_border_rounding);
+                ui.end_row();
             });
         });
 
