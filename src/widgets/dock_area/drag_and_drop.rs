@@ -4,7 +4,8 @@ use crate::{
     AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex, TabInsert,
 };
 use egui::{
-    emath::inverse_lerp, vec2, Context, Id, LayerId, NumExt, Order, Pos2, Rect, Stroke, Ui, Vec2,
+    emath::inverse_lerp, vec2, Context, Id, LayerId, NumExt, Order, Painter, Pos2, Rect, Stroke,
+    Ui, Vec2,
 };
 
 #[derive(Debug, Clone)]
@@ -67,8 +68,15 @@ impl TreeComponent {
     }
 }
 
+fn make_overlay_painter(ui: &Ui) -> Painter {
+    let id = Id::new("overlay");
+    let layer_id = LayerId::new(Order::Foreground, id);
+    ui.ctx().layer_painter(layer_id)
+}
+
 fn draw_highlight_rect(rect: Rect, ui: &Ui, style: &Style) {
-    ui.painter().rect(
+    let painter = make_overlay_painter(ui);
+    painter.rect(
         rect.expand(style.overlay.hovered_leaf_highlight.expansion),
         style.overlay.hovered_leaf_highlight.rounding,
         style.overlay.hovered_leaf_highlight.color,
@@ -87,7 +95,7 @@ fn button_ui(
 ) -> bool {
     let visuals = &style.overlay;
     let button_stroke = Stroke::new(1.0, visuals.button_color);
-    let painter = ui.painter();
+    let painter = make_overlay_painter(ui);
     painter.rect_stroke(rect, 0.0, visuals.button_border_stroke);
     let rect = rect.shrink(rect.width() * 0.1);
     painter.rect_stroke(rect, 0.0, button_stroke);
@@ -175,15 +183,9 @@ impl DragDropState {
         let shortest_side = ((rect.width() - total_button_spacing) / 3.0)
             .min((rect.height() - total_button_spacing) / 3.0)
             .min(style.overlay.max_button_size);
-        let mut offset_vector = vec2(0.0, shortest_side + style.overlay.button_spacing);
 
-        let mut destination: Option<TabDestination> = match windows_allowed {
-            true => Some(TabDestination::Window(Rect::from_min_size(
-                pointer,
-                self.drag.rect.size(),
-            ))),
-            false => None,
-        };
+        let mut destination: Option<TabDestination> = windows_allowed
+            .then(|| TabDestination::Window(Rect::from_min_size(pointer, self.drag.rect.size())));
 
         let center = rect.center();
         let rect = Rect::from_center_size(center, Vec2::splat(shortest_side));
@@ -202,10 +204,17 @@ impl DragDropState {
 
         for split in [Split::Below, Split::Right, Split::Above, Split::Left] {
             match allowed_splits {
-                AllowedSplits::TopBottomOnly if split.is_top_bottom() => continue,
-                AllowedSplits::LeftRightOnly if split.is_left_right() => continue,
+                AllowedSplits::TopBottomOnly if !split.is_top_bottom() => continue,
+                AllowedSplits::LeftRightOnly if !split.is_left_right() => continue,
                 AllowedSplits::None => continue,
                 _ => {
+                    let offset_value = shortest_side + style.overlay.button_spacing;
+                    let offset_vector = match split {
+                        Split::Above => vec2(0.0, -offset_value),
+                        Split::Below => vec2(0.0, offset_value),
+                        Split::Left => vec2(-offset_value, 0.0),
+                        Split::Right => vec2(offset_value, 0.0),
+                    };
                     if button_ui(
                         Rect::from_center_size(center + offset_vector, Vec2::splat(shortest_side)),
                         ui,
@@ -219,7 +228,6 @@ impl DragDropState {
                                 Some(TabDestination::Node(surface, node, TabInsert::Split(split)))
                         }
                     }
-                    offset_vector = offset_vector.rot90();
                 }
             }
         }
@@ -384,7 +392,7 @@ impl DragDropState {
     pub(super) fn is_locked(&self, style: &Style, ctx: &Context) -> bool {
         match self.locked.as_ref() {
             Some(lock_time) => {
-                let elapsed = (ctx.input(|i| i.time) - lock_time) as f32;
+                let elapsed = ctx.input(|i| (i.time - lock_time) as f32);
                 ctx.request_repaint();
                 elapsed < style.overlay.feel.max_preference_time
             }
@@ -413,18 +421,14 @@ const fn lerp_vec(split: Split, alpha: f32) -> Vec2 {
 // Draws a filled rect describing where a tab will be dropped.
 #[inline(always)]
 fn draw_drop_rect(rect: Rect, ui: &Ui, style: &Style) {
-    let id = Id::new("overlay");
-    let layer_id = LayerId::new(Order::Foreground, id);
-    let painter = ui.ctx().layer_painter(layer_id);
+    let painter = make_overlay_painter(ui);
     painter.rect_filled(rect, 0.0, style.overlay.selection_color);
 }
 
 // Draws a stroked rect describing where a tab will be dropped.
 #[inline(always)]
 fn draw_window_rect(rect: Rect, ui: &Ui, style: &Style) {
-    let id = Id::new("overlay");
-    let layer_id = LayerId::new(Order::Foreground, id);
-    let painter = ui.ctx().layer_painter(layer_id);
+    let painter = make_overlay_painter(ui);
     painter.rect_stroke(
         rect,
         0.0,

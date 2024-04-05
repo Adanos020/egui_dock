@@ -1,5 +1,6 @@
 use std::ops::RangeInclusive;
 
+use egui::emath::TSTransform;
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
     LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
@@ -209,7 +210,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .with((node_index, "node"))
                 .with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
-            let is_being_dragged = tabs_ui.memory(|mem| mem.is_being_dragged(id))
+            let is_being_dragged = tabs_ui.ctx().is_being_dragged(id)
                 && tabs_ui.input(|i| i.pointer.is_decidedly_dragging())
                 && self.draggable_tabs;
 
@@ -261,11 +262,20 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     let start = *state.drag_start.get_or_insert(pointer_pos);
                     let delta = pointer_pos - start;
                     if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
-                        tabs_ui.ctx().translate_layer(layer_id, delta);
+                        tabs_ui
+                            .ctx()
+                            .transform_layer_shapes(layer_id, TSTransform::new(delta, 1.0));
 
-                        self.drag_data = Some(DragData {
-                            src: TreeComponent::Tab(surface_index, node_index, tab_index),
-                            rect: self.dock_state[surface_index][node_index].rect().unwrap(),
+                        tabs_ui.memory_mut(|mem| {
+                            mem.data.insert_temp(
+                                self.id.with("drag_data"),
+                                Some(DragData {
+                                    src: TreeComponent::Tab(surface_index, node_index, tab_index),
+                                    rect: self.dock_state[surface_index][node_index]
+                                        .rect()
+                                        .unwrap(),
+                                }),
+                            );
                         });
                     }
                 }
@@ -285,17 +295,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     fade,
                 );
                 let title_id = response.id;
-
-                let (close_hovered, close_clicked) = close_response
-                    .map(|res| (res.hovered(), res.clicked()))
-                    .unwrap_or_default();
-
-                let sense = if close_hovered {
-                    Sense::click()
-                } else {
-                    Sense::click_and_drag()
-                };
-
+                let close_clicked = close_response.is_some_and(|res| res.clicked());
                 let is_lonely_tab = self.dock_state[surface_index].num_tabs() == 1;
 
                 if self.show_tab_name_on_hover {
@@ -321,7 +321,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     };
                     let tab = &mut tabs[tab_index.0];
 
-                    let response = tabs_ui.interact(response.rect, id, Sense::click());
                     response.context_menu(|ui| {
                         tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
@@ -361,14 +360,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 }
 
-                let response = tabs_ui.interact(response.rect, id, sense);
                 if let Some(pos) = state.last_hover_pos {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
                     // the underlying tab
                     if state.drag_start.is_some() && response.rect.contains(pos) {
                         self.tab_hover_rect = Some((response.rect, tab_index));
-                        state.drag_start = None;
                     }
                 }
 
@@ -501,7 +498,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         focused: bool,
         active: bool,
         is_being_dragged: bool,
-        prefered_width: Option<f32>,
+        preferred_width: Option<f32>,
         show_close_button: bool,
         fade: Option<&Style>,
     ) -> (Response, Option<Response>) {
@@ -520,13 +517,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .minimum_width
             .unwrap_or(0.0)
             .at_least(text_width + close_button_size);
-        let tab_width = prefered_width.unwrap_or(0.0).at_least(minimum_width);
+        let tab_width = preferred_width.unwrap_or(0.0).at_least(minimum_width);
 
-        let (rect, mut response) = ui.allocate_exact_size(
-            vec2(tab_width, ui.available_height()),
-            Sense::focusable_noninteractive(),
-        );
-        if !ui.memory(|mem| mem.is_anything_being_dragged()) && self.draggable_tabs {
+        let (_, tab_rect) = ui.allocate_space(vec2(tab_width, ui.available_height()));
+        let mut response = ui.interact(tab_rect, id, Sense::click_and_drag());
+        if ui.ctx().dragged_id().is_none() && self.draggable_tabs {
             response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
 
@@ -553,8 +548,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         // Draw the full tab first and then the stroke on top to avoid the stroke
         // mixing with the background color.
         ui.painter()
-            .rect_filled(rect, tab_style.rounding, tab_style.bg_fill);
-        let stroke_rect = rect_stroke_box(rect, 1.0);
+            .rect_filled(tab_rect, tab_style.rounding, tab_style.bg_fill);
+        let stroke_rect = rect_stroke_box(tab_rect, 1.0);
         ui.painter().rect_stroke(
             stroke_rect,
             tab_style.rounding,
@@ -572,9 +567,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             );
         }
 
-        let mut text_rect = rect;
-        text_rect.set_width(tab_width - close_button_size);
-
+        let mut text_rect = tab_rect;
+        text_rect.set_width(text_rect.width() - close_button_size);
         let text_pos = {
             let pos = Align2::CENTER_CENTER.pos_in_rect(&text_rect.shrink2(vec2(x_spacing, 0.0)));
             pos - galley.size() / 2.0
@@ -584,22 +578,22 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .add(TextShape::new(text_pos, galley, tab_style.text_color));
 
         let close_response = show_close_button.then(|| {
-            let mut close_button_rect = rect;
+            let mut close_button_rect = tab_rect;
             close_button_rect.set_left(text_rect.right());
             close_button_rect =
                 Rect::from_center_size(close_button_rect.center(), Vec2::splat(close_button_size));
 
-            let response = ui
-                .interact(close_button_rect, id, Sense::click())
+            let close_response = ui
+                .interact(close_button_rect, id.with("close-button"), Sense::click())
                 .on_hover_cursor(CursorIcon::PointingHand);
 
-            let color = if response.hovered() || response.has_focus() {
+            let color = if close_response.hovered() || close_response.has_focus() {
                 style.buttons.close_tab_active_color
             } else {
                 style.buttons.close_tab_color
             };
 
-            if response.hovered() || response.has_focus() {
+            if close_response.hovered() || close_response.has_focus() {
                 let mut rounding = tab_style.rounding;
                 rounding.nw = 0.0;
                 rounding.sw = 0.0;
@@ -622,7 +616,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 Stroke::new(1.0, color),
             );
 
-            response
+            close_response
         });
 
         (response, close_response)
@@ -852,7 +846,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     }
                 };
 
-                self.hover_data = Some(HoverData { rect, dst, tab });
+                ui.memory_mut(|mem| {
+                    mem.data.insert_temp(
+                        self.id.with("hover_data"),
+                        Some(HoverData { rect, dst, tab }),
+                    );
+                });
             }
         }
     }

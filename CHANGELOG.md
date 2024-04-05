@@ -1,5 +1,21 @@
 # egui_dock changelog
 
+## 0.12.0 - 2024-04-03
+
+### Breaking changes
+
+- Upgraded to egui 0.27.
+
+### Changed
+
+- All `Style` structs are now serializable with `serde`. ([#227](https://github.com/Adanos020/egui_dock/pull/227))
+
+### Fixed
+
+- Dragging tabs around should no longer cause the `DockArea` to resize a tiny bit on every frame.
+- Dragged tabs should now always follow the mouse exactly.
+- Button overlay now correctly renders split buttons when allowed splits are either `LeftRightOnly` or `TopBottomOnly`.
+
 ## 0.11.4 - 2024-03-11
 
 ### Fixed
@@ -29,17 +45,17 @@ From [#225](https://github.com/Adanos020/egui_dock/pull/225):
 ### Fixed
 
 - Bug where tabs couldn't be re-docked onto the main surface if it's
-  empty ([#222](https://github.com/Adanos020/egui_dock/pull/222))
+  empty. ([#222](https://github.com/Adanos020/egui_dock/pull/222))
 
 ## 0.11.0 - 2024-02-06
 
 ### Added
 
-- `filter_map_tabs`, `filter_tabs`, and `retain_tabs` ([#217](https://github.com/Adanos020/egui_dock/pull/217))
+- `filter_map_tabs`, `filter_tabs`, and `retain_tabs`. ([#217](https://github.com/Adanos020/egui_dock/pull/217))
 
 ### Breaking changes
 
-- Upgraded to egui 0.26
+- Upgraded to egui 0.26.
 
 ## 0.10.0 - 2024-01-09
 
