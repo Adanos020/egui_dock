@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.12.0 - 2024-04-03
+## 0.12.0 - 2024-04-05
 
 ### Breaking changes
 
