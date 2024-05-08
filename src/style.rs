@@ -132,11 +132,12 @@ pub struct TabBarStyle {
     /// Tab rounding. By `Default` it's [`Rounding::default`].
     pub rounding: Rounding,
 
-    /// Color of th line separating the tab name area from the tab content area.
+    /// Color of the line separating the tab name area from the tab content area.
     /// By `Default` it's [`Color32::BLACK`].
     pub hline_color: Color32,
 
     /// Whether tab titles expand to fill the width of their tab bars.
+    /// By `Default` it's `false`.
     pub fill_tab_bar: bool,
 }
 
