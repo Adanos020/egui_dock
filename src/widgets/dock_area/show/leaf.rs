@@ -1,6 +1,7 @@
 use std::ops::RangeInclusive;
 
 use egui::emath::TSTransform;
+use egui::Shape;
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
     LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
@@ -96,9 +97,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             return tabbar_outer_rect;
         }
 
-        // Reserve space for the add button at the end of the tab bar.
+        // Reserve space for the buttons at the ends of the tab bar.
+
         if self.show_add_buttons {
             available_width -= Style::TAB_ADD_BUTTON_SIZE;
+        }
+
+        if self.show_leaf_close_all_buttons {
+            available_width -= Style::TAB_CLOSE_ALL_BUTTON_SIZE;
+        }
+
+        if self.show_leaf_collapse_buttons {
+            available_width -= Style::TAB_COLLAPSE_BUTTON_SIZE;
         }
 
         let actual_width = {
@@ -108,7 +118,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             };
 
             let tabbar_inner_rect = Rect::from_min_size(
-                (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
+                (tabbar_outer_rect.min - pos2(-*scroll, 0.0)
+                    + vec2(
+                        if self.show_leaf_collapse_buttons {
+                            Style::TAB_COLLAPSE_BUTTON_SIZE
+                        } else {
+                            0.0
+                        },
+                        0.0,
+                    ))
+                .to_pos2(),
                 vec2(tabbar_outer_rect.width(), tabbar_outer_rect.height()),
             );
 
@@ -121,6 +140,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             let mut clip_rect = tabbar_outer_rect;
             clip_rect.set_width(available_width);
+            if self.show_leaf_collapse_buttons {
+                clip_rect = clip_rect.translate(vec2(Style::TAB_COLLAPSE_BUTTON_SIZE, 0.0));
+            }
             tabs_ui.set_clip_rect(clip_rect);
 
             // Desired size for tabs in "expanded" mode.
@@ -149,13 +171,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 (px, style.tab_bar.hline_color),
             );
 
-            // Add button at the end of the tab bar.
+            // Add button at the ends of the tab bar.
             if self.show_add_buttons {
                 let offset = match style.buttons.add_tab_align {
                     TabAddAlign::Left => {
                         (clip_rect.width() - tabs_ui.min_rect().width()).at_least(0.0)
                     }
                     TabAddAlign::Right => 0.0,
+                } + if self.show_leaf_close_all_buttons {
+                    Style::TAB_CLOSE_ALL_BUTTON_SIZE
+                } else {
+                    0.0
                 };
                 self.tab_plus(
                     ui,
@@ -166,6 +192,28 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     offset,
                     fade_style,
                 );
+            }
+
+            if self.show_leaf_close_all_buttons {
+                self.tab_close_all(
+                    ui,
+                    surface_index,
+                    node_index,
+                    tab_viewer,
+                    tabbar_outer_rect,
+                    fade_style,
+                )
+            }
+
+            if self.show_leaf_collapse_buttons {
+                self.tab_collapse(
+                    ui,
+                    surface_index,
+                    node_index,
+                    tab_viewer,
+                    tabbar_outer_rect,
+                    fade_style,
+                )
             }
 
             tabs_ui.min_rect().width()
@@ -416,6 +464,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
+    /// Draws the tab add button.
     #[allow(clippy::too_many_arguments)]
     fn tab_plus(
         &mut self,
@@ -485,6 +534,132 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui.memory_mut(|mem| mem.toggle_popup(popup_id));
             }
             tab_viewer.on_add(surface_index, node_index);
+        }
+    }
+
+    /// Draws the close all button.
+    fn tab_close_all(
+        &mut self,
+        ui: &mut Ui,
+        surface_index: SurfaceIndex,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        tabbar_outer_rect: Rect,
+        fade_style: Option<&Style>,
+    ) {
+        let rect = Rect::from_min_max(
+            tabbar_outer_rect.right_top() - vec2(Style::TAB_CLOSE_ALL_BUTTON_SIZE, 0.0),
+            tabbar_outer_rect.right_bottom() - vec2(0.0, 2.0),
+        );
+
+        let ui = &mut ui.child_ui_with_id_source(
+            rect,
+            Layout::left_to_right(Align::Center),
+            (node_index, "tab_close_all"),
+        );
+
+        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
+
+        response = response.on_hover_cursor(CursorIcon::PointingHand);
+
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
+        let color = if response.hovered() || response.has_focus() {
+            ui.painter()
+                .rect_filled(rect, Rounding::ZERO, style.buttons.close_all_tabs_bg_fill);
+            style.buttons.close_all_tabs_active_color
+        } else {
+            style.buttons.close_all_tabs_color
+        };
+
+        let mut close_all_rect = rect;
+
+        rect_set_size_centered(&mut close_all_rect, Vec2::splat(Style::TAB_CLOSE_ALL_SIZE));
+
+        ui.painter().line_segment(
+            [close_all_rect.left_top(), close_all_rect.right_bottom()],
+            Stroke::new(1.0, color),
+        );
+        ui.painter().line_segment(
+            [close_all_rect.right_top(), close_all_rect.left_bottom()],
+            Stroke::new(1.0, color),
+        );
+
+        // Draw button left border.
+        ui.painter().vline(
+            rect.left(),
+            rect.y_range(),
+            Stroke::new(
+                ui.ctx().pixels_per_point().recip(),
+                style.buttons.close_all_tabs_border_color,
+            ),
+        );
+
+        if response.clicked() {
+            todo!()
+        }
+    }
+
+    /// Draws the collapse button.
+    fn tab_collapse(
+        &mut self,
+        ui: &mut Ui,
+        surface_index: SurfaceIndex,
+        node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        tabbar_outer_rect: Rect,
+        fade_style: Option<&Style>,
+    ) {
+        let rect = Rect::from_min_max(
+            tabbar_outer_rect.left_top(),
+            tabbar_outer_rect.left_bottom() + vec2(Style::TAB_COLLAPSE_BUTTON_SIZE, 0.0),
+        );
+
+        let ui = &mut ui.child_ui_with_id_source(
+            rect,
+            Layout::left_to_right(Align::Center),
+            (node_index, "tab_collapse"),
+        );
+
+        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
+
+        response = response.on_hover_cursor(CursorIcon::PointingHand);
+
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
+        let color = if response.hovered() || response.has_focus() {
+            ui.painter()
+                .rect_filled(rect, Rounding::ZERO, style.buttons.collapse_tabs_bg_fill);
+            style.buttons.collapse_tabs_active_color
+        } else {
+            style.buttons.collapse_tabs_color
+        };
+
+        let mut arrow_rect = rect;
+
+        rect_set_size_centered(&mut arrow_rect, Vec2::splat(Style::TAB_COLLAPSE_ARROW_SIZE));
+
+        // Draw arrow.
+        ui.painter().add(Shape::convex_polygon(
+            vec![
+                arrow_rect.left_top(),
+                arrow_rect.right_top(),
+                arrow_rect.center_bottom(),
+            ],
+            color,
+            Stroke::NONE,
+        ));
+
+        // Draw button right border.
+        ui.painter().vline(
+            rect.right(),
+            rect.y_range(),
+            Stroke::new(
+                ui.ctx().pixels_per_point().recip(),
+                style.buttons.collapse_tabs_border_color,
+            ),
+        );
+
+        if response.clicked() {
+            todo!()
         }
     }
 

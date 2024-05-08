@@ -8,6 +8,25 @@
 
 - Upgraded to egui 0.28.
 
+### Added
+
+- `DockArea::show_leaf_close_all_buttons`
+- `DockArea::show_leaf_collapse_buttons`
+- Style configuration for the two buttons:
+  - `ButtonsStyle::close_all_tabs_color`
+  - `ButtonsStyle::close_all_tabs_active_color`
+  - `ButtonsStyle::close_all_tabs_bg_fill`
+  - `ButtonsStyle::close_all_tabs_border_color`
+  - `ButtonsStyle::collapse_tabs_color`
+  - `ButtonsStyle::collapse_tabs_active_color`
+  - `ButtonsStyle::collapse_tabs_bg_fill`
+  - `ButtonsStyle::collapse_tabs_border_color`
+
+### Deprecated
+
+- `DockArea::show_window_close_buttons` – use `DockArea::show_leaf_close_all_buttons` instead.
+- `DockArea::show_window_collapse_buttons` – use `DockArea::show_leaf_collapse_buttons` instead.
+
 ## 0.12.0 - 2024-04-05
 
 ### Breaking changes

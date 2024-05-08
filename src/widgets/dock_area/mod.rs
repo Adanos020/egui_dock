@@ -28,6 +28,8 @@ pub struct DockArea<'tree, Tab> {
     show_tab_name_on_hover: bool,
     show_window_close_buttons: bool,
     show_window_collapse_buttons: bool,
+    show_leaf_close_all_buttons: bool,
+    show_leaf_collapse_buttons: bool,
     allowed_splits: AllowedSplits,
     window_bounds: Option<Rect>,
 
@@ -60,6 +62,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             window_bounds: None,
             show_window_close_buttons: true,
             show_window_collapse_buttons: true,
+            show_leaf_close_all_buttons: true,
+            show_leaf_collapse_buttons: true,
         }
     }
 
@@ -137,16 +141,34 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// Enables or disables the close button on windows.
     /// By default it's `true`.
     #[inline(always)]
+    #[deprecated = "use `show_leaf_close_buttons` instead."]
     pub fn show_window_close_buttons(mut self, show_window_close_buttons: bool) -> Self {
         self.show_window_close_buttons = show_window_close_buttons;
         self
     }
 
-    /// Enables or disables the collapsing header  on windows.
+    /// Enables or disables the collapsing header on windows.
     /// By default it's `true`.
     #[inline(always)]
+    #[deprecated = "use `show_leaf_collapse_buttons` instead."]
     pub fn show_window_collapse_buttons(mut self, show_window_collapse_buttons: bool) -> Self {
         self.show_window_collapse_buttons = show_window_collapse_buttons;
+        self
+    }
+
+    /// Enables or disables the close all tabs button on tab bars.
+    /// By default it's `true`.
+    #[inline(always)]
+    pub fn show_leaf_close_all_buttons(mut self, show_leaf_close_all_buttons: bool) -> Self {
+        self.show_leaf_close_all_buttons = show_leaf_close_all_buttons;
+        self
+    }
+
+    /// Enables or disables the collapse tabs button on tab bars.
+    /// By default it's `true`.
+    #[inline(always)]
+    pub fn show_leaf_collapse_buttons(mut self, show_leaf_collapse_buttons: bool) -> Self {
+        self.show_leaf_collapse_buttons = show_leaf_collapse_buttons;
         self
     }
 }
