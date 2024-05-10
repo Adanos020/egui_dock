@@ -157,6 +157,7 @@ impl<Tab> Node<Tab> {
         }
     }
 
+    /// Returns the number of layers of collapsed leaf subnodes.
     pub fn collapsed_leaf_count(&self) -> i32 {
         match self {
             Node::Vertical {
@@ -192,14 +193,14 @@ impl<Tab> Node<Tab> {
             Split::Left | Split::Right => Node::Horizontal {
                 fraction,
                 rect,
-                fully_collapsed: false,
-                collapsed_leaf_count: 0,
+                fully_collapsed: self.is_collapsed(),
+                collapsed_leaf_count: self.collapsed_leaf_count(),
             },
             Split::Above | Split::Below => Node::Vertical {
                 fraction,
                 rect,
-                fully_collapsed: false,
-                collapsed_leaf_count: 0,
+                fully_collapsed: self.is_collapsed(),
+                collapsed_leaf_count: self.collapsed_leaf_count(),
             },
         };
         std::mem::replace(self, src)
