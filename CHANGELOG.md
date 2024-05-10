@@ -10,22 +10,34 @@
 
 ### Added
 
-- `DockArea::show_leaf_close_all_buttons`
-- `DockArea::show_leaf_collapse_buttons`
-- Style configuration for the two buttons:
-  - `ButtonsStyle::close_all_tabs_color`
-  - `ButtonsStyle::close_all_tabs_active_color`
-  - `ButtonsStyle::close_all_tabs_bg_fill`
-  - `ButtonsStyle::close_all_tabs_border_color`
-  - `ButtonsStyle::collapse_tabs_color`
-  - `ButtonsStyle::collapse_tabs_active_color`
-  - `ButtonsStyle::collapse_tabs_bg_fill`
-  - `ButtonsStyle::collapse_tabs_border_color`
+- Public API additions:
+  - `Node::is_collapsed` – returns whether the `Node` is collapsed
+  - `Node::toggle_collapsed` – toggle the collapsing state of the `Node`
+  - `Node::set_collapsed` – set the collapsing state of the `Node`
+  - `Node::set_collapsed_leaf_count` – sets the number of layers of collapsed leaf nodes
+  - `DockArea::show_leaf_close_all_buttons` – shows a close all button which closes all open tabs in a leaf
+  - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window)
+  - Added style configuration for the two buttons:
+    - `ButtonsStyle::close_all_tabs_color`
+    - `ButtonsStyle::close_all_tabs_active_color`
+    - `ButtonsStyle::close_all_tabs_bg_fill`
+    - `ButtonsStyle::close_all_tabs_border_color`
+    - `ButtonsStyle::collapse_tabs_color`
+    - `ButtonsStyle::collapse_tabs_active_color`
+    - `ButtonsStyle::collapse_tabs_bg_fill`
+    - `ButtonsStyle::collapse_tabs_border_color`
+
+- Internal additions:
+  - `Node::Leaf::collapsed` attribute – records whether a leaf is collapsed.
+  - `Node::Vertical::fully_collapsed` attribute – records whether all subnodes are collapsed.
+  - `Node::Vertical::collapsed_leaf_count` attribute – records the number of collapsed leaf subnodes.
+  - `Node::Horizontal::fully_collapsed` attribute – records whether all subnodes are collapsed.
+  - `Node::Horizontal::collapsed_leaf_count` attribute – records the number of collapsed leaf subnodes.
 
 ### Deprecated
 
-- `DockArea::show_window_close_buttons` – use `DockArea::show_leaf_close_all_buttons` instead.
-- `DockArea::show_window_collapse_buttons` – use `DockArea::show_leaf_collapse_buttons` instead.
+- `DockArea::show_window_close_buttons` – no longer has any effect; use `DockArea::show_leaf_close_all_buttons` instead.
+- `DockArea::show_window_collapse_buttons` – no longer has any effect; use `DockArea::show_leaf_collapse_buttons` instead.
 
 ## 0.12.0 - 2024-04-05
 

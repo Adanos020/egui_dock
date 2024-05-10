@@ -1,3 +1,14 @@
+// Some Ideas - "Total collapsed": every subnode is collapsed.
+
+// When a Node is totally collapsed,
+// 1. Check if its parent is also totally collapsed;
+// 2. Recursivelly set hard-coded heights to the parent nodes (tab bar height * no. of collapsed nodes);
+// 3a. Repeat until it is not totally collapsed somewhere...
+//     and set the ratio carefully to make sure it looks right.
+// 3b. Or everything is totally collapsed and the parent is the root node...
+//     then do some magic to make it look right.
+
+use std::cmp::max;
 use std::ops::RangeInclusive;
 
 use egui::emath::TSTransform;
@@ -29,6 +40,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         fade_style: Option<(&Style, f32)>,
     ) {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
+        let collapsed = self.dock_state[surface_index][node_index].is_collapsed();
 
         let rect = self.dock_state[surface_index][node_index]
             .rect()
@@ -49,16 +61,19 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             (surface_index, node_index),
             tab_viewer,
             fade_style.map(|(style, _)| style),
+            collapsed,
         );
-        self.tab_body(
-            ui,
-            state,
-            (surface_index, node_index),
-            tab_viewer,
-            spacing,
-            tabbar_rect,
-            fade_style,
-        );
+        if !collapsed {
+            self.tab_body(
+                ui,
+                state,
+                (surface_index, node_index),
+                tab_viewer,
+                spacing,
+                tabbar_rect,
+                fade_style,
+            );
+        }
 
         let tabs = self.dock_state[surface_index][node_index]
             .tabs_mut()
@@ -78,6 +93,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         fade_style: Option<&Style>,
+        collapsed: bool,
     ) -> Rect {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
@@ -210,9 +226,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     ui,
                     surface_index,
                     node_index,
-                    tab_viewer,
                     tabbar_outer_rect,
                     fade_style,
+                    collapsed,
                 )
             }
 
@@ -605,9 +621,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui: &mut Ui,
         surface_index: SurfaceIndex,
         node_index: NodeIndex,
-        tab_viewer: &mut impl TabViewer<Tab = Tab>,
         tabbar_outer_rect: Rect,
         fade_style: Option<&Style>,
+        collapsed: bool,
     ) {
         let rect = Rect::from_min_max(
             tabbar_outer_rect.left_top(),
@@ -639,11 +655,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         // Draw arrow.
         ui.painter().add(Shape::convex_polygon(
-            vec![
-                arrow_rect.left_top(),
-                arrow_rect.right_top(),
-                arrow_rect.center_bottom(),
-            ],
+            if collapsed {
+                // Arrow pointing rightwards.
+                vec![
+                    arrow_rect.left_top(),
+                    arrow_rect.right_center(),
+                    arrow_rect.left_bottom(),
+                ]
+            } else {
+                // Arrow pointing downwards.
+                vec![
+                    arrow_rect.left_top(),
+                    arrow_rect.right_top(),
+                    arrow_rect.center_bottom(),
+                ]
+            },
             color,
             Stroke::NONE,
         ));
@@ -659,7 +685,52 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
 
         if response.clicked() {
-            todo!()
+            self.tab_collapse_pressed(surface_index, collapsed, node_index);
+        }
+    }
+
+    /// Handles the collapse button press.
+    fn tab_collapse_pressed(
+        &mut self,
+        surface_index: SurfaceIndex,
+        collapsed: bool,
+        node_index: NodeIndex,
+    ) {
+        let surface = &mut self.dock_state[surface_index];
+        if collapsed {
+            // Recursively notify parent nodes that the leaf has expanded
+            surface[node_index].set_collapsed(false);
+            let mut parent_index_option = node_index.parent();
+            while let Some(parent_index) = parent_index_option {
+                let left_count = surface[parent_index.left()].collapsed_leaf_count();
+                let right_count = surface[parent_index.right()].collapsed_leaf_count();
+                surface[parent_index].set_collapsed(false);
+                if surface[parent_index].is_horizontal() {
+                    surface[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
+                } else {
+                    surface[parent_index].set_collapsed_leaf_count(left_count + right_count);
+                }
+                parent_index_option = parent_index.parent();
+            }
+        } else {
+            // Recursively notify parent nodes that the leaf has collapsed
+            surface[node_index].set_collapsed(true);
+            let mut parent_index_option = node_index.parent();
+            while let Some(parent_index) = parent_index_option {
+                let left_count = surface[parent_index.left()].collapsed_leaf_count();
+                let right_count = surface[parent_index.right()].collapsed_leaf_count();
+                if surface[parent_index.left()].is_collapsed()
+                    && surface[parent_index.right()].is_collapsed()
+                {
+                    surface[parent_index].set_collapsed(true);
+                }
+                if surface[parent_index].is_horizontal() {
+                    surface[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
+                } else {
+                    surface[parent_index].set_collapsed_leaf_count(left_count + right_count);
+                }
+                parent_index_option = parent_index.parent();
+            }
         }
     }
 
