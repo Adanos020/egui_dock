@@ -125,7 +125,7 @@ pub struct Tree<Tab> {
     // Binary tree vector
     pub(super) nodes: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
-    // Whether the all subnodes of the tree is collapsed
+    // Whether all subnodes of the tree is collapsed
     collapsed: bool,
     collapsed_leaf_count: i32,
 }
@@ -810,23 +810,23 @@ impl<Tab> Tree<Tab> {
         self.balance(emptied_nodes);
     }
 
-    /// Sets the collapsed state of the [`Tree`].
-    pub fn set_collapsed(&mut self, collapsed: bool) {
+    /// Sets the collapsing state of the [`Tree`].
+    pub(crate) fn set_collapsed(&mut self, collapsed: bool) {
         self.collapsed = collapsed;
     }
 
     /// Returns whether the [`Tree`] is collapsed.
-    pub fn is_collapsed(&self) -> bool {
+    pub(crate) fn is_collapsed(&self) -> bool {
         self.collapsed
     }
 
-    /// Sets the number of collapsed leaf nodes in the [`Tree`].
-    pub fn set_collapsed_leaf_count(&mut self, collapsed_leaf_count: i32) {
+    /// Sets the number of collapsed layers of leaf subnodes in the [`Tree`].
+    pub(crate) fn set_collapsed_leaf_count(&mut self, collapsed_leaf_count: i32) {
         self.collapsed_leaf_count = collapsed_leaf_count;
     }
 
-    /// Returns the number of collapsed leaf nodes in the [`Tree`].
-    pub fn collapsed_leaf_count(&self) -> i32 {
+    /// Returns the number of collapsed layers of leaf subnodes in the [`Tree`].
+    pub(crate) fn collapsed_leaf_count(&self) -> i32 {
         self.collapsed_leaf_count
     }
 
