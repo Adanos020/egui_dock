@@ -137,6 +137,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         self.dock_state.remove_surface(surface);
                     }
                 }
+                TabRemoval::Leaf(surface, node) => {
+                    self.dock_state[surface].remove_leaf(node);
+                    if self.dock_state[surface].is_empty() && !surface.is_main() {
+                        self.dock_state.remove_surface(surface);
+                    }
+                }
                 TabRemoval::Window(index) => {
                     self.dock_state.remove_surface(index);
                 }

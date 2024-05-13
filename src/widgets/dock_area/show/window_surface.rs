@@ -70,7 +70,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if self.dock_state[surf_index].is_collapsed() {
             let height = self.dock_state[surf_index].collapsed_leaf_count() as f32 * tab_bar_height;
             window
-                .resizable(false)
+                .resizable([true, false])
                 .max_height(height)
                 .min_height(height)
         } else {

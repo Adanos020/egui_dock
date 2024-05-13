@@ -99,8 +99,11 @@ pub struct ButtonsStyle {
     /// Color of the close all tabs button's background.
     pub close_all_tabs_bg_fill: Color32,
 
-    /// Color of the collapse tabs button's left border.
+    /// Color of the close all tabs button's left border.
     pub close_all_tabs_border_color: Color32,
+
+    /// Color of disabled close all tabs button.
+    pub close_all_tabs_disabled_color: Color32,
 
     /// Color of the collapse tabs button.
     pub collapse_tabs_color: Color32,
@@ -361,6 +364,7 @@ impl Default for ButtonsStyle {
             close_all_tabs_active_color: Color32::WHITE,
             close_all_tabs_bg_fill: Color32::GRAY,
             close_all_tabs_border_color: Color32::BLACK,
+            close_all_tabs_disabled_color: Color32::LIGHT_GRAY,
 
             collapse_tabs_color: Color32::WHITE,
             collapse_tabs_active_color: Color32::WHITE,
@@ -557,6 +561,7 @@ impl ButtonsStyle {
             close_all_tabs_color: style.visuals.text_color(),
             close_all_tabs_active_color: style.visuals.strong_text_color(),
             close_all_tabs_border_color: style.visuals.widgets.noninteractive.bg_fill,
+            close_all_tabs_disabled_color: style.visuals.widgets.inactive.bg_fill,
             collapse_tabs_bg_fill: style.visuals.widgets.hovered.bg_fill,
             collapse_tabs_color: style.visuals.text_color(),
             collapse_tabs_active_color: style.visuals.strong_text_color(),
