@@ -10,29 +10,45 @@
 
 ### Added
 
-- Public API additions:
-  - `Node::is_collapsed` – returns whether the `Node` is collapsed
-  - `Node::toggle_collapsed` – toggle the collapsing state of the `Node`
-  - `Node::set_collapsed` – set the collapsing state of the `Node`
-  - `Node::set_collapsed_leaf_count` – sets the number of layers of collapsed leaf nodes
-  - `DockArea::show_leaf_close_all_buttons` – shows a close all button which closes all open tabs in a leaf
-  - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window)
-  - Added style configuration for the two buttons:
-    - `ButtonsStyle::close_all_tabs_color`
-    - `ButtonsStyle::close_all_tabs_active_color`
-    - `ButtonsStyle::close_all_tabs_bg_fill`
-    - `ButtonsStyle::close_all_tabs_border_color`
-    - `ButtonsStyle::collapse_tabs_color`
-    - `ButtonsStyle::collapse_tabs_active_color`
-    - `ButtonsStyle::collapse_tabs_bg_fill`
-    - `ButtonsStyle::collapse_tabs_border_color`
+- `Node::is_collapsed` – returns whether the `Node` is collapsed
+- `Node::collapsed_leaf_count` – returns the number of collapsed layers of leaf subnodes
+- `Node::set_collapsed` – set the collapsing state of the `Node`
+- `Node::set_collapsed_leaf_count` – sets the number of collapsed layers of leaf subnodes
+- `DockArea::show_leaf_close_all_buttons` – shows a close all button which closes all open tabs in a leaf
+- `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window)
+- Added style configuration for the two buttons:
+  - `ButtonsStyle::close_all_tabs_color`
+  - `ButtonsStyle::close_all_tabs_active_color`
+  - `ButtonsStyle::close_all_tabs_bg_fill`
+  - `ButtonsStyle::close_all_tabs_border_color`
+  - `ButtonsStyle::close_all_tabs_disabled_color`
+  - `ButtonsStyle::collapse_tabs_color`
+  - `ButtonsStyle::collapse_tabs_active_color`
+  - `ButtonsStyle::collapse_tabs_bg_fill`
+  - `ButtonsStyle::collapse_tabs_border_color`
+- `Node::Leaf::collapsed` attribute – records whether a leaf is collapsed.
+- `Node::Vertical::fully_collapsed` attribute – records whether all subnodes are collapsed.
+- `Node::Vertical::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
+- `Node::Horizontal::fully_collapsed` attribute – records whether all subnodes are collapsed.
+- `Node::Horizontal::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
+- `Tree::collapsed` attribute – records whether all subnodes of the tree is collapsed
+- `Tree::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
+- `Tree::set_collapsed` method – sets the collapsing state of the tree.
+- `Tree::is_collapsed` method – returns whether the tree is collapsed.
+- `Tree::set_collapsed_leaf_count` method – sets the number of collapsed layers of leaf subnodes in the tree.
+- `Tree::collapsed_leaf_count` method – returns the number of collapsed layers of leaf subnodes in the tree.
+- `DockArea::tab_close_all` method – draws the close all button on a tab bar.
+- `DockArea::tab_collapse` method – draws the collapse button on a tab bar.
+- `DockArea::tab_collapse_pressed` method – performs the collapse action when the collapse button is pressed.
+- `TabRemoval::Leaf(SurfaceIndex, NodeIndex)` variant – removes a leaf node from a surface.
 
-- Internal additions:
-  - `Node::Leaf::collapsed` attribute – records whether a leaf is collapsed.
-  - `Node::Vertical::fully_collapsed` attribute – records whether all subnodes are collapsed.
-  - `Node::Vertical::collapsed_leaf_count` attribute – records the number of collapsed leaf subnodes.
-  - `Node::Horizontal::fully_collapsed` attribute – records whether all subnodes are collapsed.
-  - `Node::Horizontal::collapsed_leaf_count` attribute – records the number of collapsed leaf subnodes.
+### Breaking changes
+
+- Renamed `Translations::WindowTranslations` to `Translations::LeafTranslations`.
+- `WindowState::create_window` now returns a `egui::Window` only, instead of `(egui::Window, bool)`.
+- Removed `DockArea::show_window_body`.
+- Removed `DockArea::show_close_button`.
+- Removed `close_button` from `window_surface.rs`.
 
 ### Deprecated
 

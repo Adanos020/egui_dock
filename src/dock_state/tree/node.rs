@@ -307,26 +307,7 @@ impl<Tab> Node<Tab> {
         }
     }
 
-    /// Toggles the collapsed state of the node.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `self` is an [`Empty`](Node::Empty) node.
-    #[inline]
-    pub fn toggle_collapsed(&mut self) {
-        match self {
-            Node::Leaf { collapsed, .. } => *collapsed = !*collapsed,
-            Node::Vertical {
-                fully_collapsed, ..
-            } => *fully_collapsed = !*fully_collapsed,
-            Node::Horizontal {
-                fully_collapsed, ..
-            } => *fully_collapsed = !*fully_collapsed,
-            Node::Empty => panic!("node was empty"),
-        }
-    }
-
-    /// Sets the collapsed state of the node.
+    /// Sets the collapsing state of the node.
     ///
     /// # Panics
     ///
