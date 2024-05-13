@@ -125,6 +125,9 @@ pub struct Tree<Tab> {
     // Binary tree vector
     pub(super) nodes: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
+    // Whether the all subnodes of the tree is collapsed
+    collapsed: bool,
+    collapsed_leaf_count: i32,
 }
 
 impl<Tab> fmt::Debug for Tree<Tab> {
@@ -138,6 +141,8 @@ impl<Tab> Default for Tree<Tab> {
         Self {
             nodes: Vec::new(),
             focused_node: None,
+            collapsed: false,
+            collapsed_leaf_count: 0,
         }
     }
 }
@@ -166,6 +171,8 @@ impl<Tab> Tree<Tab> {
         Self {
             nodes: vec![root],
             focused_node: None,
+            collapsed: false,
+            collapsed_leaf_count: 0,
         }
     }
 
@@ -744,6 +751,8 @@ impl<Tab> Tree<Tab> {
         let Tree {
             focused_node,
             nodes,
+            collapsed,
+            collapsed_leaf_count,
         } = self;
         let mut emptied_nodes = HashSet::default();
         let nodes = nodes
@@ -760,6 +769,8 @@ impl<Tab> Tree<Tab> {
         let mut new_tree = Tree {
             nodes,
             focused_node: *focused_node,
+            collapsed: *collapsed,
+            collapsed_leaf_count: *collapsed_leaf_count,
         };
         new_tree.balance(emptied_nodes);
         new_tree
@@ -797,6 +808,26 @@ impl<Tab> Tree<Tab> {
             }
         }
         self.balance(emptied_nodes);
+    }
+
+    /// Sets the collapsed state of the [`Tree`].
+    pub fn set_collapsed(&mut self, collapsed: bool) {
+        self.collapsed = collapsed;
+    }
+
+    /// Returns whether the [`Tree`] is collapsed.
+    pub fn is_collapsed(&self) -> bool {
+        self.collapsed
+    }
+
+    /// Sets the number of collapsed leaf nodes in the [`Tree`].
+    pub fn set_collapsed_leaf_count(&mut self, collapsed_leaf_count: i32) {
+        self.collapsed_leaf_count = collapsed_leaf_count;
+    }
+
+    /// Returns the number of collapsed leaf nodes in the [`Tree`].
+    pub fn collapsed_leaf_count(&self) -> i32 {
+        self.collapsed_leaf_count
     }
 
     fn balance(&mut self, emptied_nodes: HashSet<NodeIndex>) {

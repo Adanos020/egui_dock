@@ -1,13 +1,3 @@
-// Some Ideas - "Total collapsed": every subnode is collapsed.
-
-// When a Node is totally collapsed,
-// 1. Check if its parent is also totally collapsed;
-// 2. Recursivelly set hard-coded heights to the parent nodes (tab bar height * no. of collapsed nodes);
-// 3a. Repeat until it is not totally collapsed somewhere...
-//     and set the ratio carefully to make sure it looks right.
-// 3b. Or everything is totally collapsed and the parent is the root node...
-//     then do some magic to make it look right.
-
 use std::cmp::max;
 use std::ops::RangeInclusive;
 
@@ -575,6 +565,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             rect,
             Layout::left_to_right(Align::Center),
             (node_index, "tab_close_all"),
+            None,
         );
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
@@ -637,6 +628,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             rect,
             Layout::left_to_right(Align::Center),
             (node_index, "tab_collapse"),
+            None,
         );
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
@@ -700,7 +692,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         node_index: NodeIndex,
     ) {
         let surface = &mut self.dock_state[surface_index];
-        // let tab_bar_height = self.style.as_ref().unwrap().tab_bar.height;
         if collapsed {
             // Recursively notify parent nodes that the leaf has expanded
             surface[node_index].set_collapsed(false);
@@ -718,6 +709,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 } else {
                     surface[parent_index].set_collapsed_leaf_count(left_count + right_count);
                 }
+            }
+            surface.set_collapsed(false);
+            let root_index = NodeIndex::root();
+            surface.set_collapsed_leaf_count(surface[root_index].collapsed_leaf_count());
+            if let Some(window_state) = self.dock_state.get_window_state_mut(surface_index) {
+                window_state.set_new(true);
             }
         } else {
             // Recursively notify parent nodes that the leaf has collapsed
@@ -740,6 +737,19 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     && surface[parent_index.right()].is_collapsed()
                 {
                     surface[parent_index].set_collapsed(true);
+                }
+            }
+            if surface.root_node().is_some_and(|root| root.is_collapsed()) {
+                surface.set_collapsed(true);
+                let root_index = NodeIndex::root();
+                surface.set_collapsed_leaf_count(surface[root_index].collapsed_leaf_count());
+                let surface_height = if surface.root_node().is_some() {
+                    surface[root_index].rect().unwrap().height()
+                } else {
+                    0.0
+                };
+                if let Some(window_state) = self.dock_state.get_window_state_mut(surface_index) {
+                    window_state.set_expanded_height(surface_height);
                 }
             }
         }
