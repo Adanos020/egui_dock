@@ -19,7 +19,6 @@ use egui::{
     Ui, UiStackInfo, Vec2, WidgetText,
 };
 
-use crate::Split;
 use crate::{
     dock_area::{
         drag_and_drop::{DragData, DragDropState, HoverData, TreeComponent},
@@ -701,6 +700,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         node_index: NodeIndex,
     ) {
         let surface = &mut self.dock_state[surface_index];
+        // let tab_bar_height = self.style.as_ref().unwrap().tab_bar.height;
         if collapsed {
             // Recursively notify parent nodes that the leaf has expanded
             surface[node_index].set_collapsed(false);
@@ -712,6 +712,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let left_count = surface[parent_index.left()].collapsed_leaf_count();
                 let right_count = surface[parent_index.right()].collapsed_leaf_count();
                 surface[parent_index].set_collapsed(false);
+
                 if surface[parent_index].is_horizontal() {
                     surface[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
                 } else {
@@ -728,60 +729,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 // Update collapsed leaf count and collapse status
                 let left_count = surface[parent_index.left()].collapsed_leaf_count();
                 let right_count = surface[parent_index.right()].collapsed_leaf_count();
-                let tab_bar_height = self.style.as_ref().unwrap().tab_bar.height;
-                if surface[parent_index.left()].is_collapsed()
-                    && surface[parent_index.right()].is_collapsed()
-                {
-                    surface[parent_index].set_collapsed(true);
 
-                    // Left and Right children are both fully collapsed
-                    let total_count = left_count + right_count;
-                    if let Node::Vertical { fraction, .. } = &mut surface[parent_index] {
-                        if total_count > 0 {
-                            *fraction = left_count as f32 / total_count as f32;
-                        }
-                    }
-                    if surface[parent_index].is_vertical() {
-                        let mut rect_height = surface[parent_index].rect().unwrap().height();
-                        if parent_index.parent().is_none()
-                            || surface[parent_index.parent().unwrap()].is_horizontal()
-                        {
-                            let mut current_count = 0;
-                            let mut current_index = parent_index;
-                            while !surface[current_index.right()].is_leaf() {
-                                let left_count =
-                                    surface[current_index.left()].collapsed_leaf_count();
-                                if let Node::Vertical { fraction, .. } = &mut surface[current_index]
-                                {
-                                    current_count += left_count;
-                                    *fraction = tab_bar_height * current_count as f32 / rect_height;
-                                    println!("{}: {}", fraction, rect_height);
-                                    rect_height -= tab_bar_height * current_count as f32;
-                                }
-                                current_index = current_index.right();
-                            }
-                            current_count += surface[current_index.left()].collapsed_leaf_count();
-                            if let Node::Vertical { fraction, .. } = &mut surface[current_index] {
-                                *fraction = tab_bar_height * current_count as f32 / rect_height;
-                                println!("{}: {}", fraction, rect_height);
-                            }
-                        }
-                    }
-                } else if surface[parent_index.left()].is_collapsed() {
-                    // Only the Left child is fully collapsed
-                    if let Node::Vertical { fraction, rect, .. } = &mut surface[parent_index] {
-                        *fraction = tab_bar_height * left_count as f32 / rect.height();
-                    }
-                } else if surface[parent_index.right()].is_collapsed() {
-                    // Only the Right child is fully collapsed
-                    if let Node::Vertical { fraction, rect, .. } = &mut surface[parent_index] {
-                        *fraction = 1.0 - tab_bar_height * right_count as f32 / rect.height();
-                    }
-                }
                 if surface[parent_index].is_horizontal() {
                     surface[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
                 } else {
                     surface[parent_index].set_collapsed_leaf_count(left_count + right_count);
+                }
+
+                if surface[parent_index.left()].is_collapsed()
+                    && surface[parent_index.right()].is_collapsed()
+                {
+                    surface[parent_index].set_collapsed(true);
                 }
             }
         }

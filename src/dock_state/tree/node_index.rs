@@ -52,16 +52,6 @@ impl NodeIndex {
         }
     }
 
-    /// Returns the index of the sibling node.
-    #[inline]
-    pub const fn sibling(self) -> Self {
-        if self.0 % 2 == 0 {
-            Self(self.0 - 1)
-        } else {
-            Self(self.0 + 1)
-        }
-    }
-
     /// Returns the number of nodes leading from the root to the current node, including `self`.
     #[inline(always)]
     pub const fn level(self) -> usize {
