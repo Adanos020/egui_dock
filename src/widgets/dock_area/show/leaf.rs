@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::convert::identity;
 use std::ops::RangeInclusive;
 
 use egui::emath::TSTransform;
@@ -204,13 +205,23 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
 
             if self.show_leaf_close_all_buttons {
+                let disabled = if let Node::Leaf { tabs, .. } =
+                    &mut self.dock_state[surface_index][node_index]
+                {
+                    !tabs
+                        .iter_mut()
+                        .map(|tab| tab_viewer.closeable(tab))
+                        .all(identity)
+                } else {
+                    unreachable!()
+                };
                 self.tab_close_all(
                     ui,
                     surface_index,
                     node_index,
-                    tab_viewer,
                     tabbar_outer_rect,
                     fade_style,
+                    disabled,
                 )
             }
 
@@ -552,9 +563,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui: &mut Ui,
         surface_index: SurfaceIndex,
         node_index: NodeIndex,
-        tab_viewer: &mut impl TabViewer<Tab = Tab>,
         tabbar_outer_rect: Rect,
         fade_style: Option<&Style>,
+        disabled: bool,
     ) {
         let rect = Rect::from_min_max(
             tabbar_outer_rect.right_top() - vec2(Style::TAB_CLOSE_ALL_BUTTON_SIZE, 0.0),
@@ -570,10 +581,28 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
-        response = response.on_hover_cursor(CursorIcon::PointingHand);
+        if !disabled {
+            response = response.on_hover_cursor(CursorIcon::PointingHand);
+
+            if response.clicked() {
+                self.to_remove.push((surface_index, node_index).into());
+            }
+        } else {
+            response = response
+                .on_hover_cursor(CursorIcon::NotAllowed)
+                .on_hover_text(
+                    self.dock_state
+                        .translations
+                        .window
+                        .close_button_tooltip
+                        .as_str(),
+                );
+        }
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
-        let color = if response.hovered() || response.has_focus() {
+        let color = if disabled {
+            style.buttons.close_all_tabs_disabled_color
+        } else if response.hovered() || response.has_focus() {
             ui.painter()
                 .rect_filled(rect, Rounding::ZERO, style.buttons.close_all_tabs_bg_fill);
             style.buttons.close_all_tabs_active_color
@@ -603,10 +632,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 style.buttons.close_all_tabs_border_color,
             ),
         );
-
-        if response.clicked() {
-            todo!()
-        }
     }
 
     /// Draws the collapse button.
