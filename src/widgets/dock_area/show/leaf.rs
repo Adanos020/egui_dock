@@ -1,4 +1,3 @@
-use std::cmp::max;
 use std::convert::identity;
 use std::ops::RangeInclusive;
 
@@ -704,77 +703,29 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
 
         if response.clicked() {
-            self.tab_collapse_pressed(surface_index, collapsed, node_index);
+            self.dock_state[surface_index][node_index].set_collapsed(!collapsed);
+            self.dock_state[surface_index].node_update_collapsed(node_index);
+            self.update_window_collapsed(surface_index, node_index);
         }
     }
 
-    /// Handles the collapse button press.
-    fn tab_collapse_pressed(
-        &mut self,
-        surface_index: SurfaceIndex,
-        collapsed: bool,
-        node_index: NodeIndex,
-    ) {
+    /// Updates the collapsed state of the node and its parents.
+    fn update_window_collapsed(&mut self, surface_index: SurfaceIndex, node_index: NodeIndex) {
         let surface = &mut self.dock_state[surface_index];
-        if collapsed {
-            // Recursively notify parent nodes that the leaf has expanded
-            surface[node_index].set_collapsed(false);
-            let mut parent_index_option = node_index.parent();
-            while let Some(parent_index) = parent_index_option {
-                parent_index_option = parent_index.parent();
-
-                // Update collapsed leaf count and collapse status
-                let left_count = surface[parent_index.left()].collapsed_leaf_count();
-                let right_count = surface[parent_index.right()].collapsed_leaf_count();
-                surface[parent_index].set_collapsed(false);
-
-                if surface[parent_index].is_horizontal() {
-                    surface[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
-                } else {
-                    surface[parent_index].set_collapsed_leaf_count(left_count + right_count);
-                }
-            }
-            surface.set_collapsed(false);
-            let root_index = NodeIndex::root();
-            surface.set_collapsed_leaf_count(surface[root_index].collapsed_leaf_count());
+        let collapsed = surface[node_index].is_collapsed();
+        if !collapsed {
             if let Some(window_state) = self.dock_state.get_window_state_mut(surface_index) {
                 window_state.set_new(true);
             }
-        } else {
-            // Recursively notify parent nodes that the leaf has collapsed
-            surface[node_index].set_collapsed(true);
-            let mut parent_index_option = node_index.parent();
-            while let Some(parent_index) = parent_index_option {
-                parent_index_option = parent_index.parent();
-
-                // Update collapsed leaf count and collapse status
-                let left_count = surface[parent_index.left()].collapsed_leaf_count();
-                let right_count = surface[parent_index.right()].collapsed_leaf_count();
-
-                if surface[parent_index].is_horizontal() {
-                    surface[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
-                } else {
-                    surface[parent_index].set_collapsed_leaf_count(left_count + right_count);
-                }
-
-                if surface[parent_index.left()].is_collapsed()
-                    && surface[parent_index.right()].is_collapsed()
-                {
-                    surface[parent_index].set_collapsed(true);
-                }
-            }
-            if surface.root_node().is_some_and(|root| root.is_collapsed()) {
-                surface.set_collapsed(true);
-                let root_index = NodeIndex::root();
-                surface.set_collapsed_leaf_count(surface[root_index].collapsed_leaf_count());
-                let surface_height = if surface.root_node().is_some() {
-                    surface[root_index].rect().unwrap().height()
-                } else {
-                    0.0
-                };
-                if let Some(window_state) = self.dock_state.get_window_state_mut(surface_index) {
-                    window_state.set_expanded_height(surface_height);
-                }
+        } else if surface.root_node().is_some_and(|root| root.is_collapsed()) {
+            let root_index = NodeIndex::root();
+            let surface_height = if surface.root_node().is_some() {
+                surface[root_index].rect().unwrap().height()
+            } else {
+                0.0
+            };
+            if let Some(window_state) = self.dock_state.get_window_state_mut(surface_index) {
+                window_state.set_expanded_height(surface_height);
             }
         }
     }

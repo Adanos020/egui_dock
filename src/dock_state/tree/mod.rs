@@ -28,6 +28,7 @@ pub use tab_iter::TabIter;
 use egui::ahash::HashSet;
 use egui::Rect;
 use std::{
+    cmp::max,
     fmt,
     ops::{Index, IndexMut},
     slice::{Iter, IterMut},
@@ -527,6 +528,7 @@ impl<Tab> Tree<Tab> {
         self[index[1]] = new;
 
         self.focused_node = Some(index[1]);
+        self.node_update_collapsed(index[1]);
 
         index
     }
@@ -846,6 +848,59 @@ impl<Tab> Tree<Tab> {
         }
         if !emptied_parents.is_empty() {
             self.balance(emptied_parents);
+        }
+    }
+
+    /// Updates the collapsed state of the node and its parents.
+    pub(crate) fn node_update_collapsed(&mut self, node_index: NodeIndex) {
+        let collapsed = self[node_index].is_collapsed();
+        if !collapsed {
+            // Recursively notify parent nodes that the leaf has expanded
+            let mut parent_index_option = node_index.parent();
+            while let Some(parent_index) = parent_index_option {
+                parent_index_option = parent_index.parent();
+
+                // Update collapsed leaf count and collapse status
+                let left_count = self[parent_index.left()].collapsed_leaf_count();
+                let right_count = self[parent_index.right()].collapsed_leaf_count();
+                self[parent_index].set_collapsed(false);
+
+                if self[parent_index].is_horizontal() {
+                    self[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
+                } else {
+                    self[parent_index].set_collapsed_leaf_count(left_count + right_count);
+                }
+            }
+            self.set_collapsed(false);
+            let root_index = NodeIndex::root();
+            self.set_collapsed_leaf_count(self[root_index].collapsed_leaf_count());
+        } else {
+            // Recursively notify parent nodes that the leaf has collapsed
+            let mut parent_index_option = node_index.parent();
+            while let Some(parent_index) = parent_index_option {
+                parent_index_option = parent_index.parent();
+
+                // Update collapsed leaf count and collapse status
+                let left_count = self[parent_index.left()].collapsed_leaf_count();
+                let right_count = self[parent_index.right()].collapsed_leaf_count();
+
+                if self[parent_index].is_horizontal() {
+                    self[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
+                } else {
+                    self[parent_index].set_collapsed_leaf_count(left_count + right_count);
+                }
+
+                if self[parent_index.left()].is_collapsed()
+                    && self[parent_index.right()].is_collapsed()
+                {
+                    self[parent_index].set_collapsed(true);
+                }
+            }
+            if self.root_node().is_some_and(|root| root.is_collapsed()) {
+                self.set_collapsed(true);
+                let root_index = NodeIndex::root();
+                self.set_collapsed_leaf_count(self[root_index].collapsed_leaf_count());
+            }
         }
     }
 }
