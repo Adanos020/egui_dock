@@ -705,12 +705,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         if response.clicked() {
             self.dock_state[surface_index][node_index].set_collapsed(!collapsed);
             self.dock_state[surface_index].node_update_collapsed(node_index);
-            self.update_window_collapsed(surface_index, node_index);
+            self.window_update_collapsed(surface_index, node_index);
         }
     }
 
     /// Updates the collapsed state of the node and its parents.
-    fn update_window_collapsed(&mut self, surface_index: SurfaceIndex, node_index: NodeIndex) {
+    fn window_update_collapsed(&mut self, surface_index: SurfaceIndex, node_index: NodeIndex) {
         let surface = &mut self.dock_state[surface_index];
         let collapsed = surface[node_index].is_collapsed();
         if !collapsed {
