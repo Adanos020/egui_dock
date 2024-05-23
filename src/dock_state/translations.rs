@@ -5,7 +5,7 @@ pub struct Translations {
     /// Text overrides for buttons in tab context menus.
     pub tab_context_menu: TabContextMenuTranslations,
     /// Text overrides for buttons in windows.
-    pub window: WindowTranslations,
+    pub window: LeafTranslations,
 }
 
 /// Specifies text in buttons displayed in the context menu displayed upon right-clicking on a tab.
@@ -21,8 +21,8 @@ pub struct TabContextMenuTranslations {
 /// Specifies text in buttons displayed in the context menu displayed upon right-clicking on a tab.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct WindowTranslations {
-    /// Message in the tooltip shown while hovering over a grayed out X button of a window
+pub struct LeafTranslations {
+    /// Message in the tooltip shown while hovering over a grayed out X button of a leaf
     /// containing non-closable tabs.
     pub close_button_tooltip: String,
 }
@@ -32,7 +32,7 @@ impl Translations {
     pub fn english() -> Self {
         Self {
             tab_context_menu: TabContextMenuTranslations::english(),
-            window: WindowTranslations::english(),
+            window: LeafTranslations::english(),
         }
     }
 }
@@ -47,11 +47,11 @@ impl TabContextMenuTranslations {
     }
 }
 
-impl WindowTranslations {
+impl LeafTranslations {
     /// Default English translations.
     pub fn english() -> Self {
         Self {
-            close_button_tooltip: String::from("This window contains non-closable tabs."),
+            close_button_tooltip: String::from("This leaf contains non-closable tabs."),
         }
     }
 }

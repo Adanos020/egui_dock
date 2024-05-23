@@ -24,6 +24,9 @@ pub enum Node<Tab> {
 
         /// Scroll amount of the tab bar.
         scroll: f32,
+
+        /// Whether the leaf is collapsed.
+        collapsed: bool,
     },
 
     /// Parent node in the vertical orientation.
@@ -33,6 +36,12 @@ pub enum Node<Tab> {
 
         /// The fraction taken by the top child of this node.
         fraction: f32,
+
+        /// Whether all subnodes are collapsed.
+        fully_collapsed: bool,
+
+        /// The number of collapsed leaf subnodes.
+        collapsed_leaf_count: i32,
     },
 
     /// Parent node in the horizontal orientation.
@@ -42,6 +51,12 @@ pub enum Node<Tab> {
 
         /// The fraction taken by the left child of this node.
         fraction: f32,
+
+        /// Whether all subnodes are collapsed.
+        fully_collapsed: bool,
+
+        /// The number of collapsed leaf subnodes.
+        collapsed_leaf_count: i32,
     },
 }
 
@@ -55,6 +70,7 @@ impl<Tab> Node<Tab> {
             tabs: vec![tab],
             active: TabIndex(0),
             scroll: 0.0,
+            collapsed: false,
         }
     }
 
@@ -67,6 +83,7 @@ impl<Tab> Node<Tab> {
             tabs,
             active: TabIndex(0),
             scroll: 0.0,
+            collapsed: false,
         }
     }
 
@@ -125,6 +142,43 @@ impl<Tab> Node<Tab> {
         self.is_horizontal() || self.is_vertical()
     }
 
+    /// Returns `true` if the node is collapsed, otherwise `false`.
+    #[inline(always)]
+    pub fn is_collapsed(&self) -> bool {
+        match self {
+            Node::Leaf { collapsed, .. } => *collapsed,
+            Node::Vertical {
+                fully_collapsed, ..
+            } => *fully_collapsed,
+            Node::Horizontal {
+                fully_collapsed, ..
+            } => *fully_collapsed,
+            Node::Empty => false,
+        }
+    }
+
+    /// Returns the number of layers of collapsed leaf subnodes.
+    pub fn collapsed_leaf_count(&self) -> i32 {
+        match self {
+            Node::Vertical {
+                collapsed_leaf_count,
+                ..
+            } => *collapsed_leaf_count,
+            Node::Horizontal {
+                collapsed_leaf_count,
+                ..
+            } => *collapsed_leaf_count,
+            Node::Leaf { collapsed, .. } => {
+                if *collapsed {
+                    1
+                } else {
+                    0
+                }
+            }
+            Node::Empty => 0,
+        }
+    }
+
     /// Replaces the node with [`Horizontal`](Node::Horizontal) or [`Vertical`](Node::Vertical) (depending on `split`)
     /// and assigns an empty rect to it.
     ///
@@ -136,8 +190,18 @@ impl<Tab> Node<Tab> {
         assert!((0.0..=1.0).contains(&fraction));
         let rect = Rect::NOTHING;
         let src = match split {
-            Split::Left | Split::Right => Node::Horizontal { fraction, rect },
-            Split::Above | Split::Below => Node::Vertical { fraction, rect },
+            Split::Left | Split::Right => Node::Horizontal {
+                fraction,
+                rect,
+                fully_collapsed: self.is_collapsed(),
+                collapsed_leaf_count: self.collapsed_leaf_count(),
+            },
+            Split::Above | Split::Below => Node::Vertical {
+                fraction,
+                rect,
+                fully_collapsed: self.is_collapsed(),
+                collapsed_leaf_count: self.collapsed_leaf_count(),
+            },
         };
         std::mem::replace(self, src)
     }
@@ -243,6 +307,45 @@ impl<Tab> Node<Tab> {
         }
     }
 
+    /// Sets the collapsing state of the node.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `self` is an [`Empty`](Node::Empty) node.
+    #[inline]
+    pub fn set_collapsed(&mut self, collapsed: bool) {
+        match self {
+            Node::Leaf { collapsed: c, .. } => *c = collapsed,
+            Node::Vertical {
+                fully_collapsed, ..
+            } => *fully_collapsed = collapsed,
+            Node::Horizontal {
+                fully_collapsed, ..
+            } => *fully_collapsed = collapsed,
+            Node::Empty => panic!("node was empty"),
+        }
+    }
+
+    /// Sets the number of layers of collapsed leaf subnodes.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `self` is neither a [`Vertical`](Node::Vertical) nor a [`Horizontal`](Node::Horizontal) node.
+    #[inline]
+    pub fn set_collapsed_leaf_count(&mut self, count: i32) {
+        match self {
+            Node::Vertical {
+                collapsed_leaf_count,
+                ..
+            } => *collapsed_leaf_count = count,
+            Node::Horizontal {
+                collapsed_leaf_count,
+                ..
+            } => *collapsed_leaf_count = count,
+            _ => panic!("node was neither vertical nor horizontal"),
+        }
+    }
+
     /// Adds a `tab` to the node.
     ///
     /// # Panics
@@ -302,6 +405,7 @@ impl<Tab> Node<Tab> {
                 tabs,
                 active,
                 scroll,
+                collapsed,
             } => {
                 let tabs: Vec<_> = tabs.iter().filter_map(function).collect();
                 if tabs.is_empty() {
@@ -313,17 +417,32 @@ impl<Tab> Node<Tab> {
                         tabs,
                         active: *active,
                         scroll: *scroll,
+                        collapsed: *collapsed,
                     }
                 }
             }
             Node::Empty => Node::Empty,
-            Node::Vertical { rect, fraction } => Node::Vertical {
+            Node::Vertical {
+                rect,
+                fraction,
+                fully_collapsed,
+                collapsed_leaf_count,
+            } => Node::Vertical {
                 rect: *rect,
                 fraction: *fraction,
+                fully_collapsed: *fully_collapsed,
+                collapsed_leaf_count: *collapsed_leaf_count,
             },
-            Node::Horizontal { rect, fraction } => Node::Horizontal {
+            Node::Horizontal {
+                rect,
+                fraction,
+                fully_collapsed,
+                collapsed_leaf_count,
+            } => Node::Horizontal {
                 rect: *rect,
                 fraction: *fraction,
+                fully_collapsed: *fully_collapsed,
+                collapsed_leaf_count: *collapsed_leaf_count,
             },
         }
     }
