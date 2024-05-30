@@ -81,7 +81,7 @@ impl<Tab> Surface<Tab> {
     /// it'll change to [`Surface::Empty`].
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Surface<NewTab>
     where
-        F: Clone + FnMut(&Tab) -> Option<NewTab>,
+        F: FnMut(&Tab) -> Option<NewTab>,
     {
         match self {
             Surface::Empty => Surface::Empty,

@@ -737,9 +737,9 @@ impl<Tab> Tree<Tab> {
 
     /// Returns a new [`Tree`] while mapping and filtering the tab type.
     /// Any remaining empty [`Node`]s are removed.
-    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Tree<NewTab>
+    pub fn filter_map_tabs<F, NewTab>(&self, mut function: F) -> Tree<NewTab>
     where
-        F: Clone + FnMut(&Tab) -> Option<NewTab>,
+        F: FnMut(&Tab) -> Option<NewTab>,
     {
         let Tree {
             focused_node,
@@ -750,7 +750,7 @@ impl<Tab> Tree<Tab> {
             .iter()
             .enumerate()
             .map(|(index, node)| {
-                let filtered_node = node.filter_map_tabs(function.clone());
+                let filtered_node = node.filter_map_tabs(&mut function);
                 if filtered_node.is_empty() && !node.is_empty() {
                     emptied_nodes.insert(NodeIndex(index));
                 }
