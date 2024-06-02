@@ -737,9 +737,9 @@ impl<Tab> Tree<Tab> {
 
     /// Returns a new [`Tree`] while mapping and filtering the tab type.
     /// Any remaining empty [`Node`]s are removed.
-    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Tree<NewTab>
+    pub fn filter_map_tabs<F, NewTab>(&self, mut function: F) -> Tree<NewTab>
     where
-        F: Clone + FnMut(&Tab) -> Option<NewTab>,
+        F: FnMut(&Tab) -> Option<NewTab>,
     {
         let Tree {
             focused_node,
@@ -750,7 +750,7 @@ impl<Tab> Tree<Tab> {
             .iter()
             .enumerate()
             .map(|(index, node)| {
-                let filtered_node = node.filter_map_tabs(function.clone());
+                let filtered_node = node.filter_map_tabs(&mut function);
                 if filtered_node.is_empty() && !node.is_empty() {
                     emptied_nodes.insert(NodeIndex(index));
                 }
@@ -768,7 +768,7 @@ impl<Tab> Tree<Tab> {
     /// Returns a new [`Tree`] while mapping the tab type.
     pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Tree<NewTab>
     where
-        F: Clone + FnMut(&Tab) -> NewTab,
+        F: FnMut(&Tab) -> NewTab,
     {
         self.filter_map_tabs(move |tab| Some(function(tab)))
     }
@@ -777,7 +777,7 @@ impl<Tab> Tree<Tab> {
     /// Any remaining empty [`Node`]s are removed.
     pub fn filter_tabs<F>(&self, mut predicate: F) -> Tree<Tab>
     where
-        F: Clone + FnMut(&Tab) -> bool,
+        F: FnMut(&Tab) -> bool,
         Tab: Clone,
     {
         self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
@@ -785,13 +785,13 @@ impl<Tab> Tree<Tab> {
 
     /// Removes all tabs for which `predicate` returns `false`.
     /// Any remaining empty [`Node`]s are also removed.
-    pub fn retain_tabs<F>(&mut self, predicate: F)
+    pub fn retain_tabs<F>(&mut self, mut predicate: F)
     where
-        F: Clone + FnMut(&mut Tab) -> bool,
+        F: FnMut(&mut Tab) -> bool,
     {
         let mut emptied_nodes = HashSet::default();
         for (index, node) in self.nodes.iter_mut().enumerate() {
-            node.retain_tabs(predicate.clone());
+            node.retain_tabs(&mut predicate);
             if node.is_empty() {
                 emptied_nodes.insert(NodeIndex(index));
             }
