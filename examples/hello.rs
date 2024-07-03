@@ -59,7 +59,7 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "My egui App",
         options,
-        Box::new(|_cc| Box::<MyApp>::default()),
+        Box::new(|_cc| Ok(Box::<MyApp>::default())),
     )
 }
 
@@ -509,7 +509,7 @@ impl Default for MyApp {
     fn default() -> Self {
         let mut dock_state =
             DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
-        dock_state.translations.tab_context_menu.eject_button = "Undock".to_owned();
+        "Undock".clone_into(&mut dock_state.translations.tab_context_menu.eject_button);
         let [a, b] = dock_state.main_surface_mut().split_left(
             NodeIndex::root(),
             0.3,
