@@ -1,5 +1,11 @@
 # egui_dock changelog
 
+## 0.13.0 - 2024-07-03
+
+### Breaking changes
+
+- Upgraded to egui 0.28.
+
 ## 0.12.0 - 2024-04-05
 
 ### Breaking changes
