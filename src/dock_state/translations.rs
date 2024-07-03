@@ -5,7 +5,7 @@ pub struct Translations {
     /// Text overrides for buttons in tab context menus.
     pub tab_context_menu: TabContextMenuTranslations,
     /// Text overrides for buttons in windows.
-    pub window: LeafTranslations,
+    pub leaf: LeafTranslations,
 }
 
 /// Specifies text in buttons displayed in the context menu displayed upon right-clicking on a tab.
@@ -32,7 +32,7 @@ impl Translations {
     pub fn english() -> Self {
         Self {
             tab_context_menu: TabContextMenuTranslations::english(),
-            window: LeafTranslations::english(),
+            leaf: LeafTranslations::english(),
         }
     }
 }

@@ -591,7 +591,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .on_hover_text(
                     self.dock_state
                         .translations
-                        .window
+                        .leaf
                         .close_button_tooltip
                         .as_str(),
                 );

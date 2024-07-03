@@ -192,14 +192,14 @@
 //! Example usage:
 //!
 //! ```rust
-//! # use egui_dock::{DockState, TabContextMenuTranslations, Translations, WindowTranslations};
+//! # use egui_dock::{DockState, TabContextMenuTranslations, Translations, LeafTranslations};
 //! # type Tab = ();
 //! let translations_pl = Translations {
 //!     tab_context_menu: TabContextMenuTranslations {
 //!         close_button: "Zamknij zakładkę".to_string(),
 //!         eject_button: "Przenieś zakładkę do nowego okna".to_string(),
 //!     },
-//!     window: WindowTranslations {
+//!     leaf: LeafTranslations {
 //!         close_button_tooltip: "To okno zawiera zakładki, których nie można zamknąć.".to_string(),
 //!     }
 //! };
@@ -209,7 +209,7 @@
 //! let mut dock_state = DockState::<Tab>::new(vec![]);
 //! dock_state.translations.tab_context_menu.close_button = "タブを閉じる".to_string();
 //! dock_state.translations.tab_context_menu.eject_button = "タブを新しいウィンドウへ移動".to_string();
-//! dock_state.translations.window.close_button_tooltip = "このウィンドウは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.close_button_tooltip = "このウィンドウは閉じられないタブがある。".to_string();
 //! ```
 
 #![warn(missing_docs)]
