@@ -2,7 +2,7 @@
 
 ## 0.14.0 - Unreleased
 
-## Changed
+### Changed
 
 - `{DockState,Surface,Tree,Node}::{filter_map_tabs,map_tabs,filter_tabs,retain_tabs}` no longer require the predicate to
   implement `Clone`. ([#241](https://github.com/Adanos020/egui_dock/pull/241))
