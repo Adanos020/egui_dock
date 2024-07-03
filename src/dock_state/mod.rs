@@ -469,9 +469,9 @@ impl<Tab> DockState<Tab> {
     /// let tabs: Vec<_> = mapped_dock_state.iter_all_tabs().map(|(_, tab)| tab.to_owned()).collect();
     /// assert_eq!(tabs, vec!["1".to_string(), "3".to_string()]);
     /// ```
-    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> DockState<NewTab>
+    pub fn filter_map_tabs<F, NewTab>(&self, mut function: F) -> DockState<NewTab>
     where
-        F: Clone + FnMut(&Tab) -> Option<NewTab>,
+        F: FnMut(&Tab) -> Option<NewTab>,
     {
         let DockState {
             surfaces,
@@ -481,7 +481,7 @@ impl<Tab> DockState<Tab> {
         let surfaces = surfaces
             .iter()
             .filter_map(|surface| {
-                let surface = surface.filter_map_tabs(function.clone());
+                let surface = surface.filter_map_tabs(&mut function);
                 (!surface.is_empty()).then_some(surface)
             })
             .collect();
@@ -504,7 +504,7 @@ impl<Tab> DockState<Tab> {
     /// ```
     pub fn map_tabs<F, NewTab>(&self, mut function: F) -> DockState<NewTab>
     where
-        F: Clone + FnMut(&Tab) -> NewTab,
+        F: FnMut(&Tab) -> NewTab,
     {
         self.filter_map_tabs(move |tab| Some(function(tab)))
     }
@@ -522,7 +522,7 @@ impl<Tab> DockState<Tab> {
     /// ```
     pub fn filter_tabs<F>(&self, mut predicate: F) -> DockState<Tab>
     where
-        F: Clone + FnMut(&Tab) -> bool,
+        F: FnMut(&Tab) -> bool,
         Tab: Clone,
     {
         self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
@@ -539,12 +539,12 @@ impl<Tab> DockState<Tab> {
     /// let tabs: Vec<_> = dock_state.iter_all_tabs().map(|(_, tab)| tab.to_owned()).collect();
     /// assert_eq!(tabs, vec!["tab1".to_string(), "tab2".to_string()]);
     /// ```
-    pub fn retain_tabs<F>(&mut self, predicate: F)
+    pub fn retain_tabs<F>(&mut self, mut predicate: F)
     where
-        F: Clone + FnMut(&mut Tab) -> bool,
+        F: FnMut(&mut Tab) -> bool,
     {
         self.surfaces.retain_mut(|surface| {
-            surface.retain_tabs(predicate.clone());
+            surface.retain_tabs(&mut predicate);
             !surface.is_empty()
         });
     }
