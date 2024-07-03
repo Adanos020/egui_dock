@@ -13,7 +13,7 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Text editor examples",
         options,
-        Box::new(|_cc| Box::<MyApp>::default()),
+        Box::new(|_cc| Ok(Box::<MyApp>::default())),
     )
 }
 
