@@ -12,6 +12,7 @@
 ### Breaking changes
 
 - Upgraded to egui 0.28.
+- Changed MSRV to 1.76.
 
 ## 0.12.0 - 2024-04-05
 
