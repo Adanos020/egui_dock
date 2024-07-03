@@ -1,10 +1,9 @@
-use std::convert::identity;
-use std::sync::Arc;
-
 use egui::{
     CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response, Sense,
-    TextStyle, Ui, Vec2, Widget,
+    TextStyle, TextWrapMode, Ui, Vec2, Widget,
 };
+use std::convert::identity;
+use std::sync::Arc;
 
 use crate::{
     dock_area::{state::State, tab_removal::TabRemoval},
@@ -61,7 +60,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tab_viewer
                 .title(&mut tabs[active.0])
                 .color(ui.visuals().widgets.noninteractive.fg_stroke.color)
-                .into_galley(ui, Some(false), 0.0, TextStyle::Button)
+                .into_galley(ui, Some(TextWrapMode::Extend), 0.0, TextStyle::Button)
         };
 
         // Fade window frame (if necessary)

@@ -4,7 +4,7 @@ use egui::emath::TSTransform;
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
     LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
-    Ui, Vec2, WidgetText,
+    Ui, UiStackInfo, Vec2, WidgetText,
 };
 
 use crate::{
@@ -36,6 +36,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             rect,
             Layout::top_down_justified(Align::Min),
             (node_index, "node"),
+            None,
         );
         let spacing = ui.spacing().item_spacing;
         ui.spacing_mut().item_spacing = Vec2::ZERO;
@@ -115,6 +116,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 tabbar_inner_rect,
                 Layout::left_to_right(Align::Center),
                 "tabs",
+                None,
             );
 
             let mut clip_rect = tabbar_outer_rect;
@@ -256,7 +258,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .response;
                 let title_id = response.id;
 
-                let response = tabs_ui.interact(response.rect, id, Sense::click_and_drag());
+                let response =
+                    tabs_ui.interact(response.rect, id.with("dragged"), Sense::click_and_drag());
 
                 if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
                     let start = *state.drag_start.get_or_insert(pointer_pos);
@@ -433,6 +436,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             rect,
             Layout::left_to_right(Align::Center),
             (node_index, "tab_add"),
+            None,
         );
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
@@ -770,6 +774,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 id,
                 body_rect,
                 ui.clip_rect(),
+                UiStackInfo::default(),
             );
             ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 

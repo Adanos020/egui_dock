@@ -32,8 +32,8 @@ Add `egui` and `egui_dock` to your project's dependencies.
 
 ```toml
 [dependencies]
-egui = "0.26"
-egui_dock = "0.12"
+egui = "0.28"
+egui_dock = "0.13"
 ```
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
@@ -53,11 +53,12 @@ You can run them with Cargo from the crate's root directory, for example: `cargo
 
 ## Alternatives
 
-### [egui_tiles](https://github.com/rerun-io/egui_tiles) 
+### [egui_tiles](https://github.com/rerun-io/egui_tiles)
 
 It's a library aiming to achieve similar goals in addition to being more flexible and customizable.
 
-One feature it supports that `egui_dock` does not at the moment is the ability to divide nodes into more than two children,
+One feature it supports that `egui_dock` does not at the moment is the ability to divide nodes into more than two
+children,
 enabling horizontal, vertical, and grid layouts.
 
 > [!NOTE]
