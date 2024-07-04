@@ -101,6 +101,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
 
         let mut available_width = tabbar_outer_rect.width();
+        let scroll_bar_width = available_width;
         if available_width == 0.0 {
             return tabbar_outer_rect;
         }
@@ -243,6 +244,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             (surface_index, node_index),
             actual_width,
             available_width,
+            scroll_bar_width,
             &tabbar_response,
             fade_style,
         );
@@ -876,6 +878,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         actual_width: f32,
         available_width: f32,
+        scroll_bar_width: f32,
         tabbar_response: &Response,
         fade_style: Option<&Style>,
     ) {
@@ -894,7 +897,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 // Draw scroll bar
                 let bar_height = 7.5;
                 let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
-                    vec2(available_width, bar_height),
+                    vec2(scroll_bar_width, bar_height),
                     Sense::click_and_drag(),
                 );
 
