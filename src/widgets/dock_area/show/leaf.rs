@@ -9,6 +9,7 @@ use egui::{
     Ui, UiStackInfo, Vec2, WidgetText,
 };
 
+use crate::dock_area::tab_removal::TabRemoval;
 use crate::{
     dock_area::{
         drag_and_drop::{DragData, DragDropState, HoverData, TreeComponent},
@@ -204,6 +205,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
 
             if self.show_leaf_close_all_buttons {
+                // Current leaf contains non-closable tabs.
                 let disabled = if let Node::Leaf { tabs, .. } =
                     &mut self.dock_state[surface_index][node_index]
                 {
@@ -214,6 +216,21 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 } else {
                     unreachable!()
                 };
+
+                // Current window contains non-closable tabs.
+                let close_window_disabled = disabled
+                    || !self.dock_state[surface_index]
+                        .iter_mut()
+                        .map(|node| {
+                            if let Node::Leaf { tabs, .. } = node {
+                                tabs.iter_mut()
+                                    .map(|tab| tab_viewer.closeable(tab))
+                                    .all(identity)
+                            } else {
+                                true
+                            }
+                        })
+                        .all(identity);
                 self.tab_close_all(
                     ui,
                     surface_index,
@@ -221,6 +238,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     tabbar_outer_rect,
                     fade_style,
                     disabled,
+                    close_window_disabled,
                 )
             }
 
@@ -558,6 +576,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     }
 
     /// Draws the close all button.
+    #[allow(clippy::too_many_arguments)]
     fn tab_close_all(
         &mut self,
         ui: &mut Ui,
@@ -566,6 +585,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tabbar_outer_rect: Rect,
         fade_style: Option<&Style>,
         disabled: bool,
+        close_window_disabled: bool,
     ) {
         let rect = Rect::from_min_max(
             tabbar_outer_rect.right_top() - vec2(Style::TAB_CLOSE_ALL_BUTTON_SIZE, 0.0),
@@ -586,6 +606,26 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             if response.clicked() {
                 self.to_remove.push((surface_index, node_index).into());
+            }
+
+            if !surface_index.is_main() {
+                response.context_menu(|ui| {
+                    ui.add_enabled_ui(!close_window_disabled, |ui| {
+                        if ui
+                            .button(&self.dock_state.translations.leaf.close_all_button)
+                            .on_disabled_hover_text(
+                                self.dock_state
+                                    .translations
+                                    .leaf
+                                    .close_all_button_tooltip
+                                    .as_str(),
+                            )
+                            .clicked()
+                        {
+                            self.to_remove.push(TabRemoval::Window(surface_index));
+                        }
+                    });
+                });
             }
         } else {
             response = response

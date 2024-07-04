@@ -18,13 +18,20 @@ pub struct TabContextMenuTranslations {
     pub eject_button: String,
 }
 
-/// Specifies text in buttons displayed in the context menu displayed upon right-clicking on a tab.
+/// Specifies text displayed in the primary buttons on a tab bar.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct LeafTranslations {
     /// Message in the tooltip shown while hovering over a grayed out X button of a leaf
     /// containing non-closable tabs.
     pub close_button_tooltip: String,
+    /// Button that closes the entire window.
+    pub close_all_button: String,
+    /// Message in the tooltip shown while hovering over a grayed out close window button of a window
+    /// containing non-closable tabs.
+    pub close_all_button_tooltip: String,
+    /// Button that collapses the entire window.
+    pub collapse_all_button: String,
 }
 
 impl Translations {
@@ -52,6 +59,9 @@ impl LeafTranslations {
     pub fn english() -> Self {
         Self {
             close_button_tooltip: String::from("This leaf contains non-closable tabs."),
+            close_all_button: String::from("Close window"),
+            close_all_button_tooltip: String::from("This window contains non-closable tabs."),
+            collapse_all_button: String::from("Collapse window"),
         }
     }
 }
