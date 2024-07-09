@@ -13,15 +13,15 @@
     - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a
       window)
     - Added style configuration for the two buttons:
-        - `ButtonsStyle::close_all_tabs_color`
-        - `ButtonsStyle::close_all_tabs_active_color`
-        - `ButtonsStyle::close_all_tabs_bg_fill`
-        - `ButtonsStyle::close_all_tabs_border_color`
+        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_color`
+        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_active_color`
+        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_bg_fill`
+        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_border_color`
         - `ButtonsStyle::close_all_tabs_disabled_color`
-        - `ButtonsStyle::collapse_tabs_color`
-        - `ButtonsStyle::collapse_tabs_active_color`
-        - `ButtonsStyle::collapse_tabs_bg_fill`
-        - `ButtonsStyle::collapse_tabs_border_color`
+    - Added the following translations:
+      - `LeafTranslations::close_all_button`
+      - `LeafTranslations::close_all_button_tooltip`
+      - `LeafTranslations::minimize_button`
     - `Node::Leaf::collapsed` attribute – records whether a leaf is collapsed.
     - `Node::Vertical::fully_collapsed` attribute – records whether all subnodes are collapsed.
     - `Node::Vertical::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
@@ -38,6 +38,9 @@
     - `DockArea::tab_collapse` method – draws the collapse button on a tab bar.
     - `DockArea::window_update_collapsed` method – updates the collapsed state of the node and its parents in a window.
     - `TabRemoval::Leaf(SurfaceIndex, NodeIndex)` variant – removes a leaf node from a surface.
+    - `WindowState::minimized` attribute – records whether a window is minimized.
+    - `WindowState::toggle_minimized` method – toggles the minimization state of a window.
+    - `WindowState::is_minimized` method – gets the minimization state of a window.
 
 ### Changed
 
