@@ -30,8 +30,8 @@ pub struct LeafTranslations {
     /// Message in the tooltip shown while hovering over a grayed out close window button of a window
     /// containing non-closable tabs.
     pub close_all_button_tooltip: String,
-    /// Button that collapses the entire window.
-    pub collapse_all_button: String,
+    /// Button that minimizes the window.
+    pub minimize_button: String,
 }
 
 impl Translations {
@@ -61,7 +61,7 @@ impl LeafTranslations {
             close_button_tooltip: String::from("This leaf contains non-closable tabs."),
             close_all_button: String::from("Close window"),
             close_all_button_tooltip: String::from("This window contains non-closable tabs."),
-            collapse_all_button: String::from("Collapse window"),
+            minimize_button: String::from("Minimize window"),
         }
     }
 }

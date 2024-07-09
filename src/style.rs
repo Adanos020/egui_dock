@@ -116,6 +116,18 @@ pub struct ButtonsStyle {
 
     /// Color of the collapse tabs button's left border.
     pub collapse_tabs_border_color: Color32,
+
+    /// Color of the minimize window button.
+    pub minimize_window_color: Color32,
+
+    /// Color of the active minimize window button.
+    pub minimize_window_active_color: Color32,
+
+    /// Color of the minimize window button's background.
+    pub minimize_window_bg_fill: Color32,
+
+    /// Color of the minimize window button's left border.
+    pub minimize_window_border_color: Color32,
 }
 
 /// Specifies the look and feel of node separators.
@@ -370,6 +382,11 @@ impl Default for ButtonsStyle {
             collapse_tabs_active_color: Color32::WHITE,
             collapse_tabs_bg_fill: Color32::GRAY,
             collapse_tabs_border_color: Color32::BLACK,
+
+            minimize_window_color: Color32::WHITE,
+            minimize_window_active_color: Color32::WHITE,
+            minimize_window_bg_fill: Color32::GRAY,
+            minimize_window_border_color: Color32::BLACK,
         }
     }
 }
@@ -505,6 +522,8 @@ impl Style {
     pub(crate) const TAB_CLOSE_ALL_SIZE: f32 = 10.0;
     pub(crate) const TAB_COLLAPSE_BUTTON_SIZE: f32 = 24.0;
     pub(crate) const TAB_COLLAPSE_ARROW_SIZE: f32 = 10.0;
+    pub(crate) const TAB_EXPAND_BUTTON_SIZE: f32 = 24.0;
+    pub(crate) const TAB_EXPAND_ARROW_SIZE: f32 = 10.0;
 }
 
 impl Style {
@@ -566,6 +585,10 @@ impl ButtonsStyle {
             collapse_tabs_color: style.visuals.text_color(),
             collapse_tabs_active_color: style.visuals.strong_text_color(),
             collapse_tabs_border_color: style.visuals.widgets.noninteractive.bg_fill,
+            minimize_window_bg_fill: style.visuals.widgets.hovered.bg_fill,
+            minimize_window_color: style.visuals.text_color(),
+            minimize_window_active_color: style.visuals.strong_text_color(),
+            minimize_window_border_color: style.visuals.widgets.noninteractive.bg_fill,
             ..ButtonsStyle::default()
         }
     }

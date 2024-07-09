@@ -749,6 +749,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             self.dock_state[surface_index].node_update_collapsed(node_index);
             self.window_update_collapsed(surface_index, node_index);
         }
+
+        if !surface_index.is_main() {
+            response.context_menu(|ui| {
+                if ui
+                    .button(&self.dock_state.translations.leaf.minimize_button)
+                    .clicked()
+                {
+                    ui.close_menu();
+                    self.window_toggle_minimized(surface_index);
+                }
+            });
+        }
     }
 
     /// Updates the collapsed state of the node and its parents.

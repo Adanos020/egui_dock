@@ -21,9 +21,12 @@ pub struct WindowState {
     /// The height of the window before it was fully collapsed
     expanded_height: Option<f32>,
 
-    /// true the first frame this window is drawn.
+    /// True the first frame this window is drawn.
     /// handles expanding after being fully collapsed, etc.
     new: bool,
+
+    /// True if the window is minimized
+    minimized: bool,
 }
 
 impl Default for WindowState {
@@ -35,6 +38,7 @@ impl Default for WindowState {
             next_size: None,
             expanded_height: None,
             new: true,
+            minimized: false,
         }
     }
 }
@@ -97,6 +101,16 @@ impl WindowState {
     #[inline(always)]
     pub(crate) fn expanded_height(&mut self) -> Option<f32> {
         self.expanded_height.take()
+    }
+
+    #[inline(always)]
+    pub(crate) fn toggle_minimized(&mut self) {
+        self.minimized = !self.minimized;
+    }
+
+    #[inline(always)]
+    pub(crate) fn is_minimized(&self) -> bool {
+        self.minimized
     }
 
     //the 'static in this case means that the `open` field is always `None`
