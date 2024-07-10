@@ -602,7 +602,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
         if !disabled {
-            response = response.on_hover_cursor(CursorIcon::PointingHand);
+            response = response
+                .on_hover_cursor(CursorIcon::PointingHand)
+                .on_hover_text(
+                    self.dock_state
+                        .translations
+                        .leaf
+                        .close_all_button_hint
+                        .as_str(),
+                );
 
             if response.clicked() {
                 self.to_remove.push((surface_index, node_index).into());
@@ -698,7 +706,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
-        response = response.on_hover_cursor(CursorIcon::PointingHand);
+        response = response
+            .on_hover_cursor(CursorIcon::PointingHand)
+            .on_hover_text(
+                self.dock_state
+                    .translations
+                    .leaf
+                    .minimize_button_hint
+                    .as_str(),
+            );
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let color = if response.hovered() || response.has_focus() {
