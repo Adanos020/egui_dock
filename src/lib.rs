@@ -200,7 +200,10 @@
 //!         eject_button: "Przenieś zakładkę do nowego okna".to_string(),
 //!     },
 //!     leaf: LeafTranslations {
-//!         close_button_tooltip: "To okno zawiera zakładki, których nie można zamknąć.".to_string(),
+//!         close_button_tooltip: "Ten węzeł zawiera niezamykalne zakładki.".to_string(),
+//!         close_all_button: "Zamknij okno".to_string(),
+//!         close_all_button_tooltip: "To okno zawiera zakładki, których nie można zamknąć.".to_string(),
+//!         minimize_button: "Zminimalizuj okno".to_string(),
 //!     }
 //! };
 //! let dock_state = DockState::<Tab>::new(vec![]).with_translations(translations_pl);
@@ -209,7 +212,10 @@
 //! let mut dock_state = DockState::<Tab>::new(vec![]);
 //! dock_state.translations.tab_context_menu.close_button = "タブを閉じる".to_string();
 //! dock_state.translations.tab_context_menu.eject_button = "タブを新しいウィンドウへ移動".to_string();
-//! dock_state.translations.leaf.close_button_tooltip = "このウィンドウは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.close_button_tooltip = "このノードは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.close_all_button = "ウィンドウを閉じる".to_string();
+//! dock_state.translations.leaf.close_all_button_tooltip = "このウィンドウは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.minimize_button = "ウィンドウを最小化する".to_string();
 //! ```
 
 #![warn(missing_docs)]
