@@ -729,26 +729,71 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         rect_set_size_centered(&mut arrow_rect, Vec2::splat(Style::TAB_COLLAPSE_ARROW_SIZE));
 
-        // Draw arrow.
-        ui.painter().add(Shape::convex_polygon(
-            if collapsed {
+        if !surface_index.is_main()
+            // && (response.hovered() || response.has_focus() || response.clicked())
+            && ui.input(|i| {
+                i.modifiers
+                    .matches_logically(self.secondary_button_modifiers)
+            })
+        {
+            // Draw arrow with chevron.
+            ui.painter().add(Shape::convex_polygon(
                 // Arrow pointing rightwards.
                 vec![
                     arrow_rect.left_top(),
-                    arrow_rect.right_center(),
-                    arrow_rect.left_bottom(),
-                ]
-            } else {
-                // Arrow pointing downwards.
-                vec![
-                    arrow_rect.left_top(),
                     arrow_rect.right_top(),
+                    arrow_rect.center(),
+                ],
+                color,
+                Stroke::NONE,
+            ));
+
+            // Chevron pointing rightwards.
+            ui.painter().add(Shape::convex_polygon(
+                vec![
+                    arrow_rect.left_center(),
+                    arrow_rect.right_center(),
                     arrow_rect.center_bottom(),
-                ]
-            },
-            color,
-            Stroke::NONE,
-        ));
+                ],
+                color,
+                Stroke::NONE,
+            ));
+            let color = style.buttons.minimize_window_bg_fill;
+            ui.painter().add(Shape::convex_polygon(
+                vec![
+                    arrow_rect
+                        .left_center()
+                        .lerp(arrow_rect.right_center(), 0.25),
+                    arrow_rect
+                        .left_center()
+                        .lerp(arrow_rect.right_center(), 0.75),
+                    arrow_rect.center().lerp(arrow_rect.center_bottom(), 0.5),
+                ],
+                color,
+                Stroke::NONE,
+            ));
+        } else {
+            // Draw arrow.
+            ui.painter().add(Shape::convex_polygon(
+                if collapsed {
+                    // Arrow pointing rightwards.
+                    vec![
+                        arrow_rect.left_top(),
+                        arrow_rect.right_center(),
+                        arrow_rect.left_bottom(),
+                    ]
+                } else {
+                    // Arrow pointing downwards.
+                    vec![
+                        arrow_rect.left_top(),
+                        arrow_rect.right_top(),
+                        arrow_rect.center_bottom(),
+                    ]
+                },
+                color,
+                Stroke::NONE,
+            ));
+        }
 
         // Draw button right border.
         ui.painter().vline(
@@ -761,9 +806,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
 
         if response.clicked() {
-            self.dock_state[surface_index][node_index].set_collapsed(!collapsed);
-            self.dock_state[surface_index].node_update_collapsed(node_index);
-            self.window_update_collapsed(surface_index, node_index);
+            if !surface_index.is_main()
+                && ui.input(|i| {
+                    i.modifiers
+                        .matches_logically(self.secondary_button_modifiers)
+                })
+            {
+                self.window_toggle_minimized(surface_index);
+            } else {
+                self.dock_state[surface_index][node_index].set_collapsed(!collapsed);
+                self.dock_state[surface_index].node_update_collapsed(node_index);
+                self.window_update_collapsed(surface_index, node_index);
+            }
         }
 
         if !surface_index.is_main() {
