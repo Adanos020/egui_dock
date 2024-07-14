@@ -577,6 +577,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
     /// Draws the close all button.
     #[allow(clippy::too_many_arguments)]
+    #[allow(unused_assignments)]
     fn tab_close_all(
         &mut self,
         ui: &mut Ui,
@@ -601,58 +602,23 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
-        if !disabled {
-            response = response
-                .on_hover_cursor(CursorIcon::PointingHand)
-                .on_hover_text(
-                    self.dock_state
-                        .translations
-                        .leaf
-                        .close_all_button_hint
-                        .as_str(),
-                );
-
-            if response.clicked() {
-                self.to_remove.push((surface_index, node_index).into());
-            }
-
-            if !surface_index.is_main() {
-                response.context_menu(|ui| {
-                    ui.add_enabled_ui(!close_window_disabled, |ui| {
-                        if ui
-                            .button(&self.dock_state.translations.leaf.close_all_button)
-                            .on_disabled_hover_text(
-                                self.dock_state
-                                    .translations
-                                    .leaf
-                                    .close_all_button_tooltip
-                                    .as_str(),
-                            )
-                            .clicked()
-                        {
-                            self.to_remove.push(TabRemoval::Window(surface_index));
-                        }
-                    });
-                });
-            }
-        } else {
-            response = response
-                .on_hover_cursor(CursorIcon::NotAllowed)
-                .on_hover_text(
-                    self.dock_state
-                        .translations
-                        .leaf
-                        .close_button_tooltip
-                        .as_str(),
-                );
-        }
-
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
-        let color = if disabled {
+
+        let mut color = if disabled {
             style.buttons.close_all_tabs_disabled_color
         } else if response.hovered() || response.has_focus() {
-            ui.painter()
-                .rect_filled(rect, Rounding::ZERO, style.buttons.close_all_tabs_bg_fill);
+            if !(close_window_disabled
+                && ui.input(|i| {
+                    i.modifiers
+                        .matches_logically(self.secondary_button_modifiers)
+                }))
+            {
+                ui.painter().rect_filled(
+                    rect,
+                    Rounding::ZERO,
+                    style.buttons.close_all_tabs_bg_fill,
+                );
+            }
             style.buttons.close_all_tabs_active_color
         } else {
             style.buttons.close_all_tabs_color
@@ -662,14 +628,107 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         rect_set_size_centered(&mut close_all_rect, Vec2::splat(Style::TAB_CLOSE_ALL_SIZE));
 
-        ui.painter().line_segment(
-            [close_all_rect.left_top(), close_all_rect.right_bottom()],
-            Stroke::new(1.0, color),
-        );
-        ui.painter().line_segment(
-            [close_all_rect.right_top(), close_all_rect.left_bottom()],
-            Stroke::new(1.0, color),
-        );
+        if ui.input(|i| {
+            i.modifiers
+                .matches_logically(self.secondary_button_modifiers)
+        }) && (response.hovered()
+            || response.has_focus()
+            || response.is_pointer_button_down_on())
+        {
+            if response.clicked() && !surface_index.is_main() && !close_window_disabled {
+                self.to_remove.push(TabRemoval::Window(surface_index));
+            }
+            if close_window_disabled {
+                color = style.buttons.close_all_tabs_disabled_color;
+                response = response
+                    .on_hover_cursor(CursorIcon::NotAllowed)
+                    .on_hover_text(
+                        self.dock_state
+                            .translations
+                            .leaf
+                            .close_button_tooltip
+                            .as_str(),
+                    );
+            }
+
+            ui.painter().add(Shape::line(
+                vec![
+                    close_all_rect
+                        .right_center()
+                        .lerp(close_all_rect.right_bottom(), 0.5),
+                    close_all_rect.right_bottom(),
+                    close_all_rect.left_bottom(),
+                    close_all_rect.left_top(),
+                    close_all_rect
+                        .center_top()
+                        .lerp(close_all_rect.left_top(), 0.5),
+                ],
+                Stroke::new(1.0, color),
+            ));
+            ui.painter().line_segment(
+                [close_all_rect.center_top(), close_all_rect.right_center()],
+                Stroke::new(1.0, color),
+            );
+            ui.painter().line_segment(
+                [close_all_rect.center(), close_all_rect.right_top()],
+                Stroke::new(1.0, color),
+            );
+        } else {
+            if !disabled {
+                response = response
+                    .on_hover_cursor(CursorIcon::PointingHand)
+                    .on_hover_text(
+                        self.dock_state
+                            .translations
+                            .leaf
+                            .close_all_button_hint
+                            .as_str(),
+                    );
+
+                if response.clicked() {
+                    self.to_remove.push((surface_index, node_index).into());
+                }
+
+                if !surface_index.is_main() {
+                    response.context_menu(|ui| {
+                        ui.add_enabled_ui(!close_window_disabled, |ui| {
+                            if ui
+                                .button(&self.dock_state.translations.leaf.close_all_button)
+                                .on_disabled_hover_text(
+                                    self.dock_state
+                                        .translations
+                                        .leaf
+                                        .close_all_button_tooltip
+                                        .as_str(),
+                                )
+                                .clicked()
+                            {
+                                self.to_remove.push(TabRemoval::Window(surface_index));
+                            }
+                        });
+                    });
+                }
+            } else {
+                response = response
+                    .on_hover_cursor(CursorIcon::NotAllowed)
+                    .on_hover_text(
+                        self.dock_state
+                            .translations
+                            .leaf
+                            .close_button_tooltip
+                            .as_str(),
+                    );
+            }
+
+            ui.painter().line_segment(
+                [close_all_rect.left_top(), close_all_rect.right_bottom()],
+                Stroke::new(1.0, color),
+            );
+            ui.painter().line_segment(
+                [close_all_rect.right_top(), close_all_rect.left_bottom()],
+                Stroke::new(1.0, color),
+            );
+        }
 
         // Draw button left border.
         ui.painter().vline(
@@ -730,7 +789,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         rect_set_size_centered(&mut arrow_rect, Vec2::splat(Style::TAB_COLLAPSE_ARROW_SIZE));
 
         if !surface_index.is_main()
-            // && (response.hovered() || response.has_focus() || response.clicked())
+            // We need `is_pointer_button_down_on` to avoid flickering of the icon drawn
+            && (response.hovered() || response.has_focus() || response.is_pointer_button_down_on())
             && ui.input(|i| {
                 i.modifiers
                     .matches_logically(self.secondary_button_modifiers)
