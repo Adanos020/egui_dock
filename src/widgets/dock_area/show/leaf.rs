@@ -646,7 +646,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         self.dock_state
                             .translations
                             .leaf
-                            .close_button_tooltip
+                            .close_all_button_tooltip
                             .as_str(),
                     );
             }
@@ -675,38 +675,38 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             );
         } else {
             if !disabled {
-                response = response
-                    .on_hover_cursor(CursorIcon::PointingHand)
-                    .on_hover_text(
-                        self.dock_state
-                            .translations
-                            .leaf
-                            .close_all_button_hint
-                            .as_str(),
-                    );
+                response = response.on_hover_cursor(CursorIcon::PointingHand);
 
                 if response.clicked() {
                     self.to_remove.push((surface_index, node_index).into());
                 }
 
                 if !surface_index.is_main() {
-                    response.context_menu(|ui| {
-                        ui.add_enabled_ui(!close_window_disabled, |ui| {
-                            if ui
-                                .button(&self.dock_state.translations.leaf.close_all_button)
-                                .on_disabled_hover_text(
-                                    self.dock_state
-                                        .translations
-                                        .leaf
-                                        .close_all_button_tooltip
-                                        .as_str(),
-                                )
-                                .clicked()
-                            {
-                                self.to_remove.push(TabRemoval::Window(surface_index));
-                            }
+                    response
+                        .on_hover_text(
+                            self.dock_state
+                                .translations
+                                .leaf
+                                .close_all_button_hint
+                                .as_str(),
+                        )
+                        .context_menu(|ui| {
+                            ui.add_enabled_ui(!close_window_disabled, |ui| {
+                                if ui
+                                    .button(&self.dock_state.translations.leaf.close_all_button)
+                                    .on_disabled_hover_text(
+                                        self.dock_state
+                                            .translations
+                                            .leaf
+                                            .close_all_button_tooltip
+                                            .as_str(),
+                                    )
+                                    .clicked()
+                                {
+                                    self.to_remove.push(TabRemoval::Window(surface_index));
+                                }
+                            });
                         });
-                    });
                 }
             } else {
                 response = response
