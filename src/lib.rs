@@ -192,15 +192,20 @@
 //! Example usage:
 //!
 //! ```rust
-//! # use egui_dock::{DockState, TabContextMenuTranslations, Translations, WindowTranslations};
+//! # use egui_dock::{DockState, TabContextMenuTranslations, Translations, LeafTranslations};
 //! # type Tab = ();
 //! let translations_pl = Translations {
 //!     tab_context_menu: TabContextMenuTranslations {
 //!         close_button: "Zamknij zakładkę".to_string(),
 //!         eject_button: "Przenieś zakładkę do nowego okna".to_string(),
 //!     },
-//!     window: WindowTranslations {
-//!         close_button_tooltip: "To okno zawiera zakładki, których nie można zamknąć.".to_string(),
+//!     leaf: LeafTranslations {
+//!         close_button_tooltip: "Ten węzeł zawiera niezamykalne zakładki.".to_string(),
+//!         close_all_button: "Zamknij okno".to_string(),
+//!         close_all_button_hint: "Kliknij prawym przyciskiem myszy, aby zamknąć to okno.".to_string(),
+//!         close_all_button_tooltip: "To okno zawiera zakładki, których nie można zamknąć.".to_string(),
+//!         minimize_button: "Zminimalizuj okno".to_string(),
+//!         minimize_button_hint: "Kliknij prawym przyciskiem myszy, aby zminimalizować to okno.".to_string(),
 //!     }
 //! };
 //! let dock_state = DockState::<Tab>::new(vec![]).with_translations(translations_pl);
@@ -209,7 +214,12 @@
 //! let mut dock_state = DockState::<Tab>::new(vec![]);
 //! dock_state.translations.tab_context_menu.close_button = "タブを閉じる".to_string();
 //! dock_state.translations.tab_context_menu.eject_button = "タブを新しいウィンドウへ移動".to_string();
-//! dock_state.translations.window.close_button_tooltip = "このウィンドウは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.close_button_tooltip = "このノードは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.close_all_button = "ウィンドウを閉じる".to_string();
+//! dock_state.translations.leaf.close_all_button_hint = "右クリックでこのウィンドウを閉じる。".to_string();
+//! dock_state.translations.leaf.close_all_button_tooltip = "このウィンドウは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.minimize_button = "ウィンドウを最小化する".to_string();
+//! dock_state.translations.leaf.minimize_button_hint = "右クリックでウィンドウを最小化する。".to_string();
 //! ```
 
 #![warn(missing_docs)]

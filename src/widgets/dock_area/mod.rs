@@ -13,7 +13,7 @@ use crate::{dock_state::DockState, NodeIndex, Style, SurfaceIndex, TabIndex};
 pub use allowed_splits::AllowedSplits;
 use tab_removal::TabRemoval;
 
-use egui::{emath::*, Id};
+use egui::{emath::*, Id, Modifiers};
 
 /// Displays a [`DockState`] in `egui`.
 pub struct DockArea<'tree, Tab> {
@@ -28,6 +28,9 @@ pub struct DockArea<'tree, Tab> {
     show_tab_name_on_hover: bool,
     show_window_close_buttons: bool,
     show_window_collapse_buttons: bool,
+    show_leaf_close_all_buttons: bool,
+    show_leaf_collapse_buttons: bool,
+    secondary_button_modifiers: Modifiers,
     allowed_splits: AllowedSplits,
     window_bounds: Option<Rect>,
 
@@ -60,6 +63,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             window_bounds: None,
             show_window_close_buttons: true,
             show_window_collapse_buttons: true,
+            show_leaf_close_all_buttons: true,
+            show_leaf_collapse_buttons: true,
+            secondary_button_modifiers: Modifiers::SHIFT,
         }
     }
 
@@ -126,6 +132,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self
     }
 
+    /// The key combination used to activate secondary buttons on tab bars.
+    /// By default it's [`Modifiers::SHIFT`].
+    pub fn secondary_button_modifiers(mut self, secondary_button_modifiers: Modifiers) -> Self {
+        self.secondary_button_modifiers = secondary_button_modifiers;
+        self
+    }
+
     /// The bounds for any windows inside the [`DockArea`]. Defaults to the screen rect.
     /// By default it's set to [`egui::Context::screen_rect`].
     #[inline(always)]
@@ -137,16 +150,34 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// Enables or disables the close button on windows.
     /// By default it's `true`.
     #[inline(always)]
+    #[deprecated = "use `show_leaf_close_buttons` instead."]
     pub fn show_window_close_buttons(mut self, show_window_close_buttons: bool) -> Self {
         self.show_window_close_buttons = show_window_close_buttons;
         self
     }
 
-    /// Enables or disables the collapsing header  on windows.
+    /// Enables or disables the collapsing header on windows.
     /// By default it's `true`.
     #[inline(always)]
+    #[deprecated = "use `show_leaf_collapse_buttons` instead."]
     pub fn show_window_collapse_buttons(mut self, show_window_collapse_buttons: bool) -> Self {
         self.show_window_collapse_buttons = show_window_collapse_buttons;
+        self
+    }
+
+    /// Enables or disables the close all tabs button on tab bars.
+    /// By default it's `true`.
+    #[inline(always)]
+    pub fn show_leaf_close_all_buttons(mut self, show_leaf_close_all_buttons: bool) -> Self {
+        self.show_leaf_close_all_buttons = show_leaf_close_all_buttons;
+        self
+    }
+
+    /// Enables or disables the collapse tabs button on tab bars.
+    /// By default it's `true`.
+    #[inline(always)]
+    pub fn show_leaf_collapse_buttons(mut self, show_leaf_collapse_buttons: bool) -> Self {
+        self.show_leaf_collapse_buttons = show_leaf_collapse_buttons;
         self
     }
 }
