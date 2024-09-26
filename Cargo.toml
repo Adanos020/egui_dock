@@ -21,7 +21,7 @@ serde = ["dep:serde", "egui/serde"]
 egui = { version = "0.28", default-features = false }
 serde = { version = "1", optional = true, features = ["derive"] }
 
-duplicate = "1.0"
+duplicate = "2.0"
 paste = "1.0"
 
 [dev-dependencies]
