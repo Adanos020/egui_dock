@@ -18,9 +18,15 @@ pub struct WindowState {
     /// The next size this window should be set to next frame.
     next_size: Option<Vec2>,
 
-    /// true the first frame this window is drawn.
-    /// handles opening collapsing header, etc.
+    /// The height of the window before it was fully collapsed
+    expanded_height: Option<f32>,
+
+    /// True the first frame this window is drawn.
+    /// handles expanding after being fully collapsed, etc.
     new: bool,
+
+    /// True if the window is minimized
+    minimized: bool,
 }
 
 impl Default for WindowState {
@@ -30,7 +36,9 @@ impl Default for WindowState {
             dragged: false,
             next_position: None,
             next_size: None,
+            expanded_height: None,
             new: true,
+            minimized: false,
         }
     }
 }
@@ -67,6 +75,19 @@ impl WindowState {
         self.dragged
     }
 
+    /// Set the height of this window when it is expanded.
+    #[inline(always)]
+    pub(crate) fn set_expanded_height(&mut self, height: f32) -> &mut Self {
+        self.expanded_height = Some(height);
+        self
+    }
+
+    #[inline(always)]
+    pub(crate) fn set_new(&mut self, new: bool) -> &mut Self {
+        self.new = new;
+        self
+    }
+
     #[inline(always)]
     pub(crate) fn next_position(&mut self) -> Option<Pos2> {
         self.next_position.take()
@@ -77,8 +98,23 @@ impl WindowState {
         self.next_size.take()
     }
 
+    #[inline(always)]
+    pub(crate) fn expanded_height(&mut self) -> Option<f32> {
+        self.expanded_height.take()
+    }
+
+    #[inline(always)]
+    pub(crate) fn toggle_minimized(&mut self) {
+        self.minimized = !self.minimized;
+    }
+
+    #[inline(always)]
+    pub(crate) fn is_minimized(&self) -> bool {
+        self.minimized
+    }
+
     //the 'static in this case means that the `open` field is always `None`
-    pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> (egui::Window<'static>, bool) {
+    pub(crate) fn create_window(&mut self, id: Id, bounds: Rect) -> egui::Window<'static> {
         let new = self.new;
         let mut window_constructor = egui::Window::new("")
             .id(id)
@@ -91,7 +127,13 @@ impl WindowState {
         if let Some(size) = self.next_size() {
             window_constructor = window_constructor.fixed_size(size);
         }
+        // Reset the height of the window if it is now expanded
+        if new {
+            if let Some(height) = self.expanded_height() {
+                window_constructor = window_constructor.max_height(height).min_height(height);
+            }
+        }
         self.new = false;
-        (window_constructor, new)
+        window_constructor
     }
 }

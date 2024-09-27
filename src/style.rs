@@ -89,6 +89,45 @@ pub struct ButtonsStyle {
 
     /// Color of the add tab button's left border.
     pub add_tab_border_color: Color32,
+
+    /// Color of the close all tabs button.
+    pub close_all_tabs_color: Color32,
+
+    /// Color of the active close all tabs button.
+    pub close_all_tabs_active_color: Color32,
+
+    /// Color of the close all tabs button's background.
+    pub close_all_tabs_bg_fill: Color32,
+
+    /// Color of the close all tabs button's left border.
+    pub close_all_tabs_border_color: Color32,
+
+    /// Color of disabled close all tabs button.
+    pub close_all_tabs_disabled_color: Color32,
+
+    /// Color of the collapse tabs button.
+    pub collapse_tabs_color: Color32,
+
+    /// Color of the active collapse tabs button.
+    pub collapse_tabs_active_color: Color32,
+
+    /// Color of the collapse tabs button's background.
+    pub collapse_tabs_bg_fill: Color32,
+
+    /// Color of the collapse tabs button's left border.
+    pub collapse_tabs_border_color: Color32,
+
+    /// Color of the minimize window button.
+    pub minimize_window_color: Color32,
+
+    /// Color of the active minimize window button.
+    pub minimize_window_active_color: Color32,
+
+    /// Color of the minimize window button's background.
+    pub minimize_window_bg_fill: Color32,
+
+    /// Color of the minimize window button's left border.
+    pub minimize_window_border_color: Color32,
 }
 
 /// Specifies the look and feel of node separators.
@@ -132,11 +171,12 @@ pub struct TabBarStyle {
     /// Tab rounding. By `Default` it's [`Rounding::default`].
     pub rounding: Rounding,
 
-    /// Color of th line separating the tab name area from the tab content area.
+    /// Color of the line separating the tab name area from the tab content area.
     /// By `Default` it's [`Color32::BLACK`].
     pub hline_color: Color32,
 
     /// Whether tab titles expand to fill the width of their tab bars.
+    /// By `Default` it's `false`.
     pub fill_tab_bar: bool,
 }
 
@@ -331,6 +371,22 @@ impl Default for ButtonsStyle {
             add_tab_active_color: Color32::WHITE,
             add_tab_bg_fill: Color32::GRAY,
             add_tab_border_color: Color32::BLACK,
+
+            close_all_tabs_color: Color32::WHITE,
+            close_all_tabs_active_color: Color32::WHITE,
+            close_all_tabs_bg_fill: Color32::GRAY,
+            close_all_tabs_border_color: Color32::BLACK,
+            close_all_tabs_disabled_color: Color32::LIGHT_GRAY,
+
+            collapse_tabs_color: Color32::WHITE,
+            collapse_tabs_active_color: Color32::WHITE,
+            collapse_tabs_bg_fill: Color32::GRAY,
+            collapse_tabs_border_color: Color32::BLACK,
+
+            minimize_window_color: Color32::WHITE,
+            minimize_window_active_color: Color32::WHITE,
+            minimize_window_bg_fill: Color32::GRAY,
+            minimize_window_border_color: Color32::BLACK,
         }
     }
 }
@@ -462,6 +518,12 @@ impl Style {
     pub(crate) const TAB_ADD_PLUS_SIZE: f32 = 12.0;
     pub(crate) const TAB_CLOSE_BUTTON_SIZE: f32 = 24.0;
     pub(crate) const TAB_CLOSE_X_SIZE: f32 = 9.0;
+    pub(crate) const TAB_CLOSE_ALL_BUTTON_SIZE: f32 = 24.0;
+    pub(crate) const TAB_CLOSE_ALL_SIZE: f32 = 10.0;
+    pub(crate) const TAB_COLLAPSE_BUTTON_SIZE: f32 = 24.0;
+    pub(crate) const TAB_COLLAPSE_ARROW_SIZE: f32 = 10.0;
+    pub(crate) const TAB_EXPAND_BUTTON_SIZE: f32 = 24.0;
+    pub(crate) const TAB_EXPAND_ARROW_SIZE: f32 = 10.0;
 }
 
 impl Style {
@@ -496,6 +558,15 @@ impl ButtonsStyle {
     /// - [`ButtonsStyle::add_tab_bg_fill`]
     /// - [`ButtonsStyle::add_tab_color`]
     /// - [`ButtonsStyle::add_tab_active_color`]
+    /// - [`ButtonsStyle::add_tab_border_color`]
+    /// - [`ButtonsStyle::close_all_tabs_bg_fill`]
+    /// - [`ButtonsStyle::close_all_tabs_color`]
+    /// - [`ButtonsStyle::close_all_tabs_active_color`]
+    /// - [`ButtonsStyle::close_all_tabs_border_color`]
+    /// - [`ButtonsStyle::collapse_tabs_bg_fill`]
+    /// - [`ButtonsStyle::collapse_tabs_color`]
+    /// - [`ButtonsStyle::collapse_tabs_active_color`]
+    /// - [`ButtonsStyle::collapse_tabs_border_color`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             close_tab_bg_fill: style.visuals.widgets.hovered.bg_fill,
@@ -505,6 +576,19 @@ impl ButtonsStyle {
             add_tab_color: style.visuals.text_color(),
             add_tab_active_color: style.visuals.strong_text_color(),
             add_tab_border_color: style.visuals.widgets.noninteractive.bg_fill,
+            close_all_tabs_bg_fill: style.visuals.widgets.hovered.bg_fill,
+            close_all_tabs_color: style.visuals.text_color(),
+            close_all_tabs_active_color: style.visuals.strong_text_color(),
+            close_all_tabs_border_color: style.visuals.widgets.noninteractive.bg_fill,
+            close_all_tabs_disabled_color: style.visuals.widgets.inactive.bg_fill,
+            collapse_tabs_bg_fill: style.visuals.widgets.hovered.bg_fill,
+            collapse_tabs_color: style.visuals.text_color(),
+            collapse_tabs_active_color: style.visuals.strong_text_color(),
+            collapse_tabs_border_color: style.visuals.widgets.noninteractive.bg_fill,
+            minimize_window_bg_fill: style.visuals.widgets.hovered.bg_fill,
+            minimize_window_color: style.visuals.text_color(),
+            minimize_window_active_color: style.visuals.strong_text_color(),
+            minimize_window_border_color: style.visuals.widgets.noninteractive.bg_fill,
             ..ButtonsStyle::default()
         }
     }

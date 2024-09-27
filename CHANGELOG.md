@@ -2,10 +2,67 @@
 
 ## 0.14.0 - Unreleased
 
+### Added
+
+- From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
+    - `Node::is_collapsed` – returns whether the `Node` is collapsed
+    - `Node::collapsed_leaf_count` – returns the number of collapsed layers of leaf subnodes
+    - `Node::set_collapsed` – set the collapsing state of the `Node`
+    - `Node::set_collapsed_leaf_count` – sets the number of collapsed layers of leaf subnodes
+    - `DockArea::show_leaf_close_all_buttons` – shows a close all button which closes all open tabs in a leaf
+    - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a
+      window)
+    - Added style configuration for the two buttons:
+        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_color`
+        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_active_color`
+        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_bg_fill`
+        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_border_color`
+        - `ButtonsStyle::close_all_tabs_disabled_color`
+    - Added the following translations:
+      - `LeafTranslations::close_all_button`
+      - `LeafTranslations::close_all_button_tooltip`
+      - `LeafTranslations::minimize_button`
+    - `Node::Leaf::collapsed` attribute – records whether a leaf is collapsed.
+    - `Node::Vertical::fully_collapsed` attribute – records whether all subnodes are collapsed.
+    - `Node::Vertical::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
+    - `Node::Horizontal::fully_collapsed` attribute – records whether all subnodes are collapsed.
+    - `Node::Horizontal::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
+    - `Tree::collapsed` attribute – records whether all subnodes of the tree is collapsed
+    - `Tree::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
+    - `Tree::set_collapsed` method – sets the collapsing state of the tree.
+    - `Tree::is_collapsed` method – returns whether the tree is collapsed.
+    - `Tree::node_update_collapsed` method – updates the collapsed state of the node and its parents.
+    - `Tree::set_collapsed_leaf_count` method – sets the number of collapsed layers of leaf subnodes in the tree.
+    - `Tree::collapsed_leaf_count` method – returns the number of collapsed layers of leaf subnodes in the tree.
+    - `DockArea::tab_close_all` method – draws the close all button on a tab bar.
+    - `DockArea::tab_collapse` method – draws the collapse button on a tab bar.
+    - `DockArea::window_update_collapsed` method – updates the collapsed state of the node and its parents in a window.
+    - `TabRemoval::Leaf(SurfaceIndex, NodeIndex)` variant – removes a leaf node from a surface.
+    - `WindowState::minimized` attribute – records whether a window is minimized.
+    - `WindowState::toggle_minimized` method – toggles the minimization state of a window.
+    - `WindowState::is_minimized` method – gets the minimization state of a window.
+
 ### Changed
 
 - `{DockState,Surface,Tree,Node}::{filter_map_tabs,map_tabs,filter_tabs,retain_tabs}` no longer require the predicate to
   implement `Clone`. ([#241](https://github.com/Adanos020/egui_dock/pull/241))
+
+### Breaking changes
+
+- From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
+    - Renamed `Translations::WindowTranslations` to `Translations::LeafTranslations`.
+    - `WindowState::create_window` now returns a `egui::Window` only, instead of `(egui::Window, bool)`.
+    - Removed `DockArea::show_window_body`.
+    - Removed `DockArea::show_close_button`.
+    - Removed `close_button` from `window_surface.rs`.
+
+### Deprecated
+
+- From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
+    - `DockArea::show_window_close_buttons` – no longer has any effect; use `DockArea::show_leaf_close_all_buttons`
+      instead.
+    - `DockArea::show_window_collapse_buttons` – no longer has any effect; use `DockArea::show_leaf_collapse_buttons`
+      instead.
 
 ## 0.13.0 - 2024-07-03
 

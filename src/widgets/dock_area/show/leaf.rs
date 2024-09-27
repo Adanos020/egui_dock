@@ -1,12 +1,15 @@
+use std::convert::identity;
 use std::ops::RangeInclusive;
 
 use egui::emath::TSTransform;
+use egui::Shape;
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
     LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
     Ui, UiStackInfo, Vec2, WidgetText,
 };
 
+use crate::dock_area::tab_removal::TabRemoval;
 use crate::{
     dock_area::{
         drag_and_drop::{DragData, DragDropState, HoverData, TreeComponent},
@@ -28,6 +31,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         fade_style: Option<(&Style, f32)>,
     ) {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
+        let collapsed = self.dock_state[surface_index][node_index].is_collapsed();
 
         let rect = self.dock_state[surface_index][node_index]
             .rect()
@@ -42,12 +46,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.spacing_mut().item_spacing = Vec2::ZERO;
         ui.set_clip_rect(rect);
 
+        if self.dock_state[surface_index][node_index].tabs_count() == 0 {
+            return;
+        }
         let tabbar_rect = self.tab_bar(
             ui,
             state,
             (surface_index, node_index),
             tab_viewer,
             fade_style.map(|(style, _)| style),
+            collapsed,
         );
         self.tab_body(
             ui,
@@ -57,6 +65,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             spacing,
             tabbar_rect,
             fade_style,
+            collapsed,
         );
 
         let tabs = self.dock_state[surface_index][node_index]
@@ -77,6 +86,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         fade_style: Option<&Style>,
+        collapsed: bool,
     ) -> Rect {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
@@ -92,13 +102,23 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
 
         let mut available_width = tabbar_outer_rect.width();
+        let scroll_bar_width = available_width;
         if available_width == 0.0 {
             return tabbar_outer_rect;
         }
 
-        // Reserve space for the add button at the end of the tab bar.
+        // Reserve space for the buttons at the ends of the tab bar.
+
         if self.show_add_buttons {
             available_width -= Style::TAB_ADD_BUTTON_SIZE;
+        }
+
+        if self.show_leaf_close_all_buttons {
+            available_width -= Style::TAB_CLOSE_ALL_BUTTON_SIZE;
+        }
+
+        if self.show_leaf_collapse_buttons {
+            available_width -= Style::TAB_COLLAPSE_BUTTON_SIZE;
         }
 
         let actual_width = {
@@ -108,7 +128,16 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             };
 
             let tabbar_inner_rect = Rect::from_min_size(
-                (tabbar_outer_rect.min - pos2(-*scroll, 0.0)).to_pos2(),
+                (tabbar_outer_rect.min - pos2(-*scroll, 0.0)
+                    + vec2(
+                        if self.show_leaf_collapse_buttons {
+                            Style::TAB_COLLAPSE_BUTTON_SIZE
+                        } else {
+                            0.0
+                        },
+                        0.0,
+                    ))
+                .to_pos2(),
                 vec2(tabbar_outer_rect.width(), tabbar_outer_rect.height()),
             );
 
@@ -121,6 +150,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             let mut clip_rect = tabbar_outer_rect;
             clip_rect.set_width(available_width);
+            if self.show_leaf_collapse_buttons {
+                clip_rect = clip_rect.translate(vec2(Style::TAB_COLLAPSE_BUTTON_SIZE, 0.0));
+            }
             tabs_ui.set_clip_rect(clip_rect);
 
             // Desired size for tabs in "expanded" mode.
@@ -149,13 +181,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 (px, style.tab_bar.hline_color),
             );
 
-            // Add button at the end of the tab bar.
+            // Add button at the ends of the tab bar.
             if self.show_add_buttons {
                 let offset = match style.buttons.add_tab_align {
                     TabAddAlign::Left => {
                         (clip_rect.width() - tabs_ui.min_rect().width()).at_least(0.0)
                     }
                     TabAddAlign::Right => 0.0,
+                } + if self.show_leaf_close_all_buttons {
+                    Style::TAB_CLOSE_ALL_BUTTON_SIZE
+                } else {
+                    0.0
                 };
                 self.tab_plus(
                     ui,
@@ -168,6 +204,55 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 );
             }
 
+            if self.show_leaf_close_all_buttons {
+                // Current leaf contains non-closable tabs.
+                let disabled = if let Node::Leaf { tabs, .. } =
+                    &mut self.dock_state[surface_index][node_index]
+                {
+                    !tabs
+                        .iter_mut()
+                        .map(|tab| tab_viewer.closeable(tab))
+                        .all(identity)
+                } else {
+                    unreachable!()
+                };
+
+                // Current window contains non-closable tabs.
+                let close_window_disabled = disabled
+                    || !self.dock_state[surface_index]
+                        .iter_mut()
+                        .map(|node| {
+                            if let Node::Leaf { tabs, .. } = node {
+                                tabs.iter_mut()
+                                    .map(|tab| tab_viewer.closeable(tab))
+                                    .all(identity)
+                            } else {
+                                true
+                            }
+                        })
+                        .all(identity);
+                self.tab_close_all(
+                    ui,
+                    surface_index,
+                    node_index,
+                    tabbar_outer_rect,
+                    fade_style,
+                    disabled,
+                    close_window_disabled,
+                )
+            }
+
+            if self.show_leaf_collapse_buttons {
+                self.tab_collapse(
+                    ui,
+                    surface_index,
+                    node_index,
+                    tabbar_outer_rect,
+                    fade_style,
+                    collapsed,
+                )
+            }
+
             tabs_ui.min_rect().width()
         };
 
@@ -177,6 +262,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             (surface_index, node_index),
             actual_width,
             available_width,
+            scroll_bar_width,
             &tabbar_response,
             fade_style,
         );
@@ -416,6 +502,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
     }
 
+    /// Draws the tab add button.
     #[allow(clippy::too_many_arguments)]
     fn tab_plus(
         &mut self,
@@ -485,6 +572,345 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui.memory_mut(|mem| mem.toggle_popup(popup_id));
             }
             tab_viewer.on_add(surface_index, node_index);
+        }
+    }
+
+    /// Draws the close all button.
+    #[allow(clippy::too_many_arguments)]
+    #[allow(unused_assignments)]
+    fn tab_close_all(
+        &mut self,
+        ui: &mut Ui,
+        surface_index: SurfaceIndex,
+        node_index: NodeIndex,
+        tabbar_outer_rect: Rect,
+        fade_style: Option<&Style>,
+        disabled: bool,
+        close_window_disabled: bool,
+    ) {
+        let rect = Rect::from_min_max(
+            tabbar_outer_rect.right_top() - vec2(Style::TAB_CLOSE_ALL_BUTTON_SIZE, 0.0),
+            tabbar_outer_rect.right_bottom() - vec2(0.0, 2.0),
+        );
+
+        let ui = &mut ui.child_ui_with_id_source(
+            rect,
+            Layout::left_to_right(Align::Center),
+            (node_index, "tab_close_all"),
+            None,
+        );
+
+        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
+
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
+
+        let mut color = if disabled {
+            style.buttons.close_all_tabs_disabled_color
+        } else if response.hovered() || response.has_focus() {
+            if !(close_window_disabled
+                && ui.input(|i| {
+                    i.modifiers
+                        .matches_logically(self.secondary_button_modifiers)
+                }))
+            {
+                ui.painter().rect_filled(
+                    rect,
+                    Rounding::ZERO,
+                    style.buttons.close_all_tabs_bg_fill,
+                );
+            }
+            style.buttons.close_all_tabs_active_color
+        } else {
+            style.buttons.close_all_tabs_color
+        };
+
+        let mut close_all_rect = rect;
+
+        rect_set_size_centered(&mut close_all_rect, Vec2::splat(Style::TAB_CLOSE_ALL_SIZE));
+
+        if ui.input(|i| {
+            i.modifiers
+                .matches_logically(self.secondary_button_modifiers)
+        }) && (response.hovered()
+            || response.has_focus()
+            || response.is_pointer_button_down_on())
+        {
+            if response.clicked() && !surface_index.is_main() && !close_window_disabled {
+                self.to_remove.push(TabRemoval::Window(surface_index));
+            }
+            if close_window_disabled {
+                color = style.buttons.close_all_tabs_disabled_color;
+                response = response
+                    .on_hover_cursor(CursorIcon::NotAllowed)
+                    .on_hover_text(
+                        self.dock_state
+                            .translations
+                            .leaf
+                            .close_all_button_tooltip
+                            .as_str(),
+                    );
+            }
+
+            ui.painter().add(Shape::line(
+                vec![
+                    close_all_rect
+                        .right_center()
+                        .lerp(close_all_rect.right_bottom(), 0.5),
+                    close_all_rect.right_bottom(),
+                    close_all_rect.left_bottom(),
+                    close_all_rect.left_top(),
+                    close_all_rect
+                        .center_top()
+                        .lerp(close_all_rect.left_top(), 0.5),
+                ],
+                Stroke::new(1.0, color),
+            ));
+            ui.painter().line_segment(
+                [close_all_rect.center_top(), close_all_rect.right_center()],
+                Stroke::new(1.0, color),
+            );
+            ui.painter().line_segment(
+                [close_all_rect.center(), close_all_rect.right_top()],
+                Stroke::new(1.0, color),
+            );
+        } else {
+            if !disabled {
+                response = response.on_hover_cursor(CursorIcon::PointingHand);
+
+                if response.clicked() {
+                    self.to_remove.push((surface_index, node_index).into());
+                }
+
+                if !surface_index.is_main() {
+                    response
+                        .on_hover_text(
+                            self.dock_state
+                                .translations
+                                .leaf
+                                .close_all_button_hint
+                                .as_str(),
+                        )
+                        .context_menu(|ui| {
+                            ui.add_enabled_ui(!close_window_disabled, |ui| {
+                                if ui
+                                    .button(&self.dock_state.translations.leaf.close_all_button)
+                                    .on_disabled_hover_text(
+                                        self.dock_state
+                                            .translations
+                                            .leaf
+                                            .close_all_button_tooltip
+                                            .as_str(),
+                                    )
+                                    .clicked()
+                                {
+                                    self.to_remove.push(TabRemoval::Window(surface_index));
+                                }
+                            });
+                        });
+                }
+            } else {
+                response = response
+                    .on_hover_cursor(CursorIcon::NotAllowed)
+                    .on_hover_text(
+                        self.dock_state
+                            .translations
+                            .leaf
+                            .close_button_tooltip
+                            .as_str(),
+                    );
+            }
+
+            ui.painter().line_segment(
+                [close_all_rect.left_top(), close_all_rect.right_bottom()],
+                Stroke::new(1.0, color),
+            );
+            ui.painter().line_segment(
+                [close_all_rect.right_top(), close_all_rect.left_bottom()],
+                Stroke::new(1.0, color),
+            );
+        }
+
+        // Draw button left border.
+        ui.painter().vline(
+            rect.left(),
+            rect.y_range(),
+            Stroke::new(
+                ui.ctx().pixels_per_point().recip(),
+                style.buttons.close_all_tabs_border_color,
+            ),
+        );
+    }
+
+    /// Draws the collapse button.
+    fn tab_collapse(
+        &mut self,
+        ui: &mut Ui,
+        surface_index: SurfaceIndex,
+        node_index: NodeIndex,
+        tabbar_outer_rect: Rect,
+        fade_style: Option<&Style>,
+        collapsed: bool,
+    ) {
+        let rect = Rect::from_min_max(
+            tabbar_outer_rect.left_top(),
+            tabbar_outer_rect.left_bottom() + vec2(Style::TAB_COLLAPSE_BUTTON_SIZE, 0.0),
+        );
+
+        let ui = &mut ui.child_ui_with_id_source(
+            rect,
+            Layout::left_to_right(Align::Center),
+            (node_index, "tab_collapse"),
+            None,
+        );
+
+        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
+
+        response = response
+            .on_hover_cursor(CursorIcon::PointingHand)
+            .on_hover_text(
+                self.dock_state
+                    .translations
+                    .leaf
+                    .minimize_button_hint
+                    .as_str(),
+            );
+
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
+        let color = if response.hovered() || response.has_focus() {
+            ui.painter()
+                .rect_filled(rect, Rounding::ZERO, style.buttons.collapse_tabs_bg_fill);
+            style.buttons.collapse_tabs_active_color
+        } else {
+            style.buttons.collapse_tabs_color
+        };
+
+        let mut arrow_rect = rect;
+
+        rect_set_size_centered(&mut arrow_rect, Vec2::splat(Style::TAB_COLLAPSE_ARROW_SIZE));
+
+        if !surface_index.is_main()
+            // We need `is_pointer_button_down_on` to avoid flickering of the icon drawn
+            && (response.hovered() || response.has_focus() || response.is_pointer_button_down_on())
+            && ui.input(|i| {
+                i.modifiers
+                    .matches_logically(self.secondary_button_modifiers)
+            })
+        {
+            // Draw arrow with chevron.
+            ui.painter().add(Shape::convex_polygon(
+                // Arrow pointing rightwards.
+                vec![
+                    arrow_rect.left_top(),
+                    arrow_rect.right_top(),
+                    arrow_rect.center(),
+                ],
+                color,
+                Stroke::NONE,
+            ));
+
+            // Chevron pointing rightwards.
+            ui.painter().add(Shape::convex_polygon(
+                vec![
+                    arrow_rect.left_center(),
+                    arrow_rect.right_center(),
+                    arrow_rect.center_bottom(),
+                ],
+                color,
+                Stroke::NONE,
+            ));
+            let color = style.buttons.minimize_window_bg_fill;
+            ui.painter().add(Shape::convex_polygon(
+                vec![
+                    arrow_rect
+                        .left_center()
+                        .lerp(arrow_rect.right_center(), 0.25),
+                    arrow_rect
+                        .left_center()
+                        .lerp(arrow_rect.right_center(), 0.75),
+                    arrow_rect.center().lerp(arrow_rect.center_bottom(), 0.5),
+                ],
+                color,
+                Stroke::NONE,
+            ));
+        } else {
+            // Draw arrow.
+            ui.painter().add(Shape::convex_polygon(
+                if collapsed {
+                    // Arrow pointing rightwards.
+                    vec![
+                        arrow_rect.left_top(),
+                        arrow_rect.right_center(),
+                        arrow_rect.left_bottom(),
+                    ]
+                } else {
+                    // Arrow pointing downwards.
+                    vec![
+                        arrow_rect.left_top(),
+                        arrow_rect.right_top(),
+                        arrow_rect.center_bottom(),
+                    ]
+                },
+                color,
+                Stroke::NONE,
+            ));
+        }
+
+        // Draw button right border.
+        ui.painter().vline(
+            rect.right(),
+            rect.y_range(),
+            Stroke::new(
+                ui.ctx().pixels_per_point().recip(),
+                style.buttons.collapse_tabs_border_color,
+            ),
+        );
+
+        if response.clicked() {
+            if !surface_index.is_main()
+                && ui.input(|i| {
+                    i.modifiers
+                        .matches_logically(self.secondary_button_modifiers)
+                })
+            {
+                self.window_toggle_minimized(surface_index);
+            } else {
+                self.dock_state[surface_index][node_index].set_collapsed(!collapsed);
+                self.dock_state[surface_index].node_update_collapsed(node_index);
+                self.window_update_collapsed(surface_index, node_index);
+            }
+        }
+
+        if !surface_index.is_main() {
+            response.context_menu(|ui| {
+                if ui
+                    .button(&self.dock_state.translations.leaf.minimize_button)
+                    .clicked()
+                {
+                    ui.close_menu();
+                    self.window_toggle_minimized(surface_index);
+                }
+            });
+        }
+    }
+
+    /// Updates the collapsed state of the node and its parents.
+    fn window_update_collapsed(&mut self, surface_index: SurfaceIndex, node_index: NodeIndex) {
+        let surface = &mut self.dock_state[surface_index];
+        let collapsed = surface[node_index].is_collapsed();
+        if !collapsed {
+            if let Some(window_state) = self.dock_state.get_window_state_mut(surface_index) {
+                window_state.set_new(true);
+            }
+        } else if surface.root_node().is_some_and(|root| root.is_collapsed()) {
+            let root_index = NodeIndex::root();
+            let surface_height = if surface.root_node().is_some() {
+                surface[root_index].rect().unwrap().height()
+            } else {
+                0.0
+            };
+            if let Some(window_state) = self.dock_state.get_window_state_mut(surface_index) {
+                window_state.set_expanded_height(surface_height);
+            }
         }
     }
 
@@ -634,6 +1060,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         (surface_index, node_index): (SurfaceIndex, NodeIndex),
         actual_width: f32,
         available_width: f32,
+        scroll_bar_width: f32,
         tabbar_response: &Response,
         fade_style: Option<&Style>,
     ) {
@@ -652,7 +1079,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 // Draw scroll bar
                 let bar_height = 7.5;
                 let (scroll_bar_rect, _scroll_bar_response) = ui.allocate_exact_size(
-                    vec2(available_width, bar_height),
+                    vec2(scroll_bar_width, bar_height),
                     Sense::click_and_drag(),
                 );
 
@@ -722,6 +1149,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         spacing: Vec2,
         tabbar_rect: Rect,
         fade: Option<(&Style, f32)>,
+        collapsed: bool,
     ) {
         let (body_rect, _body_response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::hover());
@@ -737,76 +1165,81 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             unreachable!();
         };
 
-        if let Some(tab) = tabs.get_mut(active.0) {
-            *viewport = body_rect;
+        if !collapsed {
+            if let Some(tab) = tabs.get_mut(active.0) {
+                *viewport = body_rect;
 
-            if ui.input(|i| i.pointer.any_click()) {
-                if let Some(pos) = state.last_hover_pos {
-                    if body_rect.contains(pos) && Some(ui.layer_id()) == ui.ctx().layer_id_at(pos) {
-                        self.new_focused = Some((surface_index, node_index));
+                if ui.input(|i| i.pointer.any_click()) {
+                    if let Some(pos) = state.last_hover_pos {
+                        if body_rect.contains(pos)
+                            && Some(ui.layer_id()) == ui.ctx().layer_id_at(pos)
+                        {
+                            self.new_focused = Some((surface_index, node_index));
+                        }
                     }
                 }
-            }
 
-            let (style, fade_factor) = fade.unwrap_or_else(|| (self.style.as_ref().unwrap(), 1.0));
-            let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
+                let (style, fade_factor) =
+                    fade.unwrap_or_else(|| (self.style.as_ref().unwrap(), 1.0));
+                let tabs_styles = tab_viewer.tab_style_override(tab, &style.tab);
 
-            let tabs_style = tabs_styles.as_ref().unwrap_or(&style.tab);
+                let tabs_style = tabs_styles.as_ref().unwrap_or(&style.tab);
 
-            if tab_viewer.clear_background(tab) {
-                ui.painter().rect_filled(
+                if tab_viewer.clear_background(tab) {
+                    ui.painter().rect_filled(
+                        body_rect,
+                        tabs_style.tab_body.rounding,
+                        tabs_style.tab_body.bg_fill,
+                    );
+                }
+
+                // Construct a new ui with the correct tab id.
+                //
+                // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
+                // the provided id with their own which would cause tabs to change id when moved
+                // from node to node.
+                let id = self.id.with(tab_viewer.id(tab));
+                ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
+                let ui = &mut Ui::new(
+                    ui.ctx().clone(),
+                    ui.layer_id(),
+                    id,
                     body_rect,
-                    tabs_style.tab_body.rounding,
-                    tabs_style.tab_body.bg_fill,
+                    ui.clip_rect(),
+                    UiStackInfo::default(),
                 );
+                ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
+
+                // Use initial spacing for ui.
+                ui.spacing_mut().item_spacing = spacing;
+
+                // Offset the background rectangle up to hide the top border behind the clip rect.
+                // To avoid anti-aliasing lines when the stroke width is not divisible by two, we
+                // need to calculate the effective anti-aliased stroke width.
+                let effective_stroke_width = (tabs_style.tab_body.stroke.width / 2.0).ceil() * 2.0;
+                let tab_body_rect = Rect::from_min_max(
+                    ui.clip_rect().min - vec2(0.0, effective_stroke_width),
+                    ui.clip_rect().max,
+                );
+                ui.painter().rect_stroke(
+                    rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
+                    tabs_style.tab_body.rounding,
+                    tabs_style.tab_body.stroke,
+                );
+
+                ScrollArea::new(tab_viewer.scroll_bars(tab)).show(ui, |ui| {
+                    Frame::none()
+                        .inner_margin(tabs_style.tab_body.inner_margin)
+                        .show(ui, |ui| {
+                            if fade_factor != 1.0 {
+                                fade_visuals(ui.visuals_mut(), fade_factor);
+                            }
+                            let available_rect = ui.available_rect_before_wrap();
+                            ui.expand_to_include_rect(available_rect);
+                            tab_viewer.ui(ui, tab);
+                        });
+                });
             }
-
-            // Construct a new ui with the correct tab id.
-            //
-            // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
-            // the provided id with their own which would cause tabs to change id when moved
-            // from node to node.
-            let id = self.id.with(tab_viewer.id(tab));
-            ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
-            let ui = &mut Ui::new(
-                ui.ctx().clone(),
-                ui.layer_id(),
-                id,
-                body_rect,
-                ui.clip_rect(),
-                UiStackInfo::default(),
-            );
-            ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
-
-            // Use initial spacing for ui.
-            ui.spacing_mut().item_spacing = spacing;
-
-            // Offset the background rectangle up to hide the top border behind the clip rect.
-            // To avoid anti-aliasing lines when the stroke width is not divisible by two, we
-            // need to calculate the effective anti-aliased stroke width.
-            let effective_stroke_width = (tabs_style.tab_body.stroke.width / 2.0).ceil() * 2.0;
-            let tab_body_rect = Rect::from_min_max(
-                ui.clip_rect().min - vec2(0.0, effective_stroke_width),
-                ui.clip_rect().max,
-            );
-            ui.painter().rect_stroke(
-                rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
-                tabs_style.tab_body.rounding,
-                tabs_style.tab_body.stroke,
-            );
-
-            ScrollArea::new(tab_viewer.scroll_bars(tab)).show(ui, |ui| {
-                Frame::none()
-                    .inner_margin(tabs_style.tab_body.inner_margin)
-                    .show(ui, |ui| {
-                        if fade_factor != 1.0 {
-                            fade_visuals(ui.visuals_mut(), fade_factor);
-                        }
-                        let available_rect = ui.available_rect_before_wrap();
-                        ui.expand_to_include_rect(available_rect);
-                        tab_viewer.ui(ui, tab);
-                    });
-            });
         }
 
         // change hover destination
