@@ -1,6 +1,7 @@
 use std::ops::RangeInclusive;
 
 use egui::emath::TSTransform;
+use egui::UiBuilder;
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
     LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
@@ -768,13 +769,18 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             // from node to node.
             let id = self.id.with(tab_viewer.id(tab));
             ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
+            let ui_builder = UiBuilder {
+                max_rect: Some(body_rect),
+                ..Default::default()
+            };
+
             let ui = &mut Ui::new(
                 ui.ctx().clone(),
                 ui.layer_id(),
                 id,
-                body_rect,
-                ui.clip_rect(),
-                UiStackInfo::default(),
+                ui_builder, // body_rect, // max
+                            // ui.clip_rect(), // clip
+                            // UiStackInfo::default(),
             );
             ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 
