@@ -1,6 +1,5 @@
 use egui::{
-    CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response, Sense,
-    TextStyle, TextWrapMode, Ui, Vec2, Widget,
+    CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response, Sense, TextStyle, TextWrapMode, Ui, UiBuilder, Vec2, Widget
 };
 use std::convert::identity;
 use std::sync::Arc;
@@ -133,7 +132,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) -> Option<CollapsingResponse<()>> {
         if self.show_window_collapse_buttons {
             let ch_response = CollapsingHeader::new("")
-                .id_source(id)
+                .id_salt(id)
                 .open(open)
                 .show_unindented(ui, |ui| {
                     ui.set_min_size(Vec2::splat(100.0));
@@ -198,7 +197,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .as_str(),
             ),
         );
-        ui.allocate_ui_at_rect(rect, |ui| {
+        // allocate_ui_at_rect<R>(&mut self, max_rect: Rect, add_contents: impl FnOnce(&mut Self) -> R) -> InnerResponse<R>
+        let ui_builder = UiBuilder {
+            max_rect: Some(rect),
+            ..Default::default()
+        };
+        ui.allocate_new_ui(ui_builder, |ui| {
             ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.set_height(rect.height());
                 if ui.add(close_button).clicked() {
