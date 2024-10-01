@@ -18,7 +18,7 @@ default = []
 serde = ["dep:serde", "egui/serde"]
 
 [dependencies]
-egui = { git="https://github.com/emilk/egui.git",  commit="db3dcaf", default-features = false }
+egui = { version="0.29.1", default-features = false }
 serde = { version = "1", optional = true, features = ["derive"] }
 
 duplicate = "1.0"
