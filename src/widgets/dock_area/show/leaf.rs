@@ -773,9 +773,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui.ctx().clone(),
                 ui.layer_id(),
                 id,
-                egui::UiBuilder::new()
-                    .ui_stack_info(UiStackInfo::default())
-                    .max_rect(body_rect),
+                egui::UiBuilder::new().max_rect(body_rect),
             );
             ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 
