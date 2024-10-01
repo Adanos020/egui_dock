@@ -40,7 +40,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             layout: Some(Layout::top_down_justified(Align::Min)),
             ..Default::default()
         };
-        
+
         let ui = &mut ui.new_child(ui_builder);
         let spacing = ui.spacing().item_spacing;
         ui.spacing_mut().item_spacing = Vec2::ZERO;
@@ -245,7 +245,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let show_close_button = self.show_close_buttons && closeable;
 
             let (response, title_id) = if is_being_dragged {
-                let layer_id = tabs_ui.layer_id(); // LayerId::new(Order::Tooltip, id);
+                let layer_id = LayerId::new(Order::Tooltip, id);
                 let response = tabs_ui
                     .with_layer_id(layer_id, |ui| {
                         self.tab_title(

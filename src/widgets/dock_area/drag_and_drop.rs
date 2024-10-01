@@ -69,10 +69,10 @@ impl TreeComponent {
 }
 
 fn make_overlay_painter(ui: &Ui) -> Painter {
-    // let id = Id::new("overlay");
-    // let layer_id = LayerId::new(Order::Foreground, id);
-    
-    ui.ctx().layer_painter(ui.layer_id())
+    let id = Id::new("overlay");
+    let layer_id = LayerId::new(Order::Foreground, id);
+
+    ui.ctx().layer_painter(layer_id)
 }
 
 fn draw_highlight_rect(rect: Rect, ui: &Ui, style: &Style) {
