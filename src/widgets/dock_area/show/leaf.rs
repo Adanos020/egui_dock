@@ -32,11 +32,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let rect = self.dock_state[surface_index][node_index]
             .rect()
             .expect("This node must be a leaf");
-        let ui = &mut ui.child_ui_with_id_source(
-            rect,
-            Layout::top_down_justified(Align::Min),
-            (node_index, "node"),
-            None,
+
+        let ui = &mut ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(rect)
+                .layout(Layout::top_down_justified(Align::Min))
+                .id_salt((node_index, "node")),
         );
         let spacing = ui.spacing().item_spacing;
         ui.spacing_mut().item_spacing = Vec2::ZERO;
@@ -112,11 +113,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 vec2(tabbar_outer_rect.width(), tabbar_outer_rect.height()),
             );
 
-            let tabs_ui = &mut ui.child_ui_with_id_source(
-                tabbar_inner_rect,
-                Layout::left_to_right(Align::Center),
-                "tabs",
-                None,
+            let tabs_ui = &mut ui.new_child(
+                egui::UiBuilder::new()
+                    .max_rect(tabbar_inner_rect)
+                    .layout(Layout::left_to_right(Align::Center))
+                    .id_salt("tabs"),
             );
 
             let mut clip_rect = tabbar_outer_rect;
@@ -432,11 +433,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tabbar_outer_rect.right_bottom() - vec2(offset, 2.0),
         );
 
-        let ui = &mut ui.child_ui_with_id_source(
-            rect,
-            Layout::left_to_right(Align::Center),
-            (node_index, "tab_add"),
-            None,
+        let ui = &mut ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(rect)
+                .layout(Layout::left_to_right(Align::Center))
+                .id_salt((node_index, "tab_add")),
         );
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
@@ -772,9 +773,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui.ctx().clone(),
                 ui.layer_id(),
                 id,
-                body_rect,
-                ui.clip_rect(),
-                UiStackInfo::default(),
+                egui::UiBuilder::new()
+                    .ui_stack_info(UiStackInfo::default())
+                    .max_rect(body_rect),
             );
             ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 

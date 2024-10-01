@@ -133,7 +133,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) -> Option<CollapsingResponse<()>> {
         if self.show_window_collapse_buttons {
             let ch_response = CollapsingHeader::new("")
-                .id_source(id)
+                .id_salt(id)
                 .open(open)
                 .show_unindented(ui, |ui| {
                     ui.set_min_size(Vec2::splat(100.0));
@@ -198,7 +198,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .as_str(),
             ),
         );
-        ui.allocate_ui_at_rect(rect, |ui| {
+        ui.allocate_new_ui(egui::UiBuilder::new().max_rect(rect), |ui| {
             ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.set_height(rect.height());
                 if ui.add(close_button).clicked() {
