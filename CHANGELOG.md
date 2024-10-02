@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.14.0 - Unreleased
+## 0.14.0 - 2024-09-02
 
 ### Breaking changes
 
