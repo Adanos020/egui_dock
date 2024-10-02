@@ -1,7 +1,9 @@
 use crate::{Node, NodeIndex, Tree, WindowState};
 
 /// A [`Surface`] is the highest level component in a [`DockState`](crate::DockState). [`Surface`]s represent an area
-/// in which nodes are placed. Typically, you're only using one surface, which is the main surface. However, if you drag
+/// in which nodes are placed.
+///
+/// Typically, you're only using one surface, which is the main surface. However, if you drag
 /// a tab out in a way which creates a window, you also create a new surface in which nodes can appear.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -81,7 +83,7 @@ impl<Tab> Surface<Tab> {
     /// it'll change to [`Surface::Empty`].
     pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Surface<NewTab>
     where
-        F: Clone + FnMut(&Tab) -> Option<NewTab>,
+        F: FnMut(&Tab) -> Option<NewTab>,
     {
         match self {
             Surface::Empty => Surface::Empty,
@@ -100,7 +102,7 @@ impl<Tab> Surface<Tab> {
     /// Returns a new [`Surface`] while mapping the tab type.
     pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Surface<NewTab>
     where
-        F: Clone + FnMut(&Tab) -> NewTab,
+        F: FnMut(&Tab) -> NewTab,
     {
         self.filter_map_tabs(move |tab| Some(function(tab)))
     }
@@ -110,7 +112,7 @@ impl<Tab> Surface<Tab> {
     /// it'll change to [`Surface::Empty`].
     pub fn filter_tabs<F>(&self, mut predicate: F) -> Surface<Tab>
     where
-        F: Clone + FnMut(&Tab) -> bool,
+        F: FnMut(&Tab) -> bool,
         Tab: Clone,
     {
         self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
@@ -121,7 +123,7 @@ impl<Tab> Surface<Tab> {
     /// it'll change to [`Surface::Empty`].
     pub fn retain_tabs<F>(&mut self, predicate: F)
     where
-        F: Clone + FnMut(&mut Tab) -> bool,
+        F: FnMut(&mut Tab) -> bool,
     {
         if let Surface::Main(tree) | Surface::Window(tree, _) = self {
             tree.retain_tabs(predicate);

@@ -3,7 +3,7 @@
 [![github](https://img.shields.io/badge/github-Adanos020/egui_dock-8da0cb?logo=github)](https://github.com/Adanos020/egui_dock)
 [![Crates.io](https://img.shields.io/crates/v/egui_dock)](https://crates.io/crates/egui_dock)
 [![docs.rs](https://img.shields.io/docsrs/egui_dock)](https://docs.rs/egui_dock/)
-[![egui_version](https://img.shields.io/badge/egui-0.28-blue)](https://github.com/emilk/egui)
+[![egui_version](https://img.shields.io/badge/egui-0.29-blue)](https://github.com/emilk/egui)
 
 Originally created by [@lain-dono](https://github.com/lain-dono), this library provides a docking system for `egui`.
 
@@ -32,8 +32,8 @@ Add `egui` and `egui_dock` to your project's dependencies.
 
 ```toml
 [dependencies]
-egui = "0.28"
-egui_dock = "0.13"
+egui = "0.29"
+egui_dock = "0.14"
 ```
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).

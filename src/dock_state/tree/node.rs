@@ -340,7 +340,7 @@ impl<Tab> Node<Tab> {
     /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
     pub fn filter_tabs<F>(&self, mut predicate: F) -> Node<Tab>
     where
-        F: Clone + FnMut(&Tab) -> bool,
+        F: FnMut(&Tab) -> bool,
         Tab: Clone,
     {
         self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
@@ -350,7 +350,7 @@ impl<Tab> Node<Tab> {
     /// If this [`Node`] remains empty, it will change to [`Node::Empty`].
     pub fn retain_tabs<F>(&mut self, predicate: F)
     where
-        F: Clone + FnMut(&mut Tab) -> bool,
+        F: FnMut(&mut Tab) -> bool,
     {
         if let Node::Leaf { tabs, .. } = self {
             tabs.retain_mut(predicate);
