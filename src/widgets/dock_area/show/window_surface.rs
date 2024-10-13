@@ -1,6 +1,6 @@
 use egui::{
     vec2, Align, CursorIcon, Frame, Layout, Rect, RichText, Rounding, Sense, Shape, Stroke, Ui,
-    Vec2, WidgetText,
+    UiBuilder, Vec2, WidgetText,
 };
 
 use crate::{
@@ -162,11 +162,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) {
         let rect = tabbar_outer_rect;
 
-        let ui = &mut ui.child_ui_with_id_source(
-            rect,
-            Layout::left_to_right(Align::Center),
-            (surface_index, "window_expand"),
-            None,
+        let ui = &mut ui.new_child(
+            UiBuilder::new()
+                .max_rect(rect)
+                .layout(Layout::left_to_right(Align::Center))
+                .id_salt((surface_index, "window_expand")),
         );
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
