@@ -9,6 +9,7 @@ use egui::{
     WidgetText,
 };
 
+use egui_dock::tab_viewer::AllowedSplitsOverride;
 use egui_dock::{
     AllowedSplits, DockArea, DockState, NodeIndex, OverlayType, Style, SurfaceIndex,
     TabInteractionStyle, TabViewer,
@@ -76,6 +77,7 @@ struct MyContext {
     allowed_splits: AllowedSplits,
     show_window_close: bool,
     show_window_collapse: bool,
+    split_disabled_node: NodeIndex,
 }
 
 struct MyApp {
@@ -94,6 +96,9 @@ impl TabViewer for MyContext {
         match tab.as_str() {
             "Simple Demo" => self.simple_demo(ui),
             "Style Editor" => self.style_editor(ui),
+            "Hierarchy" => {
+                ui.label("this is a node with docking disabled and a hidden tab bar");
+            }
             _ => {
                 ui.label(tab.as_str());
             }
@@ -113,6 +118,29 @@ impl TabViewer for MyContext {
                 ui.label(tab.to_string());
                 ui.label("This is a context menu");
             }
+        }
+    }
+
+    fn allowed_splits(
+        &self,
+        node_address: (SurfaceIndex, Option<NodeIndex>),
+    ) -> AllowedSplitsOverride {
+        match node_address {
+            (SurfaceIndex(0), Some(node)) if node == self.split_disabled_node => {
+                AllowedSplitsOverride::NoDock
+            }
+            _ => AllowedSplitsOverride::Fallback,
+        }
+    }
+
+    fn should_show_tab_bar(
+        &self,
+        _node_address: (SurfaceIndex, NodeIndex),
+        tabs: &[String],
+    ) -> bool {
+        match _node_address {
+            (SurfaceIndex(0), node) if node == self.split_disabled_node => tabs.len() != 1,
+            _ => true,
         }
     }
 
@@ -507,8 +535,9 @@ impl MyContext {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut dock_state =
-            DockState::new(vec!["Simple Demo".to_owned(), "Style Editor".to_owned()]);
+        let mut dock_state = DockState::new(vec![
+            "Simple Demo".to_owned(), "Style Editor".to_owned(),
+        ]);
         "Undock".clone_into(&mut dock_state.translations.tab_context_menu.eject_button);
         let [a, b] = dock_state.main_surface_mut().split_left(
             NodeIndex::root(),
@@ -520,7 +549,7 @@ impl Default for MyApp {
             0.7,
             vec!["File Browser".to_owned(), "Asset Manager".to_owned()],
         );
-        let [_, _] =
+        let [_, split_disabled_node] =
             dock_state
                 .main_surface_mut()
                 .split_below(b, 0.5, vec!["Hierarchy".to_owned()]);
@@ -547,6 +576,7 @@ impl Default for MyApp {
             draggable_tabs: true,
             show_tab_name_on_hover: false,
             allowed_splits: AllowedSplits::default(),
+            split_disabled_node,
         };
 
         Self {
