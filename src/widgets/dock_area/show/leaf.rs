@@ -6,7 +6,7 @@ use egui::Shape;
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
     LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
-    Ui, UiStackInfo, Vec2, WidgetText,
+    Ui, UiBuilder, Vec2, WidgetText,
 };
 
 use crate::dock_area::tab_removal::TabRemoval;
@@ -36,11 +36,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let rect = self.dock_state[surface_index][node_index]
             .rect()
             .expect("This node must be a leaf");
-        let ui = &mut ui.child_ui_with_id_source(
-            rect,
-            Layout::top_down_justified(Align::Min),
-            (node_index, "node"),
-            None,
+        let ui = &mut ui.new_child(
+            UiBuilder::new()
+                .max_rect(rect)
+                .layout(Layout::top_down_justified(Align::Min))
+                .id_salt((node_index, "node")),
         );
         let spacing = ui.spacing().item_spacing;
         ui.spacing_mut().item_spacing = Vec2::ZERO;
@@ -141,11 +141,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 vec2(tabbar_outer_rect.width(), tabbar_outer_rect.height()),
             );
 
-            let tabs_ui = &mut ui.child_ui_with_id_source(
-                tabbar_inner_rect,
-                Layout::left_to_right(Align::Center),
-                "tabs",
-                None,
+            let tabs_ui = &mut ui.new_child(
+                UiBuilder::new()
+                    .max_rect(tabbar_inner_rect)
+                    .layout(Layout::left_to_right(Align::Center))
+                    .id_salt("tabs"),
             );
 
             let mut clip_rect = tabbar_outer_rect;
@@ -519,11 +519,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tabbar_outer_rect.right_bottom() - vec2(offset, 2.0),
         );
 
-        let ui = &mut ui.child_ui_with_id_source(
-            rect,
-            Layout::left_to_right(Align::Center),
-            (node_index, "tab_add"),
-            None,
+        let ui = &mut ui.new_child(
+            UiBuilder::new()
+                .max_rect(rect)
+                .layout(Layout::left_to_right(Align::Center))
+                .id_salt((node_index, "tab_add")),
         );
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
@@ -1240,6 +1240,51 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         });
                 });
             }
+
+            // Construct a new ui with the correct tab id.
+            //
+            // We are forced to use `Ui::new` because other methods (eg: push_id) always mix
+            // the provided id with their own which would cause tabs to change id when moved
+            // from node to node.
+            let id = self.id.with(tab_viewer.id(tab));
+            ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
+            let ui = &mut Ui::new(
+                ui.ctx().clone(),
+                ui.layer_id(),
+                id,
+                UiBuilder::new().max_rect(body_rect),
+            );
+            ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
+
+            // Use initial spacing for ui.
+            ui.spacing_mut().item_spacing = spacing;
+
+            // Offset the background rectangle up to hide the top border behind the clip rect.
+            // To avoid anti-aliasing lines when the stroke width is not divisible by two, we
+            // need to calculate the effective anti-aliased stroke width.
+            let effective_stroke_width = (tabs_style.tab_body.stroke.width / 2.0).ceil() * 2.0;
+            let tab_body_rect = Rect::from_min_max(
+                ui.clip_rect().min - vec2(0.0, effective_stroke_width),
+                ui.clip_rect().max,
+            );
+            ui.painter().rect_stroke(
+                rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
+                tabs_style.tab_body.rounding,
+                tabs_style.tab_body.stroke,
+            );
+
+            ScrollArea::new(tab_viewer.scroll_bars(tab)).show(ui, |ui| {
+                Frame::none()
+                    .inner_margin(tabs_style.tab_body.inner_margin)
+                    .show(ui, |ui| {
+                        if fade_factor != 1.0 {
+                            fade_visuals(ui.visuals_mut(), fade_factor);
+                        }
+                        let available_rect = ui.available_rect_before_wrap();
+                        ui.expand_to_include_rect(available_rect);
+                        tab_viewer.ui(ui, tab);
+                    });
+            });
         }
 
         // change hover destination

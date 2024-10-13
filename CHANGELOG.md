@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## 0.14.0 - Unreleased
+## 0.15.0 - Unreleased
 
 ### Added
 
@@ -42,11 +42,6 @@
     - `WindowState::toggle_minimized` method – toggles the minimization state of a window.
     - `WindowState::is_minimized` method – gets the minimization state of a window.
 
-### Changed
-
-- `{DockState,Surface,Tree,Node}::{filter_map_tabs,map_tabs,filter_tabs,retain_tabs}` no longer require the predicate to
-  implement `Clone`. ([#241](https://github.com/Adanos020/egui_dock/pull/241))
-
 ### Breaking changes
 
 - From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
@@ -63,6 +58,17 @@
       instead.
     - `DockArea::show_window_collapse_buttons` – no longer has any effect; use `DockArea::show_leaf_collapse_buttons`
       instead.
+
+## 0.14.0 - 2024-09-02
+
+### Breaking changes
+
+- Upgraded to egui 0.29.
+
+### Changed
+
+- `{DockState,Surface,Tree,Node}::{filter_map_tabs,map_tabs,filter_tabs,retain_tabs}` no longer require the predicate to
+  implement `Clone`. ([#241](https://github.com/Adanos020/egui_dock/pull/241))
 
 ## 0.13.0 - 2024-07-03
 
@@ -359,14 +365,18 @@ provide a guide of how to use the library.
   to `TabStyle` ([89f3248](https://github.com/Adanos020/egui_dock/commit/89f32487a9e1fe8dee92f1fbdc296a2d460c0909))
 -
 
-Removed `StyleBuilder` ([9a9b275](https://github.com/Adanos020/egui_dock/commit/9a9b2750cd290bebcc4088761249e02102cb0ce7))
+Removed
+`StyleBuilder` ([9a9b275](https://github.com/Adanos020/egui_dock/commit/9a9b2750cd290bebcc4088761249e02102cb0ce7))
 
 - Removed `TabViewer::inner_margin_override` – no deprecation as it's in direct conflict
-  with `TabViewer::tab_style_override` ([99333b0](https://github.com/Adanos020/egui_dock/commit/99333b093d307181c288b3e134379cfe47647a7c))
+  with
+  `TabViewer::tab_style_override` ([99333b0](https://github.com/Adanos020/egui_dock/commit/99333b093d307181c288b3e134379cfe47647a7c))
 - Moved `Style::default_inner_margin`
-  to `TabsStyle::inner_margin` ([78ecf3a](https://github.com/Adanos020/egui_dock/commit/78ecf3a175ffb960724f328274682dfded800e0f))
+  to
+  `TabsStyle::inner_margin` ([78ecf3a](https://github.com/Adanos020/egui_dock/commit/78ecf3a175ffb960724f328274682dfded800e0f))
 - Moved `TabStyle::hline_color`
-  to `TabBarStyle::hline_color` ([99333b0](https://github.com/Adanos020/egui_dock/commit/99333b093d307181c288b3e134379cfe47647a7c))
+  to
+  `TabBarStyle::hline_color` ([99333b0](https://github.com/Adanos020/egui_dock/commit/99333b093d307181c288b3e134379cfe47647a7c))
 
 ## 0.5.2 - 2023-06-04
 
@@ -527,7 +537,8 @@ Removed `StyleBuilder` ([9a9b275](https://github.com/Adanos020/egui_dock/commit/
 - Renamed `TabViewer::inner_margin`
   to `TabViewer::inner_margin_override`. ([#67](https://github.com/Adanos020/egui_dock/pull/67))
 - `Style::with_separator_color` has been split
-  into `separator_color_idle`, `separator_color_hovered`, `separator_color_dragged` ([#68](https://github.com/Adanos020/egui_dock/pull/68))
+  into `separator_color_idle`, `separator_color_hovered`,
+  `separator_color_dragged` ([#68](https://github.com/Adanos020/egui_dock/pull/68))
 - Updated `egui` to 0.20.0 [#77](https://github.com/Adanos020/egui_dock/pull/77)
 
 ### Deprecated (will be deleted in the next release)
