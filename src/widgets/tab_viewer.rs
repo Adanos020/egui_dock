@@ -1,4 +1,4 @@
-use crate::{NodeIndex, SurfaceIndex, TabStyle};
+use crate::{AllowedSplits, NodeIndex, SurfaceIndex, TabStyle};
 use egui::{Id, Ui, WidgetText};
 
 /// Defines how a tab should behave and be rendered inside a [`Tree`](crate::Tree).
@@ -97,4 +97,25 @@ pub trait TabViewer {
     fn scroll_bars(&self, _tab: &Self::Tab) -> [bool; 2] {
         [true, true]
     }
+
+    fn allowed_splits(
+        &self,
+        _node_address: (SurfaceIndex, Option<NodeIndex>),
+    ) -> AllowedSplitsOverride {
+        AllowedSplitsOverride::Fallback
+    }
+
+    fn should_show_tab_bar(
+        &self,
+        _node_address: (SurfaceIndex, NodeIndex),
+        _tabs: &[Self::Tab],
+    ) -> bool {
+        true
+    }
+}
+
+pub enum AllowedSplitsOverride {
+    NoDock,
+    Override(AllowedSplits),
+    Fallback,
 }

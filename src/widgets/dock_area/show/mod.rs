@@ -6,13 +6,13 @@ use egui::{
 use duplicate::duplicate;
 use paste::paste;
 
+use super::{drag_and_drop::TreeComponent, state::State, tab_removal::TabRemoval};
+use crate::tab_viewer::AllowedSplitsOverride;
 use crate::{
     utils::{expand_to_pixel, fade_dock_style, map_to_pixel},
     AllowedSplits, DockArea, Node, NodeIndex, OverlayType, Style, SurfaceIndex, TabDestination,
     TabViewer,
 };
-
-use super::{drag_and_drop::TreeComponent, state::State, tab_removal::TabRemoval};
 
 mod leaf;
 mod main_surface;
@@ -214,7 +214,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         } else {
             AllowedSplits::All
         };
-        let allowed_splits = self.allowed_splits & restricted_splits;
+
+        let allowed_splits = match tab_viewer.allowed_splits(drag_state.hover.dst.node_address()) {
+            AllowedSplitsOverride::NoDock => None,
+            AllowedSplitsOverride::Fallback => Some(self.allowed_splits),
+            AllowedSplitsOverride::Override(splits) => Some(splits),
+        };
+
+        let allowed_splits = allowed_splits.map(|it| it & restricted_splits);
 
         let allowed_in_window = match drag_state.drag.src {
             TreeComponent::Tab(surface, node, tab) => {

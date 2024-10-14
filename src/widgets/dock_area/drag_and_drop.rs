@@ -169,7 +169,7 @@ impl DragDropState {
         &mut self,
         ui: &Ui,
         style: &Style,
-        allowed_splits: AllowedSplits,
+        allowed_splits: Option<AllowedSplits>,
         windows_allowed: bool,
         window_bounds: Rect,
     ) -> Option<TabDestination> {
@@ -187,45 +187,52 @@ impl DragDropState {
         let mut destination: Option<TabDestination> = windows_allowed
             .then(|| TabDestination::Window(Rect::from_min_size(pointer, self.drag.rect.size())));
 
-        let center = rect.center();
-        let rect = Rect::from_center_size(center, Vec2::splat(shortest_side));
-
-        if button_ui(rect, ui, &mut hovering_buttons, pointer, style, None) {
-            match self.hover.dst {
-                TreeComponent::Node(surface, node) => {
-                    destination = Some(TabDestination::Node(surface, node, TabInsert::Append))
+        if let Some(allowed_splits) = allowed_splits {
+            let center = rect.center();
+            let rect = Rect::from_center_size(center, Vec2::splat(shortest_side));
+            if button_ui(rect, ui, &mut hovering_buttons, pointer, style, None) {
+                match self.hover.dst {
+                    TreeComponent::Node(surface, node) => {
+                        destination = Some(TabDestination::Node(surface, node, TabInsert::Append))
+                    }
+                    TreeComponent::Surface(surface) => {
+                        destination = Some(TabDestination::EmptySurface(surface))
+                    }
+                    _ => (),
                 }
-                TreeComponent::Surface(surface) => {
-                    destination = Some(TabDestination::EmptySurface(surface))
-                }
-                _ => (),
             }
-        }
 
-        for split in [Split::Below, Split::Right, Split::Above, Split::Left] {
-            match allowed_splits {
-                AllowedSplits::TopBottomOnly if !split.is_top_bottom() => continue,
-                AllowedSplits::LeftRightOnly if !split.is_left_right() => continue,
-                AllowedSplits::None => continue,
-                _ => {
-                    let offset_value = shortest_side + style.overlay.button_spacing;
-                    let offset_vector = match split {
-                        Split::Above => vec2(0.0, -offset_value),
-                        Split::Below => vec2(0.0, offset_value),
-                        Split::Left => vec2(-offset_value, 0.0),
-                        Split::Right => vec2(offset_value, 0.0),
-                    };
-                    if button_ui(
-                        Rect::from_center_size(center + offset_vector, Vec2::splat(shortest_side)),
-                        ui,
-                        &mut hovering_buttons,
-                        pointer,
-                        style,
-                        Some(split),
-                    ) {
-                        if let TreeComponent::Node(surface, node) = self.hover.dst {
-                            destination =
-                                Some(TabDestination::Node(surface, node, TabInsert::Split(split)))
+            for split in [Split::Below, Split::Right, Split::Above, Split::Left] {
+                match allowed_splits {
+                    AllowedSplits::TopBottomOnly if !split.is_top_bottom() => continue,
+                    AllowedSplits::LeftRightOnly if !split.is_left_right() => continue,
+                    AllowedSplits::None => continue,
+                    _ => {
+                        let offset_value = shortest_side + style.overlay.button_spacing;
+                        let offset_vector = match split {
+                            Split::Above => vec2(0.0, -offset_value),
+                            Split::Below => vec2(0.0, offset_value),
+                            Split::Left => vec2(-offset_value, 0.0),
+                            Split::Right => vec2(offset_value, 0.0),
+                        };
+                        if button_ui(
+                            Rect::from_center_size(
+                                center + offset_vector,
+                                Vec2::splat(shortest_side),
+                            ),
+                            ui,
+                            &mut hovering_buttons,
+                            pointer,
+                            style,
+                            Some(split),
+                        ) {
+                            if let TreeComponent::Node(surface, node) = self.hover.dst {
+                                destination = Some(TabDestination::Node(
+                                    surface,
+                                    node,
+                                    TabInsert::Split(split),
+                                ))
+                            }
                         }
                     }
                 }
@@ -250,7 +257,7 @@ impl DragDropState {
         &mut self,
         ui: &Ui,
         style: &Style,
-        allowed_splits: AllowedSplits,
+        allowed_splits: Option<AllowedSplits>,
         windows_allowed: bool,
         window_bounds: Rect,
     ) -> Option<TabDestination> {
@@ -294,48 +301,52 @@ impl DragDropState {
                 Vec2::splat(style.overlay.feel.window_drop_coverage),
             );
 
-            // Find out what kind of tab insertion (if any) should be used to move this widget.
-            if center_drop_rect.contains(a_pos) {
-                (Some(TabInsert::Append), Rect::EVERYTHING)
-            } else if window_drop_rect.contains(a_pos) {
-                match windows_allowed {
-                    true => (None, Rect::NOTHING),
-                    false => (Some(TabInsert::Append), Rect::EVERYTHING),
-                }
-            } else {
-                // Assessing if were above/below the two linear functions x-y=0 and -x-y=0 determines
-                // what "diagonal" quadrant were in.
-                let a_pos = match allowed_splits {
-                    AllowedSplits::All => a_pos,
-                    AllowedSplits::LeftRightOnly => Pos2::new(a_pos.x, 0.0),
-                    AllowedSplits::TopBottomOnly => Pos2::new(0.0, a_pos.y),
-                    AllowedSplits::None => Pos2::ZERO,
-                };
-                if a_pos == Pos2::ZERO {
+            if let Some(allowed_splits) = allowed_splits {
+                // Find out what kind of tab insertion (if any) should be used to move this widget.
+                if center_drop_rect.contains(a_pos) {
+                    (Some(TabInsert::Append), Rect::EVERYTHING)
+                } else if window_drop_rect.contains(a_pos) {
                     match windows_allowed {
                         true => (None, Rect::NOTHING),
                         false => (Some(TabInsert::Append), Rect::EVERYTHING),
                     }
                 } else {
-                    match (a_pos.x - a_pos.y > 0., -a_pos.x - a_pos.y > 0.) {
-                        (true, true) => (
-                            Some(TabInsert::Split(Split::Above)),
-                            Rect::everything_above(center.y),
-                        ),
-                        (false, true) => (
-                            Some(TabInsert::Split(Split::Left)),
-                            Rect::everything_left_of(center.x),
-                        ),
-                        (true, false) => (
-                            Some(TabInsert::Split(Split::Right)),
-                            Rect::everything_right_of(center.x),
-                        ),
-                        (false, false) => (
-                            Some(TabInsert::Split(Split::Below)),
-                            Rect::everything_below(center.y),
-                        ),
+                    // Assessing if were above/below the two linear functions x-y=0 and -x-y=0 determines
+                    // what "diagonal" quadrant were in.
+                    let a_pos = match allowed_splits {
+                        AllowedSplits::All => a_pos,
+                        AllowedSplits::LeftRightOnly => Pos2::new(a_pos.x, 0.0),
+                        AllowedSplits::TopBottomOnly => Pos2::new(0.0, a_pos.y),
+                        AllowedSplits::None => Pos2::ZERO,
+                    };
+                    if a_pos == Pos2::ZERO {
+                        match windows_allowed {
+                            true => (None, Rect::NOTHING),
+                            false => (Some(TabInsert::Append), Rect::EVERYTHING),
+                        }
+                    } else {
+                        match (a_pos.x - a_pos.y > 0., -a_pos.x - a_pos.y > 0.) {
+                            (true, true) => (
+                                Some(TabInsert::Split(Split::Above)),
+                                Rect::everything_above(center.y),
+                            ),
+                            (false, true) => (
+                                Some(TabInsert::Split(Split::Left)),
+                                Rect::everything_left_of(center.x),
+                            ),
+                            (true, false) => (
+                                Some(TabInsert::Split(Split::Right)),
+                                Rect::everything_right_of(center.x),
+                            ),
+                            (false, false) => (
+                                Some(TabInsert::Split(Split::Below)),
+                                Rect::everything_below(center.y),
+                            ),
+                        }
                     }
                 }
+            } else {
+                (None, Rect::NOTHING)
             }
         };
 

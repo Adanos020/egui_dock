@@ -42,13 +42,24 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         ui.spacing_mut().item_spacing = Vec2::ZERO;
         ui.set_clip_rect(rect);
 
-        let tabbar_rect = self.tab_bar(
-            ui,
-            state,
-            (surface_index, node_index),
-            tab_viewer,
-            fade_style.map(|(style, _)| style),
-        );
+        let Node::Leaf { tabs, .. } = &mut self.dock_state[surface_index][node_index] else {
+            unreachable!();
+        };
+
+        let should_show_tab_bar =
+            tab_viewer.should_show_tab_bar((surface_index, node_index), &tabs);
+        let tabbar_rect = if should_show_tab_bar {
+            self.tab_bar(
+                ui,
+                state,
+                (surface_index, node_index),
+                tab_viewer,
+                fade_style.map(|(style, _)| style),
+            )
+        } else {
+            Rect::ZERO
+        };
+
         self.tab_body(
             ui,
             state,
