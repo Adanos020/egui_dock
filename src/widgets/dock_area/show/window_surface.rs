@@ -18,7 +18,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         state: &mut State,
         fade_style: Option<(&Style, f32, SurfaceIndex)>,
     ) {
-        //construct egui window
+        // Construct egui window
         let id = format!("window {surf_index:?}").into();
         let bounds = self.window_bounds.unwrap();
         let open = true;
@@ -28,7 +28,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             .unwrap()
             .create_window(id, bounds);
 
-        //calculate fading of the window (if any)
+        // Calculate fading of the window (if any)
         let (fade_factor, fade_style) = match fade_style {
             Some((style, factor, surface_index)) => {
                 if surface_index == surf_index {
@@ -60,7 +60,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .color(ui.visuals().widgets.noninteractive.fg_stroke.color)
         };
 
-        // iterate through every node in dock_state[surf_index], and sum up the number of tabs in them
+        // Iterate through every node in dock_state[surf_index], and sum up the number of tabs in them
         let mut tab_count = 0;
         for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
             if self.dock_state[surf_index][node_index].is_leaf() {
@@ -99,7 +99,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
         .frame(frame)
         .show(ui.ctx(), |ui| {
-            //fade inner ui (if necessary)
+            // Fade inner ui (if necessary)
             if fade_factor != 1.0 {
                 fade_visuals(ui.visuals_mut(), fade_factor);
             }

@@ -231,6 +231,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                             }
                         })
                         .all(identity);
+
                 self.tab_close_all(
                     ui,
                     surface_index,
@@ -608,6 +609,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             style.buttons.close_all_tabs_disabled_color
         } else if response.hovered() || response.has_focus() {
             if !(close_window_disabled
+                && self.secondary_button_on_modifier
                 && ui.input(|i| {
                     i.modifiers
                         .matches_logically(self.secondary_button_modifiers)
@@ -628,12 +630,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         rect_set_size_centered(&mut close_all_rect, Vec2::splat(Style::TAB_CLOSE_ALL_SIZE));
 
-        if ui.input(|i| {
-            i.modifiers
-                .matches_logically(self.secondary_button_modifiers)
-        }) && (response.hovered()
-            || response.has_focus()
-            || response.is_pointer_button_down_on())
+        if !disabled {
+            response = response.on_hover_cursor(CursorIcon::PointingHand);
+        }
+
+        if !surface_index.is_main()
+            && self.secondary_button_on_modifier
+            && ui.input(|i| {
+                i.modifiers
+                    .matches_logically(self.secondary_button_modifiers)
+            })
+            && (response.hovered() || response.has_focus() || response.is_pointer_button_down_on())
         {
             if response.clicked() && !surface_index.is_main() && !close_window_disabled {
                 self.to_remove.push(TabRemoval::Window(surface_index));
@@ -675,13 +682,11 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             );
         } else {
             if !disabled {
-                response = response.on_hover_cursor(CursorIcon::PointingHand);
-
                 if response.clicked() {
                     self.to_remove.push((surface_index, node_index).into());
                 }
 
-                if !surface_index.is_main() {
+                if !surface_index.is_main() && self.secondary_button_context_menu {
                     response
                         .on_hover_text(
                             self.dock_state
@@ -765,15 +770,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
-        response = response
-            .on_hover_cursor(CursorIcon::PointingHand)
-            .on_hover_text(
-                self.dock_state
-                    .translations
-                    .leaf
-                    .minimize_button_hint
-                    .as_str(),
-            );
+        response = response.on_hover_cursor(CursorIcon::PointingHand);
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let color = if response.hovered() || response.has_focus() {
@@ -788,7 +785,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         rect_set_size_centered(&mut arrow_rect, Vec2::splat(Style::TAB_COLLAPSE_ARROW_SIZE));
 
-        if !surface_index.is_main()
+        if !surface_index.is_main() && self.secondary_button_on_modifier
             // We need `is_pointer_button_down_on` to avoid flickering of the icon drawn
             && (response.hovered() || response.has_focus() || response.is_pointer_button_down_on())
             && ui.input(|i| {
@@ -880,16 +877,24 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             }
         }
 
-        if !surface_index.is_main() {
-            response.context_menu(|ui| {
-                if ui
-                    .button(&self.dock_state.translations.leaf.minimize_button)
-                    .clicked()
-                {
-                    ui.close_menu();
-                    self.window_toggle_minimized(surface_index);
-                }
-            });
+        if !surface_index.is_main() && self.secondary_button_context_menu {
+            response
+                .on_hover_text(
+                    self.dock_state
+                        .translations
+                        .leaf
+                        .minimize_button_hint
+                        .as_str(),
+                )
+                .context_menu(|ui| {
+                    if ui
+                        .button(&self.dock_state.translations.leaf.minimize_button)
+                        .clicked()
+                    {
+                        ui.close_menu();
+                        self.window_toggle_minimized(surface_index);
+                    }
+                });
         }
     }
 
@@ -952,7 +957,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let (_, tab_rect) = ui.allocate_space(vec2(tab_width, ui.available_height()));
         let mut response = ui.interact(tab_rect, id, Sense::click_and_drag());
         if ui.ctx().dragged_id().is_none() && self.draggable_tabs {
-            response = response.on_hover_cursor(CursorIcon::PointingHand);
+            response = response.on_hover_cursor(CursorIcon::Grab);
         }
 
         let tab_style = if focused || is_being_dragged {

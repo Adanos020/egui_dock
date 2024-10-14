@@ -10,8 +10,10 @@
     - `Node::set_collapsed` – set the collapsing state of the `Node`
     - `Node::set_collapsed_leaf_count` – sets the number of collapsed layers of leaf subnodes
     - `DockArea::show_leaf_close_all_buttons` – shows a close all button which closes all open tabs in a leaf
-    - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a
-      window)
+    - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window)
+    - `DockArea::secondary_button_modifiers` – sets the key combination used to activate secondary buttons on tab bars
+    - `DockArea::secondary_button_on_modifier` – sets whether the secondary buttons on tab bars are activated by the modifier key.
+    - `DockArea::secondary_button_context_menu` – sets whether the secondary buttons on tab bars are activated from a context value by right-clicking primary buttons.
     - Added style configuration for the two buttons:
         - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_color`
         - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_active_color`
@@ -54,9 +56,9 @@
 ### Deprecated
 
 - From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
-    - `DockArea::show_window_close_buttons` – no longer has any effect; use `DockArea::show_leaf_close_all_buttons`
+    - `DockArea::show_window_close_buttons` – no longer has any effect; consider using `DockArea::show_leaf_close_all_buttons`
       instead.
-    - `DockArea::show_window_collapse_buttons` – no longer has any effect; use `DockArea::show_leaf_collapse_buttons`
+    - `DockArea::show_window_collapse_buttons` – no longer has any effect; consider using `DockArea::show_leaf_collapse_buttons`
       instead.
 
 ## 0.14.0 - 2024-09-02
