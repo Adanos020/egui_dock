@@ -2,56 +2,59 @@
 
 ## 0.15.0 - Unreleased
 
+### Changed
+
+- From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
+  - Each leaf can now be collapsed / closed individually. They are introduced as additional tab bar controls.
+  - Undocked windows are now more compact. The original undocked window controls are now accessible as "secondary buttons" from the tab bar.
+    - By default, the secondary buttons are activated from primary buttons either by holding the <kbd>Shift</kbd> key while clicking on them, or from a context menu by right-clicking them.
+  - A number of tooltip hints are on by default as guides to the new behavior, but they can be disabled.
+  - There has been an overhaul to the internal codebase to support the new features.
+
 ### Added
 
 - From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
-    - `Node::is_collapsed` – returns whether the `Node` is collapsed
-    - `Node::collapsed_leaf_count` – returns the number of collapsed layers of leaf subnodes
-    - `Node::set_collapsed` – set the collapsing state of the `Node`
-    - `Node::set_collapsed_leaf_count` – sets the number of collapsed layers of leaf subnodes
-    - `DockArea::show_leaf_close_all_buttons` – shows a close all button which closes all open tabs in a leaf
-    - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window)
-    - `DockArea::secondary_button_modifiers` – sets the key combination used to activate secondary buttons on tab bars
-    - `DockArea::secondary_button_on_modifier` – sets whether the secondary buttons on tab bars are activated by the modifier key.
-    - `DockArea::secondary_button_context_menu` – sets whether the secondary buttons on tab bars are activated from a context value by right-clicking primary buttons.
-    - Added style configuration for the two buttons:
-        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_color`
-        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_active_color`
-        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_bg_fill`
-        - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_border_color`
-        - `ButtonsStyle::close_all_tabs_disabled_color`
-    - Added the following translations:
-      - `LeafTranslations::close_all_button`
-      - `LeafTranslations::close_all_button_tooltip`
-      - `LeafTranslations::minimize_button`
-    - `Node::Leaf::collapsed` attribute – records whether a leaf is collapsed.
-    - `Node::Vertical::fully_collapsed` attribute – records whether all subnodes are collapsed.
-    - `Node::Vertical::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
-    - `Node::Horizontal::fully_collapsed` attribute – records whether all subnodes are collapsed.
-    - `Node::Horizontal::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
-    - `Tree::collapsed` attribute – records whether all subnodes of the tree is collapsed
-    - `Tree::collapsed_leaf_count` attribute – records the number of collapsed layers of leaf subnodes.
-    - `Tree::set_collapsed` method – sets the collapsing state of the tree.
-    - `Tree::is_collapsed` method – returns whether the tree is collapsed.
-    - `Tree::node_update_collapsed` method – updates the collapsed state of the node and its parents.
-    - `Tree::set_collapsed_leaf_count` method – sets the number of collapsed layers of leaf subnodes in the tree.
-    - `Tree::collapsed_leaf_count` method – returns the number of collapsed layers of leaf subnodes in the tree.
-    - `DockArea::tab_close_all` method – draws the close all button on a tab bar.
-    - `DockArea::tab_collapse` method – draws the collapse button on a tab bar.
-    - `DockArea::window_update_collapsed` method – updates the collapsed state of the node and its parents in a window.
-    - `TabRemoval::Leaf(SurfaceIndex, NodeIndex)` variant – removes a leaf node from a surface.
-    - `WindowState::minimized` attribute – records whether a window is minimized.
-    - `WindowState::toggle_minimized` method – toggles the minimization state of a window.
-    - `WindowState::is_minimized` method – gets the minimization state of a window.
+  - `DockArea::show_leaf_close_all_buttons` – shows a close all button which closes all open tabs in a leaf.
+  - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window).
+  - `DockArea::show_secondary_button_hint` – sets whether tooltip hints are shown for secondary buttons on tab bars.
+  - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window).
+  - `DockArea::secondary_button_on_modifier` – sets whether the secondary buttons on tab bars are activated by the modifier key.
+  - `DockArea::secondary_button_context_menu` – sets whether the secondary buttons on tab bars are activated from a context value by right-clicking primary buttons.
+  - Added the following translations:
+    - `LeafTranslations::close_all_button`
+    - `LeafTranslations::close_all_button_menu_hint`
+    - `LeafTranslations::close_all_button_modifier_hint`
+    - `LeafTranslations::close_all_button_modifier_menu_hint`
+    - `LeafTranslations::close_all_button_disabled_tooltip`
+    - `LeafTranslations::minimize_button`
+    - `LeafTranslations::minimize_button_menu_hint`
+    - `LeafTranslations::minimize_button_modifier_hint`
+    - `LeafTranslations::minimize_button_modifier_menu_hint`
+  - `Node::is_collapsed` – returns whether the `Node` is collapsed.
+  - `Node::collapsed_leaf_count` – returns the number of collapsed layers of leaf subnodes.
+  - `Node::set_collapsed` – set the collapsing state of the `Node`.
+  - `Node::set_collapsed_leaf_count` – sets the number of collapsed layers of leaf subnodes.
+  - `WindowState::minimized` field – records whether a window is minimized.
+  - `WindowState::expanded_height` field – records the height of the window before it was fully collapsed.
+  - Added style configuration for the two buttons:
+    - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_color`
+    - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_active_color`
+    - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_bg_fill`
+    - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_border_color`
+    - `ButtonsStyle::close_all_tabs_disabled_color`
+    - `Style::TAB_CLOSE_ALL_BUTTON_SIZE`
+    - `Style::TAB_CLOSE_ALL_SIZE`
+    - `Style::TAB_COLLAPSE_BUTTON_SIZE`
+    - `Style::TAB_COLLAPSE_ARROW_SIZE`
+    - `Style::TAB_EXPAND_BUTTON_SIZE`
+    - `Style::TAB_EXPAND_ARROW_SIZE`
 
 ### Breaking changes
 
 - From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
-    - Renamed `Translations::WindowTranslations` to `Translations::LeafTranslations`.
-    - `WindowState::create_window` now returns a `egui::Window` only, instead of `(egui::Window, bool)`.
-    - Removed `DockArea::show_window_body`.
-    - Removed `DockArea::show_close_button`.
-    - Removed `close_button` from `window_surface.rs`.
+  - Renamed `Translations::WindowTranslations` to `Translations::LeafTranslations`.
+  - Renamed `WindowTranslations::close_button_tooltip` to `LeafTranslations::close_button_disabled_tooltip`.
+  - `Translations::LeafTranslations` now requires more fields to be constructed (see **Added** section).
 
 ### Deprecated
 
