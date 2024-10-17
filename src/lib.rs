@@ -202,10 +202,14 @@
 //!     leaf: LeafTranslations {
 //!         close_button_disabled_tooltip: "Ten węzeł zawiera niezamykalne zakładki.".to_string(),
 //!         close_all_button: "Zamknij okno".to_string(),
-//!         close_all_button_modifier_menu_hint: "Kliknij prawym przyciskiem myszy, aby zamknąć to okno.".to_string(),
+//!         close_all_button_menu_hint: "Kliknij prawym przyciskiem myszy, aby zamknąć to okno.".to_string(),
+//!         close_all_button_modifier_hint: "Naciśnij klawisze modyfikujące (domyślnie Shift), aby zamknąć to okno.".to_string(),
+//!         close_all_button_modifier_menu_hint: "Naciśnij klawisze modyfikujące (domyślnie Shift) lub kliknij prawym przyciskiem myszy, aby zamknąć to okno.".to_string(),
 //!         close_all_button_disabled_tooltip: "To okno zawiera zakładki, których nie można zamknąć.".to_string(),
 //!         minimize_button: "Zminimalizuj okno".to_string(),
 //!         minimize_button_menu_hint: "Kliknij prawym przyciskiem myszy, aby zminimalizować to okno.".to_string(),
+//!         minimize_button_modifier_hint: "Naciśnij klawisze modyfikujące (domyślnie Shift), aby zminimalizować to okno.".to_string(),
+//!         minimize_button_modifier_menu_hint: "Naciśnij klawisze modyfikujące (domyślnie Shift) lub kliknij prawym przyciskiem myszy, aby zminimalizować to okno.".to_string(),
 //!     }
 //! };
 //! let dock_state = DockState::<Tab>::new(vec![]).with_translations(translations_pl);
@@ -216,10 +220,14 @@
 //! dock_state.translations.tab_context_menu.eject_button = "タブを新しいウィンドウへ移動".to_string();
 //! dock_state.translations.leaf.close_button_disabled_tooltip = "このノードは閉じられないタブがある。".to_string();
 //! dock_state.translations.leaf.close_all_button = "ウィンドウを閉じる".to_string();
-//! dock_state.translations.leaf.close_all_button_modifier_menu_hint = "右クリックでこのウィンドウを閉じる。".to_string();
+//! dock_state.translations.leaf.close_all_button_menu_hint = "右クリックでこのウィンドウを閉じる。".to_string();
+//! dock_state.translations.leaf.close_all_button_modifier_hint = "修飾キー（デフォルトではShift）を押して、このウィンドウを閉じます。".to_string();
+//! dock_state.translations.leaf.close_all_button_modifier_menu_hint = "修飾キー（デフォルトではShift）を押すか、右クリックしてこのウィンドウを閉じます。".to_string();
 //! dock_state.translations.leaf.close_all_button_disabled_tooltip = "このウィンドウは閉じられないタブがある。".to_string();
 //! dock_state.translations.leaf.minimize_button = "ウィンドウを最小化する".to_string();
 //! dock_state.translations.leaf.minimize_button_menu_hint = "右クリックでウィンドウを最小化する。".to_string();
+//! dock_state.translations.leaf.minimize_button_modifier_hint = "修飾キー（デフォルトではShift）を押すと、このウィンドウが最小化されます。".to_string();
+//! dock_state.translations.leaf.minimize_button_modifier_menu_hint = "修飾キー（デフォルトではShiftキー）を押すか、右クリックしてこのウィンドウを最小化する。".to_string();
 //! ```
 
 #![warn(missing_docs)]
