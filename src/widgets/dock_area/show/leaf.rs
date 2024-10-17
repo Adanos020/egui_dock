@@ -645,24 +645,26 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             Self::draw_close_window_symbol(ui, stroke_color, close_all_rect);
         } else {
             // Close all tabs in this leaf
-            if !disabled && !surface_index.is_main() && self.secondary_button_context_menu {
-                response.context_menu(|ui| {
-                    ui.add_enabled_ui(!close_window_disabled, |ui| {
-                        if ui
-                            .button(&self.dock_state.translations.leaf.close_all_button)
-                            .on_disabled_hover_text(
-                                self.dock_state
-                                    .translations
-                                    .leaf
-                                    .close_all_button_disabled_tooltip
-                                    .as_str(),
-                            )
-                            .clicked()
-                        {
-                            self.to_remove.push(TabRemoval::Window(surface_index));
-                        }
+            if !disabled {
+                if !surface_index.is_main() && self.secondary_button_context_menu {
+                    response.context_menu(|ui| {
+                        ui.add_enabled_ui(!close_window_disabled, |ui| {
+                            if ui
+                                .button(&self.dock_state.translations.leaf.close_all_button)
+                                .on_disabled_hover_text(
+                                    self.dock_state
+                                        .translations
+                                        .leaf
+                                        .close_all_button_disabled_tooltip
+                                        .as_str(),
+                                )
+                                .clicked()
+                            {
+                                self.to_remove.push(TabRemoval::Window(surface_index));
+                            }
+                        });
                     });
-                });
+                }
             } else {
                 response = response
                     .on_hover_cursor(CursorIcon::NotAllowed)
