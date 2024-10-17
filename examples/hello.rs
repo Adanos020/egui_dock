@@ -76,6 +76,9 @@ struct MyContext {
     allowed_splits: AllowedSplits,
     show_leaf_close_all: bool,
     show_leaf_collapse: bool,
+    show_secondary_button_hint: bool,
+    secondary_button_on_modifier: bool,
+    secondary_button_context_menu: bool,
 }
 
 struct MyApp {
@@ -163,6 +166,18 @@ impl MyContext {
             ui.checkbox(
                 &mut self.show_leaf_collapse,
                 "Show collaspse button on tab bars",
+            );
+            ui.checkbox(
+                &mut self.secondary_button_on_modifier,
+                "Enable secondary buttons when modifiers (Shift by default) are pressed",
+            );
+            ui.checkbox(
+                &mut self.secondary_button_context_menu,
+                "Enable secondary buttons in right-click context menus",
+            );
+            ui.checkbox(
+                &mut self.show_secondary_button_hint,
+                "Show tooltip hints for secondary buttons",
             );
             ComboBox::new("cbox:allowed_splits", "Split direction(s)")
                 .selected_text(format!("{:?}", self.allowed_splits))
@@ -545,6 +560,9 @@ impl Default for MyApp {
 
             show_leaf_close_all: true,
             show_leaf_collapse: true,
+            show_secondary_button_hint: true,
+            secondary_button_on_modifier: true,
+            secondary_button_context_menu: true,
             show_close_buttons: true,
             show_add_buttons: false,
             draggable_tabs: true,
@@ -604,6 +622,9 @@ impl eframe::App for MyApp {
                     .allowed_splits(self.context.allowed_splits)
                     .show_leaf_close_all_buttons(self.context.show_leaf_close_all)
                     .show_leaf_collapse_buttons(self.context.show_leaf_collapse)
+                    .show_secondary_button_hint(self.context.show_secondary_button_hint)
+                    .secondary_button_on_modifier(self.context.secondary_button_on_modifier)
+                    .secondary_button_context_menu(self.context.secondary_button_context_menu)
                     .show_inside(ui, &mut self.context);
             });
     }
