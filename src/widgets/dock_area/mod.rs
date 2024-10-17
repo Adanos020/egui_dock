@@ -30,6 +30,7 @@ pub struct DockArea<'tree, Tab> {
     show_window_collapse_buttons: bool,
     show_leaf_close_all_buttons: bool,
     show_leaf_collapse_buttons: bool,
+    show_secondary_button_hint: bool,
     secondary_button_modifiers: Modifiers,
     secondary_button_on_modifier: bool,
     secondary_button_context_menu: bool,
@@ -67,6 +68,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             show_window_collapse_buttons: true,
             show_leaf_close_all_buttons: true,
             show_leaf_collapse_buttons: true,
+            show_secondary_button_hint: true,
             secondary_button_modifiers: Modifiers::SHIFT,
             secondary_button_on_modifier: true,
             secondary_button_context_menu: true,
@@ -136,6 +138,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self
     }
 
+    /// Whether tooltip hints are shown for secondary buttons on tab bars.
+    /// By default it's `true`.
+    pub fn show_secondary_button_hint(mut self, show_secondary_button_hint: bool) -> Self {
+        self.show_secondary_button_hint = show_secondary_button_hint;
+        self
+    }
+
     /// The key combination used to activate secondary buttons on tab bars.
     /// By default it's [`Modifiers::SHIFT`].
     pub fn secondary_button_modifiers(mut self, secondary_button_modifiers: Modifiers) -> Self {
@@ -144,12 +153,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     }
 
     /// Whether the secondary buttons on tab bars are activated by the modifier key.
+    /// By default it's `true`.
     pub fn secondary_button_on_modifier(mut self, secondary_button_on_modifier: bool) -> Self {
         self.secondary_button_on_modifier = secondary_button_on_modifier;
         self
     }
 
     /// Whether the secondary buttons on tab bars are activated from a context value by right-clicking primary buttons.
+    /// By default it's `true`.
     pub fn secondary_button_context_menu(mut self, secondary_button_context_menu: bool) -> Self {
         self.secondary_button_context_menu = secondary_button_context_menu;
         self

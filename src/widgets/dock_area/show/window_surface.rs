@@ -1,6 +1,6 @@
 use egui::{
-    vec2, Align, CursorIcon, Frame, Layout, Rect, RichText, Rounding, Sense, Shape, Stroke, Ui,
-    UiBuilder, Vec2, WidgetText,
+    vec2, Align, Color32, CursorIcon, Frame, Layout, Rect, Response, RichText, Rounding, Sense,
+    Shape, Stroke, Ui, UiBuilder, Vec2, WidgetText,
 };
 
 use crate::{
@@ -186,6 +186,30 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         rect_set_size_centered(&mut arrow_rect, Vec2::splat(Style::TAB_EXPAND_ARROW_SIZE));
 
+        Self::draw_chevron_right(ui, &mut response, style, color, arrow_rect);
+
+        // Draw button right border.
+        ui.painter().vline(
+            rect.right(),
+            rect.y_range(),
+            Stroke::new(
+                ui.ctx().pixels_per_point().recip(),
+                style.buttons.minimize_window_border_color,
+            ),
+        );
+
+        if response.clicked() {
+            self.window_toggle_minimized(surface_index);
+        }
+    }
+
+    fn draw_chevron_right(
+        ui: &mut Ui,
+        response: &mut Response,
+        style: &Style,
+        color: Color32,
+        arrow_rect: Rect,
+    ) {
         ui.painter().add(Shape::convex_polygon(
             // Arrow pointing rightwards.
             vec![
@@ -225,20 +249,6 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             color,
             Stroke::NONE,
         ));
-
-        // Draw button right border.
-        ui.painter().vline(
-            rect.right(),
-            rect.y_range(),
-            Stroke::new(
-                ui.ctx().pixels_per_point().recip(),
-                style.buttons.minimize_window_border_color,
-            ),
-        );
-
-        if response.clicked() {
-            self.window_toggle_minimized(surface_index);
-        }
     }
 
     pub(super) fn window_toggle_minimized(&mut self, surf_index: SurfaceIndex) {

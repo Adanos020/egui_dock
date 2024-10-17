@@ -1,13 +1,10 @@
+use egui::{
+    emath::TSTransform, epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, Color32,
+    CursorIcon, Frame, Id, Key, LayerId, Layout, NumExt, Order, Rect, Response, Rounding,
+    ScrollArea, Sense, Shape, Stroke, TextStyle, Ui, UiBuilder, Vec2, WidgetText,
+};
 use std::convert::identity;
 use std::ops::RangeInclusive;
-
-use egui::emath::TSTransform;
-use egui::Shape;
-use egui::{
-    epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
-    LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
-    Ui, UiBuilder, Vec2, WidgetText,
-};
 
 use crate::dock_area::tab_removal::TabRemoval;
 use crate::{
@@ -605,16 +602,13 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
 
-        let mut color = if disabled {
+        // Whether we're on "secondary button mode" due to modifier keys
+        let on_secondary_button = self.is_on_secondary_button(surface_index, ui, &response);
+
+        let mut stroke_color = if disabled {
             style.buttons.close_all_tabs_disabled_color
         } else if response.hovered() || response.has_focus() {
-            if !(close_window_disabled
-                && self.secondary_button_on_modifier
-                && ui.input(|i| {
-                    i.modifiers
-                        .matches_logically(self.secondary_button_modifiers)
-                }))
-            {
+            if !(close_window_disabled && on_secondary_button) {
                 ui.painter().rect_filled(
                     rect,
                     Rounding::ZERO,
@@ -634,85 +628,41 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             response = response.on_hover_cursor(CursorIcon::PointingHand);
         }
 
-        if !surface_index.is_main()
-            && self.secondary_button_on_modifier
-            && ui.input(|i| {
-                i.modifiers
-                    .matches_logically(self.secondary_button_modifiers)
-            })
-            && (response.hovered() || response.has_focus() || response.is_pointer_button_down_on())
-        {
-            if response.clicked() && !surface_index.is_main() && !close_window_disabled {
-                self.to_remove.push(TabRemoval::Window(surface_index));
-            }
+        if on_secondary_button {
+            // Close the entire window
             if close_window_disabled {
-                color = style.buttons.close_all_tabs_disabled_color;
+                stroke_color = style.buttons.close_all_tabs_disabled_color;
                 response = response
                     .on_hover_cursor(CursorIcon::NotAllowed)
                     .on_hover_text(
                         self.dock_state
                             .translations
                             .leaf
-                            .close_all_button_tooltip
+                            .close_all_button_disabled_tooltip
                             .as_str(),
                     );
             }
-
-            ui.painter().add(Shape::line(
-                vec![
-                    close_all_rect
-                        .right_center()
-                        .lerp(close_all_rect.right_bottom(), 0.5),
-                    close_all_rect.right_bottom(),
-                    close_all_rect.left_bottom(),
-                    close_all_rect.left_top(),
-                    close_all_rect
-                        .center_top()
-                        .lerp(close_all_rect.left_top(), 0.5),
-                ],
-                Stroke::new(1.0, color),
-            ));
-            ui.painter().line_segment(
-                [close_all_rect.center_top(), close_all_rect.right_center()],
-                Stroke::new(1.0, color),
-            );
-            ui.painter().line_segment(
-                [close_all_rect.center(), close_all_rect.right_top()],
-                Stroke::new(1.0, color),
-            );
+            Self::draw_close_window_symbol(ui, stroke_color, close_all_rect);
         } else {
-            if !disabled {
-                if response.clicked() {
-                    self.to_remove.push((surface_index, node_index).into());
-                }
-
-                if !surface_index.is_main() && self.secondary_button_context_menu {
-                    response
-                        .on_hover_text(
-                            self.dock_state
-                                .translations
-                                .leaf
-                                .close_all_button_hint
-                                .as_str(),
-                        )
-                        .context_menu(|ui| {
-                            ui.add_enabled_ui(!close_window_disabled, |ui| {
-                                if ui
-                                    .button(&self.dock_state.translations.leaf.close_all_button)
-                                    .on_disabled_hover_text(
-                                        self.dock_state
-                                            .translations
-                                            .leaf
-                                            .close_all_button_tooltip
-                                            .as_str(),
-                                    )
-                                    .clicked()
-                                {
-                                    self.to_remove.push(TabRemoval::Window(surface_index));
-                                }
-                            });
-                        });
-                }
+            // Close all tabs in this leaf
+            if !disabled && !surface_index.is_main() && self.secondary_button_context_menu {
+                response.context_menu(|ui| {
+                    ui.add_enabled_ui(!close_window_disabled, |ui| {
+                        if ui
+                            .button(&self.dock_state.translations.leaf.close_all_button)
+                            .on_disabled_hover_text(
+                                self.dock_state
+                                    .translations
+                                    .leaf
+                                    .close_all_button_disabled_tooltip
+                                    .as_str(),
+                            )
+                            .clicked()
+                        {
+                            self.to_remove.push(TabRemoval::Window(surface_index));
+                        }
+                    });
+                });
             } else {
                 response = response
                     .on_hover_cursor(CursorIcon::NotAllowed)
@@ -720,18 +670,28 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         self.dock_state
                             .translations
                             .leaf
-                            .close_button_tooltip
+                            .close_button_disabled_tooltip
                             .as_str(),
                     );
             }
 
+            if response.clicked() {
+                if on_secondary_button {
+                    if !close_window_disabled {
+                        self.to_remove.push(TabRemoval::Window(surface_index));
+                    }
+                } else if !disabled {
+                    self.to_remove.push((surface_index, node_index).into());
+                }
+            }
+
             ui.painter().line_segment(
                 [close_all_rect.left_top(), close_all_rect.right_bottom()],
-                Stroke::new(1.0, color),
+                Stroke::new(1.0, stroke_color),
             );
             ui.painter().line_segment(
                 [close_all_rect.right_top(), close_all_rect.left_bottom()],
-                Stroke::new(1.0, color),
+                Stroke::new(1.0, stroke_color),
             );
         }
 
@@ -744,6 +704,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 style.buttons.close_all_tabs_border_color,
             ),
         );
+
+        if !disabled && !on_secondary_button {
+            response = self.show_tooltip_hints(surface_index, response);
+        }
     }
 
     /// Draws the collapse button.
@@ -773,6 +737,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         response = response.on_hover_cursor(CursorIcon::PointingHand);
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
+
+        // Whether we're on "secondary button mode" due to modifier keys
+        let on_secondary_button = self.is_on_secondary_button(surface_index, ui, &response);
+
         let color = if response.hovered() || response.has_focus() {
             ui.painter()
                 .rect_filled(rect, Rounding::ZERO, style.buttons.collapse_tabs_bg_fill);
@@ -782,74 +750,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         };
 
         let mut arrow_rect = rect;
-
         rect_set_size_centered(&mut arrow_rect, Vec2::splat(Style::TAB_COLLAPSE_ARROW_SIZE));
 
-        if !surface_index.is_main() && self.secondary_button_on_modifier
-            // We need `is_pointer_button_down_on` to avoid flickering of the icon drawn
-            && (response.hovered() || response.has_focus() || response.is_pointer_button_down_on())
-            && ui.input(|i| {
-                i.modifiers
-                    .matches_logically(self.secondary_button_modifiers)
-            })
-        {
-            // Draw arrow with chevron.
-            ui.painter().add(Shape::convex_polygon(
-                // Arrow pointing rightwards.
-                vec![
-                    arrow_rect.left_top(),
-                    arrow_rect.right_top(),
-                    arrow_rect.center(),
-                ],
-                color,
-                Stroke::NONE,
-            ));
-
-            // Chevron pointing rightwards.
-            ui.painter().add(Shape::convex_polygon(
-                vec![
-                    arrow_rect.left_center(),
-                    arrow_rect.right_center(),
-                    arrow_rect.center_bottom(),
-                ],
-                color,
-                Stroke::NONE,
-            ));
-            let color = style.buttons.minimize_window_bg_fill;
-            ui.painter().add(Shape::convex_polygon(
-                vec![
-                    arrow_rect
-                        .left_center()
-                        .lerp(arrow_rect.right_center(), 0.25),
-                    arrow_rect
-                        .left_center()
-                        .lerp(arrow_rect.right_center(), 0.75),
-                    arrow_rect.center().lerp(arrow_rect.center_bottom(), 0.5),
-                ],
-                color,
-                Stroke::NONE,
-            ));
+        if on_secondary_button {
+            // Collapse the entire window
+            Self::draw_chevron_down(ui, style, color, arrow_rect);
         } else {
             // Draw arrow.
-            ui.painter().add(Shape::convex_polygon(
-                if collapsed {
-                    // Arrow pointing rightwards.
-                    vec![
-                        arrow_rect.left_top(),
-                        arrow_rect.right_center(),
-                        arrow_rect.left_bottom(),
-                    ]
-                } else {
-                    // Arrow pointing downwards.
-                    vec![
-                        arrow_rect.left_top(),
-                        arrow_rect.right_top(),
-                        arrow_rect.center_bottom(),
-                    ]
-                },
-                color,
-                Stroke::NONE,
-            ));
+            Self::draw_arrow(collapsed, ui, color, arrow_rect);
         }
 
         // Draw button right border.
@@ -863,12 +771,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         );
 
         if response.clicked() {
-            if !surface_index.is_main()
-                && ui.input(|i| {
-                    i.modifiers
-                        .matches_logically(self.secondary_button_modifiers)
-                })
-            {
+            if on_secondary_button {
                 self.window_toggle_minimized(surface_index);
             } else {
                 self.dock_state[surface_index][node_index].set_collapsed(!collapsed);
@@ -878,24 +781,145 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         }
 
         if !surface_index.is_main() && self.secondary_button_context_menu {
-            response
-                .on_hover_text(
-                    self.dock_state
-                        .translations
-                        .leaf
-                        .minimize_button_hint
-                        .as_str(),
-                )
-                .context_menu(|ui| {
-                    if ui
-                        .button(&self.dock_state.translations.leaf.minimize_button)
-                        .clicked()
-                    {
-                        ui.close_menu();
-                        self.window_toggle_minimized(surface_index);
-                    }
-                });
+            response.context_menu(|ui| {
+                if ui
+                    .button(&self.dock_state.translations.leaf.minimize_button)
+                    .clicked()
+                {
+                    ui.close_menu();
+                    self.window_toggle_minimized(surface_index);
+                }
+            });
         }
+
+        if !on_secondary_button {
+            self.show_tooltip_hints(surface_index, response);
+        }
+    }
+
+    fn show_tooltip_hints(&mut self, surface_index: SurfaceIndex, response: Response) -> Response {
+        if !surface_index.is_main()
+            && self.show_secondary_button_hint
+            && (self.secondary_button_context_menu || self.secondary_button_on_modifier)
+        {
+            let hint = if self.secondary_button_context_menu && self.secondary_button_on_modifier {
+                &self
+                    .dock_state
+                    .translations
+                    .leaf
+                    .minimize_button_modifier_menu_hint
+            } else if self.secondary_button_context_menu {
+                &self.dock_state.translations.leaf.minimize_button_menu_hint
+            } else {
+                &self
+                    .dock_state
+                    .translations
+                    .leaf
+                    .minimize_button_modifier_hint
+            };
+            return response.on_hover_text(hint);
+        }
+        response
+    }
+
+    fn is_on_secondary_button(
+        &self,
+        surface_index: SurfaceIndex,
+        ui: &mut Ui,
+        response: &Response,
+    ) -> bool {
+        !surface_index.is_main()
+            && self.secondary_button_on_modifier
+            && ui.input(|i| {
+                i.modifiers
+                    .matches_logically(self.secondary_button_modifiers)
+            })
+            && (response.hovered() || response.has_focus() || response.is_pointer_button_down_on())
+    }
+
+    fn draw_close_window_symbol(ui: &mut Ui, stroke_color: Color32, close_all_rect: Rect) {
+        ui.painter().add(Shape::line(
+            vec![
+                close_all_rect
+                    .right_center()
+                    .lerp(close_all_rect.right_bottom(), 0.5),
+                close_all_rect.right_bottom(),
+                close_all_rect.left_bottom(),
+                close_all_rect.left_top(),
+                close_all_rect
+                    .center_top()
+                    .lerp(close_all_rect.left_top(), 0.5),
+            ],
+            Stroke::new(1.0, stroke_color),
+        ));
+        ui.painter().line_segment(
+            [close_all_rect.center_top(), close_all_rect.right_center()],
+            Stroke::new(1.0, stroke_color),
+        );
+        ui.painter().line_segment(
+            [close_all_rect.center(), close_all_rect.right_top()],
+            Stroke::new(1.0, stroke_color),
+        );
+    }
+
+    fn draw_arrow(collapsed: bool, ui: &mut Ui, color: Color32, arrow_rect: Rect) {
+        ui.painter().add(Shape::convex_polygon(
+            if collapsed {
+                // Arrow pointing rightwards.
+                vec![
+                    arrow_rect.left_top(),
+                    arrow_rect.right_center(),
+                    arrow_rect.left_bottom(),
+                ]
+            } else {
+                // Arrow pointing downwards.
+                vec![
+                    arrow_rect.left_top(),
+                    arrow_rect.right_top(),
+                    arrow_rect.center_bottom(),
+                ]
+            },
+            color,
+            Stroke::NONE,
+        ));
+    }
+
+    fn draw_chevron_down(ui: &mut Ui, style: &Style, color: Color32, arrow_rect: Rect) {
+        ui.painter().add(Shape::convex_polygon(
+            // Arrow pointing downwards.
+            vec![
+                arrow_rect.left_top(),
+                arrow_rect.right_top(),
+                arrow_rect.center(),
+            ],
+            color,
+            Stroke::NONE,
+        ));
+
+        // Chevron pointing downwards.
+        ui.painter().add(Shape::convex_polygon(
+            vec![
+                arrow_rect.left_center(),
+                arrow_rect.right_center(),
+                arrow_rect.center_bottom(),
+            ],
+            color,
+            Stroke::NONE,
+        ));
+        let color = style.buttons.minimize_window_bg_fill;
+        ui.painter().add(Shape::convex_polygon(
+            vec![
+                arrow_rect
+                    .left_center()
+                    .lerp(arrow_rect.right_center(), 0.25),
+                arrow_rect
+                    .left_center()
+                    .lerp(arrow_rect.right_center(), 0.75),
+                arrow_rect.center().lerp(arrow_rect.center_bottom(), 0.5),
+            ],
+            color,
+            Stroke::NONE,
+        ));
     }
 
     /// Updates the collapsed state of the node and its parents.
