@@ -4,12 +4,19 @@ use crate::{NodeIndex, SurfaceIndex, TabIndex};
 #[derive(Debug, Clone, Copy)]
 pub(super) enum TabRemoval {
     Node(SurfaceIndex, NodeIndex, TabIndex),
+    Leaf(SurfaceIndex, NodeIndex),
     Window(SurfaceIndex),
 }
 
 impl From<SurfaceIndex> for TabRemoval {
     fn from(index: SurfaceIndex) -> Self {
         TabRemoval::Window(index)
+    }
+}
+
+impl From<(SurfaceIndex, NodeIndex)> for TabRemoval {
+    fn from((si, ni): (SurfaceIndex, NodeIndex)) -> TabRemoval {
+        TabRemoval::Leaf(si, ni)
     }
 }
 

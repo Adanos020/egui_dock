@@ -74,8 +74,11 @@ struct MyContext {
     draggable_tabs: bool,
     show_tab_name_on_hover: bool,
     allowed_splits: AllowedSplits,
-    show_window_close: bool,
-    show_window_collapse: bool,
+    show_leaf_close_all: bool,
+    show_leaf_collapse: bool,
+    show_secondary_button_hint: bool,
+    secondary_button_on_modifier: bool,
+    secondary_button_context_menu: bool,
 }
 
 struct MyApp {
@@ -156,10 +159,25 @@ impl MyContext {
             ui.checkbox(&mut self.show_add_buttons, "Show add buttons");
             ui.checkbox(&mut self.draggable_tabs, "Draggable tabs");
             ui.checkbox(&mut self.show_tab_name_on_hover, "Show tab name on hover");
-            ui.checkbox(&mut self.show_window_close, "Show close button on windows");
             ui.checkbox(
-                &mut self.show_window_collapse,
-                "Show collaspse button on windows",
+                &mut self.show_leaf_close_all,
+                "Show close all button on tab bars",
+            );
+            ui.checkbox(
+                &mut self.show_leaf_collapse,
+                "Show collaspse button on tab bars",
+            );
+            ui.checkbox(
+                &mut self.secondary_button_on_modifier,
+                "Enable secondary buttons when modifiers (Shift by default) are pressed",
+            );
+            ui.checkbox(
+                &mut self.secondary_button_context_menu,
+                "Enable secondary buttons in right-click context menus",
+            );
+            ui.checkbox(
+                &mut self.show_secondary_button_hint,
+                "Show tooltip hints for secondary buttons",
             );
             ComboBox::new("cbox:allowed_splits", "Split direction(s)")
                 .selected_text(format!("{:?}", self.allowed_splits))
@@ -540,8 +558,11 @@ impl Default for MyApp {
             style: None,
             open_tabs,
 
-            show_window_close: true,
-            show_window_collapse: true,
+            show_leaf_close_all: true,
+            show_leaf_collapse: true,
+            show_secondary_button_hint: true,
+            secondary_button_on_modifier: true,
+            secondary_button_context_menu: true,
             show_close_buttons: true,
             show_add_buttons: false,
             draggable_tabs: true,
@@ -599,8 +620,11 @@ impl eframe::App for MyApp {
                     .draggable_tabs(self.context.draggable_tabs)
                     .show_tab_name_on_hover(self.context.show_tab_name_on_hover)
                     .allowed_splits(self.context.allowed_splits)
-                    .show_window_close_buttons(self.context.show_window_close)
-                    .show_window_collapse_buttons(self.context.show_window_collapse)
+                    .show_leaf_close_all_buttons(self.context.show_leaf_close_all)
+                    .show_leaf_collapse_buttons(self.context.show_leaf_collapse)
+                    .show_secondary_button_hint(self.context.show_secondary_button_hint)
+                    .secondary_button_on_modifier(self.context.secondary_button_on_modifier)
+                    .secondary_button_context_menu(self.context.secondary_button_context_menu)
                     .show_inside(ui, &mut self.context);
             });
     }

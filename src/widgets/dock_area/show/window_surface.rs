@@ -1,14 +1,12 @@
 use egui::{
-    CollapsingHeader, CollapsingResponse, Frame, Galley, Id, Layout, Rect, Response, Sense,
-    TextStyle, TextWrapMode, Ui, UiBuilder, Vec2, Widget,
+    vec2, Align, Color32, CursorIcon, Frame, Layout, Rect, Response, RichText, Rounding, Sense,
+    Shape, Stroke, Ui, UiBuilder, Vec2, WidgetText,
 };
-use std::convert::identity;
-use std::sync::Arc;
 
 use crate::{
     dock_area::{state::State, tab_removal::TabRemoval},
-    utils::fade_visuals,
-    DockArea, Node, Style, SurfaceIndex, TabViewer,
+    utils::{fade_visuals, rect_set_size_centered},
+    DockArea, Node, NodeIndex, Style, SurfaceIndex, TabViewer,
 };
 
 impl<'tree, Tab> DockArea<'tree, Tab> {
@@ -20,17 +18,17 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         state: &mut State,
         fade_style: Option<(&Style, f32, SurfaceIndex)>,
     ) {
-        //construct egui window
+        // Construct egui window
         let id = format!("window {surf_index:?}").into();
         let bounds = self.window_bounds.unwrap();
-        let mut open = true;
-        let (window, new) = self
+        let open = true;
+        let window = self
             .dock_state
             .get_window_state_mut(surf_index)
             .unwrap()
             .create_window(id, bounds);
 
-        //calculate fading of the window (if any)
+        // Calculate fading of the window (if any)
         let (fade_factor, fade_style) = match fade_style {
             Some((style, factor, surface_index)) => {
                 if surface_index == surf_index {
@@ -60,8 +58,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             tab_viewer
                 .title(&mut tabs[active.0])
                 .color(ui.visuals().widgets.noninteractive.fg_stroke.color)
-                .into_galley(ui, Some(TextWrapMode::Extend), 0.0, TextStyle::Button)
         };
+
+        // Iterate through every node in dock_state[surf_index], and sum up the number of tabs in them
+        let mut tab_count = 0;
+        for node_index in self.dock_state[surf_index].breadth_first_index_iter() {
+            if self.dock_state[surf_index][node_index].is_leaf() {
+                tab_count += self.dock_state[surf_index][node_index].tabs_count();
+            }
+        }
 
         // Fade window frame (if necessary)
         let mut frame = Frame::window(ui.style());
@@ -71,187 +76,212 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             frame.shadow.color = frame.shadow.color.linear_multiply(fade_factor);
         }
 
-        window
-            .frame(frame)
-            .min_width(min_window_width(&title, ui.spacing().indent))
-            .show(ui.ctx(), |ui| {
-                //fade inner ui (if necessary)
-                if fade_factor != 1.0 {
-                    fade_visuals(ui.visuals_mut(), fade_factor);
-                }
-
-                let collapser_id = id.with("collapser");
-                let collapser_state = new.then_some(true);
-                let ch_res = self.show_window_body(
+        let tab_bar_height = self.style.as_ref().unwrap().tab_bar.height;
+        let minimized = self
+            .dock_state
+            .get_window_state(surf_index)
+            .unwrap()
+            .is_minimized();
+        if minimized {
+            let height = tab_bar_height;
+            window
+                .resizable([true, false])
+                .max_height(height)
+                .min_height(height)
+        } else if self.dock_state[surf_index].is_collapsed() {
+            let height = self.dock_state[surf_index].collapsed_leaf_count() as f32 * tab_bar_height;
+            window
+                .resizable([true, false])
+                .max_height(height)
+                .min_height(height)
+        } else {
+            window
+        }
+        .frame(frame)
+        .show(ui.ctx(), |ui| {
+            // Fade inner ui (if necessary)
+            if fade_factor != 1.0 {
+                fade_visuals(ui.visuals_mut(), fade_factor);
+            }
+            if minimized {
+                self.minimized_body(
                     ui,
                     surf_index,
-                    tab_viewer,
-                    state,
-                    fade_style,
-                    collapser_state,
-                    collapser_id,
+                    fade_style.map(|(style, _)| style),
                     title,
-                );
-                if self.show_window_close_buttons {
-                    // Finds out if theres a reason for the close button to be disabled
-                    // by iterating over the tree and finding if theres any non-closable nodes.
-                    let disabled = !self.dock_state[surf_index]
-                        .iter_mut()
-                        .filter_map(|node| {
-                            if let Node::Leaf { tabs, .. } = node {
-                                Some(
-                                    tabs.iter_mut()
-                                        .map(|tab| tab_viewer.closeable(tab))
-                                        .all(identity),
-                                )
-                            } else {
-                                None
-                            }
-                        })
-                        .all(identity);
-
-                    self.show_close_button(ui, &mut open, ch_res, disabled);
-                }
-            });
+                    tab_count,
+                )
+            } else {
+                self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
+            }
+        });
 
         if !open {
             self.to_remove.push(TabRemoval::Window(surf_index));
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn show_window_body(
+    fn minimized_body(
         &mut self,
         ui: &mut Ui,
-        surf_index: SurfaceIndex,
-        tab_viewer: &mut impl TabViewer<Tab = Tab>,
-        state: &mut State,
-        fade_style: Option<(&Style, f32)>,
-        open: Option<bool>,
-        id: Id,
-        title: Arc<Galley>,
-    ) -> Option<CollapsingResponse<()>> {
-        if self.show_window_collapse_buttons {
-            let ch_response = CollapsingHeader::new("")
-                .id_salt(id)
-                .open(open)
-                .show_unindented(ui, |ui| {
-                    ui.set_min_size(Vec2::splat(100.0));
-                    self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
-                });
-            ui.set_width(min_window_width(&title, ui.spacing().indent));
+        surface_index: SurfaceIndex,
+        fade_style: Option<&Style>,
+        title: WidgetText,
+        tab_count: usize,
+    ) {
+        ui.horizontal(|ui| {
+            let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
+            let (tabbar_outer_rect, _) = ui.allocate_exact_size(
+                vec2(Style::TAB_EXPAND_BUTTON_SIZE, style.tab_bar.height),
+                Sense::hover(),
+            );
+            ui.painter().rect_filled(
+                tabbar_outer_rect,
+                style.tab_bar.rounding,
+                style.tab_bar.bg_fill,
+            );
+            self.window_expand(ui, surface_index, tabbar_outer_rect, fade_style);
+            ui.label(title);
+            if tab_count > 1 {
+                ui.label(
+                    RichText::new(format!("+{}", tab_count - 1))
+                        .color(ui.visuals().weak_text_color()),
+                );
+            }
+            ui.allocate_space(ui.available_size());
+        });
+    }
 
-            if ch_response.fully_closed() {
-                let rect = Rect::from_min_size(
-                    ch_response.header_response.rect.left_top(),
-                    Vec2::new(
-                        ui.min_rect().size().x,
-                        ch_response.header_response.rect.height(),
-                    ),
-                );
-                ui.painter().galley(
-                    rect.center() - (title.size() * 0.5),
-                    title,
-                    ui.visuals().widgets.noninteractive.fg_stroke.color,
-                );
-            }
-            Some(ch_response)
+    /// Draws the expand window button.
+    fn window_expand(
+        &mut self,
+        ui: &mut Ui,
+        surface_index: SurfaceIndex,
+        tabbar_outer_rect: Rect,
+        fade_style: Option<&Style>,
+    ) {
+        let rect = tabbar_outer_rect;
+
+        let ui = &mut ui.new_child(
+            UiBuilder::new()
+                .max_rect(rect)
+                .layout(Layout::left_to_right(Align::Center))
+                .id_salt((surface_index, "window_expand")),
+        );
+
+        let (rect, mut response) = ui.allocate_exact_size(ui.available_size(), Sense::click());
+
+        response = response.on_hover_cursor(CursorIcon::PointingHand);
+
+        let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
+        let color = if response.hovered() || response.has_focus() {
+            ui.painter()
+                .rect_filled(rect, Rounding::ZERO, style.buttons.minimize_window_bg_fill);
+            style.buttons.minimize_window_active_color
         } else {
-            // in case we don't render with a collapsing header we need to make a "blank"
-            // window head in preparation for adding the close button.
-            if self.show_window_close_buttons {
-                ui.add_space(ui.spacing().icon_width + ui.spacing().item_spacing.y);
-            }
-            self.render_nodes(ui, tab_viewer, state, surf_index, fade_style);
-            None
+            style.buttons.minimize_window_color
+        };
+
+        let mut arrow_rect = rect;
+
+        rect_set_size_centered(&mut arrow_rect, Vec2::splat(Style::TAB_EXPAND_ARROW_SIZE));
+
+        Self::draw_chevron_right(ui, &mut response, style, color, arrow_rect);
+
+        // Draw button right border.
+        ui.painter().vline(
+            rect.right(),
+            rect.y_range(),
+            Stroke::new(
+                ui.ctx().pixels_per_point().recip(),
+                style.buttons.minimize_window_border_color,
+            ),
+        );
+
+        if response.clicked() {
+            self.window_toggle_minimized(surface_index);
         }
     }
 
-    fn show_close_button(
-        &mut self,
+    fn draw_chevron_right(
         ui: &mut Ui,
-        open: &mut bool,
-        collapse_response: Option<CollapsingResponse<()>>,
-        disabled: bool,
+        response: &mut Response,
+        style: &Style,
+        color: Color32,
+        arrow_rect: Rect,
     ) {
-        let rect = {
-            let (top_right, height) = match collapse_response {
-                Some(collapse) => (
-                    Rect::from_two_pos(
-                        collapse.header_response.rect.right_top(),
-                        ui.max_rect().right_top(),
-                    )
-                    .right_top(),
-                    collapse.header_response.rect.height(),
-                ),
-                None => (ui.max_rect().right_top(), ui.spacing().icon_width),
-            };
+        ui.painter().add(Shape::convex_polygon(
+            // Arrow pointing rightwards.
+            vec![
+                arrow_rect.left_top(),
+                arrow_rect.center(),
+                arrow_rect.left_bottom(),
+            ],
+            color,
+            Stroke::NONE,
+        ));
 
-            Rect::from_min_size(top_right, Vec2::new(0.0, height))
+        // Chevron pointing rightwards.
+        ui.painter().add(Shape::convex_polygon(
+            vec![
+                arrow_rect.center_top(),
+                arrow_rect.right_center(),
+                arrow_rect.center_bottom(),
+            ],
+            color,
+            Stroke::NONE,
+        ));
+        let color = if response.hovered() || response.has_focus() {
+            style.buttons.minimize_window_bg_fill
+        } else {
+            style.tab_bar.bg_fill
         };
-        let close_button = close_button(
-            disabled.then_some(
-                self.dock_state
-                    .translations
-                    .window
-                    .close_button_tooltip
-                    .as_str(),
-            ),
-        );
-        ui.allocate_new_ui(UiBuilder::new().max_rect(rect), |ui| {
-            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.set_height(rect.height());
-                if ui.add(close_button).clicked() {
-                    *open = false;
-                }
-            });
-        });
+        ui.painter().add(Shape::convex_polygon(
+            vec![
+                arrow_rect
+                    .center_top()
+                    .lerp(arrow_rect.center_bottom(), 0.25),
+                arrow_rect.center().lerp(arrow_rect.right_center(), 0.5),
+                arrow_rect
+                    .center_top()
+                    .lerp(arrow_rect.center_bottom(), 0.75),
+            ],
+            color,
+            Stroke::NONE,
+        ));
     }
-}
 
-fn min_window_width(title: &Galley, button_width: f32) -> f32 {
-    (button_width * 2.) + title.size().x
-}
+    pub(super) fn window_toggle_minimized(&mut self, surf_index: SurfaceIndex) {
+        let minimized = self
+            .dock_state
+            .get_window_state(surf_index)
+            .unwrap()
+            .is_minimized();
+        let surface = &mut self.dock_state[surf_index];
 
-fn close_button(disabled: Option<&str>) -> impl Widget + '_ {
-    move |ui: &mut Ui| -> Response {
-        let sense = disabled.map_or(Sense::click(), |_disabled| Sense::hover());
-
-        //this is how CollapsableHeader decides on space,
-        //don't know why it doesn't atually end up the same size.
-        let size = Vec2::new(ui.spacing().indent, ui.spacing().icon_width);
-        let (rect, res) = ui.allocate_exact_size(size, sense);
-
-        let visuals = ui.style().interact(&res);
-        let painter = ui.painter();
-
-        let rect = Rect::from_center_size(
-            rect.center(),
-            Vec2::splat(rect.width().min(rect.height()) * 0.5),
-        )
-        .expand(visuals.expansion);
-
-        let stroke = match disabled.is_some() {
-            true => visuals.bg_stroke,
-            false => visuals.fg_stroke,
-        };
-        painter.line_segment(
-            [
-                painter.round_pos_to_pixels(rect.left_top()),
-                painter.round_pos_to_pixels(rect.right_bottom()),
-            ],
-            stroke,
-        );
-        painter.line_segment(
-            [
-                painter.round_pos_to_pixels(rect.right_top()),
-                painter.round_pos_to_pixels(rect.left_bottom()),
-            ],
-            stroke,
-        );
-        match disabled {
-            Some(reason) => res.on_hover_text(reason),
-            None => res,
+        if surface.root_node().is_some_and(|node| node.is_collapsed()) {
+            // The window is already fully collapsed,
+            // so `expanded_height` has already been set.
+            // We don't need to set `new` either.
+            if let Some(window_state) = self.dock_state.get_window_state_mut(surf_index) {
+                window_state.toggle_minimized();
+            }
+        } else if minimized {
+            if let Some(window_state) = self.dock_state.get_window_state_mut(surf_index) {
+                window_state.set_new(true);
+                window_state.toggle_minimized();
+            }
+        } else {
+            let root_index = NodeIndex::root();
+            let surface_height = if surface.root_node().is_some() {
+                surface[root_index].rect().unwrap().height()
+            } else {
+                0.0
+            };
+            if let Some(window_state) = self.dock_state.get_window_state_mut(surf_index) {
+                window_state.set_expanded_height(surface_height);
+                window_state.toggle_minimized();
+            }
         }
     }
 }

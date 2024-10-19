@@ -349,7 +349,7 @@ impl DragDropState {
 
         self.update_lock(LockState::SoftLock, style, ui.ctx());
 
-        //Draw the overlay
+        // Draw the overlay
         match final_result {
             Some(TabDestination::Window(rect)) => {
                 let rect = self.window_preview_rect(rect);

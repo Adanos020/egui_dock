@@ -28,6 +28,7 @@ pub use tab_iter::TabIter;
 use egui::ahash::HashSet;
 use egui::Rect;
 use std::{
+    cmp::max,
     fmt,
     ops::{Index, IndexMut},
     slice::{Iter, IterMut},
@@ -125,6 +126,9 @@ pub struct Tree<Tab> {
     // Binary tree vector
     pub(super) nodes: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
+    // Whether all subnodes of the tree is collapsed
+    collapsed: bool,
+    collapsed_leaf_count: i32,
 }
 
 impl<Tab> fmt::Debug for Tree<Tab> {
@@ -138,6 +142,8 @@ impl<Tab> Default for Tree<Tab> {
         Self {
             nodes: Vec::new(),
             focused_node: None,
+            collapsed: false,
+            collapsed_leaf_count: 0,
         }
     }
 }
@@ -166,6 +172,8 @@ impl<Tab> Tree<Tab> {
         Self {
             nodes: vec![root],
             focused_node: None,
+            collapsed: false,
+            collapsed_leaf_count: 0,
         }
     }
 
@@ -520,6 +528,7 @@ impl<Tab> Tree<Tab> {
         self[index[1]] = new;
 
         self.focused_node = Some(index[1]);
+        self.node_update_collapsed(index[1]);
 
         index
     }
@@ -744,6 +753,8 @@ impl<Tab> Tree<Tab> {
         let Tree {
             focused_node,
             nodes,
+            collapsed,
+            collapsed_leaf_count,
         } = self;
         let mut emptied_nodes = HashSet::default();
         let nodes = nodes
@@ -760,6 +771,8 @@ impl<Tab> Tree<Tab> {
         let mut new_tree = Tree {
             nodes,
             focused_node: *focused_node,
+            collapsed: *collapsed,
+            collapsed_leaf_count: *collapsed_leaf_count,
         };
         new_tree.balance(emptied_nodes);
         new_tree
@@ -799,6 +812,26 @@ impl<Tab> Tree<Tab> {
         self.balance(emptied_nodes);
     }
 
+    /// Sets the collapsing state of the [`Tree`].
+    pub(crate) fn set_collapsed(&mut self, collapsed: bool) {
+        self.collapsed = collapsed;
+    }
+
+    /// Returns whether the [`Tree`] is collapsed.
+    pub(crate) fn is_collapsed(&self) -> bool {
+        self.collapsed
+    }
+
+    /// Sets the number of collapsed layers of leaf subnodes in the [`Tree`].
+    pub(crate) fn set_collapsed_leaf_count(&mut self, collapsed_leaf_count: i32) {
+        self.collapsed_leaf_count = collapsed_leaf_count;
+    }
+
+    /// Returns the number of collapsed layers of leaf subnodes in the [`Tree`].
+    pub(crate) fn collapsed_leaf_count(&self) -> i32 {
+        self.collapsed_leaf_count
+    }
+
     fn balance(&mut self, emptied_nodes: HashSet<NodeIndex>) {
         let mut emptied_parents = HashSet::default();
         for parent_index in emptied_nodes.into_iter().filter_map(|ni| ni.parent()) {
@@ -815,6 +848,59 @@ impl<Tab> Tree<Tab> {
         }
         if !emptied_parents.is_empty() {
             self.balance(emptied_parents);
+        }
+    }
+
+    /// Updates the collapsed state of the node and its parents.
+    pub(crate) fn node_update_collapsed(&mut self, node_index: NodeIndex) {
+        let collapsed = self[node_index].is_collapsed();
+        if !collapsed {
+            // Recursively notify parent nodes that the leaf has expanded
+            let mut parent_index_option = node_index.parent();
+            while let Some(parent_index) = parent_index_option {
+                parent_index_option = parent_index.parent();
+
+                // Update collapsed leaf count and collapse status
+                let left_count = self[parent_index.left()].collapsed_leaf_count();
+                let right_count = self[parent_index.right()].collapsed_leaf_count();
+                self[parent_index].set_collapsed(false);
+
+                if self[parent_index].is_horizontal() {
+                    self[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
+                } else {
+                    self[parent_index].set_collapsed_leaf_count(left_count + right_count);
+                }
+            }
+            self.set_collapsed(false);
+            let root_index = NodeIndex::root();
+            self.set_collapsed_leaf_count(self[root_index].collapsed_leaf_count());
+        } else {
+            // Recursively notify parent nodes that the leaf has collapsed
+            let mut parent_index_option = node_index.parent();
+            while let Some(parent_index) = parent_index_option {
+                parent_index_option = parent_index.parent();
+
+                // Update collapsed leaf count and collapse status
+                let left_count = self[parent_index.left()].collapsed_leaf_count();
+                let right_count = self[parent_index.right()].collapsed_leaf_count();
+
+                if self[parent_index].is_horizontal() {
+                    self[parent_index].set_collapsed_leaf_count(max(left_count, right_count));
+                } else {
+                    self[parent_index].set_collapsed_leaf_count(left_count + right_count);
+                }
+
+                if self[parent_index.left()].is_collapsed()
+                    && self[parent_index.right()].is_collapsed()
+                {
+                    self[parent_index].set_collapsed(true);
+                }
+            }
+            if self.root_node().is_some_and(|root| root.is_collapsed()) {
+                self.set_collapsed(true);
+                let root_index = NodeIndex::root();
+                self.set_collapsed_leaf_count(self[root_index].collapsed_leaf_count());
+            }
         }
     }
 }
