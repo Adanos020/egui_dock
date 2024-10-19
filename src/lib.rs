@@ -218,16 +218,16 @@
 //! let mut dock_state = DockState::<Tab>::new(vec![]);
 //! dock_state.translations.tab_context_menu.close_button = "タブを閉じる".to_string();
 //! dock_state.translations.tab_context_menu.eject_button = "タブを新しいウィンドウへ移動".to_string();
-//! dock_state.translations.leaf.close_button_disabled_tooltip = "このノードは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.close_button_disabled_tooltip = "このノードは閉じられないタブがある".to_string();
 //! dock_state.translations.leaf.close_all_button = "ウィンドウを閉じる".to_string();
-//! dock_state.translations.leaf.close_all_button_menu_hint = "右クリックでこのウィンドウを閉じる。".to_string();
-//! dock_state.translations.leaf.close_all_button_modifier_hint = "修飾キー（デフォルトではShift）を押して、このウィンドウを閉じます。".to_string();
-//! dock_state.translations.leaf.close_all_button_modifier_menu_hint = "修飾キー（デフォルトではShift）を押すか、右クリックしてこのウィンドウを閉じます。".to_string();
-//! dock_state.translations.leaf.close_all_button_disabled_tooltip = "このウィンドウは閉じられないタブがある。".to_string();
+//! dock_state.translations.leaf.close_all_button_menu_hint = "右クリックでこのウィンドウを閉じる".to_string();
+//! dock_state.translations.leaf.close_all_button_modifier_hint = "修飾キー（デフォルトではShift）を押して、このウィンドウを閉じます".to_string();
+//! dock_state.translations.leaf.close_all_button_modifier_menu_hint = "修飾キー（デフォルトではShift）を押すか、右クリックしてこのウィンドウを閉じます".to_string();
+//! dock_state.translations.leaf.close_all_button_disabled_tooltip = "このウィンドウは閉じられないタブがある".to_string();
 //! dock_state.translations.leaf.minimize_button = "ウィンドウを最小化する".to_string();
-//! dock_state.translations.leaf.minimize_button_menu_hint = "右クリックでウィンドウを最小化する。".to_string();
-//! dock_state.translations.leaf.minimize_button_modifier_hint = "修飾キー（デフォルトではShift）を押すと、このウィンドウが最小化されます。".to_string();
-//! dock_state.translations.leaf.minimize_button_modifier_menu_hint = "修飾キー（デフォルトではShiftキー）を押すか、右クリックしてこのウィンドウを最小化する。".to_string();
+//! dock_state.translations.leaf.minimize_button_menu_hint = "右クリックでウィンドウを最小化する".to_string();
+//! dock_state.translations.leaf.minimize_button_modifier_hint = "修飾キー（デフォルトではShift）を押すと、このウィンドウが最小化されます".to_string();
+//! dock_state.translations.leaf.minimize_button_modifier_menu_hint = "修飾キー（デフォルトではShift）を押すか、右クリックしてこのウィンドウを最小化する".to_string();
 //! ```
 
 #![warn(missing_docs)]
