@@ -209,7 +209,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     }
 }
 
-impl<'tree, Tab> std::fmt::Debug for DockArea<'tree, Tab> {
+impl<Tab> std::fmt::Debug for DockArea<'_, Tab> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DockArea").finish_non_exhaustive()
     }

@@ -8,7 +8,7 @@ use crate::{
     DockArea, SurfaceIndex, TabViewer,
 };
 
-impl<'tree, Tab> DockArea<'tree, Tab> {
+impl<Tab> DockArea<'_, Tab> {
     pub(super) fn show_root_surface_inside(
         &mut self,
         ui: &mut Ui,
