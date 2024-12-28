@@ -1,5 +1,70 @@
 # egui_dock changelog
 
+## 0.15.0 - Unreleased
+
+### Changed
+
+- From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
+  - Each leaf can now be collapsed / closed individually. They are introduced as additional tab bar controls.
+  - Undocked windows are now more compact. The original undocked window controls are now accessible as "secondary buttons" from the tab bar.
+    - By default, the secondary buttons are activated from primary buttons either by holding the <kbd>Shift</kbd> key while clicking on them, or from a context menu by right-clicking them.
+  - A number of tooltip hints are on by default as guides to the new behavior, but they can be disabled.
+  - There has been an overhaul to the internal codebase to support the new features.
+
+### Added
+
+- From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
+  - `DockArea::show_leaf_close_all_buttons` – shows a close all button which closes all open tabs in a leaf.
+  - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window).
+  - `DockArea::show_secondary_button_hint` – sets whether tooltip hints are shown for secondary buttons on tab bars.
+  - `DockArea::show_leaf_collapse_buttons` – shows a collapsing button which collapses a leaf (no longer collapsing a window).
+  - `DockArea::secondary_button_on_modifier` – sets whether the secondary buttons on tab bars are activated by the modifier key.
+  - `DockArea::secondary_button_context_menu` – sets whether the secondary buttons on tab bars are activated from a context value by right-clicking primary buttons.
+  - Added the following translations:
+    - `LeafTranslations::close_all_button`
+    - `LeafTranslations::close_all_button_menu_hint`
+    - `LeafTranslations::close_all_button_modifier_hint`
+    - `LeafTranslations::close_all_button_modifier_menu_hint`
+    - `LeafTranslations::close_all_button_disabled_tooltip`
+    - `LeafTranslations::minimize_button`
+    - `LeafTranslations::minimize_button_menu_hint`
+    - `LeafTranslations::minimize_button_modifier_hint`
+    - `LeafTranslations::minimize_button_modifier_menu_hint`
+  - `Node::is_collapsed` – returns whether the `Node` is collapsed.
+  - `Node::collapsed_leaf_count` – returns the number of collapsed layers of leaf subnodes.
+  - `Node::set_collapsed` – set the collapsing state of the `Node`.
+  - `Node::set_collapsed_leaf_count` – sets the number of collapsed layers of leaf subnodes.
+  - `WindowState::minimized` field – records whether a window is minimized.
+  - `WindowState::expanded_height` field – records the height of the window before it was fully collapsed.
+  - Added style configuration for the two buttons:
+    - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_color`
+    - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_active_color`
+    - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_bg_fill`
+    - `ButtonsStyle::{close_all_tabs, collapse_tabs, minimize_window}_border_color`
+    - `ButtonsStyle::close_all_tabs_disabled_color`
+    - `Style::TAB_CLOSE_ALL_BUTTON_SIZE`
+    - `Style::TAB_CLOSE_ALL_SIZE`
+    - `Style::TAB_COLLAPSE_BUTTON_SIZE`
+    - `Style::TAB_COLLAPSE_ARROW_SIZE`
+    - `Style::TAB_EXPAND_BUTTON_SIZE`
+    - `Style::TAB_EXPAND_ARROW_SIZE`
+
+### Breaking changes
+
+- From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
+  - Renamed `Translations::WindowTranslations` to `Translations::LeafTranslations`.
+  - Renamed `WindowTranslations::close_button_tooltip` to `LeafTranslations::close_button_disabled_tooltip`.
+  - `Translations::LeafTranslations` now requires more fields to be constructed (see **Added** section).
+- Upgraded to egui 0.30.
+
+### Deprecated
+
+- From ([#237](https://github.com/Adanos020/egui_dock/pull/237)):
+    - `DockArea::show_window_close_buttons` – no longer has any effect; consider using `DockArea::show_leaf_close_all_buttons`
+      instead.
+    - `DockArea::show_window_collapse_buttons` – no longer has any effect; consider using `DockArea::show_leaf_collapse_buttons`
+      instead.
+
 ## 0.14.0 - 2024-09-02
 
 ### Breaking changes

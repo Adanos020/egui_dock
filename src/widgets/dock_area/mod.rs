@@ -13,7 +13,7 @@ use crate::{dock_state::DockState, NodeIndex, Style, SurfaceIndex, TabIndex};
 pub use allowed_splits::AllowedSplits;
 use tab_removal::TabRemoval;
 
-use egui::{emath::*, Id};
+use egui::{emath::*, Id, Modifiers};
 
 /// Displays a [`DockState`] in `egui`.
 pub struct DockArea<'tree, Tab> {
@@ -28,6 +28,12 @@ pub struct DockArea<'tree, Tab> {
     show_tab_name_on_hover: bool,
     show_window_close_buttons: bool,
     show_window_collapse_buttons: bool,
+    show_leaf_close_all_buttons: bool,
+    show_leaf_collapse_buttons: bool,
+    show_secondary_button_hint: bool,
+    secondary_button_modifiers: Modifiers,
+    secondary_button_on_modifier: bool,
+    secondary_button_context_menu: bool,
     allowed_splits: AllowedSplits,
     window_bounds: Option<Rect>,
 
@@ -60,6 +66,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             window_bounds: None,
             show_window_close_buttons: true,
             show_window_collapse_buttons: true,
+            show_leaf_close_all_buttons: true,
+            show_leaf_collapse_buttons: true,
+            show_secondary_button_hint: true,
+            secondary_button_modifiers: Modifiers::SHIFT,
+            secondary_button_on_modifier: true,
+            secondary_button_context_menu: true,
         }
     }
 
@@ -126,6 +138,34 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         self
     }
 
+    /// Whether tooltip hints are shown for secondary buttons on tab bars.
+    /// By default it's `true`.
+    pub fn show_secondary_button_hint(mut self, show_secondary_button_hint: bool) -> Self {
+        self.show_secondary_button_hint = show_secondary_button_hint;
+        self
+    }
+
+    /// The key combination used to activate secondary buttons on tab bars.
+    /// By default it's [`Modifiers::SHIFT`].
+    pub fn secondary_button_modifiers(mut self, secondary_button_modifiers: Modifiers) -> Self {
+        self.secondary_button_modifiers = secondary_button_modifiers;
+        self
+    }
+
+    /// Whether the secondary buttons on tab bars are activated by the modifier key.
+    /// By default it's `true`.
+    pub fn secondary_button_on_modifier(mut self, secondary_button_on_modifier: bool) -> Self {
+        self.secondary_button_on_modifier = secondary_button_on_modifier;
+        self
+    }
+
+    /// Whether the secondary buttons on tab bars are activated from a context value by right-clicking primary buttons.
+    /// By default it's `true`.
+    pub fn secondary_button_context_menu(mut self, secondary_button_context_menu: bool) -> Self {
+        self.secondary_button_context_menu = secondary_button_context_menu;
+        self
+    }
+
     /// The bounds for any windows inside the [`DockArea`]. Defaults to the screen rect.
     /// By default it's set to [`egui::Context::screen_rect`].
     #[inline(always)]
@@ -137,21 +177,39 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     /// Enables or disables the close button on windows.
     /// By default it's `true`.
     #[inline(always)]
+    #[deprecated = "consider using `show_leaf_close_buttons` instead."]
     pub fn show_window_close_buttons(mut self, show_window_close_buttons: bool) -> Self {
         self.show_window_close_buttons = show_window_close_buttons;
         self
     }
 
-    /// Enables or disables the collapsing header  on windows.
+    /// Enables or disables the collapsing header on windows.
     /// By default it's `true`.
     #[inline(always)]
+    #[deprecated = "consider using `show_leaf_collapse_buttons` instead."]
     pub fn show_window_collapse_buttons(mut self, show_window_collapse_buttons: bool) -> Self {
         self.show_window_collapse_buttons = show_window_collapse_buttons;
         self
     }
+
+    /// Enables or disables the close all tabs button on tab bars.
+    /// By default it's `true`.
+    #[inline(always)]
+    pub fn show_leaf_close_all_buttons(mut self, show_leaf_close_all_buttons: bool) -> Self {
+        self.show_leaf_close_all_buttons = show_leaf_close_all_buttons;
+        self
+    }
+
+    /// Enables or disables the collapse tabs button on tab bars.
+    /// By default it's `true`.
+    #[inline(always)]
+    pub fn show_leaf_collapse_buttons(mut self, show_leaf_collapse_buttons: bool) -> Self {
+        self.show_leaf_collapse_buttons = show_leaf_collapse_buttons;
+        self
+    }
 }
 
-impl<'tree, Tab> std::fmt::Debug for DockArea<'tree, Tab> {
+impl<Tab> std::fmt::Debug for DockArea<'_, Tab> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DockArea").finish_non_exhaustive()
     }

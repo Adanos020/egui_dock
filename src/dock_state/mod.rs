@@ -146,7 +146,7 @@ impl<Tab> DockState<Tab> {
     pub fn is_surface_valid(&self, surface_index: SurfaceIndex) -> bool {
         self.surfaces
             .get(surface_index.0)
-            .map_or(false, |surface| !surface.is_empty())
+            .is_some_and(|surface| !surface.is_empty())
     }
 
     /// Returns a list of all valid [`SurfaceIndex`]es.

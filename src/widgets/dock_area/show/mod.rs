@@ -18,7 +18,7 @@ mod leaf;
 mod main_surface;
 mod window_surface;
 
-impl<'tree, Tab> DockArea<'tree, Tab> {
+impl<Tab> DockArea<'_, Tab> {
     /// Show the `DockArea` at the top level.
     ///
     /// This is the same as doing:
@@ -133,6 +133,12 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             match index {
                 TabRemoval::Node(surface, node, tab) => {
                     self.dock_state[surface].remove_tab((node, tab));
+                    if self.dock_state[surface].is_empty() && !surface.is_main() {
+                        self.dock_state.remove_surface(surface);
+                    }
+                }
+                TabRemoval::Leaf(surface, node) => {
+                    self.dock_state[surface].remove_leaf(node);
                     if self.dock_state[surface].is_empty() && !surface.is_main() {
                         self.dock_state.remove_surface(surface);
                     }
@@ -335,13 +341,74 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let style = self.style.as_ref().unwrap();
         let pixels_per_point = ui.ctx().pixels_per_point();
 
+        let left_collapsed_count =
+            self.dock_state[surface_index][node_index.left()].collapsed_leaf_count();
+        let right_collapsed_count =
+            self.dock_state[surface_index][node_index.right()].collapsed_leaf_count();
+        let left_collapsed = self.dock_state[surface_index][node_index.left()].is_collapsed();
+        let right_collapsed = self.dock_state[surface_index][node_index.right()].is_collapsed();
+
+        if left_collapsed || right_collapsed {
+            if let Node::Vertical { rect, .. } = &mut self.dock_state[surface_index][node_index] {
+                debug_assert!(!rect.any_nan() && rect.is_finite());
+                let rect = expand_to_pixel(*rect, pixels_per_point);
+
+                if left_collapsed {
+                    // EITHER only left collapsed OR left and right both collapsed
+                    let border_y =
+                        rect.min.y + (left_collapsed_count as f32) * style.tab_bar.height;
+                    let left_separator_border = map_to_pixel(
+                        border_y - style.separator.width * 0.5,
+                        pixels_per_point,
+                        f32::round,
+                    );
+                    let right_separator_border = map_to_pixel(
+                        border_y + style.separator.width * 0.5,
+                        pixels_per_point,
+                        f32::round,
+                    );
+                    let left = rect
+                        .intersect(Rect::everything_above(left_separator_border))
+                        .intersect(max_rect);
+                    let right = rect
+                        .intersect(Rect::everything_below(right_separator_border))
+                        .intersect(max_rect);
+                    self.dock_state[surface_index][node_index.left()].set_rect(left);
+                    self.dock_state[surface_index][node_index.right()].set_rect(right);
+                } else {
+                    // Only right collapsed
+                    let border_y =
+                        rect.max.y - (right_collapsed_count as f32) * style.tab_bar.height;
+                    let left_separator_border = map_to_pixel(
+                        border_y - style.separator.width * 0.5,
+                        pixels_per_point,
+                        f32::round,
+                    );
+                    let right_separator_border = map_to_pixel(
+                        border_y + style.separator.width * 0.5,
+                        pixels_per_point,
+                        f32::round,
+                    );
+                    let left = rect
+                        .intersect(Rect::everything_above(left_separator_border))
+                        .intersect(max_rect);
+                    let right = rect
+                        .intersect(Rect::everything_below(right_separator_border))
+                        .intersect(max_rect);
+                    self.dock_state[surface_index][node_index.left()].set_rect(left);
+                    self.dock_state[surface_index][node_index.right()].set_rect(right);
+                }
+                return;
+            }
+        }
+
         duplicate! {
             [
                 orientation   dim_point  dim_size  left_of    right_of;
                 [Horizontal]  [x]        [width]   [left_of]  [right_of];
                 [Vertical]    [y]        [height]  [above]    [below];
             ]
-            if let Node::orientation { fraction, rect } = &mut self.dock_state[surface_index][node_index] {
+            if let Node::orientation { fraction, rect, .. } = &mut self.dock_state[surface_index][node_index] {
                 debug_assert!(!rect.any_nan() && rect.is_finite());
                 let rect = expand_to_pixel(*rect, pixels_per_point);
 
@@ -376,6 +443,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ) {
         assert!(self.dock_state[surface_index][node_index].is_parent());
 
+        // If either of the children is collapsed, we don't want the user to interact with the separator
+        if (self.dock_state[surface_index][node_index.left()].is_collapsed()
+            || self.dock_state[surface_index][node_index.right()].is_collapsed())
+            && self.dock_state[surface_index][node_index].is_vertical()
+        {
+            return;
+        }
+
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let pixels_per_point = ui.ctx().pixels_per_point();
 
@@ -385,7 +460,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 [Horizontal]  [x]        [width];
                 [Vertical]    [y]        [height];
             ]
-            if let Node::orientation { fraction, ref rect } = &mut self.dock_state[surface_index][node_index] {
+            if let Node::orientation { fraction, ref rect, .. } = &mut self.dock_state[surface_index][node_index] {
                 let mut separator = *rect;
 
                 let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
