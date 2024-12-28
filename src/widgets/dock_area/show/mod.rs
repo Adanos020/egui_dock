@@ -18,7 +18,7 @@ mod leaf;
 mod main_surface;
 mod window_surface;
 
-impl<'tree, Tab> DockArea<'tree, Tab> {
+impl<Tab> DockArea<'_, Tab> {
     /// Show the `DockArea` at the top level.
     ///
     /// This is the same as doing:

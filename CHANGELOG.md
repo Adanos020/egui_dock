@@ -55,6 +55,7 @@
   - Renamed `Translations::WindowTranslations` to `Translations::LeafTranslations`.
   - Renamed `WindowTranslations::close_button_tooltip` to `LeafTranslations::close_button_disabled_tooltip`.
   - `Translations::LeafTranslations` now requires more fields to be constructed (see **Added** section).
+- Upgraded to egui 0.30.
 
 ### Deprecated
 

@@ -42,7 +42,7 @@ impl<'a, Tab> Iterator for TabIter<'a, Tab> {
     }
 }
 
-impl<'a, Tab> std::fmt::Debug for TabIter<'a, Tab> {
+impl<Tab> std::fmt::Debug for TabIter<'_, Tab> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TabIter").finish_non_exhaustive()
     }

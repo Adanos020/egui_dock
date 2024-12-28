@@ -3,7 +3,6 @@ use egui::{
     CursorIcon, Frame, Id, Key, LayerId, Layout, NumExt, Order, Rect, Response, Rounding,
     ScrollArea, Sense, Shape, Stroke, TextStyle, Ui, UiBuilder, Vec2, WidgetText,
 };
-use std::convert::identity;
 use std::ops::RangeInclusive;
 
 use crate::dock_area::tab_removal::TabRemoval;
@@ -18,7 +17,7 @@ use crate::{
 
 use crate::popup::popup_under_widget;
 
-impl<'tree, Tab> DockArea<'tree, Tab> {
+impl<Tab> DockArea<'_, Tab> {
     pub(super) fn show_leaf(
         &mut self,
         ui: &mut Ui,
@@ -206,28 +205,20 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 let disabled = if let Node::Leaf { tabs, .. } =
                     &mut self.dock_state[surface_index][node_index]
                 {
-                    !tabs
-                        .iter_mut()
-                        .map(|tab| tab_viewer.closeable(tab))
-                        .all(identity)
+                    !tabs.iter_mut().all(|tab| tab_viewer.closeable(tab))
                 } else {
                     unreachable!()
                 };
 
                 // Current window contains non-closable tabs.
                 let close_window_disabled = disabled
-                    || !self.dock_state[surface_index]
-                        .iter_mut()
-                        .map(|node| {
-                            if let Node::Leaf { tabs, .. } = node {
-                                tabs.iter_mut()
-                                    .map(|tab| tab_viewer.closeable(tab))
-                                    .all(identity)
-                            } else {
-                                true
-                            }
-                        })
-                        .all(identity);
+                    || !self.dock_state[surface_index].iter_mut().all(|node| {
+                        if let Node::Leaf { tabs, .. } = node {
+                            tabs.iter_mut().all(|tab| tab_viewer.closeable(tab))
+                        } else {
+                            true
+                        }
+                    });
 
                 self.tab_close_all(
                     ui,
@@ -325,7 +316,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             let (response, title_id) = if is_being_dragged {
                 let layer_id = LayerId::new(Order::Tooltip, id);
                 let response = tabs_ui
-                    .with_layer_id(layer_id, |ui| {
+                    .scope_builder(UiBuilder::new().layer_id(layer_id), |ui| {
                         self.tab_title(
                             ui,
                             &tab_style,
@@ -1233,9 +1224,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 ui.ctx().check_for_id_clash(id, body_rect, "a tab with id");
                 let ui = &mut Ui::new(
                     ui.ctx().clone(),
-                    ui.layer_id(),
                     id,
-                    UiBuilder::new().max_rect(body_rect),
+                    UiBuilder::new().max_rect(body_rect).layer_id(ui.layer_id()),
                 );
                 ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 
