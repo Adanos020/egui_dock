@@ -1,6 +1,6 @@
 use egui::{
-    CentralPanel, Color32, Context, CursorIcon, EventFilter, Frame, Key, Pos2, Rect, Rounding,
-    Sense, Ui, Vec2,
+    CentralPanel, Color32, Context, CornerRadius, CursorIcon, EventFilter, Frame, Key, Pos2, Rect,
+    Sense, StrokeKind, Ui, Vec2,
 };
 
 use duplicate::duplicate;
@@ -317,6 +317,7 @@ impl<Tab> DockArea<'_, Tab> {
             rect,
             style.main_surface_border_rounding,
             style.main_surface_border_stroke,
+            StrokeKind::Inside,
         );
         if surface == SurfaceIndex::main() {
             rect = rect.expand(-style.main_surface_border_stroke.width / 2.0);
@@ -523,7 +524,7 @@ impl<Tab> DockArea<'_, Tab> {
                     style.separator.color_idle
                 };
 
-                ui.painter().rect_filled(separator, Rounding::ZERO, color);
+                ui.painter().rect_filled(separator, CornerRadius::ZERO, color);
 
                 // Update 'fraction' interaction after drawing separator,
                 // otherwise it may overlap on other separator / bodies when

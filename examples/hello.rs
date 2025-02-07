@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use eframe::NativeOptions;
 use egui::{
     color_picker::{color_edit_button_srgba, Alpha},
-    vec2, CentralPanel, ComboBox, Frame, Rounding, Slider, TopBottomPanel, Ui, ViewportBuilder,
+    vec2, CentralPanel, ComboBox, CornerRadius, Frame, Slider, TopBottomPanel, Ui, ViewportBuilder,
     WidgetText,
 };
 
@@ -216,8 +216,8 @@ impl MyContext {
                 );
                 ui.end_row();
 
-                ui.label("Rounding:");
-                rounding_ui(ui, &mut style.main_surface_border_rounding);
+                ui.label("Corner radius:");
+                corner_radius_ui(ui, &mut style.main_surface_border_rounding);
                 ui.end_row();
             });
         });
@@ -287,25 +287,25 @@ impl MyContext {
             fn tab_style_editor_ui(ui: &mut Ui, tab_style: &mut TabInteractionStyle) {
                 ui.separator();
 
-                ui.label("Rounding");
+                ui.label("Corner radius");
                 labeled_widget!(
                     ui,
-                    Slider::new(&mut tab_style.rounding.nw, 0.0..=15.0),
+                    Slider::new(&mut tab_style.corner_radius.nw, 0..=15),
                     "North-West"
                 );
                 labeled_widget!(
                     ui,
-                    Slider::new(&mut tab_style.rounding.ne, 0.0..=15.0),
+                    Slider::new(&mut tab_style.corner_radius.ne, 0..=15),
                     "North-East"
                 );
                 labeled_widget!(
                     ui,
-                    Slider::new(&mut tab_style.rounding.sw, 0.0..=15.0),
+                    Slider::new(&mut tab_style.corner_radius.sw, 0..=15),
                     "South-West"
                 );
                 labeled_widget!(
                     ui,
-                    Slider::new(&mut tab_style.rounding.se, 0.0..=15.0),
+                    Slider::new(&mut tab_style.corner_radius.se, 0..=15),
                     "South-East"
                 );
 
@@ -377,8 +377,8 @@ impl MyContext {
         ui.collapsing("Tab body", |ui| {
             ui.separator();
 
-            ui.label("Rounding");
-            rounding_ui(ui, &mut style.tab.tab_body.rounding);
+            ui.label("Corner radius");
+            corner_radius_ui(ui, &mut style.tab.tab_body.corner_radius);
 
             ui.label("Stroke width:");
             ui.add(Slider::new(
@@ -516,8 +516,8 @@ impl MyContext {
                     ui.add(Slider::new(&mut style.overlay.hovered_leaf_highlight.expansion, -50.0..=50.0));
                     ui.end_row();
                 });
-                ui.label("Rounding:");
-                rounding_ui(ui, &mut style.overlay.hovered_leaf_highlight.rounding);
+                ui.label("Corner radius:");
+                corner_radius_ui(ui, &mut style.overlay.hovered_leaf_highlight.corner_radius);
             })
         });
     }
@@ -630,9 +630,9 @@ impl eframe::App for MyApp {
     }
 }
 
-fn rounding_ui(ui: &mut Ui, rounding: &mut Rounding) {
-    labeled_widget!(ui, Slider::new(&mut rounding.nw, 0.0..=15.0), "North-West");
-    labeled_widget!(ui, Slider::new(&mut rounding.ne, 0.0..=15.0), "North-East");
-    labeled_widget!(ui, Slider::new(&mut rounding.sw, 0.0..=15.0), "South-West");
-    labeled_widget!(ui, Slider::new(&mut rounding.se, 0.0..=15.0), "South-East");
+fn corner_radius_ui(ui: &mut Ui, corner_radius: &mut CornerRadius) {
+    labeled_widget!(ui, Slider::new(&mut corner_radius.nw, 0..=15), "North-West");
+    labeled_widget!(ui, Slider::new(&mut corner_radius.ne, 0..=15), "North-East");
+    labeled_widget!(ui, Slider::new(&mut corner_radius.sw, 0..=15), "South-West");
+    labeled_widget!(ui, Slider::new(&mut corner_radius.se, 0..=15), "South-East");
 }
