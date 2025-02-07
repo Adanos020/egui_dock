@@ -4,8 +4,8 @@ use crate::{
     AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex, TabInsert,
 };
 use egui::{
-    emath::inverse_lerp, vec2, Context, Id, LayerId, NumExt, Order, Painter, Pos2, Rect, Stroke,
-    StrokeKind, Ui, Vec2,
+    emath::{inverse_lerp, GuiRounding},
+    vec2, Context, Id, LayerId, NumExt, Order, Painter, Pos2, Rect, Stroke, StrokeKind, Ui, Vec2,
 };
 
 #[derive(Debug, Clone)]
@@ -471,7 +471,7 @@ fn constrain_rect_to_area(ui: &Ui, rect: Rect, mut bounds: Rect) -> Rect {
     pos.y = pos.y.at_most(bounds.bottom() + margin_y - rect.height()); // move right if needed
     pos.y = pos.y.at_least(bounds.top() - margin_y); // move down if needed
 
-    pos = ui.painter().round_pos_to_pixels(pos);
+    pos = pos.round_to_pixels(ui.painter().pixels_per_point());
 
     Rect::from_min_size(pos, rect.size())
 }
