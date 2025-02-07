@@ -1,7 +1,7 @@
 use egui::{
     emath::TSTransform, epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, Color32,
-    CursorIcon, Frame, Id, Key, LayerId, Layout, NumExt, Order, Rect, Response, Rounding,
-    ScrollArea, Sense, Shape, Stroke, TextStyle, Ui, UiBuilder, Vec2, WidgetText,
+    CornerRadius, CursorIcon, Frame, Id, Key, LayerId, Layout, NumExt, Order, Rect, Response,
+    ScrollArea, Sense, Shape, Stroke, StrokeKind, TextStyle, Ui, UiBuilder, Vec2, WidgetText,
 };
 use std::ops::RangeInclusive;
 
@@ -93,7 +93,7 @@ impl<Tab> DockArea<'_, Tab> {
         );
         ui.painter().rect_filled(
             tabbar_outer_rect,
-            style.tab_bar.rounding,
+            style.tab_bar.corner_radius,
             style.tab_bar.bg_fill,
         );
 
@@ -522,7 +522,7 @@ impl<Tab> DockArea<'_, Tab> {
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let color = if response.hovered() || response.has_focus() {
             ui.painter()
-                .rect_filled(rect, Rounding::ZERO, style.buttons.add_tab_bg_fill);
+                .rect_filled(rect, CornerRadius::ZERO, style.buttons.add_tab_bg_fill);
             style.buttons.add_tab_active_color
         } else {
             style.buttons.add_tab_color
@@ -602,7 +602,7 @@ impl<Tab> DockArea<'_, Tab> {
             if !(close_window_disabled && on_secondary_button) {
                 ui.painter().rect_filled(
                     rect,
-                    Rounding::ZERO,
+                    CornerRadius::ZERO,
                     style.buttons.close_all_tabs_bg_fill,
                 );
             }
@@ -735,8 +735,11 @@ impl<Tab> DockArea<'_, Tab> {
         let on_secondary_button = self.is_on_secondary_button(surface_index, ui, &response);
 
         let color = if response.hovered() || response.has_focus() {
-            ui.painter()
-                .rect_filled(rect, Rounding::ZERO, style.buttons.collapse_tabs_bg_fill);
+            ui.painter().rect_filled(
+                rect,
+                CornerRadius::ZERO,
+                style.buttons.collapse_tabs_bg_fill,
+            );
             style.buttons.collapse_tabs_active_color
         } else {
             style.buttons.collapse_tabs_color
@@ -1000,19 +1003,20 @@ impl<Tab> DockArea<'_, Tab> {
         // Draw the full tab first and then the stroke on top to avoid the stroke
         // mixing with the background color.
         ui.painter()
-            .rect_filled(tab_rect, tab_style.rounding, tab_style.bg_fill);
+            .rect_filled(tab_rect, tab_style.corner_radius, tab_style.bg_fill);
         let stroke_rect = rect_stroke_box(tab_rect, 1.0);
         ui.painter().rect_stroke(
             stroke_rect,
-            tab_style.rounding,
+            tab_style.corner_radius,
             Stroke::new(1.0, tab_style.outline_color),
+            StrokeKind::Inside,
         );
         if !is_being_dragged {
             // Make the tab name area connect with the tab ui area.
             ui.painter().hline(
                 RangeInclusive::new(
-                    stroke_rect.min.x + f32::max(tab_style.rounding.sw, 1.5),
-                    stroke_rect.max.x - f32::max(tab_style.rounding.se, 1.5),
+                    stroke_rect.min.x + f32::max(tab_style.corner_radius.sw.into(), 1.5),
+                    stroke_rect.max.x - f32::max(tab_style.corner_radius.se.into(), 1.5),
                 ),
                 stroke_rect.bottom(),
                 Stroke::new(2.0, tab_style.bg_fill),
@@ -1046,13 +1050,13 @@ impl<Tab> DockArea<'_, Tab> {
             };
 
             if close_response.hovered() || close_response.has_focus() {
-                let mut rounding = tab_style.rounding;
-                rounding.nw = 0.0;
-                rounding.sw = 0.0;
+                let mut corner_radius = tab_style.corner_radius;
+                corner_radius.nw = 0;
+                corner_radius.sw = 0;
 
                 ui.painter().rect_filled(
                     close_button_rect,
-                    rounding,
+                    corner_radius,
                     style.buttons.add_tab_bg_fill,
                 );
             }
@@ -1210,7 +1214,7 @@ impl<Tab> DockArea<'_, Tab> {
                 if tab_viewer.clear_background(tab) {
                     ui.painter().rect_filled(
                         body_rect,
-                        tabs_style.tab_body.rounding,
+                        tabs_style.tab_body.corner_radius,
                         tabs_style.tab_body.bg_fill,
                     );
                 }
@@ -1242,12 +1246,13 @@ impl<Tab> DockArea<'_, Tab> {
                 );
                 ui.painter().rect_stroke(
                     rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
-                    tabs_style.tab_body.rounding,
+                    tabs_style.tab_body.corner_radius,
                     tabs_style.tab_body.stroke,
+                    StrokeKind::Inside,
                 );
 
                 ScrollArea::new(tab_viewer.scroll_bars(tab)).show(ui, |ui| {
-                    Frame::none()
+                    Frame::new()
                         .inner_margin(tabs_style.tab_body.inner_margin)
                         .show(ui, |ui| {
                             if fade_factor != 1.0 {
