@@ -617,7 +617,6 @@ impl TabBarStyle {
     ///
     /// Fields overwritten by [`egui::Style`] are:
     /// - [`TabBarStyle::bg_fill`]
-    /// - [`TabBarStyle::rounding`]
     /// - [`TabBarStyle::hline_color`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
@@ -661,7 +660,6 @@ impl TabInteractionStyle {
     /// - [`TabInteractionStyle::outline_color`]
     /// - [`TabInteractionStyle::bg_fill`]
     /// - [`TabInteractionStyle::text_color`]
-    /// - [`TabInteractionStyle::rounding`]
     pub fn from_egui_active(style: &egui::Style) -> Self {
         Self {
             outline_color: style.visuals.widgets.noninteractive.bg_stroke.color,
@@ -681,15 +679,11 @@ impl TabInteractionStyle {
     /// - [`TabInteractionStyle::outline_color`]
     /// - [`TabInteractionStyle::bg_fill`]
     /// - [`TabInteractionStyle::text_color`]
-    /// - [`TabInteractionStyle::rounding`]
     pub fn from_egui_inactive(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.text_color(),
-            bg_fill: egui::ecolor::tint_color_towards(
-                style.visuals.window_fill,
-                style.visuals.extreme_bg_color,
-            ),
-            outline_color: egui::ecolor::tint_color_towards(
+            bg_fill: tint_color_towards(style.visuals.window_fill, style.visuals.extreme_bg_color),
+            outline_color: tint_color_towards(
                 style.visuals.widgets.noninteractive.bg_stroke.color,
                 style.visuals.extreme_bg_color,
             ),
@@ -703,7 +697,6 @@ impl TabInteractionStyle {
     /// - [`TabInteractionStyle::outline_color`]
     /// - [`TabInteractionStyle::bg_fill`]
     /// - [`TabInteractionStyle::text_color`]
-    /// - [`TabInteractionStyle::rounding`]
     pub fn from_egui_focused(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
@@ -717,7 +710,6 @@ impl TabInteractionStyle {
     /// - [`TabInteractionStyle::outline_color`]
     /// - [`TabInteractionStyle::bg_fill`]
     /// - [`TabInteractionStyle::text_color`]
-    /// - [`TabInteractionStyle::rounding`]
     pub fn from_egui_hovered(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
@@ -732,7 +724,6 @@ impl TabInteractionStyle {
     /// - [`TabInteractionStyle::outline_color`]
     /// - [`TabInteractionStyle::bg_fill`]
     /// - [`TabInteractionStyle::text_color`]
-    /// - [`TabInteractionStyle::rounding`]
     pub fn from_egui_active_with_kb_focus(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
@@ -747,7 +738,6 @@ impl TabInteractionStyle {
     /// - [`TabInteractionStyle::outline_color`]
     /// - [`TabInteractionStyle::bg_fill`]
     /// - [`TabInteractionStyle::text_color`]
-    /// - [`TabInteractionStyle::rounding`]
     pub fn from_egui_inactive_with_kb_focus(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
@@ -762,7 +752,6 @@ impl TabInteractionStyle {
     /// - [`TabInteractionStyle::outline_color`]
     /// - [`TabInteractionStyle::bg_fill`]
     /// - [`TabInteractionStyle::text_color`]
-    /// - [`TabInteractionStyle::rounding`]
     pub fn from_egui_focused_with_kb_focus(style: &egui::Style) -> Self {
         Self {
             text_color: style.visuals.strong_text_color(),
@@ -778,7 +767,6 @@ impl TabBodyStyle {
     /// Fields overwritten by [`egui::Style`] are:
     /// - [`TabBodyStyle::inner_margin`]
     /// - [`TabBodyStyle::stroke]
-    /// - [`TabBodyStyle::rounding`]
     /// - [`TabBodyStyle::bg_fill`]
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
