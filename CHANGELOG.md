@@ -1,5 +1,11 @@
 # egui_dock changelog
 
+## egui_dock 0.16.1 - 2025-02-14
+
+### Fixed
+
+- `TabViewer::on_close` is now called when a whole leaf is closed at once.
+
 ## egui_dock 0.16.0 - 2025-02-07
 
 ### Breaking changes
