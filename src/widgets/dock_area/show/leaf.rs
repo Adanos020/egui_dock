@@ -69,8 +69,11 @@ impl<Tab> DockArea<'_, Tab> {
             .expect("This node must be a leaf here");
         for (tab_index, tab) in tabs.iter_mut().enumerate() {
             if tab_viewer.force_close(tab) {
-                self.to_remove
-                    .push((surface_index, node_index, TabIndex(tab_index)).into());
+                self.to_remove.push(TabRemoval::Node(
+                    surface_index,
+                    node_index,
+                    TabIndex(tab_index),
+                ));
             }
         }
     }
@@ -224,6 +227,7 @@ impl<Tab> DockArea<'_, Tab> {
                     ui,
                     surface_index,
                     node_index,
+                    tab_viewer,
                     tabbar_outer_rect,
                     fade_style,
                     disabled,
@@ -410,8 +414,11 @@ impl<Tab> DockArea<'_, Tab> {
                         }
                         if show_close_button && ui.add(close_button).clicked() {
                             if tab_viewer.on_close(tab) {
-                                self.to_remove
-                                    .push((surface_index, node_index, tab_index).into());
+                                self.to_remove.push(TabRemoval::Node(
+                                    surface_index,
+                                    node_index,
+                                    tab_index,
+                                ));
                             } else {
                                 *active = tab_index;
                                 self.new_focused = Some((surface_index, node_index));
@@ -431,7 +438,7 @@ impl<Tab> DockArea<'_, Tab> {
 
                     if tab_viewer.on_close(tab) {
                         self.to_remove
-                            .push((surface_index, node_index, tab_index).into());
+                            .push(TabRemoval::Node(surface_index, node_index, tab_index));
                     } else {
                         *active = tab_index;
                         self.new_focused = Some((surface_index, node_index));
@@ -480,7 +487,7 @@ impl<Tab> DockArea<'_, Tab> {
             if self.show_close_buttons && tab_viewer.closeable(tab) && response.middle_clicked() {
                 if tab_viewer.on_close(tab) {
                     self.to_remove
-                        .push((surface_index, node_index, tab_index).into());
+                        .push(TabRemoval::Node(surface_index, node_index, tab_index));
                 } else {
                     *active = tab_index;
                     self.new_focused = Some((surface_index, node_index));
@@ -572,6 +579,7 @@ impl<Tab> DockArea<'_, Tab> {
         ui: &mut Ui,
         surface_index: SurfaceIndex,
         node_index: NodeIndex,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
         tabbar_outer_rect: Rect,
         fade_style: Option<&Style>,
         disabled: bool,
@@ -669,12 +677,22 @@ impl<Tab> DockArea<'_, Tab> {
             }
 
             if response.clicked() {
+                let mut closed_all = false;
                 if on_secondary_button {
                     if !close_window_disabled {
                         self.to_remove.push(TabRemoval::Window(surface_index));
+                        closed_all = true;
                     }
                 } else if !disabled {
-                    self.to_remove.push((surface_index, node_index).into());
+                    self.to_remove
+                        .push(TabRemoval::Leaf(surface_index, node_index));
+                    closed_all = true;
+                }
+
+                if closed_all {
+                    for tab in self.dock_state[surface_index][node_index].iter_tabs_mut() {
+                        let _ = tab_viewer.on_close(tab);
+                    }
                 }
             }
 
