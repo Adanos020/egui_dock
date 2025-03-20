@@ -33,7 +33,7 @@ Add `egui` and `egui_dock` to your project's dependencies.
 ```toml
 [dependencies]
 egui = "0.31"
-egui_dock = "0.16"
+egui_dock = "0.17"
 ```
 
 Then proceed by setting up `egui`, following its [quick start guide](https://github.com/emilk/egui#quick-start).
