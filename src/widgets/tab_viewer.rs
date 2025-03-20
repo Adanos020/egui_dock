@@ -72,6 +72,16 @@ pub trait TabViewer {
     /// [`Node`](crate::Node) this particular add button was pressed.
     fn on_add(&mut self, _surface: SurfaceIndex, _node: NodeIndex) {}
 
+    /// Called when the rectangle of the tab content changes.
+    ///
+    /// This can happen when the window is resized, panels are docked or undocked,
+    /// or when the layout of the dock area is changed in any way that affects
+    /// the available space for the tab content.
+    ///
+    /// This is useful for tabs that need to adjust their content based on the
+    /// available space.
+    fn on_rect_changed(&mut self, _tab: &mut Self::Tab) {}
+
     /// Content of the popup under the add button. Useful for selecting what type of tab to add.
     ///
     /// This requires that [`DockArea::show_add_buttons`](crate::DockArea::show_add_buttons) and

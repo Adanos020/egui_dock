@@ -1198,7 +1198,10 @@ impl<Tab> DockArea<'_, Tab> {
 
         if !collapsed {
             if let Some(tab) = tabs.get_mut(active.0) {
-                *viewport = body_rect;
+                if *viewport != body_rect {
+                    *viewport = body_rect;
+                    tab_viewer.on_rect_changed(tab);
+                }
 
                 if ui.input(|i| i.pointer.any_click()) {
                     if let Some(pos) = state.last_hover_pos {
