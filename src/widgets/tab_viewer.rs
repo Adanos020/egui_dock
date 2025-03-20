@@ -35,21 +35,35 @@ pub trait TabViewer {
     /// Called after each tab button is shown, so you can add a tooltip, check for clicks, etc.
     fn on_tab_button(&mut self, _tab: &mut Self::Tab, _response: &egui::Response) {}
 
+    /// This is called when the `_tab` gets closed by the user.
+    ///
+    /// Returns an `OnCloseResponse` which determines what happens to the tab after this function gets called.
+    fn on_close(&mut self, _tab: &mut Self::Tab) -> OnCloseResponse {
+        OnCloseResponse::Close
+    }
+
     /// Returns `true` if the user of your app should be able to close a given `_tab`.
     ///
-    /// By default `true` is always returned.
+    /// By default, `true` is always returned.
+    fn is_closeable(&self, _tab: &mut Self::Tab) -> bool {
+        true
+    }
+
+    /// Returns `true` if the user of your app should be able to close a given `_tab`.
+    ///
+    /// By default, `true` is always returned.
+    #[deprecated = "Use the `TabViewer::is_closeable` function instead."]
     fn closeable(&mut self, _tab: &mut Self::Tab) -> bool {
         true
     }
 
-    /// This is called when the `_tab` gets closed by the user.
+    /// This is called every frame after [`ui`](Self::ui) is called, if the `_tab` is active.
     ///
-    /// Returns `true` if the tab should close immediately, otherwise `false`.
+    /// Returns `true` if the tab should be forced to close, `false` otherwise.
     ///
-    /// **Note**: if `false` is returned, [`ui`](Self::ui) will still be called once more if this
-    /// tab is active.
-    fn on_close(&mut self, _tab: &mut Self::Tab) -> bool {
-        true
+    /// In the event this function returns true the tab will be removed without calling `on_close`.
+    fn force_close(&mut self, _tab: &mut Self::Tab) -> bool {
+        false
     }
 
     /// This is called when the add button is pressed.
@@ -63,15 +77,6 @@ pub trait TabViewer {
     /// This requires that [`DockArea::show_add_buttons`](crate::DockArea::show_add_buttons) and
     /// [`DockArea::show_add_popup`](crate::DockArea::show_add_popup) are set to `true`.
     fn add_popup(&mut self, _ui: &mut Ui, _surface: SurfaceIndex, _node: NodeIndex) {}
-
-    /// This is called every frame after [`ui`](Self::ui) is called, if the `_tab` is active.
-    ///
-    /// Returns `true` if the tab should be forced to close, `false` otherwise.
-    ///
-    /// In the event this function returns true the tab will be removed without calling `on_close`.
-    fn force_close(&mut self, _tab: &mut Self::Tab) -> bool {
-        false
-    }
 
     /// Sets custom style for given tab.
     fn tab_style_override(&self, _tab: &Self::Tab, _global_style: &TabStyle) -> Option<TabStyle> {
@@ -97,4 +102,15 @@ pub trait TabViewer {
     fn scroll_bars(&self, _tab: &Self::Tab) -> [bool; 2] {
         [true, true]
     }
+}
+
+/// Determines what happens to a tab when a user attempts to close it.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum OnCloseResponse {
+    /// Closes the tab.
+    Close,
+    /// Focuses on the tab.
+    Focus,
+    /// Ignores the close request.
+    Ignore,
 }

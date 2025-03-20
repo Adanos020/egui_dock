@@ -16,6 +16,7 @@ use crate::{
 };
 
 use crate::popup::popup_under_widget;
+use crate::tab_viewer::OnCloseResponse;
 
 impl<Tab> DockArea<'_, Tab> {
     pub(super) fn show_leaf(
@@ -205,7 +206,7 @@ impl<Tab> DockArea<'_, Tab> {
                 let disabled = if let Node::Leaf { tabs, .. } =
                     &mut self.dock_state[surface_index][node_index]
                 {
-                    !tabs.iter_mut().all(|tab| tab_viewer.closeable(tab))
+                    !tabs.iter_mut().all(|tab| tab_viewer.is_closeable(tab))
                 } else {
                     unreachable!()
                 };
@@ -214,7 +215,7 @@ impl<Tab> DockArea<'_, Tab> {
                 let close_window_disabled = disabled
                     || !self.dock_state[surface_index].iter_mut().all(|node| {
                         if let Node::Leaf { tabs, .. } = node {
-                            tabs.iter_mut().all(|tab| tab_viewer.closeable(tab))
+                            tabs.iter_mut().all(|tab| tab_viewer.is_closeable(tab))
                         } else {
                             true
                         }
@@ -307,7 +308,7 @@ impl<Tab> DockArea<'_, Tab> {
                     *active == tab_index || is_being_dragged,
                     tab_viewer.title(&mut tabs[tab_index.0]),
                     tab_style.unwrap_or(style.tab.clone()),
-                    tab_viewer.closeable(&mut tabs[tab_index.0]),
+                    tab_viewer.is_closeable(&mut tabs[tab_index.0]),
                 )
             };
 
@@ -392,14 +393,14 @@ impl<Tab> DockArea<'_, Tab> {
                     let close_button =
                         Button::new(&self.dock_state.translations.tab_context_menu.close_button);
 
-                    let Node::Leaf { tabs, active, .. } =
-                        &mut self.dock_state[surface_index][node_index]
-                    else {
-                        unreachable!()
-                    };
-                    let tab = &mut tabs[tab_index.0];
-
                     response.context_menu(|ui| {
+                        let Node::Leaf { tabs, .. } =
+                            &mut self.dock_state[surface_index][node_index]
+                        else {
+                            unreachable!()
+                        };
+                        let tab = &mut tabs[tab_index.0];
+
                         tab_viewer.context_menu(ui, tab, surface_index, node_index);
                         if (surface_index.is_main() || !is_lonely_tab)
                             && tab_viewer.allowed_in_windows(tab)
@@ -409,33 +410,14 @@ impl<Tab> DockArea<'_, Tab> {
                             ui.close_menu();
                         }
                         if show_close_button && ui.add(close_button).clicked() {
-                            if tab_viewer.on_close(tab) {
-                                self.to_remove
-                                    .push((surface_index, node_index, tab_index).into());
-                            } else {
-                                *active = tab_index;
-                                self.new_focused = Some((surface_index, node_index));
-                            }
+                            self.close_tab(tab_viewer, surface_index, node_index, tab_index);
                             ui.close_menu();
                         }
                     });
                 }
 
                 if close_clicked {
-                    let Node::Leaf { tabs, active, .. } =
-                        &mut self.dock_state[surface_index][node_index]
-                    else {
-                        unreachable!()
-                    };
-                    let tab = &mut tabs[tab_index.0];
-
-                    if tab_viewer.on_close(tab) {
-                        self.to_remove
-                            .push((surface_index, node_index, tab_index).into());
-                    } else {
-                        *active = tab_index;
-                        self.new_focused = Some((surface_index, node_index));
-                    }
+                    self.close_tab(tab_viewer, surface_index, node_index, tab_index);
                 }
 
                 if let Some(pos) = state.last_hover_pos {
@@ -477,17 +459,40 @@ impl<Tab> DockArea<'_, Tab> {
                 self.new_focused = Some((surface_index, node_index));
             }
 
-            if self.show_close_buttons && tab_viewer.closeable(tab) && response.middle_clicked() {
-                if tab_viewer.on_close(tab) {
-                    self.to_remove
-                        .push((surface_index, node_index, tab_index).into());
-                } else {
-                    *active = tab_index;
-                    self.new_focused = Some((surface_index, node_index));
-                }
-            }
-
             tab_viewer.on_tab_button(tab, &response);
+
+            if self.show_close_buttons && tab_viewer.is_closeable(tab) && response.middle_clicked()
+            {
+                self.close_tab(tab_viewer, surface_index, node_index, tab_index);
+            }
+        }
+    }
+
+    fn close_tab(
+        &mut self,
+        tab_viewer: &mut impl TabViewer<Tab = Tab>,
+        surface_index: SurfaceIndex,
+        node_index: NodeIndex,
+        tab_index: TabIndex,
+    ) {
+        let Node::Leaf { tabs, active, .. } = &mut self.dock_state[surface_index][node_index]
+        else {
+            unreachable!()
+        };
+        let tab = &mut tabs[tab_index.0];
+
+        match tab_viewer.on_close(tab) {
+            OnCloseResponse::Close => {
+                self.to_remove
+                    .push((surface_index, node_index, tab_index).into());
+            }
+            OnCloseResponse::Focus => {
+                *active = tab_index;
+                self.new_focused = Some((surface_index, node_index));
+            }
+            OnCloseResponse::Ignore => {
+                // no-op
+            }
         }
     }
 
