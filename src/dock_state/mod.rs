@@ -304,6 +304,14 @@ impl<Tab> DockState<Tab> {
         removed_tab
     }
 
+    /// Remove a leaf at the specified surface, and node index.
+    pub fn remove_leaf(&mut self, (surface_index, node_index): (SurfaceIndex, NodeIndex)) {
+        self[surface_index].remove_leaf(node_index);
+        if !surface_index.is_main() && self[surface_index].is_empty() {
+            self.remove_surface(surface_index);
+        }
+    }
+
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///

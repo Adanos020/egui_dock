@@ -45,7 +45,7 @@ pub trait TabViewer {
     /// Returns `true` if the user of your app should be able to close a given `_tab`.
     ///
     /// By default, `true` is always returned.
-    fn is_closeable(&self, _tab: &mut Self::Tab) -> bool {
+    fn is_closeable(&self, _tab: &Self::Tab) -> bool {
         true
     }
 

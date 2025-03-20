@@ -120,7 +120,7 @@ impl TabViewer for MyContext {
         }
     }
 
-    fn is_closeable(&self, tab: &mut Self::Tab) -> bool {
+    fn is_closeable(&self, tab: &Self::Tab) -> bool {
         ["Inspector", "Style Editor"].contains(&tab.as_str())
     }
 
