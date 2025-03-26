@@ -5,7 +5,7 @@ use egui::{
 };
 use std::ops::RangeInclusive;
 
-use crate::dock_area::tab_removal::TabRemoval;
+use crate::dock_area::tab_removal::{ForcedRemoval, TabRemoval};
 use crate::{
     dock_area::{
         drag_and_drop::{DragData, DragDropState, HoverData, TreeComponent},
@@ -16,7 +16,6 @@ use crate::{
 };
 
 use crate::popup::popup_under_widget;
-use crate::tab_viewer::OnCloseResponse;
 
 impl<Tab> DockArea<'_, Tab> {
     pub(super) fn show_leaf(
@@ -70,8 +69,12 @@ impl<Tab> DockArea<'_, Tab> {
             .expect("This node must be a leaf here");
         for (tab_index, tab) in tabs.iter_mut().enumerate() {
             if tab_viewer.force_close(tab) {
-                self.to_remove
-                    .push((surface_index, node_index, TabIndex(tab_index)).into());
+                self.to_remove.push(TabRemoval::Tab(
+                    surface_index,
+                    node_index,
+                    TabIndex(tab_index),
+                    ForcedRemoval(true),
+                ));
             }
         }
     }
@@ -308,7 +311,7 @@ impl<Tab> DockArea<'_, Tab> {
                     *active == tab_index || is_being_dragged,
                     tab_viewer.title(&mut tabs[tab_index.0]),
                     tab_style.unwrap_or(style.tab.clone()),
-                    tab_viewer.is_closeable(&mut tabs[tab_index.0]),
+                    tab_viewer.is_closeable(&tabs[tab_index.0]),
                 )
             };
 
@@ -410,14 +413,24 @@ impl<Tab> DockArea<'_, Tab> {
                             ui.close_menu();
                         }
                         if show_close_button && ui.add(close_button).clicked() {
-                            self.close_tab(tab_viewer, surface_index, node_index, tab_index);
+                            self.to_remove.push(TabRemoval::Tab(
+                                surface_index,
+                                node_index,
+                                tab_index,
+                                ForcedRemoval(false),
+                            ));
                             ui.close_menu();
                         }
                     });
                 }
 
                 if close_clicked {
-                    self.close_tab(tab_viewer, surface_index, node_index, tab_index);
+                    self.to_remove.push(TabRemoval::Tab(
+                        surface_index,
+                        node_index,
+                        tab_index,
+                        ForcedRemoval(false),
+                    ));
                 }
 
                 if let Some(pos) = state.last_hover_pos {
@@ -463,35 +476,12 @@ impl<Tab> DockArea<'_, Tab> {
 
             if self.show_close_buttons && tab_viewer.is_closeable(tab) && response.middle_clicked()
             {
-                self.close_tab(tab_viewer, surface_index, node_index, tab_index);
-            }
-        }
-    }
-
-    fn close_tab(
-        &mut self,
-        tab_viewer: &mut impl TabViewer<Tab = Tab>,
-        surface_index: SurfaceIndex,
-        node_index: NodeIndex,
-        tab_index: TabIndex,
-    ) {
-        let Node::Leaf { tabs, active, .. } = &mut self.dock_state[surface_index][node_index]
-        else {
-            unreachable!()
-        };
-        let tab = &mut tabs[tab_index.0];
-
-        match tab_viewer.on_close(tab) {
-            OnCloseResponse::Close => {
-                self.to_remove
-                    .push((surface_index, node_index, tab_index).into());
-            }
-            OnCloseResponse::Focus => {
-                *active = tab_index;
-                self.new_focused = Some((surface_index, node_index));
-            }
-            OnCloseResponse::Ignore => {
-                // no-op
+                self.to_remove.push(TabRemoval::Tab(
+                    surface_index,
+                    node_index,
+                    tab_index,
+                    ForcedRemoval(false),
+                ));
             }
         }
     }
@@ -679,7 +669,8 @@ impl<Tab> DockArea<'_, Tab> {
                         self.to_remove.push(TabRemoval::Window(surface_index));
                     }
                 } else if !disabled {
-                    self.to_remove.push((surface_index, node_index).into());
+                    self.to_remove
+                        .push(TabRemoval::Node(surface_index, node_index));
                 }
             }
 

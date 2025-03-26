@@ -29,7 +29,7 @@ impl egui_dock::TabViewer for TabViewer {
 
     fn on_close(&mut self, _tab: &mut Self::Tab) -> OnCloseResponse {
         println!("Closed tab: {_tab}");
-        OnCloseResponse::Focus
+        OnCloseResponse::Close
     }
 }
 

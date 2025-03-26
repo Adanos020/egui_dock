@@ -6,13 +6,14 @@ use egui::{
 use duplicate::duplicate;
 use paste::paste;
 
+use super::{drag_and_drop::TreeComponent, state::State, tab_removal::TabRemoval};
+use crate::dock_area::tab_removal::ForcedRemoval;
+use crate::tab_viewer::OnCloseResponse;
 use crate::{
     utils::{expand_to_pixel, fade_dock_style, map_to_pixel},
     AllowedSplits, DockArea, Node, NodeIndex, OverlayType, Style, SurfaceIndex, TabDestination,
     TabViewer,
 };
-
-use super::{drag_and_drop::TreeComponent, state::State, tab_removal::TabRemoval};
 
 mod leaf;
 mod main_surface;
@@ -129,22 +130,57 @@ impl<Tab> DockArea<'_, Tab> {
             );
         }
 
-        for index in self.to_remove.drain(..).rev() {
-            match index {
-                TabRemoval::Node(surface, node, tab) => {
-                    self.dock_state[surface].remove_tab((node, tab));
-                    if self.dock_state[surface].is_empty() && !surface.is_main() {
-                        self.dock_state.remove_surface(surface);
+        for removal in self.to_remove.drain(..).rev() {
+            match removal {
+                TabRemoval::Tab(surface, node, tab, ForcedRemoval(is_forced)) => {
+                    if is_forced {
+                        self.dock_state.remove_tab((surface, node, tab));
+                    } else {
+                        let Node::Leaf { tabs, active, .. } = &mut self.dock_state[surface][node]
+                        else {
+                            unreachable!()
+                        };
+                        match tab_viewer.on_close(&mut tabs[tab.0]) {
+                            OnCloseResponse::Close => {
+                                self.dock_state.remove_tab((surface, node, tab));
+                            }
+                            OnCloseResponse::Focus => {
+                                *active = tab;
+                                self.new_focused = Some((surface, node));
+                            }
+                            OnCloseResponse::Ignore => {
+                                // no-op
+                            }
+                        }
                     }
                 }
-                TabRemoval::Leaf(surface, node) => {
-                    self.dock_state[surface].remove_leaf(node);
-                    if self.dock_state[surface].is_empty() && !surface.is_main() {
-                        self.dock_state.remove_surface(surface);
+                TabRemoval::Node(surface, node) => {
+                    let mut all_tabs_are_closable = true;
+                    for tab in self.dock_state[surface][node].iter_tabs_mut() {
+                        if !(tab_viewer.is_closeable(tab)
+                            && matches!(tab_viewer.on_close(tab), OnCloseResponse::Close))
+                        {
+                            all_tabs_are_closable = false;
+                        }
+                    }
+                    if all_tabs_are_closable {
+                        self.dock_state.remove_leaf((surface, node));
                     }
                 }
-                TabRemoval::Window(index) => {
-                    self.dock_state.remove_surface(index);
+                TabRemoval::Window(surface) => {
+                    let mut all_tabs_are_closable = true;
+                    for node in self.dock_state[surface].iter_mut() {
+                        for tab in node.iter_tabs_mut() {
+                            if !(tab_viewer.is_closeable(tab)
+                                && matches!(tab_viewer.on_close(tab), OnCloseResponse::Close))
+                            {
+                                all_tabs_are_closable = false;
+                            }
+                        }
+                    }
+                    if all_tabs_are_closable {
+                        self.dock_state.remove_surface(surface);
+                    }
                 }
             }
         }
