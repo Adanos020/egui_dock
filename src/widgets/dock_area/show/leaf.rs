@@ -97,6 +97,8 @@ impl<Tab> DockArea<'_, Tab> {
             style.tab_bar.bg_fill,
         );
 
+        let tabbar_outer_rect = tabbar_outer_rect - style.tab_bar.inner_margin;
+
         let mut available_width = tabbar_outer_rect.width();
         let scroll_bar_width = available_width;
         if available_width == 0.0 {
