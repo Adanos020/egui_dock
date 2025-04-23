@@ -362,6 +362,9 @@ impl<Tab> DockArea<'_, Tab> {
 
                 (response, title_id)
             } else {
+                if tab_index.0 != 0 {
+                    tabs_ui.allocate_space(vec2(tab_style.spacing, 0.0));
+                }
                 let (mut response, close_response) = self.tab_title(
                     tabs_ui,
                     &tab_style,
