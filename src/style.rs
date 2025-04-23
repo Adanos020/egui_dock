@@ -216,6 +216,9 @@ pub struct TabStyle {
     /// By `Default` it's `false`.
     pub hline_below_active_tab_name: bool,
 
+    /// Spacing between tabs.
+    pub spacing: f32,
+
     /// The minimum width of the tab.
     ///
     /// The tab title or [`TabBarStyle::fill_tab_bar`] may make the tab
@@ -446,6 +449,7 @@ impl Default for TabStyle {
                 text_color: Color32::BLACK,
                 ..Default::default()
             },
+            spacing: 0.0,
             tab_body: TabBodyStyle::default(),
             hline_below_active_tab_name: false,
             minimum_width: None,
