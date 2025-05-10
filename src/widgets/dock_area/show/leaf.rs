@@ -1053,7 +1053,7 @@ impl<Tab> DockArea<'_, Tab> {
                 ui.painter().rect_filled(
                     close_button_rect,
                     corner_radius,
-                    style.buttons.add_tab_bg_fill,
+                    style.buttons.close_tab_bg_fill,
                 );
             }
 
