@@ -580,7 +580,7 @@ impl Default for MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         TopBottomPanel::top("egui_dock::MenuBar").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
+            egui::containers::menu::Bar::new().ui(ui, |ui| {
                 ui.menu_button("View", |ui| {
                     // allow certain tabs to be toggled
                     for tab in &["File Browser", "Asset Manager"] {
@@ -596,7 +596,7 @@ impl eframe::App for MyApp {
                                     .push_to_focused_leaf(tab.to_string());
                             }
 
-                            ui.close_menu();
+                            ui.close();
                         }
                     }
                 });

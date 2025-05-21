@@ -65,7 +65,10 @@ pub(crate) fn popup_under_widget<R>(
 
     if ui.input(|i| i.key_pressed(Key::Escape)) || widget_response.clicked_elsewhere() {
         ui.memory_mut(|mem| mem.close_popup(popup_id));
+    } else {
+        ui.memory_mut(|mem| mem.keep_popup_open(popup_id));
     }
+
     Some(inner)
 }
 

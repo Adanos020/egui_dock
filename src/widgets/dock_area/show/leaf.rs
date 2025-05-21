@@ -406,7 +406,7 @@ impl<Tab> DockArea<'_, Tab> {
                             && ui.add(eject_button).clicked()
                         {
                             self.to_detach.push((surface_index, node_index, tab_index));
-                            ui.close_menu();
+                            ui.close();
                         }
                         if show_close_button && ui.add(close_button).clicked() {
                             if tab_viewer.on_close(tab) {
@@ -416,7 +416,7 @@ impl<Tab> DockArea<'_, Tab> {
                                 *active = tab_index;
                                 self.new_focused = Some((surface_index, node_index));
                             }
-                            ui.close_menu();
+                            ui.close();
                         }
                     });
                 }
@@ -782,7 +782,7 @@ impl<Tab> DockArea<'_, Tab> {
                     .button(&self.dock_state.translations.leaf.minimize_button)
                     .clicked()
                 {
-                    ui.close_menu();
+                    ui.close();
                     self.window_toggle_minimized(surface_index);
                 }
             });
