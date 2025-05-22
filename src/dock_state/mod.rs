@@ -186,8 +186,8 @@ impl<Tab> DockState<Tab> {
         &mut self,
         (surface_index, node_index, tab_index): (SurfaceIndex, NodeIndex, TabIndex),
     ) {
-        if let Some(Node::Leaf { active, .. }) = self[surface_index].nodes.get_mut(node_index.0) {
-            *active = tab_index;
+        if let Some(Node::Leaf(leaf)) = self[surface_index].nodes.get_mut(node_index.0) {
+            leaf.active = tab_index;
         }
     }
 

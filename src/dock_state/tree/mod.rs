@@ -20,6 +20,8 @@ pub mod node;
 /// Wrapper around indices to the collection of nodes inside a [`Tree`].
 pub mod node_index;
 
+
+
 pub use node::Node;
 pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
@@ -182,12 +184,7 @@ impl<Tab> Tree<Tab> {
     #[inline]
     pub fn find_active(&mut self) -> Option<(Rect, &mut Tab)> {
         self.nodes.iter_mut().find_map(|node| match node {
-            Node::Leaf {
-                tabs,
-                active,
-                viewport,
-                ..
-            } => tabs.get_mut(active.0).map(|tab| (viewport.to_owned(), tab)),
+            Node::Leaf(leaf) => leaf.tabs.get_mut(leaf.active.0).map(|tab| (leaf.viewport.to_owned(), tab)),
             _ => None,
         })
     }
@@ -253,8 +250,8 @@ impl<Tab> Tree<Tab> {
     pub fn num_tabs(&self) -> usize {
         let mut count = 0;
         for node in self.nodes.iter() {
-            if let Node::Leaf { tabs, .. } = node {
-                count += tabs.len();
+            if let Node::Leaf(leaf) = node {
+                count += leaf.tabs.len();
             }
         }
         count
@@ -558,12 +555,7 @@ impl<Tab> Tree<Tab> {
     #[inline]
     pub fn find_active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
         match self.focused_node.and_then(|idx| self.nodes.get_mut(idx.0)) {
-            Some(Node::Leaf {
-                tabs,
-                active,
-                viewport,
-                ..
-            }) => tabs.get_mut(active.0).map(|tab| (*viewport, tab)),
+            Some(Node::Leaf(leaf)) => leaf.active_focused(),
             _ => None,
         }
     }
@@ -664,9 +656,9 @@ impl<Tab> Tree<Tab> {
     pub fn push_to_first_leaf(&mut self, tab: Tab) {
         for (index, node) in &mut self.nodes.iter_mut().enumerate() {
             match node {
-                Node::Leaf { tabs, active, .. } => {
-                    *active = TabIndex(tabs.len());
-                    tabs.push(tab);
+                Node::Leaf(leaf) => {
+                    leaf.active = TabIndex(leaf.tabs.len());
+                    leaf.tabs.push(tab);
                     self.focused_node = Some(NodeIndex(index));
                     return;
                 }
@@ -686,8 +678,8 @@ impl<Tab> Tree<Tab> {
     /// Sets which is the active tab within a specific node.
     #[inline]
     pub fn set_active_tab(&mut self, node_index: NodeIndex, tab_index: TabIndex) {
-        if let Some(Node::Leaf { active, .. }) = self.nodes.get_mut(node_index.0) {
-            *active = tab_index;
+        if let Some(Node::Leaf(leaf)) = self.nodes.get_mut(node_index.0) {
+            leaf.active = tab_index;
         }
     }
 
@@ -708,9 +700,9 @@ impl<Tab> Tree<Tab> {
                             self[node] = Node::leaf(tab);
                             self.focused_node = Some(node);
                         }
-                        Node::Leaf { tabs, active, .. } => {
-                            *active = TabIndex(tabs.len());
-                            tabs.push(tab);
+                        Node::Leaf(leaf) => {
+                            leaf.active = TabIndex(leaf.tabs.len());
+                            leaf.tabs.push(tab);
                             self.focused_node = Some(node);
                         }
                         _ => {
