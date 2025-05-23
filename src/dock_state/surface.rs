@@ -1,3 +1,5 @@
+use std::ops::{Index, IndexMut};
+
 use crate::{Node, NodeIndex, Tree, WindowState};
 
 /// A [`Surface`] is the highest level component in a [`DockState`](crate::DockState). [`Surface`]s represent an area
@@ -16,6 +18,26 @@ pub enum Surface<Tab> {
 
     /// A windowed surface with a state.
     Window(Tree<Tab>, WindowState),
+}
+
+impl<Tab> Index<NodeIndex> for Surface<Tab> {
+    type Output = Node<Tab>;
+
+    fn index(&self, index: NodeIndex) -> &Self::Output {
+        match self {
+            Surface::Empty => panic!("indexed on empty surface"),
+            Surface::Main(tree) | Surface::Window(tree, _) => &tree[index],
+        }
+    }
+}
+impl<Tab> IndexMut<NodeIndex> for Surface<Tab> {
+
+    fn index_mut(&mut self, index: NodeIndex) -> &mut Self::Output {
+        match self {
+            Surface::Empty => panic!("indexed on empty surface"),
+            Surface::Main(tree) | Surface::Window(tree, _) => &mut tree[index],
+        }
+    }
 }
 
 impl<Tab> Surface<Tab> {
