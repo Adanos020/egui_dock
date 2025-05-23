@@ -1,10 +1,9 @@
 use crate::{Split, TabIndex};
 use egui::Rect;
-use leaf::LeafNode;
-use split::SplitNode;
-pub mod leaf;
-
-pub mod split;
+pub use leaf::LeafNode;
+pub use split::SplitNode;
+mod leaf;
+mod split;
 
 /// Represents an abstract node of a [`Tree`](crate::Tree).
 #[derive(Clone, Debug)]
@@ -30,6 +29,22 @@ impl<Tab> Node<Tab> {
         Self::Leaf(LeafNode::new(vec![tab]))
     }
 
+    /// Get immutable access to the leaf data of this node, if it contains any (i.e is a leaf)
+    pub fn get_leaf(&self) -> Option<&LeafNode<Tab>> {
+        match self {
+            Node::Leaf(leaf_node) => Some(leaf_node),
+            _ => None,
+        }
+    }
+
+    /// Get mutable access to the leaf data of this node, if it contains any (i.e is a leaf)
+    pub fn get_leaf_mut(&mut self) -> Option<&mut LeafNode<Tab>> {
+        match self {
+            Node::Leaf(leaf_node) => Some(leaf_node),
+            _ => None,
+        }
+    }
+
     /// Constructs a leaf node with a given list of `tabs`.
     #[inline(always)]
     pub const fn leaf_with(tabs: Vec<Tab>) -> Self {
@@ -37,6 +52,8 @@ impl<Tab> Node<Tab> {
     }
 
     /// Sets the area occupied by the node.
+    /// 
+    /// If the node is a ``Node::Empty``, this will do nothing.
     #[inline]
     pub fn set_rect(&mut self, new_rect: Rect) {
         match self {

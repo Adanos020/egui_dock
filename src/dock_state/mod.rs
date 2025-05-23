@@ -12,6 +12,7 @@ pub mod window_state;
 
 pub use surface::Surface;
 pub use surface_index::SurfaceIndex;
+use tree::node::LeafNode;
 pub use window_state::WindowState;
 
 use egui::Rect;
@@ -403,7 +404,7 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, surface)| {
                 surface
                     .iter_nodes()
-                    .map(move |node| (SurfaceIndex(surface_index), node))
+                    .map(move |node| (surface_index.into(), node))
             })
     }
 
@@ -415,7 +416,7 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, surface)| {
                 surface
                     .iter_nodes_mut()
-                    .map(move |node| (SurfaceIndex(surface_index), node))
+                    .map(move |node| (surface_index.into(), node))
             })
     }
 
@@ -427,7 +428,7 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, surface)| {
                 surface
                     .iter_all_tabs()
-                    .map(move |(node_index, tab)| ((SurfaceIndex(surface_index), node_index), tab))
+                    .map(move |(node_index, tab)| ((surface_index.into(), node_index), tab))
             })
     }
 
@@ -441,7 +442,7 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, surface)| {
                 surface
                     .iter_all_tabs_mut()
-                    .map(move |(node_index, tab)| ((SurfaceIndex(surface_index), node_index), tab))
+                    .map(move |(node_index, tab)| ((surface_index.into(), node_index), tab))
             })
     }
 
@@ -464,6 +465,16 @@ impl<Tab> DockState<Tab> {
             .iter()
             .filter_map(|surface| surface.node_tree())
             .flat_map(|nodes| nodes.iter())
+    }
+
+    /// Returns an immutable [`Iterator`] of all [``LeafNode``]s in the dock state.
+    pub fn iter_leaves(&self) -> impl Iterator<Item = (SurfaceIndex, &LeafNode<Tab>)> {
+        self.iter_all_nodes().filter_map(|(index, node)| node.get_leaf().map(|leaf| (index, leaf)))
+    }
+
+    /// Returns a mutable [`Iterator`] of all [``LeafNode``]s in the dock state.
+    pub fn iter_leaves_mut(&mut self) -> impl Iterator<Item = (SurfaceIndex, &mut LeafNode<Tab>)> {
+        self.iter_all_nodes_mut().filter_map(|(index, node)| node.get_leaf_mut().map(|leaf| (index, leaf)))
     }
 
     /// Returns a new [`DockState`] while mapping and filtering the tab type.

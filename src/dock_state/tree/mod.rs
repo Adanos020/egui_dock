@@ -677,10 +677,9 @@ impl<Tab> Tree<Tab> {
 
     /// Sets which is the active tab within a specific node.
     #[inline]
-    pub fn set_active_tab(&mut self, node_index: NodeIndex, tab_index: TabIndex) {
-        if let Some(Node::Leaf(leaf)) = self.nodes.get_mut(node_index.0) {
-            leaf.active = tab_index;
-        }
+    pub fn set_active_tab(&mut self, node_index: impl Into<NodeIndex>, tab_index: impl Into<TabIndex>) {
+        let Some(Node::Leaf(leaf)) = self.nodes.get_mut(node_index.into().0) else {return};
+        leaf.set_active_tab(tab_index);
     }
 
     /// Pushes `tab` to the currently focused leaf.
@@ -701,8 +700,7 @@ impl<Tab> Tree<Tab> {
                             self.focused_node = Some(node);
                         }
                         Node::Leaf(leaf) => {
-                            leaf.active = TabIndex(leaf.tabs.len());
-                            leaf.tabs.push(tab);
+                            leaf.append_tab(tab);
                             self.focused_node = Some(node);
                         }
                         _ => {
@@ -896,7 +894,7 @@ impl<Tab> Tree<Tab> {
         }
     }
 
-    /// Find the given tab based on ``predicate``.
+    /// Find a given tab based on ``predicate``.
     ///
     /// Returns the indicies in where that node and tab is in this surface.
     ///

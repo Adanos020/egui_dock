@@ -6,7 +6,7 @@ use egui::{
 use std::ops::RangeInclusive;
 
 use crate::dock_area::tab_removal::{ForcedRemoval, TabRemoval};
-use crate::node::leaf::LeafNode;
+use crate::node::LeafNode;
 use crate::{
     dock_area::{
         drag_and_drop::{DragData, DragDropState, HoverData, TreeComponent},

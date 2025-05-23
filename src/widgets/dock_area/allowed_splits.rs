@@ -32,7 +32,7 @@ impl AllowedSplits {
             0b10 => AllowedSplits::LeftRightOnly,
             0b01 => AllowedSplits::TopBottomOnly,
             0b00 => AllowedSplits::None,
-            _ => panic!("Provided an invalid value for allowed splits: {u8:0x}"),
+            _ => unreachable!("Provided an invalid value for allowed splits: {u8:0x}"),
         }
     }
 }

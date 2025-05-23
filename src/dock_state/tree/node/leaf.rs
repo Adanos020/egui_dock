@@ -1,10 +1,8 @@
+use egui::Rect;
 
-use std::ops::RangeInclusive;
+use crate::TabIndex;
 
-use egui::{epaint::TextShape, vec2, Align2, CursorIcon, Id, NumExt, Rect, Response, Sense, Stroke, StrokeKind, TextStyle, Ui, Vec2, WidgetText};
-
-use crate::{utils::{rect_set_size_centered, rect_stroke_box}, Style, TabIndex, TabStyle};
-
+/// The inner data of a [``Node::Leaf``](crate::Node), which contains tabs and can be collapsed.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct LeafNode<Tab> {
@@ -39,10 +37,26 @@ impl<Tab> LeafNode<Tab> {
         }
     }
 
+    /// Set the active tab of this ``LeafNode``
+    /// 
+    /// If ``active_tab`` is out of bounds, it will be ignored.
+    #[inline]
+    pub fn set_active_tab(&mut self, active_tab: impl Into<TabIndex>) {
+        let index = active_tab.into();
+        if index.0 < self.len() {
+            self.active = index;
+        }
+    }
+
     /// Set the area this ``LeafNode`` Occupies
     #[inline]
     pub fn set_rect(&mut self, new_rect: Rect) {
         self.rect = new_rect;
+    }
+
+    /// Get the length of tab list in this ``LeafNode``.
+    pub fn len(&self) -> usize {
+        self.tabs.len()
     }
 
     /// Get the area this ``LeafNode`` occupies
@@ -117,6 +131,4 @@ impl<Tab> LeafNode<Tab> {
     pub fn active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
         self.tabs.get_mut(self.active.0).map(|tab| (self.viewport, tab))
     }
-
-    
 }
