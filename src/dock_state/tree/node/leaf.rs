@@ -38,7 +38,7 @@ impl<Tab> LeafNode<Tab> {
     }
 
     /// Set the active tab of this ``LeafNode``
-    /// 
+    ///
     /// If ``active_tab`` is out of bounds, it will be ignored.
     #[inline]
     pub fn set_active_tab(&mut self, active_tab: impl Into<TabIndex>) {
@@ -76,8 +76,8 @@ impl<Tab> LeafNode<Tab> {
         &mut self.tabs
     }
 
-    /// Append a ``Tab`` to the end of this ``LeafNode``s tab list. 
-    /// 
+    /// Append a ``Tab`` to the end of this ``LeafNode``s tab list.
+    ///
     /// This will also focus the added tab.
     #[track_caller]
     #[inline]
@@ -86,12 +86,12 @@ impl<Tab> LeafNode<Tab> {
         self.tabs.push(tab);
     }
 
-    /// Insert a ``Tab`` to this ``LeafNode``s tab list at the specified ``TabIndex``. 
-    /// 
+    /// Insert a ``Tab`` to this ``LeafNode``s tab list at the specified ``TabIndex``.
+    ///
     /// This will also focus the added tab.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// if ``tab_index`` exceeds the leaf's tab list length.
     #[track_caller]
     #[inline]
@@ -101,13 +101,13 @@ impl<Tab> LeafNode<Tab> {
         self.active = tab_index;
     }
 
-    /// Remove a ``Tab`` to this ``LeafNode``s tab list at the specified ``TabIndex``. 
-    /// 
+    /// Remove a ``Tab`` to this ``LeafNode``s tab list at the specified ``TabIndex``.
+    ///
     /// This will also focus the added tab.'
-    /// 
+    ///
     /// # Panics
-    /// 
-    /// if ``tab_index`` is out of bounds for the tab list 
+    ///
+    /// if ``tab_index`` is out of bounds for the tab list
     #[inline]
     pub fn remove_tab(&mut self, tab_index: impl Into<TabIndex>) -> Option<Tab> {
         let index = tab_index.into();
@@ -116,7 +116,6 @@ impl<Tab> LeafNode<Tab> {
         }
         Some(self.tabs.remove(index.0))
     }
-
 
     /// Removes all tabs for which `predicate` returns `false`.
     pub fn retain_tabs<F>(&mut self, predicate: F)
@@ -129,6 +128,8 @@ impl<Tab> LeafNode<Tab> {
     /// Return the area and tab which is currently representing this ``LeafNode`` (if it exists)
     #[inline]
     pub fn active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
-        self.tabs.get_mut(self.active.0).map(|tab| (self.viewport, tab))
+        self.tabs
+            .get_mut(self.active.0)
+            .map(|tab| (self.viewport, tab))
     }
 }

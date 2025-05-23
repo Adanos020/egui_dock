@@ -469,12 +469,14 @@ impl<Tab> DockState<Tab> {
 
     /// Returns an immutable [`Iterator`] of all [``LeafNode``]s in the dock state.
     pub fn iter_leaves(&self) -> impl Iterator<Item = (SurfaceIndex, &LeafNode<Tab>)> {
-        self.iter_all_nodes().filter_map(|(index, node)| node.get_leaf().map(|leaf| (index, leaf)))
+        self.iter_all_nodes()
+            .filter_map(|(index, node)| node.get_leaf().map(|leaf| (index, leaf)))
     }
 
     /// Returns a mutable [`Iterator`] of all [``LeafNode``]s in the dock state.
     pub fn iter_leaves_mut(&mut self) -> impl Iterator<Item = (SurfaceIndex, &mut LeafNode<Tab>)> {
-        self.iter_all_nodes_mut().filter_map(|(index, node)| node.get_leaf_mut().map(|leaf| (index, leaf)))
+        self.iter_all_nodes_mut()
+            .filter_map(|(index, node)| node.get_leaf_mut().map(|leaf| (index, leaf)))
     }
 
     /// Returns a new [`DockState`] while mapping and filtering the tab type.
@@ -575,9 +577,14 @@ impl<Tab> DockState<Tab> {
     /// The returned [`NodeIndex`] will always point to a [`Node::Leaf`].
     ///
     /// In case there are several hits, only the first is returned.
-    pub fn find_tab_from(&self, predicate: impl Fn(&Tab) -> bool) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
+    pub fn find_tab_from(
+        &self,
+        predicate: impl Fn(&Tab) -> bool,
+    ) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
         for &surface_index in self.valid_surface_indices().iter() {
-            if self.surfaces[surface_index.0].is_empty() {continue;}
+            if self.surfaces[surface_index.0].is_empty() {
+                continue;
+            }
             if let Some((node_index, tab_index)) = self[surface_index].find_tab_from(&predicate) {
                 return Some((surface_index, node_index, tab_index));
             }

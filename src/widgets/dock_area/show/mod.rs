@@ -60,7 +60,6 @@ impl<Tab> DockArea<'_, Tab> {
             });
     }
 
-    
     /// Shows the docking hierarchy inside a [`Ui`].
     ///
     /// See also [`show`](Self::show).
@@ -137,8 +136,7 @@ impl<Tab> DockArea<'_, Tab> {
                     if is_forced {
                         self.dock_state.remove_tab((surface, node, tab));
                     } else {
-                        let Node::Leaf(leaf) = &mut self.dock_state[surface][node]
-                        else {
+                        let Node::Leaf(leaf) = &mut self.dock_state[surface][node] else {
                             unreachable!()
                         };
                         match tab_viewer.on_close(&mut leaf.tabs[tab.0]) {

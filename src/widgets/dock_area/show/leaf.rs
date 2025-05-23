@@ -123,8 +123,7 @@ impl<Tab> DockArea<'_, Tab> {
         }
 
         let actual_width = {
-            let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index]
-            else {
+            let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index] else {
                 unreachable!()
             };
 
@@ -207,13 +206,12 @@ impl<Tab> DockArea<'_, Tab> {
 
             if self.show_leaf_close_all_buttons {
                 // Current leaf contains non-closable tabs.
-                let disabled = if let Node::Leaf(leaf) =
-                    &mut self.dock_state[surface_index][node_index]
-                {
-                    !leaf.tabs.iter_mut().all(|tab| tab_viewer.is_closeable(tab))
-                } else {
-                    unreachable!()
-                };
+                let disabled =
+                    if let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index] {
+                        !leaf.tabs.iter_mut().all(|tab| tab_viewer.is_closeable(tab))
+                    } else {
+                        unreachable!()
+                    };
 
                 // Current window contains non-closable tabs.
                 let close_window_disabled = disabled
@@ -301,9 +299,7 @@ impl<Tab> DockArea<'_, Tab> {
             }
 
             let (is_active, label, tab_style, closeable) = {
-                let Node::Leaf(leaf) =
-                    &mut self.dock_state[surface_index][node_index]
-                else {
+                let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index] else {
                     unreachable!()
                 };
                 let style = fade.unwrap_or_else(|| self.style.as_ref().unwrap());
@@ -398,8 +394,7 @@ impl<Tab> DockArea<'_, Tab> {
                         Button::new(&self.dock_state.translations.tab_context_menu.close_button);
 
                     response.context_menu(|ui| {
-                        let Node::Leaf(leaf) =
-                            &mut self.dock_state[surface_index][node_index]
+                        let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index]
                         else {
                             unreachable!()
                         };
@@ -447,8 +442,7 @@ impl<Tab> DockArea<'_, Tab> {
             };
 
             // Paint hline below each tab unless its active (or option says otherwise).
-            let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index]
-            else {
+            let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index] else {
                 unreachable!()
             };
             let tab = &mut leaf.tabs[tab_index.0];
@@ -1130,11 +1124,13 @@ impl<Tab> DockArea<'_, Tab> {
                 let points_to_scroll_coefficient =
                     overflow / (scroll_bar_rect.width() - scroll_bar_handle_size);
 
-                leaf.scroll -= scroll_bar_handle_response.drag_delta().x * points_to_scroll_coefficient;
+                leaf.scroll -=
+                    scroll_bar_handle_response.drag_delta().x * points_to_scroll_coefficient;
 
                 if let Some(pos) = state.last_hover_pos {
                     if scroll_bar_rect.contains(pos) {
-                        leaf.scroll += ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x)
+                        leaf.scroll += ui
+                            .input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x)
                             * points_to_scroll_coefficient;
                     }
                 }
@@ -1177,13 +1173,17 @@ impl<Tab> DockArea<'_, Tab> {
         let (body_rect, _body_response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::hover());
 
-        let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index]
-        else {
+        let Node::Leaf(leaf) = &mut self.dock_state[surface_index][node_index] else {
             unreachable!();
         };
-        let LeafNode { rect, viewport, tabs, active, .. } = leaf;
+        let LeafNode {
+            rect,
+            viewport,
+            tabs,
+            active,
+            ..
+        } = leaf;
         if !collapsed {
-            
             if let Some(tab) = tabs.get_mut(active.0) {
                 if *viewport != body_rect {
                     *viewport = body_rect;

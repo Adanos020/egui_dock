@@ -52,15 +52,14 @@ impl<Tab> Node<Tab> {
     }
 
     /// Sets the area occupied by the node.
-    /// 
+    ///
     /// If the node is a ``Node::Empty``, this will do nothing.
     #[inline]
     pub fn set_rect(&mut self, new_rect: Rect) {
         match self {
             Self::Empty => (),
             Self::Leaf(leaf) => leaf.set_rect(new_rect),
-            | Self::Vertical(split)
-            | Self::Horizontal(split)=> split.set_rect(new_rect),
+            Self::Vertical(split) | Self::Horizontal(split) => split.set_rect(new_rect),
         }
     }
 
@@ -72,8 +71,7 @@ impl<Tab> Node<Tab> {
         match self {
             Self::Empty => None,
             Self::Leaf(leaf) => Some(leaf.rect()),
-            | Self::Vertical(split)
-            | Self::Horizontal(split)=> Some(split.rect()),
+            Self::Vertical(split) | Self::Horizontal(split) => Some(split.rect()),
         }
     }
 
@@ -122,11 +120,13 @@ impl<Tab> Node<Tab> {
     pub fn collapsed_leaf_count(&self) -> i32 {
         match self {
             Node::Horizontal(split) | Node::Vertical(split) => split.collapsed_leaf_count,
-            Node::Leaf(leaf) => if leaf.collapsed {
+            Node::Leaf(leaf) => {
+                if leaf.collapsed {
                     1
                 } else {
                     0
-                },
+                }
+            }
             Node::Empty => 0,
         }
     }
@@ -142,8 +142,18 @@ impl<Tab> Node<Tab> {
         assert!((0.0..=1.0).contains(&fraction));
         let rect = Rect::NOTHING;
         let src = match split {
-            Split::Left | Split::Right => Node::Horizontal(SplitNode::new(rect, fraction, self.is_collapsed(), self.collapsed_leaf_count())),
-            Split::Above | Split::Below => Node::Vertical(SplitNode::new(rect, fraction, self.is_collapsed(), self.collapsed_leaf_count())),
+            Split::Left | Split::Right => Node::Horizontal(SplitNode::new(
+                rect,
+                fraction,
+                self.is_collapsed(),
+                self.collapsed_leaf_count(),
+            )),
+            Split::Above | Split::Below => Node::Vertical(SplitNode::new(
+                rect,
+                fraction,
+                self.is_collapsed(),
+                self.collapsed_leaf_count(),
+            )),
         };
         std::mem::replace(self, src)
     }
@@ -318,12 +328,19 @@ impl<Tab> Node<Tab> {
     {
         match self {
             Node::Leaf(leaf) => {
-                let LeafNode { rect, viewport, tabs, active, scroll, collapsed } = leaf;
+                let LeafNode {
+                    rect,
+                    viewport,
+                    tabs,
+                    active,
+                    scroll,
+                    collapsed,
+                } = leaf;
                 let tabs: Vec<_> = tabs.iter().filter_map(function).collect();
                 if tabs.is_empty() {
                     Node::Empty
                 } else {
-                    Node::Leaf( LeafNode {
+                    Node::Leaf(LeafNode {
                         rect: *rect,
                         viewport: *viewport,
                         tabs,

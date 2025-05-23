@@ -1,6 +1,5 @@
 use egui::Rect;
 
-
 ///the inner data of a [``Node::Horizontal``](crate::Node)/[``Node::Vertical``](crate::Node), which splits into two further nodes.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -19,8 +18,18 @@ pub struct SplitNode {
 }
 impl SplitNode {
     /// Create a new ``SplitNode``
-    pub const fn new(rect: Rect, fraction: f32, fully_collapsed: bool, collapsed_leaf_count: i32) -> Self {
-        Self { rect, fraction, fully_collapsed, collapsed_leaf_count }
+    pub const fn new(
+        rect: Rect,
+        fraction: f32,
+        fully_collapsed: bool,
+        collapsed_leaf_count: i32,
+    ) -> Self {
+        Self {
+            rect,
+            fraction,
+            fully_collapsed,
+            collapsed_leaf_count,
+        }
     }
     /// Set the Area which this ``SplitNode`` occupies.
     #[inline]

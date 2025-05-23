@@ -20,8 +20,6 @@ pub mod node;
 /// Wrapper around indices to the collection of nodes inside a [`Tree`].
 pub mod node_index;
 
-
-
 pub use node::Node;
 pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
@@ -184,7 +182,10 @@ impl<Tab> Tree<Tab> {
     #[inline]
     pub fn find_active(&mut self) -> Option<(Rect, &mut Tab)> {
         self.nodes.iter_mut().find_map(|node| match node {
-            Node::Leaf(leaf) => leaf.tabs.get_mut(leaf.active.0).map(|tab| (leaf.viewport.to_owned(), tab)),
+            Node::Leaf(leaf) => leaf
+                .tabs
+                .get_mut(leaf.active.0)
+                .map(|tab| (leaf.viewport.to_owned(), tab)),
             _ => None,
         })
     }
@@ -677,8 +678,14 @@ impl<Tab> Tree<Tab> {
 
     /// Sets which is the active tab within a specific node.
     #[inline]
-    pub fn set_active_tab(&mut self, node_index: impl Into<NodeIndex>, tab_index: impl Into<TabIndex>) {
-        let Some(Node::Leaf(leaf)) = self.nodes.get_mut(node_index.into().0) else {return};
+    pub fn set_active_tab(
+        &mut self,
+        node_index: impl Into<NodeIndex>,
+        tab_index: impl Into<TabIndex>,
+    ) {
+        let Some(Node::Leaf(leaf)) = self.nodes.get_mut(node_index.into().0) else {
+            return;
+        };
         leaf.set_active_tab(tab_index);
     }
 
@@ -903,7 +910,9 @@ impl<Tab> Tree<Tab> {
     /// In case there are several hits, only the first is returned.
     pub fn find_tab_from(&self, predicate: impl Fn(&Tab) -> bool) -> Option<(NodeIndex, TabIndex)> {
         for (node_index, node) in self.nodes.iter().enumerate() {
-            let Some(tabs) = node.tabs() else {continue;};
+            let Some(tabs) = node.tabs() else {
+                continue;
+            };
             for (tab_index, tab) in tabs.iter().enumerate() {
                 if predicate(tab) {
                     return Some((node_index.into(), tab_index.into()));
