@@ -556,6 +556,23 @@ impl<Tab> DockState<Tab> {
             !surface.is_empty()
         });
     }
+
+    /// Find a tab based on the conditions of a functino.
+    ///
+    /// Returns in which node and where in that node the tab is.
+    ///
+    /// The returned [`NodeIndex`] will always point to a [`Node::Leaf`].
+    ///
+    /// In case there are several hits, only the first is returned.
+    pub fn find_tab_from(&self, predicate: impl Fn(&Tab) -> bool) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
+        for &surface_index in self.valid_surface_indices().iter() {
+            if self.surfaces[surface_index.0].is_empty() {continue;}
+            if let Some((node_index, tab_index)) = self[surface_index].find_tab_from(&predicate) {
+                return Some((surface_index, node_index, tab_index));
+            }
+        }
+        None
+    }
 }
 
 impl<Tab> DockState<Tab>
@@ -572,14 +589,7 @@ where
     ///
     /// See also: [`find_main_surface_tab`](DockState::find_main_surface_tab)
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
-        for &surface_index in self.valid_surface_indices().iter() {
-            if !self.surfaces[surface_index.0].is_empty() {
-                if let Some((node_index, tab_index)) = self[surface_index].find_tab(needle_tab) {
-                    return Some((surface_index, node_index, tab_index));
-                }
-            }
-        }
-        None
+        self.find_tab_from(|tab| tab == needle_tab)
     }
 
     /// Find the given tab on the main surface.

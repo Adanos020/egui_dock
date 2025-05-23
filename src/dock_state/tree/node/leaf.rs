@@ -1,6 +1,9 @@
-use egui::Rect;
 
-use crate::TabIndex;
+use std::ops::RangeInclusive;
+
+use egui::{epaint::TextShape, vec2, Align2, CursorIcon, Id, NumExt, Rect, Response, Sense, Stroke, StrokeKind, TextStyle, Ui, Vec2, WidgetText};
+
+use crate::{utils::{rect_set_size_centered, rect_stroke_box}, Style, TabIndex, TabStyle};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -24,6 +27,7 @@ pub struct LeafNode<Tab> {
     pub collapsed: bool,
 }
 impl<Tab> LeafNode<Tab> {
+    /// Create New LeafNode with specified ``tabs``, all other internal values will be filled by "nothing" defaults.
     pub const fn new(tabs: Vec<Tab>) -> Self {
         LeafNode {
             rect: Rect::NOTHING,
@@ -35,25 +39,32 @@ impl<Tab> LeafNode<Tab> {
         }
     }
 
+    /// Set the area this ``LeafNode`` Occupies
     #[inline]
     pub fn set_rect(&mut self, new_rect: Rect) {
         self.rect = new_rect;
     }
 
+    /// Get the area this ``LeafNode`` occupies
     pub fn rect(&self) -> Rect {
         self.rect
     }
 
+    /// Get immutable access to the ``Tab``s of this ``LeafNode``
     #[inline]
     pub fn tabs(&self) -> &[Tab] {
         &self.tabs
     }
 
+    /// Get mutable access to the ``Tab``s of this ``LeafNode``
     #[inline]
     pub fn tabs_mut(&mut self) -> &mut [Tab] {
         &mut self.tabs
     }
 
+    /// Append a ``Tab`` to the end of this ``LeafNode``s tab list. 
+    /// 
+    /// This will also focus the added tab.
     #[track_caller]
     #[inline]
     pub fn append_tab(&mut self, tab: Tab) {
@@ -61,21 +72,39 @@ impl<Tab> LeafNode<Tab> {
         self.tabs.push(tab);
     }
 
+    /// Insert a ``Tab`` to this ``LeafNode``s tab list at the specified ``TabIndex``. 
+    /// 
+    /// This will also focus the added tab.
+    /// 
+    /// # Panics
+    /// 
+    /// if ``tab_index`` exceeds the leaf's tab list length.
     #[track_caller]
     #[inline]
-    pub fn insert_tab(&mut self, index: TabIndex, tab: Tab) {
-        self.tabs.insert(index.0, tab);
-        self.active = index;
+    pub fn insert_tab(&mut self, tab_index: impl Into<TabIndex>, tab: Tab) {
+        let tab_index = tab_index.into();
+        self.tabs.insert(tab_index.0, tab);
+        self.active = tab_index;
     }
 
+    /// Remove a ``Tab`` to this ``LeafNode``s tab list at the specified ``TabIndex``. 
+    /// 
+    /// This will also focus the added tab.'
+    /// 
+    /// # Panics
+    /// 
+    /// if ``tab_index`` is out of bounds for the tab list 
     #[inline]
-    pub fn remove_tab(&mut self, tab_index: TabIndex) -> Option<Tab> {
-        if tab_index <= self.active {
+    pub fn remove_tab(&mut self, tab_index: impl Into<TabIndex>) -> Option<Tab> {
+        let index = tab_index.into();
+        if index <= self.active {
             self.active.0 = self.active.0.saturating_sub(1);
         }
-        Some(self.tabs.remove(tab_index.0))
+        Some(self.tabs.remove(index.0))
     }
 
+
+    /// Removes all tabs for which `predicate` returns `false`.
     pub fn retain_tabs<F>(&mut self, predicate: F)
     where
         F: FnMut(&mut Tab) -> bool,
@@ -83,9 +112,11 @@ impl<Tab> LeafNode<Tab> {
         self.tabs.retain_mut(predicate);
     }
 
+    /// Return the area and tab which is currently representing this ``LeafNode`` (if it exists)
     #[inline]
     pub fn active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
         self.tabs.get_mut(self.active.0).map(|tab| (self.viewport, tab))
     }
 
+    
 }

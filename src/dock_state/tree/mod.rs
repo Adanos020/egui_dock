@@ -895,6 +895,25 @@ impl<Tab> Tree<Tab> {
             }
         }
     }
+
+    /// Find the given tab based on ``predicate``.
+    ///
+    /// Returns the indicies in where that node and tab is in this surface.
+    ///
+    /// The returned [`NodeIndex`] will always point to a [`Node::Leaf`].
+    ///
+    /// In case there are several hits, only the first is returned.
+    pub fn find_tab_from(&self, predicate: impl Fn(&Tab) -> bool) -> Option<(NodeIndex, TabIndex)> {
+        for (node_index, node) in self.nodes.iter().enumerate() {
+            let Some(tabs) = node.tabs() else {continue;};
+            for (tab_index, tab) in tabs.iter().enumerate() {
+                if predicate(tab) {
+                    return Some((node_index.into(), tab_index.into()));
+                }
+            }
+        }
+        None
+    }
 }
 
 impl<Tab> Tree<Tab>
@@ -909,15 +928,6 @@ where
     ///
     /// In case there are several hits, only the first is returned.
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(NodeIndex, TabIndex)> {
-        for (node_index, node) in self.nodes.iter().enumerate() {
-            if let Some(tabs) = node.tabs() {
-                for (tab_index, tab) in tabs.iter().enumerate() {
-                    if tab == needle_tab {
-                        return Some((node_index.into(), tab_index.into()));
-                    }
-                }
-            }
-        }
-        None
+        self.find_tab_from(|tab| tab == needle_tab)
     }
 }

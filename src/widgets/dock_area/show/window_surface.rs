@@ -52,11 +52,11 @@ impl<Tab> DockArea<'_, Tab> {
                     }
                     unreachable!("a window surface should never be empty")
                 });
-            let Node::Leaf { tabs, active, .. } = &mut self.dock_state[surf_index][node_id] else {
+            let Node::Leaf(leaf) = &mut self.dock_state[surf_index][node_id] else {
                 unreachable!()
             };
             tab_viewer
-                .title(&mut tabs[active.0])
+                .title(&mut leaf.tabs[leaf.active.0])
                 .color(ui.visuals().widgets.noninteractive.fg_stroke.color)
         };
 
