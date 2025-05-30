@@ -31,7 +31,6 @@ impl<Tab> Index<NodeIndex> for Surface<Tab> {
     }
 }
 impl<Tab> IndexMut<NodeIndex> for Surface<Tab> {
-
     fn index_mut(&mut self, index: NodeIndex) -> &mut Self::Output {
         match self {
             Surface::Empty => panic!("indexed on empty surface"),

@@ -131,7 +131,7 @@ impl<Tab> LeafNode<Tab> {
     }
 
     /// Return the area and tab which is currently representing this [`LeafNode`]
-    /// 
+    ///
     /// This may return ``None`` if the leaf contains 0 tabs.
     #[inline]
     pub fn active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
