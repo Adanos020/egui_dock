@@ -37,9 +37,9 @@ impl<Tab> LeafNode<Tab> {
         }
     }
 
-    /// Set the active tab of this ``LeafNode``
+    /// Set the active tab of this [`LeafNode`]
     ///
-    /// If ``active_tab`` is out of bounds, it will be ignored.
+    /// If ``active_tab`` is out of bounds, it will be ignored and the active tab will not be changed.
     #[inline]
     pub fn set_active_tab(&mut self, active_tab: impl Into<TabIndex>) {
         let index = active_tab.into();
@@ -48,35 +48,35 @@ impl<Tab> LeafNode<Tab> {
         }
     }
 
-    /// Set the area this ``LeafNode`` Occupies
+    /// Set the area this [`LeafNode`] Occupies on screen.
     #[inline]
     pub fn set_rect(&mut self, new_rect: Rect) {
         self.rect = new_rect;
     }
 
-    /// Get the length of tab list in this ``LeafNode``.
+    /// Get the length of tab list in this [`LeafNode`].
     pub fn len(&self) -> usize {
         self.tabs.len()
     }
 
-    /// Get the area this ``LeafNode`` occupies
+    /// Get a [`Rect`] representing the area this [`LeafNode`] occupies on screen.
     pub fn rect(&self) -> Rect {
         self.rect
     }
 
-    /// Get immutable access to the ``Tab``s of this ``LeafNode``
+    /// Get immutable access to the ``Tab``s of this [`LeafNode`]
     #[inline]
     pub fn tabs(&self) -> &[Tab] {
         &self.tabs
     }
 
-    /// Get mutable access to the ``Tab``s of this ``LeafNode``
+    /// Get mutable access to the ``Tab``s of this [`LeafNode`]
     #[inline]
     pub fn tabs_mut(&mut self) -> &mut [Tab] {
         &mut self.tabs
     }
 
-    /// Append a ``Tab`` to the end of this ``LeafNode``s tab list.
+    /// Append a ``Tab`` to the end of this [`LeafNode`]s tab list.
     ///
     /// This will also focus the added tab.
     #[track_caller]
@@ -86,7 +86,7 @@ impl<Tab> LeafNode<Tab> {
         self.tabs.push(tab);
     }
 
-    /// Insert a ``Tab`` to this ``LeafNode``s tab list at the specified ``TabIndex``.
+    /// Insert a ``Tab`` to this [`LeafNode`]s tab list at the specified [`TabIndex`].
     ///
     /// This will also focus the added tab.
     ///
@@ -101,7 +101,7 @@ impl<Tab> LeafNode<Tab> {
         self.active = tab_index;
     }
 
-    /// Remove a ``Tab`` to this ``LeafNode``s tab list at the specified ``TabIndex``.
+    /// Remove a ``Tab`` to this [`LeafNode`]s tab list at the specified [`TabIndex`].
     ///
     /// This will also focus the added tab.'
     ///
@@ -125,7 +125,9 @@ impl<Tab> LeafNode<Tab> {
         self.tabs.retain_mut(predicate);
     }
 
-    /// Return the area and tab which is currently representing this ``LeafNode`` (if it exists)
+    /// Return the area and tab which is currently representing this [`LeafNode`]
+    /// 
+    /// This may return ``None`` if the leaf contains 0 tabs.
     #[inline]
     pub fn active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
         self.tabs

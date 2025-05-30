@@ -1,9 +1,11 @@
 use crate::{Split, TabIndex};
 use egui::Rect;
-pub use leaf::LeafNode;
-pub use split::SplitNode;
+
 mod leaf;
 mod split;
+pub use leaf::LeafNode;
+pub use split::SplitNode;
+
 
 /// Represents an abstract node of a [`Tree`](crate::Tree).
 #[derive(Clone, Debug)]

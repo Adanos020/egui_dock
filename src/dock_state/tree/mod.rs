@@ -24,6 +24,8 @@ pub use node::Node;
 pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
+pub use node::LeafNode;
+pub use node::SplitNode;
 
 use egui::ahash::HashSet;
 use egui::Rect;
@@ -280,12 +282,12 @@ impl<Tab> Tree<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, Node};
+    /// # use egui_dock::{DockState, LeafNode};
     /// let mut dock_state = DockState::new(vec!["single tab"]);
     /// let root_node = dock_state.main_surface_mut().root_node_mut().unwrap();
-    /// if let Node::Leaf { tabs, ..} = root_node {
-    ///     tabs.push("partner tab");
-    /// }
+    /// let root_as_leaf = root_node.get_leaf_mut().unwrap();
+    /// root_as_leaf.tabs.push("partner tab");
+    /// 
     /// assert_eq!(root_node.tabs(), Some(["single tab", "partner tab"].as_slice()));
     /// ```
     pub fn root_node_mut(&mut self) -> Option<&mut Node<Tab>> {
