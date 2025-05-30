@@ -59,6 +59,11 @@ impl<Tab> LeafNode<Tab> {
         self.tabs.len()
     }
 
+    /// Returns `true` when the [`LeafNode`] contains no tabs.
+    pub fn is_empty(&self) -> bool {
+        self.tabs.is_empty()
+    }
+
     /// Get a [`Rect`] representing the area this [`LeafNode`] occupies on screen.
     pub fn rect(&self) -> Rect {
         self.rect
