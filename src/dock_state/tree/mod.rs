@@ -929,3 +929,25 @@ where
         None
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[derive(Copy, Clone, Debug, PartialEq)]
+    struct Tab(u64);
+
+    #[test]
+    fn retain() {
+        let mut tree: Tree<Tab> = Tree::new(vec![]);
+        tree.push_to_focused_leaf(Tab(0));
+        let (n0, _t0) = tree.find_tab(&Tab(0)).unwrap();
+        tree.split_below(n0, 0.5, vec![Tab(1)]);
+
+        let i1 = tree.find_tab(&Tab(0)).unwrap();
+        tree.remove_tab(i1);
+
+        tree.retain_tabs(|_| true);
+        assert!(tree.find_tab(&Tab(0)).is_some());
+    }
+}
