@@ -354,21 +354,37 @@ impl<Tab> DockState<Tab> {
         SurfaceIndex(self.surfaces.len())
     }
 
+    /// Ensures that the surface at `index` contains a [`Tree`]
+    ///
+    /// If the surface is [`Empty`](Surface::Empty), builds a [`Surface::Main`]
+    /// for the main surface or a [`Surface::Window`] for other surfaces.
+    ///
+    /// # Panics
+    /// If `index` is not a valid `SurfaceIndex`
+    fn ensure_tree(&mut self, index: SurfaceIndex) {
+        if matches!(self.surfaces[index.0], Surface::Empty) {
+            self.surfaces[index.0] = if index == SurfaceIndex::main() {
+                Surface::Main(Tree::new(vec![]))
+            } else {
+                Surface::Window(Tree::new(vec![]), WindowState::default())
+            }
+        }
+    }
+
     /// Pushes `tab` to the currently focused leaf.
     ///
     /// If no leaf is focused it will be pushed to the first available leaf.
     ///
     /// If no leaf is available then a new leaf will be created.
     pub fn push_to_focused_leaf(&mut self, tab: Tab) {
-        if let Some(surface) = self.focused_surface {
-            self[surface].push_to_focused_leaf(tab)
-        } else {
-            self[SurfaceIndex::main()].push_to_focused_leaf(tab)
-        }
+        let surface_index = self.focused_surface.unwrap_or(SurfaceIndex::main());
+        self.ensure_tree(surface_index);
+        self[surface_index].push_to_focused_leaf(tab)
     }
 
     /// Push a tab to the first available `Leaf` or create a new leaf if an `Empty` node is encountered.
     pub fn push_to_first_leaf(&mut self, tab: Tab) {
+        self.ensure_tree(SurfaceIndex::main());
         self[SurfaceIndex::main()].push_to_first_leaf(tab);
     }
 
