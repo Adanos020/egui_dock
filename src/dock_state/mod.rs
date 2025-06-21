@@ -585,3 +585,18 @@ where
         self[SurfaceIndex::main()].find_tab(needle_tab)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn retain_none_then_push() {
+        let mut t = DockState::new(vec![]);
+        t.push_to_focused_leaf(0);
+        let i = t.find_tab(&0).unwrap();
+        t.remove_tab(i);
+        t.retain_tabs(|_| false);
+        t.push_to_focused_leaf(0);
+    }
+}
