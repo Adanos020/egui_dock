@@ -543,9 +543,10 @@ impl<Tab> DockState<Tab> {
     where
         F: FnMut(&mut Tab) -> bool,
     {
+        let mut main_surface = true;
         self.surfaces.retain_mut(|surface| {
             surface.retain_tabs(&mut predicate);
-            !surface.is_empty()
+            std::mem::take(&mut main_surface) || !surface.is_empty()
         });
     }
 }
