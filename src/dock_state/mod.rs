@@ -363,21 +363,37 @@ impl<Tab> DockState<Tab> {
         SurfaceIndex(self.surfaces.len())
     }
 
+    /// Ensures that the surface at `index` contains a [`Tree`]
+    ///
+    /// If the surface is [`Empty`](Surface::Empty), builds a [`Surface::Main`]
+    /// for the main surface or a [`Surface::Window`] for other surfaces.
+    ///
+    /// # Panics
+    /// If `index` is not a valid `SurfaceIndex`
+    fn ensure_tree(&mut self, index: SurfaceIndex) {
+        if matches!(self.surfaces[index.0], Surface::Empty) {
+            self.surfaces[index.0] = if index == SurfaceIndex::main() {
+                Surface::Main(Tree::new(vec![]))
+            } else {
+                Surface::Window(Tree::new(vec![]), WindowState::default())
+            }
+        }
+    }
+
     /// Pushes `tab` to the currently focused leaf.
     ///
     /// If no leaf is focused it will be pushed to the first available leaf.
     ///
     /// If no leaf is available then a new leaf will be created.
     pub fn push_to_focused_leaf(&mut self, tab: Tab) {
-        if let Some(surface) = self.focused_surface {
-            self[surface].push_to_focused_leaf(tab)
-        } else {
-            self[SurfaceIndex::main()].push_to_focused_leaf(tab)
-        }
+        let surface_index = self.focused_surface.unwrap_or(SurfaceIndex::main());
+        self.ensure_tree(surface_index);
+        self[surface_index].push_to_focused_leaf(tab)
     }
 
     /// Push a tab to the first available `Leaf` or create a new leaf if an `Empty` node is encountered.
     pub fn push_to_first_leaf(&mut self, tab: Tab) {
+        self.ensure_tree(SurfaceIndex::main());
         self[SurfaceIndex::main()].push_to_first_leaf(tab);
     }
 
@@ -564,9 +580,10 @@ impl<Tab> DockState<Tab> {
     where
         F: FnMut(&mut Tab) -> bool,
     {
+        let mut main_surface = true;
         self.surfaces.retain_mut(|surface| {
             surface.retain_tabs(&mut predicate);
-            !surface.is_empty()
+            std::mem::take(&mut main_surface) || !surface.is_empty()
         });
     }
 
@@ -619,5 +636,20 @@ where
     /// In case there are several hits, only the first is returned.
     pub fn find_main_surface_tab(&self, needle_tab: &Tab) -> Option<(NodeIndex, TabIndex)> {
         self[SurfaceIndex::main()].find_tab(needle_tab)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn retain_none_then_push() {
+        let mut t = DockState::new(vec![]);
+        t.push_to_focused_leaf(0);
+        let i = t.find_tab(&0).unwrap();
+        t.remove_tab(i);
+        t.retain_tabs(|_| false);
+        t.push_to_focused_leaf(0);
     }
 }
