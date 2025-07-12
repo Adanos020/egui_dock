@@ -2,6 +2,7 @@
 
 use eframe::{egui, NativeOptions};
 
+use egui_dock::tab_viewer::OnCloseResponse;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 
 fn main() -> eframe::Result<()> {
@@ -24,6 +25,11 @@ impl egui_dock::TabViewer for TabViewer {
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         ui.label(format!("Content of {tab}"));
+    }
+
+    fn on_close(&mut self, _tab: &mut Self::Tab) -> OnCloseResponse {
+        println!("Closed tab: {_tab}");
+        OnCloseResponse::Close
     }
 }
 

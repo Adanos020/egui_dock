@@ -20,7 +20,9 @@ pub mod node;
 /// Wrapper around indices to the collection of nodes inside a [`Tree`].
 pub mod node_index;
 
+pub use node::LeafNode;
 pub use node::Node;
+pub use node::SplitNode;
 pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
@@ -182,12 +184,10 @@ impl<Tab> Tree<Tab> {
     #[inline]
     pub fn find_active(&mut self) -> Option<(Rect, &mut Tab)> {
         self.nodes.iter_mut().find_map(|node| match node {
-            Node::Leaf {
-                tabs,
-                active,
-                viewport,
-                ..
-            } => tabs.get_mut(active.0).map(|tab| (viewport.to_owned(), tab)),
+            Node::Leaf(leaf) => leaf
+                .tabs
+                .get_mut(leaf.active.0)
+                .map(|tab| (leaf.viewport.to_owned(), tab)),
             _ => None,
         })
     }
@@ -253,8 +253,8 @@ impl<Tab> Tree<Tab> {
     pub fn num_tabs(&self) -> usize {
         let mut count = 0;
         for node in self.nodes.iter() {
-            if let Node::Leaf { tabs, .. } = node {
-                count += tabs.len();
+            if let Node::Leaf(leaf) = node {
+                count += leaf.tabs.len();
             }
         }
         count
@@ -282,12 +282,12 @@ impl<Tab> Tree<Tab> {
     /// # Examples
     ///
     /// ```rust
-    /// # use egui_dock::{DockState, Node};
+    /// # use egui_dock::{DockState, LeafNode};
     /// let mut dock_state = DockState::new(vec!["single tab"]);
     /// let root_node = dock_state.main_surface_mut().root_node_mut().unwrap();
-    /// if let Node::Leaf { tabs, ..} = root_node {
-    ///     tabs.push("partner tab");
-    /// }
+    /// let root_as_leaf = root_node.get_leaf_mut().unwrap();
+    /// root_as_leaf.tabs.push("partner tab");
+    ///
     /// assert_eq!(root_node.tabs(), Some(["single tab", "partner tab"].as_slice()));
     /// ```
     pub fn root_node_mut(&mut self) -> Option<&mut Node<Tab>> {
@@ -558,12 +558,7 @@ impl<Tab> Tree<Tab> {
     #[inline]
     pub fn find_active_focused(&mut self) -> Option<(Rect, &mut Tab)> {
         match self.focused_node.and_then(|idx| self.nodes.get_mut(idx.0)) {
-            Some(Node::Leaf {
-                tabs,
-                active,
-                viewport,
-                ..
-            }) => tabs.get_mut(active.0).map(|tab| (*viewport, tab)),
+            Some(Node::Leaf(leaf)) => leaf.active_focused(),
             _ => None,
         }
     }
@@ -658,15 +653,25 @@ impl<Tab> Tree<Tab> {
                 level += 1;
             }
         }
+        // Ensure that there are no trailing `Node::Empty` items
+        while let Some(last_index) = self.nodes.len().checked_sub(1).map(NodeIndex) {
+            if self[last_index].is_empty()
+                && last_index.parent().is_some_and(|pi| !self[pi].is_parent())
+            {
+                self.nodes.pop();
+            } else {
+                break;
+            }
+        }
     }
 
     /// Pushes a tab to the first `Leaf` it finds or create a new leaf if an `Empty` node is encountered.
     pub fn push_to_first_leaf(&mut self, tab: Tab) {
         for (index, node) in &mut self.nodes.iter_mut().enumerate() {
             match node {
-                Node::Leaf { tabs, active, .. } => {
-                    *active = TabIndex(tabs.len());
-                    tabs.push(tab);
+                Node::Leaf(leaf) => {
+                    leaf.active = TabIndex(leaf.tabs.len());
+                    leaf.tabs.push(tab);
                     self.focused_node = Some(NodeIndex(index));
                     return;
                 }
@@ -685,10 +690,14 @@ impl<Tab> Tree<Tab> {
 
     /// Sets which is the active tab within a specific node.
     #[inline]
-    pub fn set_active_tab(&mut self, node_index: NodeIndex, tab_index: TabIndex) {
-        if let Some(Node::Leaf { active, .. }) = self.nodes.get_mut(node_index.0) {
-            *active = tab_index;
-        }
+    pub fn set_active_tab(
+        &mut self,
+        node_index: impl Into<NodeIndex>,
+        tab_index: impl Into<TabIndex>,
+    ) {
+        if let Some(Node::Leaf(leaf)) = self.nodes.get_mut(node_index.into().0) {
+            leaf.set_active_tab(tab_index);
+        };
     }
 
     /// Pushes `tab` to the currently focused leaf.
@@ -708,9 +717,8 @@ impl<Tab> Tree<Tab> {
                             self[node] = Node::leaf(tab);
                             self.focused_node = Some(node);
                         }
-                        Node::Leaf { tabs, active, .. } => {
-                            *active = TabIndex(tabs.len());
-                            tabs.push(tab);
+                        Node::Leaf(leaf) => {
+                            leaf.append_tab(tab);
                             self.focused_node = Some(node);
                         }
                         _ => {
@@ -835,7 +843,10 @@ impl<Tab> Tree<Tab> {
     fn balance(&mut self, emptied_nodes: HashSet<NodeIndex>) {
         let mut emptied_parents = HashSet::default();
         for parent_index in emptied_nodes.into_iter().filter_map(|ni| ni.parent()) {
-            if self[parent_index.left()].is_empty() && self[parent_index.right()].is_empty() {
+            if !self[parent_index].is_parent() {
+                continue;
+            } else if self[parent_index.left()].is_empty() && self[parent_index.right()].is_empty()
+            {
                 self[parent_index] = Node::Empty;
                 emptied_parents.insert(parent_index);
             } else if self[parent_index.left()].is_empty() {
@@ -903,6 +914,26 @@ impl<Tab> Tree<Tab> {
             }
         }
     }
+
+    /// Find a given tab based on ``predicate``.
+    ///
+    /// Returns the indices in where that node and tab is in this surface.
+    ///
+    /// The returned [`NodeIndex`] will always point to a [`Node::Leaf`].
+    ///
+    /// In case there are several hits, only the first is returned.
+    pub fn find_tab_from(&self, predicate: impl Fn(&Tab) -> bool) -> Option<(NodeIndex, TabIndex)> {
+        for (node_index, node) in self.nodes.iter().enumerate() {
+            if let Some(tabs) = node.tabs() {
+                for (tab_index, tab) in tabs.iter().enumerate() {
+                    if predicate(tab) {
+                        return Some((node_index.into(), tab_index.into()));
+                    }
+                }
+            };
+        }
+        None
+    }
 }
 
 impl<Tab> Tree<Tab>
@@ -917,15 +948,42 @@ where
     ///
     /// In case there are several hits, only the first is returned.
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(NodeIndex, TabIndex)> {
-        for (node_index, node) in self.nodes.iter().enumerate() {
-            if let Some(tabs) = node.tabs() {
-                for (tab_index, tab) in tabs.iter().enumerate() {
-                    if tab == needle_tab {
-                        return Some((node_index.into(), tab_index.into()));
-                    }
-                }
-            }
-        }
-        None
+        self.find_tab_from(|tab| tab == needle_tab)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[derive(Copy, Clone, Debug, PartialEq)]
+    struct Tab(u64);
+
+    /// Checks that `retain` works after removing a node
+    #[test]
+    fn remove_and_retain() {
+        let mut tree: Tree<Tab> = Tree::new(vec![]);
+        tree.push_to_focused_leaf(Tab(0));
+        let (n0, _t0) = tree.find_tab(&Tab(0)).unwrap();
+        tree.split_below(n0, 0.5, vec![Tab(1)]);
+
+        let i1 = tree.find_tab(&Tab(1)).unwrap();
+        tree.remove_tab(i1);
+        assert_eq!(tree.nodes.len(), 1);
+
+        tree.retain_tabs(|_| true);
+        assert!(tree.find_tab(&Tab(0)).is_some());
+    }
+
+    /// Tests whether `retain_tabs` works correctly with trailing `Empty` nodes
+    #[test]
+    fn retain_trailing_empty() {
+        let mut tree: Tree<Tab> = Tree::new(vec![]);
+        tree.push_to_focused_leaf(Tab(0));
+        tree.nodes.push(Node::Empty);
+        tree.nodes.push(Node::Empty);
+
+        tree.retain_tabs(|_| true);
+        assert!(tree.find_tab(&Tab(0)).is_some());
     }
 }

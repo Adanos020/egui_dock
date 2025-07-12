@@ -9,6 +9,7 @@ use egui::{
     WidgetText,
 };
 
+use egui_dock::tab_viewer::OnCloseResponse;
 use egui_dock::{
     AllowedSplits, DockArea, DockState, NodeIndex, OverlayType, Style, SurfaceIndex,
     TabInteractionStyle, TabViewer,
@@ -119,13 +120,13 @@ impl TabViewer for MyContext {
         }
     }
 
-    fn closeable(&mut self, tab: &mut Self::Tab) -> bool {
+    fn is_closeable(&self, tab: &Self::Tab) -> bool {
         ["Inspector", "Style Editor"].contains(&tab.as_str())
     }
 
-    fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
+    fn on_close(&mut self, tab: &mut Self::Tab) -> OnCloseResponse {
         self.open_tabs.remove(tab);
-        true
+        OnCloseResponse::Close
     }
 }
 
@@ -277,7 +278,7 @@ impl MyContext {
                         ui.selectable_value(
                             &mut style.buttons.add_tab_align,
                             align,
-                            format!("{:?}", align),
+                            format!("{align:?}"),
                         );
                     }
                 });

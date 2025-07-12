@@ -165,6 +165,9 @@ pub struct TabBarStyle {
     /// Height of the tab bar. By `Default` it's `24.0`.
     pub height: f32,
 
+    /// Inner margin of tab bar. By `Default` it's `Margin::ZERO`.
+    pub inner_margin: Margin,
+
     /// Show a scroll bar when tab bar overflows. By `Default` it's `true`.
     pub show_scroll_bar_on_overflow: bool,
 
@@ -212,6 +215,9 @@ pub struct TabStyle {
     /// If `false`, show the active tab as merged with the tab ui area.
     /// By `Default` it's `false`.
     pub hline_below_active_tab_name: bool,
+
+    /// Spacing between tabs.
+    pub spacing: f32,
 
     /// The minimum width of the tab.
     ///
@@ -409,6 +415,7 @@ impl Default for TabBarStyle {
         Self {
             bg_fill: Color32::WHITE,
             height: 24.0,
+            inner_margin: Margin::ZERO,
             show_scroll_bar_on_overflow: true,
             corner_radius: CornerRadius::default(),
             hline_color: Color32::BLACK,
@@ -442,6 +449,7 @@ impl Default for TabStyle {
                 text_color: Color32::BLACK,
                 ..Default::default()
             },
+            spacing: 0.0,
             tab_body: TabBodyStyle::default(),
             hline_below_active_tab_name: false,
             minimum_width: None,

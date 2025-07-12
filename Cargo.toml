@@ -2,9 +2,9 @@
 name = "egui_dock"
 description = "Docking system for egui - an immediate-mode GUI library for Rust"
 authors = ["lain-dono", "Adam Gąsior (Adanos020)"]
-version = "0.16.0"
+version = "0.17.0"
 edition = "2021"
-rust-version = "1.81"
+rust-version = "1.82"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/Adanos020/egui_dock"
@@ -30,3 +30,8 @@ eframe = { version = "0.32", default-features = false, features = [
     "default_fonts",
     "glow",
 ] }
+serde_json = { version = "1" }
+
+[[example]]
+name = "save_load_dock_state"
+required-features = ["serde"]

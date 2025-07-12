@@ -1,5 +1,51 @@
 # egui_dock changelog
 
+## egui_dock 0.17.0 - TBD
+
+### Changed
+
+- From ([#272](https://github.com/Adanos020/egui_dock/pull/272)):
+    - `Node`s underlying data has been split up into the `LeafNode` and `SplitNode` types, meaning that any match
+      statements carried out on a node now needs to account for this.
+    - `Tree::set_active_tab` now takes `impl Into<NodeIndex>` and `impl Into<TabIndex>` to make use slightly easier.
+    - `Surface` now implements `Index<NodeIndex>`/`IndexMut<NodeIndex>` which tries to access the surfaces node tree and
+      the node at the index. This will always panic when used on an empty surface as they do not have a node tree nor
+      nodes.
+
+### Added
+
+- From ([#272](https://github.com/Adanos020/egui_dock/pull/272)):
+    - `DockState::iter_leaves` and `DockState::iter_leaves_mut` - can be used to more efficiently iterate over leaf
+      nodes without needing to "unwrap" them from the `Node` enum.
+    - `DockState::find_tab_from`/`Tree::find_tab_from` - a more generalized version of the existing `find_tab` methods
+      which doesn't require the tab type to implement `PartialEq`.
+    - New type `LeafNode` which contains leaf node data and has the following methods:
+        * `new`
+        * `set_active_tab`
+        * `set_rect`
+        * `rect`
+        * `len`
+        * `is_empty`
+        * `tabs`
+        * `tabs_mut`
+        * `append_tab`
+        * `insert_tab`
+        * `remove_tab`
+        * `retain_tabs`
+        * `active_focused`
+    - New type `SplitNode` which contains data about node splits and has the following methods:
+        * `new`
+        * `set_rect`
+        * `rect`
+    - `Node::get_leaf`/`Node::get_leaf_mut` - an alternative way of trying to access leaf data in a node
+- `TabBarStyle` now has two new fields: `inner_margin` and
+  `spacing`. ([#270](https://github.com/Adanos020/egui_dock/pull/270))
+
+### Fixed
+
+- `DockState::retain_tabs` no longer deletes the main surface if it ends up
+  empty ([#277](https://github.com/Adanos020/egui_dock/pull/277))
+
 ## egui_dock 0.16.0 - 2025-02-07
 
 ### Breaking changes
