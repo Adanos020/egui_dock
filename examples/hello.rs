@@ -278,7 +278,7 @@ impl MyContext {
                         ui.selectable_value(
                             &mut style.buttons.add_tab_align,
                             align,
-                            format!("{:?}", align),
+                            format!("{align:?}"),
                         );
                     }
                 });

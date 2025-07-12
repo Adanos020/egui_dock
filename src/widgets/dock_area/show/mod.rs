@@ -136,16 +136,13 @@ impl<Tab> DockArea<'_, Tab> {
                     if is_forced {
                         self.dock_state.remove_tab((surface, node, tab));
                     } else {
-                        let Node::Leaf { tabs, active, .. } = &mut self.dock_state[surface][node]
-                        else {
-                            unreachable!()
-                        };
-                        match tab_viewer.on_close(&mut tabs[tab.0]) {
+                        let leaf = &mut self.dock_state[surface][node].get_leaf_mut().unwrap();
+                        match tab_viewer.on_close(&mut leaf.tabs[tab.0]) {
                             OnCloseResponse::Close => {
                                 self.dock_state.remove_tab((surface, node, tab));
                             }
                             OnCloseResponse::Focus => {
-                                *active = tab;
+                                leaf.active = tab;
                                 self.new_focused = Some((surface, node));
                             }
                             OnCloseResponse::Ignore => {
@@ -260,10 +257,10 @@ impl<Tab> DockArea<'_, Tab> {
 
         let allowed_in_window = match drag_state.drag.src {
             TreeComponent::Tab(surface, node, tab) => {
-                let Node::Leaf { tabs, .. } = &mut self.dock_state[surface][node] else {
+                let Node::Leaf(leaf) = &mut self.dock_state[surface][node] else {
                     unreachable!("tab drags can only come from leaf nodes")
                 };
-                tab_viewer.allowed_in_windows(&mut tabs[tab.0])
+                tab_viewer.allowed_in_windows(&mut leaf.tabs[tab.0])
             }
             _ => todo!("collections of tabs, like nodes or surfaces, can't be dragged! (yet)"),
         };
@@ -386,9 +383,10 @@ impl<Tab> DockArea<'_, Tab> {
         let right_collapsed = self.dock_state[surface_index][node_index.right()].is_collapsed();
 
         if left_collapsed || right_collapsed {
-            if let Node::Vertical { rect, .. } = &mut self.dock_state[surface_index][node_index] {
+            if let Node::Vertical(split) = &mut self.dock_state[surface_index][node_index] {
+                let rect = split.rect();
                 debug_assert!(!rect.any_nan() && rect.is_finite());
-                let rect = expand_to_pixel(*rect, pixels_per_point);
+                let rect = expand_to_pixel(rect, pixels_per_point);
 
                 if left_collapsed {
                     // EITHER only left collapsed OR left and right both collapsed
@@ -445,11 +443,12 @@ impl<Tab> DockArea<'_, Tab> {
                 [Horizontal]  [x]        [width]   [left_of]  [right_of];
                 [Vertical]    [y]        [height]  [above]    [below];
             ]
-            if let Node::orientation { fraction, rect, .. } = &mut self.dock_state[surface_index][node_index] {
+            if let Node::orientation(split) = &mut self.dock_state[surface_index][node_index] {
+                let rect = split.rect;
                 debug_assert!(!rect.any_nan() && rect.is_finite());
-                let rect = expand_to_pixel(*rect, pixels_per_point);
+                let rect = expand_to_pixel(rect, pixels_per_point);
 
-                let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
+                let midpoint = rect.min.dim_point + rect.dim_size() * split.fraction;
                 let left_separator_border = map_to_pixel(
                     midpoint - style.separator.width * 0.5,
                     pixels_per_point,
@@ -497,10 +496,11 @@ impl<Tab> DockArea<'_, Tab> {
                 [Horizontal]  [x]        [width];
                 [Vertical]    [y]        [height];
             ]
-            if let Node::orientation { fraction, ref rect, .. } = &mut self.dock_state[surface_index][node_index] {
-                let mut separator = *rect;
+            if let Node::orientation(split) = &mut self.dock_state[surface_index][node_index] {
+                let rect = split.rect;
+                let mut separator = rect;
 
-                let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
+                let midpoint = rect.min.dim_point + rect.dim_size() * split.fraction;
                 separator.min.dim_point = midpoint - style.separator.width * 0.5;
                 separator.max.dim_point = midpoint + style.separator.width * 0.5;
 
@@ -540,7 +540,7 @@ impl<Tab> DockArea<'_, Tab> {
                     None
                 };
 
-                let midpoint = rect.min.dim_point + rect.dim_size() * *fraction;
+                let midpoint = rect.min.dim_point + rect.dim_size() * split.fraction;
                 separator.min.dim_point = map_to_pixel(
                     midpoint - style.separator.width * 0.5,
                     pixels_per_point,
@@ -576,12 +576,12 @@ impl<Tab> DockArea<'_, Tab> {
                         let min = (style.separator.extra / range).min(1.0);
                         let max = 1.0 - min;
                         let (min, max) = (min.min(max), max.max(min));
-                        *fraction = (*fraction + delta / range).clamp(min, max);
+                        split.fraction = (split.fraction + delta / range).clamp(min, max);
                     }
                 }
 
                 if response.double_clicked() {
-                    *fraction = 0.5;
+                    split.fraction = 0.5;
                 }
             }
         }
