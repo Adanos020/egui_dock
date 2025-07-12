@@ -38,6 +38,8 @@
         * `set_rect`
         * `rect`
     - `Node::get_leaf`/`Node::get_leaf_mut` - an alternative way of trying to access leaf data in a node
+- `TabBarStyle` now has two new fields: `inner_margin` and
+  `spacing`. ([#270](https://github.com/Adanos020/egui_dock/pull/270))
 
 ### Fixed
 
