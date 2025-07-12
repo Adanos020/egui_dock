@@ -102,6 +102,8 @@ impl<Tab> DockArea<'_, Tab> {
             style.tab_bar.bg_fill,
         );
 
+        let tabbar_outer_rect = tabbar_outer_rect - style.tab_bar.inner_margin;
+
         let mut available_width = tabbar_outer_rect.width();
         let scroll_bar_width = available_width;
         if available_width == 0.0 {
@@ -357,6 +359,9 @@ impl<Tab> DockArea<'_, Tab> {
 
                 (response, title_id)
             } else {
+                if tab_index.0 != 0 {
+                    tabs_ui.allocate_space(vec2(tab_style.spacing, 0.0));
+                }
                 let (mut response, close_response) = self.tab_title(
                     tabs_ui,
                     &tab_style,
