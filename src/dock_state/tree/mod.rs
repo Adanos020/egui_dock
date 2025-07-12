@@ -653,6 +653,16 @@ impl<Tab> Tree<Tab> {
                 level += 1;
             }
         }
+        // Ensure that there are no trailing `Node::Empty` items
+        while let Some(last_index) = self.nodes.len().checked_sub(1).map(NodeIndex) {
+            if self[last_index].is_empty()
+                && last_index.parent().is_some_and(|pi| !self[pi].is_parent())
+            {
+                self.nodes.pop();
+            } else {
+                break;
+            }
+        }
     }
 
     /// Pushes a tab to the first `Leaf` it finds or create a new leaf if an `Empty` node is encountered.
@@ -833,7 +843,10 @@ impl<Tab> Tree<Tab> {
     fn balance(&mut self, emptied_nodes: HashSet<NodeIndex>) {
         let mut emptied_parents = HashSet::default();
         for parent_index in emptied_nodes.into_iter().filter_map(|ni| ni.parent()) {
-            if self[parent_index.left()].is_empty() && self[parent_index.right()].is_empty() {
+            if !self[parent_index].is_parent() {
+                continue;
+            } else if self[parent_index.left()].is_empty() && self[parent_index.right()].is_empty()
+            {
                 self[parent_index] = Node::Empty;
                 emptied_parents.insert(parent_index);
             } else if self[parent_index.left()].is_empty() {
@@ -936,5 +949,41 @@ where
     /// In case there are several hits, only the first is returned.
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(NodeIndex, TabIndex)> {
         self.find_tab_from(|tab| tab == needle_tab)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[derive(Copy, Clone, Debug, PartialEq)]
+    struct Tab(u64);
+
+    /// Checks that `retain` works after removing a node
+    #[test]
+    fn remove_and_retain() {
+        let mut tree: Tree<Tab> = Tree::new(vec![]);
+        tree.push_to_focused_leaf(Tab(0));
+        let (n0, _t0) = tree.find_tab(&Tab(0)).unwrap();
+        tree.split_below(n0, 0.5, vec![Tab(1)]);
+
+        let i1 = tree.find_tab(&Tab(1)).unwrap();
+        tree.remove_tab(i1);
+        assert_eq!(tree.nodes.len(), 1);
+
+        tree.retain_tabs(|_| true);
+        assert!(tree.find_tab(&Tab(0)).is_some());
+    }
+
+    /// Tests whether `retain_tabs` works correctly with trailing `Empty` nodes
+    #[test]
+    fn retain_trailing_empty() {
+        let mut tree: Tree<Tab> = Tree::new(vec![]);
+        tree.push_to_focused_leaf(Tab(0));
+        tree.nodes.push(Node::Empty);
+        tree.nodes.push(Node::Empty);
+
+        tree.retain_tabs(|_| true);
+        assert!(tree.find_tab(&Tab(0)).is_some());
     }
 }
