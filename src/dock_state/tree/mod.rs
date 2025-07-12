@@ -685,10 +685,9 @@ impl<Tab> Tree<Tab> {
         node_index: impl Into<NodeIndex>,
         tab_index: impl Into<TabIndex>,
     ) {
-        let Some(Node::Leaf(leaf)) = self.nodes.get_mut(node_index.into().0) else {
-            return;
+        if let Some(Node::Leaf(leaf)) = self.nodes.get_mut(node_index.into().0) {
+            leaf.set_active_tab(tab_index);
         };
-        leaf.set_active_tab(tab_index);
     }
 
     /// Pushes `tab` to the currently focused leaf.
@@ -905,21 +904,20 @@ impl<Tab> Tree<Tab> {
 
     /// Find a given tab based on ``predicate``.
     ///
-    /// Returns the indicies in where that node and tab is in this surface.
+    /// Returns the indices in where that node and tab is in this surface.
     ///
     /// The returned [`NodeIndex`] will always point to a [`Node::Leaf`].
     ///
     /// In case there are several hits, only the first is returned.
     pub fn find_tab_from(&self, predicate: impl Fn(&Tab) -> bool) -> Option<(NodeIndex, TabIndex)> {
         for (node_index, node) in self.nodes.iter().enumerate() {
-            let Some(tabs) = node.tabs() else {
-                continue;
-            };
-            for (tab_index, tab) in tabs.iter().enumerate() {
-                if predicate(tab) {
-                    return Some((node_index.into(), tab_index.into()));
+            if let Some(tabs) = node.tabs() {
+                for (tab_index, tab) in tabs.iter().enumerate() {
+                    if predicate(tab) {
+                        return Some((node_index.into(), tab_index.into()));
+                    }
                 }
-            }
+            };
         }
         None
     }

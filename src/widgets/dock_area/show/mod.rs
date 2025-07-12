@@ -136,9 +136,7 @@ impl<Tab> DockArea<'_, Tab> {
                     if is_forced {
                         self.dock_state.remove_tab((surface, node, tab));
                     } else {
-                        let Node::Leaf(leaf) = &mut self.dock_state[surface][node] else {
-                            unreachable!()
-                        };
+                        let leaf = &mut self.dock_state[surface][node].get_leaf_mut().unwrap();
                         match tab_viewer.on_close(&mut leaf.tabs[tab.0]) {
                             OnCloseResponse::Close => {
                                 self.dock_state.remove_tab((surface, node, tab));

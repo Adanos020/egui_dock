@@ -16,6 +16,7 @@ pub struct SplitNode {
     /// The number of collapsed leaf subnodes.
     pub collapsed_leaf_count: i32,
 }
+
 impl SplitNode {
     /// Create a new ``SplitNode``
     pub const fn new(

@@ -24,6 +24,7 @@ pub struct LeafNode<Tab> {
     /// Whether the leaf is collapsed.
     pub collapsed: bool,
 }
+
 impl<Tab> LeafNode<Tab> {
     /// Create New LeafNode with specified ``tabs``, all other internal values will be filled by "nothing" defaults.
     pub const fn new(tabs: Vec<Tab>) -> Self {
