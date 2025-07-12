@@ -39,6 +39,11 @@
         * `rect`
     - `Node::get_leaf`/`Node::get_leaf_mut` - an alternative way of trying to access leaf data in a node
 
+### Fixed
+
+- `DockState::retain_tabs` no longer deletes the main surface if it ends up
+  empty ([#277](https://github.com/Adanos020/egui_dock/pull/277))
+
 ## egui_dock 0.16.0 - 2025-02-07
 
 ### Breaking changes
