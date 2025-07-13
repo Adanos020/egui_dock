@@ -12,6 +12,7 @@ pub mod window_state;
 
 pub use surface::Surface;
 pub use surface_index::SurfaceIndex;
+use tree::node::LeafNode;
 pub use window_state::WindowState;
 
 use egui::Rect;
@@ -186,8 +187,8 @@ impl<Tab> DockState<Tab> {
         &mut self,
         (surface_index, node_index, tab_index): (SurfaceIndex, NodeIndex, TabIndex),
     ) {
-        if let Some(Node::Leaf { active, .. }) = self[surface_index].nodes.get_mut(node_index.0) {
-            *active = tab_index;
+        if let Some(Node::Leaf(leaf)) = self[surface_index].nodes.get_mut(node_index.0) {
+            leaf.active = tab_index;
         }
     }
 
@@ -304,6 +305,14 @@ impl<Tab> DockState<Tab> {
         removed_tab
     }
 
+    /// Remove a leaf at the specified surface, and node index.
+    pub fn remove_leaf(&mut self, (surface_index, node_index): (SurfaceIndex, NodeIndex)) {
+        self[surface_index].remove_leaf(node_index);
+        if !surface_index.is_main() && self[surface_index].is_empty() {
+            self.remove_surface(surface_index);
+        }
+    }
+
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) has `tabs`.
     ///
@@ -354,21 +363,37 @@ impl<Tab> DockState<Tab> {
         SurfaceIndex(self.surfaces.len())
     }
 
+    /// Ensures that the surface at `index` contains a [`Tree`]
+    ///
+    /// If the surface is [`Empty`](Surface::Empty), builds a [`Surface::Main`]
+    /// for the main surface or a [`Surface::Window`] for other surfaces.
+    ///
+    /// # Panics
+    /// If `index` is not a valid `SurfaceIndex`
+    fn ensure_tree(&mut self, index: SurfaceIndex) {
+        if matches!(self.surfaces[index.0], Surface::Empty) {
+            self.surfaces[index.0] = if index == SurfaceIndex::main() {
+                Surface::Main(Tree::new(vec![]))
+            } else {
+                Surface::Window(Tree::new(vec![]), WindowState::default())
+            }
+        }
+    }
+
     /// Pushes `tab` to the currently focused leaf.
     ///
     /// If no leaf is focused it will be pushed to the first available leaf.
     ///
     /// If no leaf is available then a new leaf will be created.
     pub fn push_to_focused_leaf(&mut self, tab: Tab) {
-        if let Some(surface) = self.focused_surface {
-            self[surface].push_to_focused_leaf(tab)
-        } else {
-            self[SurfaceIndex::main()].push_to_focused_leaf(tab)
-        }
+        let surface_index = self.focused_surface.unwrap_or(SurfaceIndex::main());
+        self.ensure_tree(surface_index);
+        self[surface_index].push_to_focused_leaf(tab)
     }
 
     /// Push a tab to the first available `Leaf` or create a new leaf if an `Empty` node is encountered.
     pub fn push_to_first_leaf(&mut self, tab: Tab) {
+        self.ensure_tree(SurfaceIndex::main());
         self[SurfaceIndex::main()].push_to_first_leaf(tab);
     }
 
@@ -395,7 +420,7 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, surface)| {
                 surface
                     .iter_nodes()
-                    .map(move |node| (SurfaceIndex(surface_index), node))
+                    .map(move |node| (surface_index.into(), node))
             })
     }
 
@@ -407,7 +432,7 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, surface)| {
                 surface
                     .iter_nodes_mut()
-                    .map(move |node| (SurfaceIndex(surface_index), node))
+                    .map(move |node| (surface_index.into(), node))
             })
     }
 
@@ -419,7 +444,7 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, surface)| {
                 surface
                     .iter_all_tabs()
-                    .map(move |(node_index, tab)| ((SurfaceIndex(surface_index), node_index), tab))
+                    .map(move |(node_index, tab)| ((surface_index.into(), node_index), tab))
             })
     }
 
@@ -433,7 +458,7 @@ impl<Tab> DockState<Tab> {
             .flat_map(|(surface_index, surface)| {
                 surface
                     .iter_all_tabs_mut()
-                    .map(move |(node_index, tab)| ((SurfaceIndex(surface_index), node_index), tab))
+                    .map(move |(node_index, tab)| ((surface_index.into(), node_index), tab))
             })
     }
 
@@ -456,6 +481,18 @@ impl<Tab> DockState<Tab> {
             .iter()
             .filter_map(|surface| surface.node_tree())
             .flat_map(|nodes| nodes.iter())
+    }
+
+    /// Returns an immutable [`Iterator`] of all [``LeafNode``]s in the dock state.
+    pub fn iter_leaves(&self) -> impl Iterator<Item = (SurfaceIndex, &LeafNode<Tab>)> {
+        self.iter_all_nodes()
+            .filter_map(|(index, node)| node.get_leaf().map(|leaf| (index, leaf)))
+    }
+
+    /// Returns a mutable [`Iterator`] of all [``LeafNode``]s in the dock state.
+    pub fn iter_leaves_mut(&mut self) -> impl Iterator<Item = (SurfaceIndex, &mut LeafNode<Tab>)> {
+        self.iter_all_nodes_mut()
+            .filter_map(|(index, node)| node.get_leaf_mut().map(|leaf| (index, leaf)))
     }
 
     /// Returns a new [`DockState`] while mapping and filtering the tab type.
@@ -543,10 +580,33 @@ impl<Tab> DockState<Tab> {
     where
         F: FnMut(&mut Tab) -> bool,
     {
+        let mut main_surface = true;
         self.surfaces.retain_mut(|surface| {
             surface.retain_tabs(&mut predicate);
-            !surface.is_empty()
+            std::mem::take(&mut main_surface) || !surface.is_empty()
         });
+    }
+
+    /// Find a tab based on the conditions of a functino.
+    ///
+    /// Returns in which node and where in that node the tab is.
+    ///
+    /// The returned [`NodeIndex`] will always point to a [`Node::Leaf`].
+    ///
+    /// In case there are several hits, only the first is returned.
+    pub fn find_tab_from(
+        &self,
+        predicate: impl Fn(&Tab) -> bool,
+    ) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
+        for &surface_index in self.valid_surface_indices().iter() {
+            if self.surfaces[surface_index.0].is_empty() {
+                continue;
+            }
+            if let Some((node_index, tab_index)) = self[surface_index].find_tab_from(&predicate) {
+                return Some((surface_index, node_index, tab_index));
+            }
+        }
+        None
     }
 }
 
@@ -564,14 +624,7 @@ where
     ///
     /// See also: [`find_main_surface_tab`](DockState::find_main_surface_tab)
     pub fn find_tab(&self, needle_tab: &Tab) -> Option<(SurfaceIndex, NodeIndex, TabIndex)> {
-        for &surface_index in self.valid_surface_indices().iter() {
-            if !self.surfaces[surface_index.0].is_empty() {
-                if let Some((node_index, tab_index)) = self[surface_index].find_tab(needle_tab) {
-                    return Some((surface_index, node_index, tab_index));
-                }
-            }
-        }
-        None
+        self.find_tab_from(|tab| tab == needle_tab)
     }
 
     /// Find the given tab on the main surface.
@@ -583,5 +636,20 @@ where
     /// In case there are several hits, only the first is returned.
     pub fn find_main_surface_tab(&self, needle_tab: &Tab) -> Option<(NodeIndex, TabIndex)> {
         self[SurfaceIndex::main()].find_tab(needle_tab)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn retain_none_then_push() {
+        let mut t = DockState::new(vec![]);
+        t.push_to_focused_leaf(0);
+        let i = t.find_tab(&0).unwrap();
+        t.remove_tab(i);
+        t.retain_tabs(|_| false);
+        t.push_to_focused_leaf(0);
     }
 }

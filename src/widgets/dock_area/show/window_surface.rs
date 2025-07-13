@@ -6,7 +6,7 @@ use egui::{
 use crate::{
     dock_area::{state::State, tab_removal::TabRemoval},
     utils::{fade_visuals, rect_set_size_centered},
-    DockArea, Node, NodeIndex, Style, SurfaceIndex, TabViewer,
+    DockArea, NodeIndex, Style, SurfaceIndex, TabViewer,
 };
 
 impl<Tab> DockArea<'_, Tab> {
@@ -52,11 +52,9 @@ impl<Tab> DockArea<'_, Tab> {
                     }
                     unreachable!("a window surface should never be empty")
                 });
-            let Node::Leaf { tabs, active, .. } = &mut self.dock_state[surf_index][node_id] else {
-                unreachable!()
-            };
+            let leaf = self.dock_state[surf_index][node_id].get_leaf_mut().unwrap();
             tab_viewer
-                .title(&mut tabs[active.0])
+                .title(&mut leaf.tabs[leaf.active.0])
                 .color(ui.visuals().widgets.noninteractive.fg_stroke.color)
         };
 
