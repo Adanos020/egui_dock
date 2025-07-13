@@ -1,7 +1,8 @@
 use egui::{
     emath::TSTransform, epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, Color32,
-    CornerRadius, CursorIcon, Frame, Id, Key, LayerId, Layout, NumExt, Order, Rect, Response,
-    ScrollArea, Sense, Shape, Stroke, StrokeKind, TextStyle, Ui, UiBuilder, Vec2, WidgetText,
+    CornerRadius, CursorIcon, Frame, Id, Key, LayerId, Layout, NumExt, Order, Popup,
+    PopupCloseBehavior, Rect, Response, ScrollArea, Sense, Shape, Stroke, StrokeKind, TextStyle,
+    Ui, UiBuilder, Vec2, WidgetText,
 };
 use std::ops::RangeInclusive;
 
@@ -16,7 +17,7 @@ use crate::{
     DockArea, Node, NodeIndex, Style, SurfaceIndex, TabAddAlign, TabIndex, TabStyle, TabViewer,
 };
 
-use crate::popup::popup_under_widget;
+use crate::tab_viewer::OnCloseResponse;
 
 impl<Tab> DockArea<'_, Tab> {
     pub(super) fn show_leaf(
@@ -406,16 +407,23 @@ impl<Tab> DockArea<'_, Tab> {
                             && ui.add(eject_button).clicked()
                         {
                             self.to_detach.push((surface_index, node_index, tab_index));
-                            ui.close_menu();
+                            ui.close();
                         }
                         if show_close_button && ui.add(close_button).clicked() {
-                            self.to_remove.push(TabRemoval::Tab(
-                                surface_index,
-                                node_index,
-                                tab_index,
-                                ForcedRemoval(false),
-                            ));
-                            ui.close_menu();
+                            match tab_viewer.on_close(tab) {
+                                OnCloseResponse::Close => self.to_remove.push(TabRemoval::Tab(
+                                    surface_index,
+                                    node_index,
+                                    tab_index,
+                                    ForcedRemoval(false),
+                                )),
+                                OnCloseResponse::Focus => {
+                                    leaf.active = tab_index;
+                                    self.new_focused = Some((surface_index, node_index));
+                                }
+                                OnCloseResponse::Ignore => (),
+                            }
+                            ui.close();
                         }
                     });
                 }
@@ -542,14 +550,16 @@ impl<Tab> DockArea<'_, Tab> {
         );
 
         let popup_id = ui.id().with("tab_add_popup");
-        popup_under_widget(ui, popup_id, &response, |ui| {
-            tab_viewer.add_popup(ui, surface_index, node_index);
-        });
+        if self.show_add_popup {
+            Popup::from_toggle_button_response(&response)
+                .id(popup_id)
+                .close_behavior(PopupCloseBehavior::CloseOnClickOutside)
+                .show(|ui| {
+                    tab_viewer.add_popup(ui, surface_index, node_index);
+                });
+        }
 
         if response.clicked() {
-            if self.show_add_popup {
-                ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-            }
             tab_viewer.on_add(surface_index, node_index);
         }
     }
@@ -773,7 +783,7 @@ impl<Tab> DockArea<'_, Tab> {
                     .button(&self.dock_state.translations.leaf.minimize_button)
                     .clicked()
                 {
-                    ui.close_menu();
+                    ui.close();
                     self.window_toggle_minimized(surface_index);
                 }
             });
