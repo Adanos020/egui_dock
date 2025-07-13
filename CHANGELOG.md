@@ -1,6 +1,6 @@
 # egui_dock changelog
 
-## egui_dock 0.17.0 - TBD
+## egui_dock 0.17.0 - 2025/07/13
 
 ### Breaking changes
 
@@ -25,31 +25,34 @@
     - `DockState::find_tab_from`/`Tree::find_tab_from` - a more generalized version of the existing `find_tab` methods
       which doesn't require the tab type to implement `PartialEq`.
     - New type `LeafNode` which contains leaf node data and has the following methods:
-        * `new`
-        * `set_active_tab`
-        * `set_rect`
-        * `rect`
-        * `len`
-        * `is_empty`
-        * `tabs`
-        * `tabs_mut`
-        * `append_tab`
-        * `insert_tab`
-        * `remove_tab`
-        * `retain_tabs`
-        * `active_focused`
+        * `new`,
+        * `set_active_tab`,
+        * `set_rect`,
+        * `rect`,
+        * `len`,
+        * `is_empty`,
+        * `tabs`,
+        * `tabs_mut`,
+        * `append_tab`,
+        * `insert_tab`,
+        * `remove_tab`,
+        * `retain_tabs`,
+        * `active_focused`.
     - New type `SplitNode` which contains data about node splits and has the following methods:
-        * `new`
-        * `set_rect`
-        * `rect`
-    - `Node::get_leaf`/`Node::get_leaf_mut` - an alternative way of trying to access leaf data in a node
+        * `new`,
+        * `set_rect`,
+        * `rect`.
+    - `Node::get_leaf`/`Node::get_leaf_mut` - an alternative way of trying to access leaf data in a node.
 - `TabBarStyle` now has two new fields: `inner_margin` and
   `spacing`. ([#270](https://github.com/Adanos020/egui_dock/pull/270))
 
 ### Fixed
 
 - `DockState::retain_tabs` no longer deletes the main surface if it ends up
-  empty ([#277](https://github.com/Adanos020/egui_dock/pull/277))
+  empty ([#277](https://github.com/Adanos020/egui_dock/pull/277)).
+- From [#275](https://github.com/Adanos020/egui_dock/pull/275):
+    - `{DockState,Tree}::remove_leaf` now removes unused empty node`s at the back of the tree.
+    - `{DockState,Tree}::retain_tabs` no longer deletes leaf nodes it shouldn't delete.
 
 ## egui_dock 0.16.0 - 2025-02-07
 
