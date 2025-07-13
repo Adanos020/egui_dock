@@ -2,11 +2,16 @@
 
 ## egui_dock 0.17.0 - TBD
 
-### Changed
+### Breaking changes
 
 - From ([#272](https://github.com/Adanos020/egui_dock/pull/272)):
     - `Node`s underlying data has been split up into the `LeafNode` and `SplitNode` types, meaning that any match
       statements carried out on a node now needs to account for this.
+- Upgraded to egui 0.32 ([#280](https://github.com/Adanos020/egui_dock/pull/280/))
+
+### Changed
+
+- From ([#272](https://github.com/Adanos020/egui_dock/pull/272)):
     - `Tree::set_active_tab` now takes `impl Into<NodeIndex>` and `impl Into<TabIndex>` to make use slightly easier.
     - `Surface` now implements `Index<NodeIndex>`/`IndexMut<NodeIndex>` which tries to access the surfaces node tree and
       the node at the index. This will always panic when used on an empty surface as they do not have a node tree nor
