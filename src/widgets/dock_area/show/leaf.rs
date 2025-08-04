@@ -164,6 +164,9 @@ impl<Tab> DockArea<'_, Tab> {
                 .fill_tab_bar
                 .then_some(available_width / (leaf.tabs.len() as f32));
 
+            let actual_width = tabbar_outer_rect.width();
+            let overflow = (actual_width - available_width).at_least(0.0);
+
             self.tabs(
                 tabs_ui,
                 state,
@@ -172,6 +175,7 @@ impl<Tab> DockArea<'_, Tab> {
                 tabbar_outer_rect,
                 prefered_width,
                 fade_style,
+                overflow,
             );
 
             // Draw hline from tab end to edge of tab bar.
@@ -271,6 +275,7 @@ impl<Tab> DockArea<'_, Tab> {
         tabbar_outer_rect: Rect,
         preferred_width: Option<f32>,
         fade: Option<&Style>,
+        overflow: f32,
     ) {
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
@@ -453,6 +458,7 @@ impl<Tab> DockArea<'_, Tab> {
             let leaf = self.dock_state[surface_index][node_index]
                 .get_leaf_mut()
                 .unwrap();
+
             let tab = &mut leaf.tabs[tab_index.0];
             let style = fade.unwrap_or_else(|| self.style.as_ref().unwrap());
             let tab_style = tab_viewer.tab_style_override(tab, &style.tab);
@@ -486,6 +492,12 @@ impl<Tab> DockArea<'_, Tab> {
                     ForcedRemoval(false),
                 ));
             }
+
+            if response.hovered() {
+                leaf.scroll += tabs_ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x);
+            }
+
+            // leaf.scroll = leaf.scroll.clamp(-overflow, 0.0);
         }
     }
 
