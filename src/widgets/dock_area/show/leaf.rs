@@ -97,6 +97,7 @@ impl<Tab> DockArea<'_, Tab> {
             vec2(ui.available_width(), style.tab_bar.height),
             Sense::hover(),
         );
+        let style2 = style.clone();
         ui.painter().rect_filled(
             tabbar_outer_rect,
             style.tab_bar.corner_radius,
@@ -125,7 +126,7 @@ impl<Tab> DockArea<'_, Tab> {
             available_width -= Style::TAB_COLLAPSE_BUTTON_SIZE;
         }
 
-        let actual_width = {
+        let (actual_width, hovered) = {
             let leaf = self.dock_state[surface_index][node_index]
                 .get_leaf_mut()
                 .expect("This node must be a leaf");
@@ -164,10 +165,7 @@ impl<Tab> DockArea<'_, Tab> {
                 .fill_tab_bar
                 .then_some(available_width / (leaf.tabs.len() as f32));
 
-            let actual_width = tabbar_outer_rect.width();
-            let overflow = (actual_width - available_width).at_least(0.0);
-
-            self.tabs(
+            let hovered = self.tabs(
                 tabs_ui,
                 state,
                 (surface_index, node_index),
@@ -175,7 +173,6 @@ impl<Tab> DockArea<'_, Tab> {
                 tabbar_outer_rect,
                 prefered_width,
                 fade_style,
-                overflow,
             );
 
             // Draw hline from tab end to edge of tab bar.
@@ -248,7 +245,7 @@ impl<Tab> DockArea<'_, Tab> {
                 )
             }
 
-            tabs_ui.min_rect().width()
+            (tabs_ui.min_rect().width(), hovered)
         };
 
         self.tab_bar_scroll(
@@ -259,6 +256,7 @@ impl<Tab> DockArea<'_, Tab> {
             available_width,
             scroll_bar_width,
             &tabbar_response,
+            hovered,
             fade_style,
         );
 
@@ -275,8 +273,9 @@ impl<Tab> DockArea<'_, Tab> {
         tabbar_outer_rect: Rect,
         preferred_width: Option<f32>,
         fade: Option<&Style>,
-        overflow: f32,
-    ) {
+    ) -> bool {
+        let mut hovered = false;
+
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
         let focused = self.dock_state.focused_leaf();
@@ -454,6 +453,10 @@ impl<Tab> DockArea<'_, Tab> {
                 (response, title_id)
             };
 
+            if response.hovered() {
+                hovered = true;
+            }
+
             // Paint hline below each tab unless its active (or option says otherwise).
             let leaf = self.dock_state[surface_index][node_index]
                 .get_leaf_mut()
@@ -492,13 +495,9 @@ impl<Tab> DockArea<'_, Tab> {
                     ForcedRemoval(false),
                 ));
             }
-
-            if response.hovered() {
-                leaf.scroll += tabs_ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x);
-            }
-
-            // leaf.scroll = leaf.scroll.clamp(-overflow, 0.0);
         }
+
+        hovered
     }
 
     /// Draws the tab add button.
@@ -1101,6 +1100,7 @@ impl<Tab> DockArea<'_, Tab> {
         available_width: f32,
         scroll_bar_width: f32,
         tabbar_response: &Response,
+        hovered: bool,
         fade_style: Option<&Style>,
     ) {
         assert_ne!(available_width, 0.0);
@@ -1172,7 +1172,7 @@ impl<Tab> DockArea<'_, Tab> {
             }
 
             // Handle user input.
-            if tabbar_response.hovered() {
+            if tabbar_response.hovered() || hovered {
                 leaf.scroll += ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x);
             }
         }
