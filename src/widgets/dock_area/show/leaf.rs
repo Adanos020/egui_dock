@@ -97,7 +97,6 @@ impl<Tab> DockArea<'_, Tab> {
             vec2(ui.available_width(), style.tab_bar.height),
             Sense::hover(),
         );
-        let style2 = style.clone();
         ui.painter().rect_filled(
             tabbar_outer_rect,
             style.tab_bar.corner_radius,
