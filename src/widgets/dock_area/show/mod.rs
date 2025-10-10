@@ -311,6 +311,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             rect,
             style.main_surface_border_rounding,
             style.main_surface_border_stroke,
+            egui::StrokeKind::Middle
         );
         if surface == SurfaceIndex::main() {
             rect = rect.expand(-style.main_surface_border_stroke.width / 2.0);

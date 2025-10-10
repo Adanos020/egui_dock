@@ -4,7 +4,7 @@ use egui::emath::TSTransform;
 use egui::UiBuilder;
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
-    LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
+    LayerId, Layout, NumExt, Order, Rect, Response, CornerRadius, ScrollArea, Sense, Stroke, TextStyle,
     Ui, Vec2, WidgetText,
 };
 
@@ -454,7 +454,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
         let color = if response.hovered() || response.has_focus() {
             ui.painter()
-                .rect_filled(rect, Rounding::ZERO, style.buttons.add_tab_bg_fill);
+                .rect_filled(rect, CornerRadius::ZERO, style.buttons.add_tab_bg_fill);
             style.buttons.add_tab_active_color
         } else {
             style.buttons.add_tab_color
@@ -566,13 +566,14 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
             stroke_rect,
             tab_style.rounding,
             Stroke::new(1.0, tab_style.outline_color),
+            egui::StrokeKind::Middle
         );
         if !is_being_dragged {
             // Make the tab name area connect with the tab ui area.
             ui.painter().hline(
                 RangeInclusive::new(
-                    stroke_rect.min.x + f32::max(tab_style.rounding.sw, 1.5),
-                    stroke_rect.max.x - f32::max(tab_style.rounding.se, 1.5),
+                    stroke_rect.min.x + f32::max(tab_style.rounding.sw as f32, 1.5),
+                    stroke_rect.max.x - f32::max(tab_style.rounding.se as f32, 1.5),
                 ),
                 stroke_rect.bottom(),
                 Stroke::new(2.0, tab_style.bg_fill),
@@ -607,8 +608,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             if close_response.hovered() || close_response.has_focus() {
                 let mut rounding = tab_style.rounding;
-                rounding.nw = 0.0;
-                rounding.sw = 0.0;
+                rounding.nw = 0;
+                rounding.sw = 0;
 
                 ui.painter().rect_filled(
                     close_button_rect,
@@ -783,11 +784,8 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             let ui = &mut Ui::new(
                 ui.ctx().clone(),
-                ui.layer_id(),
                 id,
-                ui_builder, // body_rect, // max
-                            // ui.clip_rect(), // clip
-                            // UiStackInfo::default(),
+                ui_builder,
             );
             ui.set_clip_rect(Rect::from_min_max(ui.cursor().min, ui.clip_rect().max));
 
@@ -806,6 +804,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 rect_stroke_box(tab_body_rect, tabs_style.tab_body.stroke.width),
                 tabs_style.tab_body.rounding,
                 tabs_style.tab_body.stroke,
+                egui::StrokeKind::Middle
             );
 
             ScrollArea::new(tab_viewer.scroll_bars(tab)).show(ui, |ui| {

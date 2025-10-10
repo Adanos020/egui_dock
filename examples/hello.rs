@@ -4,9 +4,7 @@ use std::collections::HashSet;
 
 use eframe::NativeOptions;
 use egui::{
-    color_picker::{color_edit_button_srgba, Alpha},
-    vec2, CentralPanel, ComboBox, Frame, Rounding, Slider, TopBottomPanel, Ui, ViewportBuilder,
-    WidgetText,
+    CentralPanel, ComboBox, CornerRadius, Frame, Rounding, Slider, TopBottomPanel, Ui, ViewportBuilder, WidgetText, color_picker::{Alpha, color_edit_button_srgba}, vec2
 };
 
 use egui_dock::{
@@ -272,22 +270,22 @@ impl MyContext {
                 ui.label("Rounding");
                 labeled_widget!(
                     ui,
-                    Slider::new(&mut tab_style.rounding.nw, 0.0..=15.0),
+                    Slider::new(&mut tab_style.rounding.nw, 0..=15),
                     "North-West"
                 );
                 labeled_widget!(
                     ui,
-                    Slider::new(&mut tab_style.rounding.ne, 0.0..=15.0),
+                    Slider::new(&mut tab_style.rounding.ne, 0..=15),
                     "North-East"
                 );
                 labeled_widget!(
                     ui,
-                    Slider::new(&mut tab_style.rounding.sw, 0.0..=15.0),
+                    Slider::new(&mut tab_style.rounding.sw, 0..=15),
                     "South-West"
                 );
                 labeled_widget!(
                     ui,
-                    Slider::new(&mut tab_style.rounding.se, 0.0..=15.0),
+                    Slider::new(&mut tab_style.rounding.se, 0..=15),
                     "South-East"
                 );
 
@@ -606,9 +604,9 @@ impl eframe::App for MyApp {
     }
 }
 
-fn rounding_ui(ui: &mut Ui, rounding: &mut Rounding) {
-    labeled_widget!(ui, Slider::new(&mut rounding.nw, 0.0..=15.0), "North-West");
-    labeled_widget!(ui, Slider::new(&mut rounding.ne, 0.0..=15.0), "North-East");
-    labeled_widget!(ui, Slider::new(&mut rounding.sw, 0.0..=15.0), "South-West");
-    labeled_widget!(ui, Slider::new(&mut rounding.se, 0.0..=15.0), "South-East");
+fn rounding_ui(ui: &mut Ui, rounding: &mut CornerRadius) {
+    labeled_widget!(ui, Slider::new(&mut rounding.nw, 0..=15), "North-West");
+    labeled_widget!(ui, Slider::new(&mut rounding.ne, 0..=15), "North-East");
+    labeled_widget!(ui, Slider::new(&mut rounding.sw, 0..=15), "South-West");
+    labeled_widget!(ui, Slider::new(&mut rounding.se, 0..=15), "South-East");
 }

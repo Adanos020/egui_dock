@@ -4,8 +4,7 @@ use crate::{
     AllowedSplits, NodeIndex, Split, Style, SurfaceIndex, TabDestination, TabIndex, TabInsert,
 };
 use egui::{
-    emath::inverse_lerp, vec2, Context, Id, LayerId, NumExt, Order, Painter, Pos2, Rect, Stroke,
-    Ui, Vec2,
+    Context, Id, LayerId, NumExt, Order, Painter, Pos2, Rect, Stroke, StrokeKind, Ui, Vec2, emath::inverse_lerp, vec2
 };
 
 #[derive(Debug, Clone)]
@@ -82,6 +81,7 @@ fn draw_highlight_rect(rect: Rect, ui: &Ui, style: &Style) {
         style.overlay.hovered_leaf_highlight.rounding,
         style.overlay.hovered_leaf_highlight.color,
         style.overlay.hovered_leaf_highlight.stroke,
+        StrokeKind::Middle
     );
 }
 
@@ -97,11 +97,11 @@ fn button_ui(
     let visuals = &style.overlay;
     let button_stroke = Stroke::new(1.0, visuals.button_color);
     let painter = make_overlay_painter(ui);
-    painter.rect_stroke(rect, 0.0, visuals.button_border_stroke);
+    painter.rect_stroke(rect, 0.0, visuals.button_border_stroke, StrokeKind::Middle);
     let rect = rect.shrink(rect.width() * 0.1);
-    painter.rect_stroke(rect, 0.0, button_stroke);
+    painter.rect_stroke(rect, 0.0, button_stroke, StrokeKind::Middle);
     let rim = { Rect::from_two_pos(rect.min, rect.lerp_inside(vec2(1.0, 0.1))) };
-    painter.rect(rim, 0.0, visuals.button_color, Stroke::NONE);
+    painter.rect(rim, 0.0, visuals.button_color, Stroke::NONE, StrokeKind::Middle);
 
     if let Some(split) = split {
         for line in DASHED_LINE_ALPHAS.chunks(2) {
@@ -437,6 +437,7 @@ fn draw_window_rect(rect: Rect, ui: &Ui, style: &Style) {
             style.overlay.selection_stroke_width,
             style.overlay.selection_color,
         ),
+        StrokeKind::Middle
     );
 }
 

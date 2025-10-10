@@ -1,4 +1,4 @@
-use egui::{ecolor::*, Margin, Rounding, Stroke};
+use egui::{CornerRadius, Margin, Rounding, Stroke, ecolor::*};
 
 /// Left or right alignment for tab add button.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -398,7 +398,7 @@ impl Default for TabInteractionStyle {
         Self {
             bg_fill: Color32::WHITE,
             outline_color: Color32::BLACK,
-            rounding: Rounding::default(),
+            rounding: CornerRadius::default(),
             text_color: Color32::DARK_GRAY,
         }
     }
@@ -407,9 +407,9 @@ impl Default for TabInteractionStyle {
 impl Default for TabBodyStyle {
     fn default() -> Self {
         Self {
-            inner_margin: Margin::same(4.0),
+            inner_margin: Margin::same(4),
             stroke: Stroke::default(),
-            rounding: Rounding::default(),
+            rounding: CornerRadius::default(),
             bg_fill: Color32::WHITE,
         }
     }
@@ -450,7 +450,7 @@ impl Default for LeafHighlighting {
     fn default() -> Self {
         Self {
             color: Color32::TRANSPARENT,
-            rounding: Rounding::same(0.0),
+            rounding: CornerRadius::same(0),
             stroke: Stroke::NONE,
             expansion: 0.0,
         }
@@ -538,11 +538,11 @@ impl TabBarStyle {
     pub fn from_egui(style: &egui::Style) -> Self {
         Self {
             bg_fill: style.visuals.extreme_bg_color,
-            rounding: Rounding {
-                nw: style.visuals.widgets.inactive.rounding.nw + 2.0,
-                ne: style.visuals.widgets.inactive.rounding.ne + 2.0,
-                sw: 0.0,
-                se: 0.0,
+            rounding: CornerRadius {
+                nw: style.visuals.widgets.inactive.rounding().nw + 2,
+                ne: style.visuals.widgets.inactive.rounding().ne + 2,
+                sw: 0,
+                se: 0,
             },
             hline_color: style.visuals.widgets.noninteractive.bg_stroke.color,
             ..TabBarStyle::default()
@@ -583,10 +583,10 @@ impl TabInteractionStyle {
             outline_color: style.visuals.widgets.noninteractive.bg_stroke.color,
             bg_fill: style.visuals.window_fill(),
             text_color: style.visuals.text_color(),
-            rounding: Rounding {
-                sw: 0.0,
-                se: 0.0,
-                ..style.visuals.widgets.active.rounding
+            rounding: CornerRadius {
+                sw: 0,
+                se: 0,
+                ..style.visuals.widgets.active.corner_radius
             },
         }
     }
@@ -700,7 +700,7 @@ impl TabBodyStyle {
         Self {
             inner_margin: style.spacing.window_margin,
             stroke: style.visuals.widgets.noninteractive.bg_stroke,
-            rounding: style.visuals.widgets.active.rounding,
+            rounding: style.visuals.widgets.active.corner_radius,
             bg_fill: style.visuals.window_fill(),
         }
     }
