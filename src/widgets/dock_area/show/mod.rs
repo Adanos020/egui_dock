@@ -66,7 +66,7 @@ impl<Tab> DockArea<'_, Tab> {
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         self.style
             .get_or_insert(Style::from_egui(ui.style().as_ref()));
-        self.window_bounds.get_or_insert(ui.ctx().screen_rect());
+        self.window_bounds.get_or_insert(ui.ctx().content_rect());
 
         let mut state = State::load(ui.ctx(), self.id);
 
