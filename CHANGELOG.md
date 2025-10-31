@@ -1,5 +1,15 @@
 # egui_dock changelog
 
+## egui_dock 0.18.0 - 2025/10/31
+
+### Breaking changes
+
+- Upgraded to egui 0.33 ([#293](https://github.com/Adanos020/egui_dock/pull/293))
+
+### Changed
+
+- Node separators are always clamped between their bounds. ([#289](https://github.com/Adanos020/egui_dock/pull/289))
+
 ## egui_dock 0.17.0 - 2025/07/13
 
 ### Breaking changes

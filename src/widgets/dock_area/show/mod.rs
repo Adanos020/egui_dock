@@ -66,7 +66,7 @@ impl<Tab> DockArea<'_, Tab> {
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
         self.style
             .get_or_insert(Style::from_egui(ui.style().as_ref()));
-        self.window_bounds.get_or_insert(ui.ctx().screen_rect());
+        self.window_bounds.get_or_insert(ui.ctx().content_rect());
 
         let mut state = State::load(ui.ctx(), self.id);
 
@@ -565,20 +565,12 @@ impl<Tab> DockArea<'_, Tab> {
                 // Update 'fraction' interaction after drawing separator,
                 // otherwise it may overlap on other separator / bodies when
                 // shrunk fast.
-                if let Some(pos) = response.interact_pointer_pos().or(arrow_key_offset.map(|v| separator.center() + v)) {
-                    let dim_point = pos.dim_point;
-                    let delta = arrow_key_offset.unwrap_or(response.drag_delta()).dim_point;
-
-                    if (delta > 0. && dim_point > midpoint && dim_point < rect.max.dim_point)
-                        || (delta < 0. && dim_point < midpoint && dim_point > rect.min.dim_point)
-                    {
-                        let range = rect.max.dim_point - rect.min.dim_point;
-                        let min = (style.separator.extra / range).min(1.0);
-                        let max = 1.0 - min;
-                        let (min, max) = (min.min(max), max.max(min));
-                        split.fraction = (split.fraction + delta / range).clamp(min, max);
-                    }
-                }
+                let range = rect.max.dim_point - rect.min.dim_point;
+                let min = (style.separator.extra / range).min(1.0);
+                let max = 1.0 - min;
+                let (min, max) = (min.min(max), max.max(min));
+                let delta = arrow_key_offset.unwrap_or(response.drag_delta()).dim_point;
+                split.fraction = (split.fraction + delta / range).clamp(min, max);
 
                 if response.double_clicked() {
                     split.fraction = 0.5;
