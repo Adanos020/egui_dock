@@ -1,6 +1,10 @@
 # egui_dock changelog
 
-## egui_dock 0.18.0 - unreleased
+## egui_dock 0.18.0 - 2025/10/31
+
+### Breaking changes
+
+- Upgraded to egui 0.33 ([#293](https://github.com/Adanos020/egui_dock/pull/293))
 
 ### Changed
 
