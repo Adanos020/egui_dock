@@ -297,8 +297,8 @@ impl<Tab> Tree<Tab> {
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) gets the `tabs`.
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
-    /// split.
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will attempt to occupy
+    /// after the split.
     ///
     /// The new node is placed relatively to the old node, in the direction specified by `split`.
     ///
@@ -341,8 +341,8 @@ impl<Tab> Tree<Tab> {
     ///
     /// This is a shorthand for using `split_tabs` with [`Split::Above`].
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
-    /// split.
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will attempt to occupy
+    /// after the split.
     ///
     /// The new node is placed *above* the old node.
     ///
@@ -366,8 +366,8 @@ impl<Tab> Tree<Tab> {
     ///
     /// This is a shorthand for using `split_tabs` with [`Split::Below`].
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
-    /// split.
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will attempt to occupy
+    /// after the split.
     ///
     /// The new node is placed *below* the old node.
     ///
@@ -391,8 +391,8 @@ impl<Tab> Tree<Tab> {
     ///
     /// This is a shorthand for using `split_tabs` with [`Split::Left`].
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
-    /// split.
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will attempt to occupy
+    /// after the split.
     ///
     /// The new node is placed to the *left* of the old node.
     ///
@@ -416,8 +416,8 @@ impl<Tab> Tree<Tab> {
     ///
     /// This is a shorthand for using `split_tabs` with [`Split::Right`].
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
-    /// split.
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will attempt to occupy
+    /// after the split.
     ///
     /// The new node is placed to the *right* of the old node.
     ///
@@ -439,8 +439,8 @@ impl<Tab> Tree<Tab> {
     /// Creates two new nodes by splitting a given `parent` node and assigns them as its children. The first (old) node
     /// inherits content of the `parent` from before the split, and the second (new) uses `new`.
     ///
-    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will occupy after the
-    /// split.
+    /// `fraction` (in range 0..=1) specifies how much of the `parent` node's area the old node will attempt to occupy
+    /// after the split.
     ///
     /// The new node is placed relatively to the old node, in the direction specified by `split`.
     ///
